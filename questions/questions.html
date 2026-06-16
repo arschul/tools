@@ -712,9 +712,36 @@
     .logo { font-size: 1.3rem; }
     .generate-btn { font-size: 1.25rem; padding: 0.65rem 2rem; }
   }
+
+  .back-link {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100000;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.18);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .back-link:hover {
+    background: rgba(0,0,0,0.78);
+    transform: translateX(-2px);
+  }
 </style>
 </head>
 <body>
+<a class="back-link" href="../">← Tool Hub</a>
 
 <!-- CONFETTI -->
 <div class="confetti-container" id="confettiContainer"></div>
