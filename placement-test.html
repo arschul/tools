@@ -354,6 +354,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
     <div id="pq-detail"></div>
   </div>
   <div class="r-actions">
+    <button class="btn-print dash-back" id="rs-dash-back" style="display:none">← Dashboard</button>
     <button class="btn-tracker" id="btn-open-tracker">📊 Open Progress Tracker</button>
     <button class="btn-print" onclick="window.print()">🖨 Print / Export Results</button>
     <button class="btn-newtest" onclick="location.reload()">↩ New Test</button>
@@ -363,6 +364,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 <!-- ═══════════ TRACKER ═══════════ -->
 <section id="ts" class="screen">
   <input type="file" id="tr-import-input" accept=".json" style="display:none">
+  <button class="tr-btn dash-back" id="tr-dash-back" style="display:none">← Dashboard</button>
   <div class="tr-bar">
     <div class="tr-left">
       <button class="tr-back" id="tr-back">← Results</button>
@@ -391,6 +393,14 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 </section>
 
 <script>
+// ═══════════════════════════════════════════════
+//  DASHBOARD INTEGRATION (URL params)
+// ═══════════════════════════════════════════════
+const _p  = new URLSearchParams(location.search);
+const _sid  = _p.get('studentId') || null;   // dashboard student id
+const _sname = _p.get('name')      || null;   // pre-filled name
+const _view  = _p.get('view')      || null;   // 'tracker' → skip test
+
 // ═══════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════
@@ -985,7 +995,7 @@ $('btn-next').addEventListener('click', () => {
 //  STUDENT RECORD & LOCALSTORAGE
 // ═══════════════════════════════════════════════
 let currentStudent = null;
-const SK = 'efl_pt_student';
+const SK = _sid ? `efl-dashboard:placement:${_sid}` : 'efl_pt_student';
 
 function buildStudentRecord() {
   const scores = {};
@@ -1007,6 +1017,7 @@ function buildStudentRecord() {
     startLevelIdx: S.startIdx,
     placement: S.finalPlacement || 'Below Starting Level',
     endReason: S.endReason,
+    studentId: _sid,
     scores
   };
 }
@@ -1291,20 +1302,42 @@ $('tr-back').addEventListener('click', () => showScreen('rs'));
 $('btn-open-tracker').addEventListener('click', () => { if(currentStudent) openTracker(currentStudent); });
 
 // ═══════════════════════════════════════════════
-//  RESUME ON START SCREEN
+//  INIT — handle dashboard params + resume
 // ═══════════════════════════════════════════════
-(function checkResume() {
-  const saved = loadSavedStudent();
-  if(saved) {
-    $('resume-wrap').style.display = 'block';
-    $('resume-info').textContent = saved.name + ' — placed: ' + saved.placement;
+(function init() {
+  const DASH_URL = '../teacher-dashboard/teacher-dashboard.html';
+
+  if(_sid) {
+    // Coming from dashboard: pre-fill name, lock field
+    if(_sname) {
+      $('sname').value = _sname;
+      $('sname').readOnly = true;
+      $('sname').style.opacity = '.75';
+      $('sname').style.cursor = 'default';
+    }
+    // Show all dashboard-back buttons
+    document.querySelectorAll('.dash-back').forEach(el => {
+      el.style.display = 'inline-flex';
+      el.addEventListener('click', () => { window.location.href = DASH_URL; });
+    });
+    // view=tracker → skip start screen and open tracker directly
+    if(_view === 'tracker') {
+      const saved = loadSavedStudent();
+      if(saved) { openTracker(saved); return; }
+    }
+  } else {
+    // Standalone: show resume button if there's saved data
+    const saved = loadSavedStudent();
+    if(saved) {
+      $('resume-wrap').style.display = 'block';
+      $('resume-info').textContent = saved.name + ' — placed: ' + saved.placement;
+    }
+    $('btn-resume').addEventListener('click', () => {
+      const s = loadSavedStudent();
+      if(s) openTracker(s);
+    });
   }
 })();
-
-$('btn-resume').addEventListener('click', () => {
-  const saved = loadSavedStudent();
-  if(saved) openTracker(saved);
-});
 </script>
 </body>
 </html>
