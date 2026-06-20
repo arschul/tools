@@ -1164,7 +1164,7 @@ function renderCalendar(){
         <div class="cal-date">${d}</div>
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}          ${!holiday?flexToday.map(({cls:c,time:t}=>{})=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}${t?' · '+t:''}</div>`).join(''):''}
+          ${!holiday?[...classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`),...flexToday.map(x=>`<div class="cal-tag" style="background:${x.cls.color}22;color:${x.cls.color};border-color:${x.cls.color}55">${esc(x.cls.name)}${x.time?' &middot; '+x.time:''}</div>`)].join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
         </div>
       </div>`;
