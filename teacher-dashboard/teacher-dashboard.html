@@ -394,7 +394,7 @@
 
 <script>
 /* ---------- constants ---------- */
-const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4] };
+const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4], FLEX:[] };
 const PALETTE = ['#4f6df5','#1f9d6f','#c98a1c','#d1453d','#8b5cf6','#0ea5b8','#e8618c','#6b7280'];
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -407,6 +407,7 @@ let state = {
   holidays: [],
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
+  bookedSessions: [],
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
   expandedClassId: null,
   openDrawer: null,
@@ -458,7 +459,7 @@ function formatDateLong(dateStr){
 function formatDateShort(dateStr){
   return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
-function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
+function scheduleLabel(s){ return {MW:'Mon / Wed',TT:'Tue / Thu',FLEX:'Flexible'}[s]||s; }
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function esc(str){
@@ -503,16 +504,20 @@ function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
   const startStr = startOverride || cls.startDate;
-  const endStr = endOverride || cls.endDate;
+  const endStr   = endOverride   || cls.endDate;
   if(!startStr || !endStr) return null;
+  if(cls.schedule === 'FLEX'){
+    return state.bookedSessions.filter(s =>
+      s.classId===cls.id && s.date>=startStr && s.date<=endStr && !isHoliday(s.date)
+    ).length;
+  }
   const start = new Date(startStr+'T00:00:00');
-  const end = new Date(endStr+'T00:00:00');
+  const end   = new Date(endStr+'T00:00:00');
   if(start>end) return 0;
-  let count=0;
-  let d = new Date(start);
+  let count=0, d=new Date(start);
   while(d<=end){
-    const dow = d.getDay();
-    const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+    const dow=d.getDay();
+    const dateStr=dateToStr(d.getFullYear(),d.getMonth(),d.getDate());
     if(SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
     d.setDate(d.getDate()+1);
   }
@@ -587,7 +592,10 @@ function renderDashboard(){
   const today = todayStr();
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
-  const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+  const todaysClasses = todayHoliday ? [] : [
+    ...state.classes.filter(c=>c.schedule!=='FLEX' && SCHEDULE_DAYS[c.schedule].includes(dow)),
+    ...state.classes.filter(c=>c.schedule==='FLEX' && state.bookedSessions.some(s=>s.classId===c.id&&s.date===today))
+  ];
   const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
 
   document.getElementById('view-dashboard').innerHTML = `
@@ -698,6 +706,7 @@ function openClassModal(classId){
       <select id="cm-schedule">
         <option value="MW" ${c?.schedule==='MW'?'selected':''}>Monday / Wednesday</option>
         <option value="TT" ${c?.schedule==='TT'?'selected':''}>Tuesday / Thursday</option>
+        <option value="FLEX" ${c?.schedule==='FLEX'?'selected':''}>Flexible (custom schedule)</option>
       </select>
     </div>
     <div class="field"><label>Time (optional)</label><input id="cm-time" type="time" value="${c?.time||''}"></div>
@@ -790,7 +799,7 @@ function renderRollCall(){
   if(created) scheduleSave('sessions', state.sessions);
 
   const dow = new Date(date+'T00:00:00').getDay();
-  const offSchedule = !SCHEDULE_DAYS[cls.schedule].includes(dow);
+  const offSchedule = cls.schedule!=='FLEX' && !SCHEDULE_DAYS[cls.schedule].includes(dow);
   const holiday = getHoliday(date);
 
   document.getElementById('view-rollcall').innerHTML = `
@@ -1145,7 +1154,8 @@ function renderCalendar(){
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
-    const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+    const classesToday = state.classes.filter(c=>c.schedule!=='FLEX'&&SCHEDULE_DAYS[c.schedule].includes(dow));
+    const flexToday = state.bookedSessions.filter(s=>s.date===dateStr).map(s=>({cls:classById(s.classId),time:s.time})).filter(x=>x.cls);
     const eventsToday = state.events.filter(e=>e.date===dateStr);
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
@@ -1154,7 +1164,7 @@ function renderCalendar(){
         <div class="cal-date">${d}</div>
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
+          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}          ${!holiday?flexToday.map(({cls:c,time:t}=>{})=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}${t?' · '+t:''}</div>`).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
         </div>
       </div>`;
@@ -1199,9 +1209,11 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
-  const eventsToday = state.events.filter(e=>e.date===dateStr);
-  const holiday = getHoliday(dateStr);
+  const classesToday = state.classes.filter(c=>c.schedule!=='FLEX'&&SCHEDULE_DAYS[c.schedule].includes(dow));
+  const bookedToday  = state.bookedSessions.filter(s=>s.date===dateStr);
+  const eventsToday  = state.events.filter(e=>e.date===dateStr);
+  const holiday      = getHoliday(dateStr);
+  const flexClasses  = state.classes.filter(c=>c.schedule==='FLEX');
   showModal(`
     <h3>${formatDateLong(dateStr)}</h3>
     <div class="modal-section">
@@ -1227,6 +1239,32 @@ function openDayModal(dateStr){
             <button class="btn-ghost small" onclick="goToRollCall('${c.id}','${dateStr}');closeModal();">Roll Call →</button>
           </div>
         `).join('')}
+      </div>
+    ` : ''}
+    ${bookedToday.length ? `
+      <div class="modal-section">
+        <div class="modal-section-label">Booked Sessions</div>
+        ${bookedToday.map(s=>{ const c=classById(s.classId); return c?`
+          <div class="modal-row">
+            <span><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${s.time?' · '+s.time:''}</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-ghost small" onclick="goToRollCall('${s.classId}','${dateStr}');closeModal();">Roll Call →</button>
+              <button class="icon-btn danger" onclick="removeBookedSession('${s.id}','${dateStr}')">×</button>
+            </div>
+          </div>
+        `:''}).join('')}
+      </div>
+    ` : ''}
+    ${flexClasses.length ? `
+      <div class="modal-section">
+        <div class="modal-section-label">Book a Session</div>
+        <div class="field-row">
+          <select id="bs-class" style="flex:1">
+            ${flexClasses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+          </select>
+          <input type="time" id="bs-time" style="width:110px" placeholder="Time (optional)">
+          <button class="btn-ghost small" onclick="bookSession('${dateStr}')">Book</button>
+        </div>
       </div>
     ` : ''}
     <div class="modal-section">
@@ -1259,6 +1297,21 @@ function openDayModal(dateStr){
       <button class="btn-accent" onclick="addEvent('${dateStr}')">Add event</button>
     </div>
   `);
+}
+function bookSession(dateStr){
+  const classId = document.getElementById('bs-class').value;
+  const time    = document.getElementById('bs-time').value || null;
+  if(!classId) return;
+  state.bookedSessions.push({id:uid(), classId, date:dateStr, time});
+  scheduleSave('bookedSessions', state.bookedSessions);
+  renderCalendar();
+  openDayModal(dateStr);
+}
+function removeBookedSession(sessionId, dateStr){
+  state.bookedSessions = state.bookedSessions.filter(s=>s.id!==sessionId);
+  scheduleSave('bookedSessions', state.bookedSessions);
+  renderCalendar();
+  openDayModal(dateStr);
 }
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
@@ -1299,7 +1352,8 @@ function exportData(){
     students: state.students,
     sessions: state.sessions,
     events: state.events,
-    holidays: state.holidays
+    holidays: state.holidays,
+    bookedSessions: state.bookedSessions
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1332,11 +1386,13 @@ function importData(file){
     state.sessions = data.sessions || {};
     state.events = data.events || [];
     state.holidays = data.holidays || [];
+    state.bookedSessions = data.bookedSessions || [];
     saveKey('classes', state.classes);
     saveKey('students', state.students);
     saveKey('sessions', state.sessions);
     saveKey('events', state.events);
     saveKey('holidays', state.holidays);
+    saveKey('bookedSessions', state.bookedSessions);
     state.expandedClassId = null;
     state.openDrawer = null;
     state.reportsSelection = {classId:'', studentId:''};
@@ -1353,6 +1409,7 @@ async function init(){
   state.sessions = await loadKey('sessions', {});
   state.events = await loadKey('events', []);
   state.holidays = await loadKey('holidays', []);
+  state.bookedSessions = await loadKey('bookedSessions', []);
   navigate('dashboard');
 }
 init();
