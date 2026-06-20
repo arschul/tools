@@ -143,10 +143,79 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 .pq-s{font-family:var(--fd);font-weight:700;font-size:15px;text-align:right;white-space:nowrap;width:90px}
 .pq-miss{color:var(--accent);font-size:12px;font-weight:600;text-align:right;white-space:nowrap;width:90px}
 
+/* ── TRACKER ── */
+#ts.active{display:flex;flex-direction:column;min-height:100vh}
+.tr-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:10}
+.tr-left{display:flex;align-items:center;gap:14px}
+.tr-back{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-family:var(--fb);font-size:13px;cursor:pointer;transition:all .2s}
+.tr-back:hover{color:var(--text);border-color:var(--text)}
+.tr-stname{font-family:var(--fd);font-size:16px;font-weight:700}
+.tr-sub{display:flex;align-items:center;gap:8px;margin-top:3px}
+.tr-badge{background:var(--success-dim);border:1px solid var(--success);color:var(--success);font-size:11px;font-weight:700;padding:2px 10px;border-radius:100px}
+.tr-tdate{font-size:12px;color:var(--muted)}
+.tr-right{display:flex;gap:8px}
+.tr-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-family:var(--fb);font-size:13px;cursor:pointer;transition:all .2s}
+.tr-btn:hover{color:var(--text);border-color:var(--text)}
+.tr-tabs{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex}
+.tr-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--fb);font-size:14px;font-weight:500;padding:12px 18px;cursor:pointer;transition:all .2s;margin-bottom:-1px}
+.tr-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tr-body{flex:1;padding:28px 24px;max-width:920px;width:100%;margin:0 auto}
+/* level blocks */
+.lb{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.lb-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card);cursor:pointer;user-select:none;transition:background .15s}
+.lb-hdr:hover{background:var(--surface)}
+.lb-title{display:flex;align-items:center;gap:10px}
+.lb-placed{color:var(--success);font-size:11px;font-weight:700}
+.lb-name{font-family:var(--fd);font-size:14px;font-weight:700}
+.lb-cnt{font-size:12px;color:var(--muted);font-weight:400}
+.lb-right{display:flex;align-items:center;gap:12px}
+.lb-avg{font-family:var(--fd);font-weight:700;font-size:16px}
+.lb-chev{color:var(--muted);font-size:12px;transition:transform .2s}
+.lb-chev.rot{transform:rotate(180deg)}
+/* question rows table */
+.qrt{display:none;width:100%;border-collapse:collapse}
+.qrt.open{display:table}
+.qr{border-top:1px solid rgba(48,54,61,.5)}
+.qr:hover{background:rgba(255,255,255,.02)}
+.qr td{padding:9px 12px;font-size:13px;vertical-align:middle}
+.qr-n{color:var(--muted);font-size:11px;font-family:var(--fd);font-weight:600;width:30px}
+.qr-u{color:var(--muted);font-size:12px;width:170px}
+.qr-oc{color:var(--text2)}
+.qr-s{width:90px;text-align:right}
+/* score cells */
+.sc-cell{font-family:var(--fd);font-weight:700;font-size:14px;cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid transparent;display:inline-block;min-width:52px;text-align:center;transition:border-color .15s}
+.sc-cell:hover{border-color:var(--border)}
+.sc-na{color:var(--muted);font-size:12px;font-weight:400}
+.sc-input{width:62px;background:var(--card);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:var(--fd);font-weight:700;font-size:14px;padding:3px 6px;text-align:center;outline:none}
+/* teach next */
+.tn-sec{margin-bottom:20px}
+.tn-hdr{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:0 0 8px;display:flex;align-items:center;gap:8px}
+.tn-cnt{background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:1px 7px;border-radius:100px;font-weight:400}
+.tn-card{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tn-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(48,54,61,.4)}
+.tn-row:last-child{border-bottom:none}
+.tn-row:hover{background:rgba(255,255,255,.02)}
+.tn-lvl{font-size:11px;font-weight:700;color:var(--muted);width:110px;flex-shrink:0;font-family:var(--fd)}
+.tn-oc{flex:1;font-size:13px;color:var(--text2);min-width:0}
+.tn-unit{font-size:11px;color:var(--muted)}
+.tn-sc{font-family:var(--fd);font-weight:700;font-size:14px;flex-shrink:0;min-width:52px;text-align:right;cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid transparent;transition:border-color .15s}
+.tn-sc:hover{border-color:var(--border)}
+/* resume on start */
+.resume-wrap{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.btn-resume{width:100%;background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:12px 16px;font-family:var(--fb);font-size:14px;cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:10px}
+.btn-resume:hover{border-color:var(--accent);color:var(--text)}
+.resume-label{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+/* open tracker on results */
+.btn-tracker{width:100%;background:var(--success);border:none;color:#fff;border-radius:8px;padding:15px 20px;font-family:var(--fd);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s;margin-bottom:8px}
+.btn-tracker:hover{opacity:.88}
+
 @media print{
   body{background:#fff;color:#111}
-  #ss,#qs,.modal-ov,.r-actions{display:none!important}
+  #ss,#qs,.modal-ov,.r-actions,.tr-bar,.tr-tabs,.tr-btn,.tr-back{display:none!important}
   #rs{display:block!important;padding:20px;max-width:100%}
+  #ts.active{display:block!important}
+  .lb{page-break-inside:avoid}
+  .qrt{display:table!important}
   .rh-school,.rh-title,.rh-meta{color:#111}
   .place-card{border:2px solid #059669;background:#f0fdf4}
   .place-name,.place-tag{color:#059669}
@@ -188,6 +257,13 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
       </select>
     </div>
     <button class="btn-begin" id="btn-begin">Begin Test →</button>
+    <div class="resume-wrap" id="resume-wrap" style="display:none">
+      <div class="resume-label">Saved Progress</div>
+      <button class="btn-resume" id="btn-resume">
+        <span>📊</span>
+        <span id="resume-info">Resume student</span>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -278,8 +354,39 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
     <div id="pq-detail"></div>
   </div>
   <div class="r-actions">
+    <button class="btn-tracker" id="btn-open-tracker">📊 Open Progress Tracker</button>
     <button class="btn-print" onclick="window.print()">🖨 Print / Export Results</button>
     <button class="btn-newtest" onclick="location.reload()">↩ New Test</button>
+  </div>
+</section>
+
+<!-- ═══════════ TRACKER ═══════════ -->
+<section id="ts" class="screen">
+  <input type="file" id="tr-import-input" accept=".json" style="display:none">
+  <div class="tr-bar">
+    <div class="tr-left">
+      <button class="tr-back" id="tr-back">← Results</button>
+      <div>
+        <div class="tr-stname" id="tr-name"></div>
+        <div class="tr-sub">
+          <span class="tr-badge" id="tr-badge"></span>
+          <span class="tr-tdate" id="tr-date"></span>
+        </div>
+      </div>
+    </div>
+    <div class="tr-right">
+      <button class="tr-btn" id="tr-import-btn">⬆ Import</button>
+      <button class="tr-btn" id="tr-export-btn">⬇ Export</button>
+      <button class="tr-btn" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+  <div class="tr-tabs">
+    <button class="tr-tab active" id="tab-progress" onclick="switchTab('progress')">📊 Progress</button>
+    <button class="tr-tab" id="tab-teach" onclick="switchTab('teach')">🎯 Teach Next</button>
+  </div>
+  <div class="tr-body">
+    <div id="tp-progress"></div>
+    <div id="tp-teach" style="display:none"></div>
   </div>
 </section>
 
@@ -697,6 +804,8 @@ function handleStrike(){
 function endTest(placement, reason){
   S.finalPlacement = placement;
   S.endReason = reason;
+  currentStudent = buildStudentRecord();
+  saveStudent();
   buildResults();
   showScreen('rs');
 }
@@ -870,6 +979,331 @@ $('btn-next').addEventListener('click', () => {
   S.curScores.push(S.sliderVal);
   S.curAsked++;
   nextQ();
+});
+
+// ═══════════════════════════════════════════════
+//  STUDENT RECORD & LOCALSTORAGE
+// ═══════════════════════════════════════════════
+let currentStudent = null;
+const SK = 'efl_pt_student';
+
+function buildStudentRecord() {
+  const scores = {};
+  LEVELS.forEach(lvl => {
+    scores[lvl] = QB[lvl].map(() => ({ score: null, updated: null }));
+  });
+  S.levelResults.forEach(r => {
+    if(!r.questions) return;
+    r.questions.forEach(q => {
+      scores[r.level][q.qNum - 1] = {
+        score: q.strike ? null : q.score,
+        updated: q.strike ? null : new Date().toISOString()
+      };
+    });
+  });
+  return {
+    name: S.name,
+    testDate: new Date().toISOString(),
+    startLevelIdx: S.startIdx,
+    placement: S.finalPlacement || 'Below Starting Level',
+    endReason: S.endReason,
+    scores
+  };
+}
+
+function saveStudent() {
+  if(currentStudent) localStorage.setItem(SK, JSON.stringify(currentStudent));
+}
+
+function loadSavedStudent() {
+  try { return JSON.parse(localStorage.getItem(SK)); } catch { return null; }
+}
+
+// ═══════════════════════════════════════════════
+//  OPEN TRACKER
+// ═══════════════════════════════════════════════
+function openTracker(student) {
+  currentStudent = student;
+  saveStudent();
+  $('tr-name').textContent = student.name;
+  $('tr-badge').textContent = 'Placed: ' + student.placement;
+  const d = new Date(student.testDate);
+  $('tr-date').textContent = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
+  renderProgressTab();
+  renderTeachNextTab();
+  switchTab('progress');
+  showScreen('ts');
+}
+
+// ═══════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════
+function switchTab(tab) {
+  $('tp-progress').style.display = tab === 'progress' ? 'block' : 'none';
+  $('tp-teach').style.display   = tab === 'teach'    ? 'block' : 'none';
+  $('tab-progress').classList.toggle('active', tab === 'progress');
+  $('tab-teach').classList.toggle('active',    tab === 'teach');
+}
+
+// ═══════════════════════════════════════════════
+//  PROGRESS TAB
+// ═══════════════════════════════════════════════
+function lvlAvg(qs) {
+  const a = qs.filter(q => q.score !== null);
+  return a.length ? Math.round(a.reduce((s,q) => s + q.score, 0) / a.length) : null;
+}
+
+function makeScoreCell(lvl, qi, fromTeach) {
+  const qd = currentStudent.scores[lvl][qi];
+  const el = document.createElement('span');
+  el.className = (fromTeach ? 'tn-sc' : 'sc-cell') + (qd.score === null ? ' sc-na' : '');
+  el.style.color = qd.score !== null ? hslColor(qd.score) : '';
+  el.textContent = qd.score !== null ? qd.score + '%' : '—';
+  el.onclick = () => editScore(el, lvl, qi, fromTeach);
+  return el;
+}
+
+function renderProgressTab() {
+  const wrap = $('tp-progress');
+  wrap.innerHTML = '';
+  const placementIdx = LEVELS.indexOf(currentStudent.placement);
+
+  LEVELS.forEach((lvl, li) => {
+    const qs = currentStudent.scores[lvl];
+    const assessed = qs.filter(q => q.score !== null).length;
+    const avg = lvlAvg(qs);
+    const isPlaced = li === placementIdx;
+
+    const block = document.createElement('div');
+    block.className = 'lb';
+    block.id = 'lb-' + li;
+    if(isPlaced) block.style.borderColor = 'var(--success)';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'lb-hdr';
+    hdr.innerHTML = `
+      <div class="lb-title">
+        ${isPlaced ? '<span class="lb-placed">★ PLACED</span>' : ''}
+        <span class="lb-name">${lvl}</span>
+        <span class="lb-cnt" id="lc-${li}">${assessed}/18 assessed</span>
+      </div>
+      <div class="lb-right">
+        <span class="lb-avg" id="la-${li}" style="color:${avg!==null?hslColor(avg):'var(--muted)'}">${avg!==null?avg+'%':'—'}</span>
+        <span class="lb-chev${isPlaced?' rot':''}" id="lch-${li}">▼</span>
+      </div>`;
+
+    const table = document.createElement('table');
+    table.className = 'qrt' + (isPlaced ? ' open' : '');
+    table.id = 'qt-' + li;
+
+    QB[lvl].forEach((q, qi) => {
+      const tr = document.createElement('tr');
+      tr.className = 'qr';
+      const n = document.createElement('td'); n.className = 'qr-n'; n.textContent = qi+1;
+      const u = document.createElement('td'); u.className = 'qr-u'; u.textContent = q.unit;
+      const o = document.createElement('td'); o.className = 'qr-oc'; o.textContent = q.outcome;
+      const s = document.createElement('td'); s.className = 'qr-s';
+      s.appendChild(makeScoreCell(lvl, qi, false));
+      tr.append(n, u, o, s);
+      table.appendChild(tr);
+    });
+
+    hdr.onclick = () => {
+      const open = table.classList.toggle('open');
+      $('lch-'+li).classList.toggle('rot', open);
+    };
+
+    block.append(hdr, table);
+    wrap.appendChild(block);
+  });
+}
+
+function updateLvlHeader(lvl) {
+  const li = LEVELS.indexOf(lvl);
+  const qs = currentStudent.scores[lvl];
+  const assessed = qs.filter(q => q.score !== null).length;
+  const avg = lvlAvg(qs);
+  const avgEl = $('la-'+li), cntEl = $('lc-'+li);
+  if(avgEl){ avgEl.textContent = avg!==null?avg+'%':'—'; avgEl.style.color = avg!==null?hslColor(avg):'var(--muted)'; }
+  if(cntEl) cntEl.textContent = assessed+'/18 assessed';
+}
+
+// ═══════════════════════════════════════════════
+//  TEACH NEXT TAB
+// ═══════════════════════════════════════════════
+function getPriority(score, atOrBelow) {
+  if(!atOrBelow) return 4;
+  if(score === null) return 1;
+  if(score < 65)    return 2;
+  if(score < 80)    return 3;
+  return 5;
+}
+
+function renderTeachNextTab() {
+  const wrap = $('tp-teach');
+  wrap.innerHTML = '';
+  const placementIdx = LEVELS.indexOf(currentStudent.placement);
+
+  const all = [];
+  LEVELS.forEach((lvl, li) => {
+    QB[lvl].forEach((q, qi) => {
+      const score = currentStudent.scores[lvl][qi].score;
+      const atOrBelow = li <= placementIdx;
+      all.push({ lvl, li, qi, q, score, priority: getPriority(score, atOrBelow) });
+    });
+  });
+
+  all.sort((a, b) => {
+    if(a.priority !== b.priority) return a.priority - b.priority;
+    if(a.score !== b.score){
+      if(a.score === null) return -1;
+      if(b.score === null) return  1;
+      return a.score - b.score;
+    }
+    return a.li !== b.li ? a.li - b.li : a.qi - b.qi;
+  });
+
+  const groups = [
+    { pMin:1, pMax:2, label:'🔴 Needs Work',     desc:'Unassessed or below 65% — priority teaching targets' },
+    { pMin:3, pMax:3, label:'🟡 Review',          desc:'Borderline 65–79% at or below placement' },
+    { pMin:4, pMax:4, label:'🔵 Future Content',  desc:'Levels above placement — teach when ready' },
+    { pMin:5, pMax:5, label:'✅ Strong',           desc:'Scored 80%+ — no action needed' }
+  ];
+
+  groups.forEach(g => {
+    const items = all.filter(x => x.priority >= g.pMin && x.priority <= g.pMax);
+    if(!items.length) return;
+
+    const sec = document.createElement('div');
+    sec.className = 'tn-sec';
+
+    const hdrEl = document.createElement('div');
+    hdrEl.className = 'tn-hdr';
+    hdrEl.title = g.desc;
+    hdrEl.innerHTML = `${g.label} <span class="tn-cnt">${items.length}</span>`;
+    sec.appendChild(hdrEl);
+
+    const card = document.createElement('div');
+    card.className = 'tn-card';
+
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'tn-row';
+
+      const lvlSpan = document.createElement('span');
+      lvlSpan.className = 'tn-lvl';
+      lvlSpan.textContent = item.lvl;
+
+      const ocSpan = document.createElement('span');
+      ocSpan.className = 'tn-oc';
+      ocSpan.innerHTML = `${item.q.outcome} <span class="tn-unit">${item.q.unit}</span>`;
+
+      row.append(lvlSpan, ocSpan, makeScoreCell(item.lvl, item.qi, true));
+      card.appendChild(row);
+    });
+
+    sec.appendChild(card);
+    wrap.appendChild(sec);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SCORE EDITING
+// ═══════════════════════════════════════════════
+function editScore(el, lvl, qi, fromTeach) {
+  const cur = currentStudent.scores[lvl][qi].score;
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.min = 0; inp.max = 100;
+  inp.value = cur !== null ? cur : '';
+  inp.className = 'sc-input';
+  inp.placeholder = '0–100';
+  el.replaceWith(inp);
+  inp.focus(); inp.select();
+
+  function commit() {
+    let val = parseInt(inp.value);
+    if(isNaN(val)) val = null;
+    else val = Math.max(0, Math.min(100, val));
+    currentStudent.scores[lvl][qi] = { score: val, updated: new Date().toISOString() };
+    saveStudent();
+    const newEl = makeScoreCell(lvl, qi, fromTeach);
+    inp.replaceWith(newEl);
+    updateLvlHeader(lvl);
+    renderTeachNextTab();
+    if(fromTeach) {
+      // Also update the matching cell in the progress tab if visible
+      const qt = $('qt-' + LEVELS.indexOf(lvl));
+      if(qt) {
+        const rows = qt.querySelectorAll('.qr');
+        if(rows[qi]) {
+          const td = rows[qi].querySelector('.qr-s');
+          if(td){ td.innerHTML = ''; td.appendChild(makeScoreCell(lvl, qi, false)); }
+        }
+      }
+    }
+  }
+
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e => {
+    if(e.key === 'Enter') inp.blur();
+    if(e.key === 'Escape') {
+      inp.replaceWith(makeScoreCell(lvl, qi, fromTeach));
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  IMPORT / EXPORT
+// ═══════════════════════════════════════════════
+function exportStudent() {
+  if(!currentStudent) return;
+  const json = JSON.stringify(currentStudent, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (currentStudent.name.replace(/\s+/g,'-') || 'student') + '-tracker.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+$('tr-import-input').addEventListener('change', function() {
+  const file = this.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.name && data.scores && data.placement) {
+        openTracker(data);
+      } else { alert('Invalid student file.'); }
+    } catch { alert('Could not read file.'); }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+$('tr-export-btn').addEventListener('click', exportStudent);
+$('tr-import-btn').addEventListener('click', () => $('tr-import-input').click());
+$('tr-back').addEventListener('click', () => showScreen('rs'));
+$('btn-open-tracker').addEventListener('click', () => { if(currentStudent) openTracker(currentStudent); });
+
+// ═══════════════════════════════════════════════
+//  RESUME ON START SCREEN
+// ═══════════════════════════════════════════════
+(function checkResume() {
+  const saved = loadSavedStudent();
+  if(saved) {
+    $('resume-wrap').style.display = 'block';
+    $('resume-info').textContent = saved.name + ' — placed: ' + saved.placement;
+  }
+})();
+
+$('btn-resume').addEventListener('click', () => {
+  const saved = loadSavedStudent();
+  if(saved) openTracker(saved);
 });
 </script>
 </body>
