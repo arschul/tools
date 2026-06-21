@@ -614,6 +614,7 @@ let S = {
   strikesNow:0, curScores:[], curAsked:0, curQuestions:[],
   levelResults:[], observations:[], finalPlacement:null, endReason:''
 };
+let prevScores = null;  // scores from most recent previous session, for slider pre-fill
 
 // ═══════════════════════════════════════════════
 //  HELPERS
@@ -643,14 +644,26 @@ function updateSliderUI(val){
 
 function resetSlider(){
   S.sliderMoved = false;
-  S.sliderVal = 50;
-  $('sslider').value = 50;
-  $('sslider').style.background = 'var(--border)';
-  $('score-num').textContent = '—';
-  $('score-num').style.color = '';
-  $('score-num').classList.add('pending');
-  $('btn-next').disabled = true;
-  $('shint').textContent = 'Move the slider to score this response';
+  const lvl = LEVELS[S.curIdx];
+  const prevEntry = prevScores && prevScores[lvl] && prevScores[lvl][S.qIdx];
+  const prevScore = (prevEntry && prevEntry.score !== null && prevEntry.score !== undefined) ? prevEntry.score : null;
+  if(prevScore !== null){
+    S.sliderVal = prevScore;
+    S.sliderMoved = true;
+    $('sslider').value = prevScore;
+    updateSliderUI(prevScore);
+    $('btn-next').disabled = false;
+    $('shint').textContent = 'Previous score pre-filled — adjust if needed';
+  } else {
+    S.sliderVal = 50;
+    $('sslider').value = 50;
+    $('sslider').style.background = 'var(--border)';
+    $('score-num').textContent = '—';
+    $('score-num').style.color = '';
+    $('score-num').classList.add('pending');
+    $('btn-next').disabled = true;
+    $('shint').textContent = 'Move the slider to score this response';
+  }
 }
 
 function updatePips(){
@@ -941,18 +954,30 @@ function buildResults(){
     const avgColor = r.qAnswered > 0 ? hslColor(r.average) : 'var(--muted)';
     const avgText = r.qAnswered > 0 ? r.average + '%' : '—';
     const rows = r.questions.map(q => {
+      const prevEntry = prevScores && prevScores[r.level] && prevScores[r.level][q.qNum - 1];
+      const prevScore = (prevEntry && prevEntry.score !== null && prevEntry.score !== undefined) ? prevEntry.score : null;
       if(q.strike){
+        const prevHTML = prevScore !== null ? `<span style="color:var(--muted);font-size:11px;">(was ${prevScore}%)</span> ` : '';
         return `<tr>
           <td class="pq-n">${q.qNum}</td>
           <td class="pq-u">${q.unit}</td>
           <td class="pq-oc">${q.outcome}</td>
-          <td class="pq-miss">✗ No response</td></tr>`;
+          <td class="pq-miss">${prevHTML}✗ No response</td></tr>`;
+      }
+      let scoreHTML;
+      if(prevScore !== null && prevScore !== q.score){
+        const delta = q.score - prevScore;
+        const sign = delta > 0 ? '+' : '';
+        const deltaColor = delta > 0 ? 'var(--success)' : 'var(--accent)';
+        scoreHTML = `<span style="color:var(--muted)">${prevScore}%</span> <span style="color:var(--muted)">→</span> <span style="color:${hslColor(q.score)}">${q.score}%</span> <span style="font-size:11px;color:${deltaColor}">(${sign}${delta})</span>`;
+      } else {
+        scoreHTML = `<span style="color:${hslColor(q.score)}">${q.score}%</span>`;
       }
       return `<tr>
         <td class="pq-n">${q.qNum}</td>
         <td class="pq-u">${q.unit}</td>
         <td class="pq-oc">${q.outcome}</td>
-        <td class="pq-s" style="color:${hslColor(q.score)}">${q.score}%</td></tr>`;
+        <td class="pq-s">${scoreHTML}</td></tr>`;
     }).join('');
     const block = document.createElement('div');
     block.className = 'pq-block';
@@ -1045,11 +1070,43 @@ function buildStudentRecord() {
 }
 
 function saveStudent() {
-  if(currentStudent) localStorage.setItem(SK, JSON.stringify(currentStudent));
+  if(!currentStudent) return;
+  let history = [];
+  try {
+    const raw = localStorage.getItem(SK);
+    if(raw){
+      const data = JSON.parse(raw);
+      history = Array.isArray(data.history) ? data.history
+              : (data.placement !== undefined || data.name !== undefined) ? [data]  // legacy single record
+              : [];
+    }
+  } catch {}
+  history.push(currentStudent);
+  localStorage.setItem(SK, JSON.stringify({ history }));
 }
 
 function loadSavedStudent() {
-  try { return JSON.parse(localStorage.getItem(SK)); } catch { return null; }
+  try {
+    const raw = localStorage.getItem(SK);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(Array.isArray(data.history) && data.history.length > 0) return data.history[data.history.length - 1];
+    if(data.placement !== undefined || data.name !== undefined) return data; // legacy
+    return null;
+  } catch { return null; }
+}
+
+function loadPreviousScores() {
+  if(!_sid) return;
+  try {
+    const raw = localStorage.getItem(SK);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    let records = Array.isArray(data.history) ? data.history
+                : (data.placement !== undefined || data.name !== undefined) ? [data]
+                : [];
+    if(records.length > 0) prevScores = records[records.length - 1].scores || null;
+  } catch {}
 }
 
 // ═══════════════════════════════════════════════
@@ -1390,6 +1447,8 @@ $('btn-open-tracker').addEventListener('click', () => { if(currentStudent) openT
   const DASH_URL = 'https://arschul.github.io/tools/teacher-dashboard/teacher-dashboard.html';
 
   if(_sid) {
+    // Load any previous session scores for slider pre-fill during the test
+    loadPreviousScores();
     // Coming from dashboard: pre-fill name, lock field
     if(_sname) {
       $('sname').value = _sname;
