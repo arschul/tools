@@ -182,6 +182,25 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 .qr-u{color:var(--muted);font-size:12px;width:170px}
 .qr-oc{color:var(--text2)}
 .qr-s{width:90px;text-align:right}
+.qr-pin{width:28px;text-align:center}
+/* focus panel */
+.focus-panel{padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.focus-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.focus-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.focus-slot{border:1px solid var(--border);border-radius:8px;padding:12px 14px;background:var(--card);min-height:88px;display:flex;flex-direction:column}
+.focus-slot.empty{border-style:dashed;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+.focus-slot.filled{border-color:var(--accent);background:var(--accent-dim)}
+.focus-flvl{font-family:var(--fd);font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.focus-foc{font-size:13px;color:var(--text);font-weight:600;line-height:1.3;margin-bottom:3px}
+.focus-gram{font-size:11px;color:var(--purple);font-style:italic;flex:1}
+.focus-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.focus-fscore{font-family:var(--fd);font-weight:700;font-size:14px}
+.focus-rm{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;transition:color .15s}
+.focus-rm:hover{color:var(--accent)}
+/* pin buttons */
+.pin-btn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:3px 4px;opacity:.25;transition:opacity .15s;line-height:1;flex-shrink:0}
+.pin-btn:hover{opacity:.7}
+.pin-btn.pinned{opacity:1}
 /* score cells */
 .sc-cell{font-family:var(--fd);font-weight:700;font-size:14px;cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid transparent;display:inline-block;min-width:52px;text-align:center;transition:border-color .15s}
 .sc-cell:hover{border-color:var(--border)}
@@ -387,6 +406,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
     <button class="tr-tab active" id="tab-progress" onclick="switchTab('progress')">📊 Progress</button>
     <button class="tr-tab" id="tab-teach" onclick="switchTab('teach')">🎯 Teach Next</button>
   </div>
+  <div id="tr-focus" class="focus-panel"></div>
   <div class="tr-body">
     <div id="tp-progress"></div>
     <div id="tp-teach" style="display:none"></div>
@@ -1019,6 +1039,7 @@ function buildStudentRecord() {
     placement: S.finalPlacement || 'Below Starting Level',
     endReason: S.endReason,
     studentId: _sid,
+    focus: [],
     scores
   };
 }
@@ -1036,11 +1057,13 @@ function loadSavedStudent() {
 // ═══════════════════════════════════════════════
 function openTracker(student) {
   currentStudent = student;
+  if(!currentStudent.focus) currentStudent.focus = [];
   saveStudent();
   $('tr-name').textContent = student.name;
   $('tr-badge').textContent = 'Placed: ' + student.placement;
   const d = new Date(student.testDate);
   $('tr-date').textContent = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
+  renderFocusPanel();
   renderProgressTab();
   renderTeachNextTab();
   switchTab('progress');
@@ -1055,6 +1078,61 @@ function switchTab(tab) {
   $('tp-teach').style.display   = tab === 'teach'    ? 'block' : 'none';
   $('tab-progress').classList.toggle('active', tab === 'progress');
   $('tab-teach').classList.toggle('active',    tab === 'teach');
+}
+
+// ═══════════════════════════════════════════════
+//  FOCUS PANEL
+// ═══════════════════════════════════════════════
+function renderFocusPanel() {
+  const slots = [0,1,2].map(i => {
+    const f = currentStudent.focus[i];
+    if(!f) return `<div class="focus-slot empty">＋ Add focus area</div>`;
+    const q  = QB[f.lvl][f.qi];
+    const qd = currentStudent.scores[f.lvl][f.qi];
+    const score = qd.score;
+    const sc = score !== null ? hslColor(score) : 'var(--muted)';
+    const st = score !== null ? score + '%' : '—';
+    // escape single quotes in lvl for inline onclick
+    const lvlSafe = f.lvl.replace(/'/g,"\\'");
+    return `
+      <div class="focus-slot filled">
+        <div class="focus-flvl">${f.lvl}</div>
+        <div class="focus-foc">${q.outcome}</div>
+        <div class="focus-gram">📌 ${q.tests}</div>
+        <div class="focus-foot">
+          <span class="focus-fscore" style="color:${sc}">${st}</span>
+          <button class="focus-rm" onclick="toggleFocus('${lvlSafe}',${f.qi})" title="Remove">✕</button>
+        </div>
+      </div>`;
+  });
+  $('tr-focus').innerHTML = `
+    <div class="focus-title">Focus Areas <span style="font-weight:400;opacity:.6">(${currentStudent.focus.length}/3)</span></div>
+    <div class="focus-slots">${slots.join('')}</div>`;
+}
+
+function toggleFocus(lvl, qi) {
+  qi = parseInt(qi);
+  const idx = currentStudent.focus.findIndex(f => f.lvl === lvl && f.qi === qi);
+  if(idx !== -1) {
+    currentStudent.focus.splice(idx, 1);
+  } else {
+    if(currentStudent.focus.length >= 3) currentStudent.focus.shift();
+    currentStudent.focus.push({lvl, qi});
+  }
+  saveStudent();
+  renderFocusPanel();
+  renderProgressTab();
+  renderTeachNextTab();
+}
+
+function makePinBtn(lvl, qi) {
+  const pinned = currentStudent.focus.some(f => f.lvl === lvl && f.qi === qi);
+  const btn = document.createElement('button');
+  btn.className = 'pin-btn' + (pinned ? ' pinned' : '');
+  btn.title = pinned ? 'Remove from focus' : 'Add to focus';
+  btn.textContent = '📌';
+  btn.onclick = (e) => { e.stopPropagation(); toggleFocus(lvl, qi); };
+  return btn;
 }
 
 // ═══════════════════════════════════════════════
@@ -1116,7 +1194,9 @@ function renderProgressTab() {
       const o = document.createElement('td'); o.className = 'qr-oc'; o.textContent = q.outcome;
       const s = document.createElement('td'); s.className = 'qr-s';
       s.appendChild(makeScoreCell(lvl, qi, false));
-      tr.append(n, u, o, s);
+      const p = document.createElement('td'); p.className = 'qr-pin';
+      p.appendChild(makePinBtn(lvl, qi));
+      tr.append(n, u, o, s, p);
       table.appendChild(tr);
     });
 
@@ -1210,7 +1290,7 @@ function renderTeachNextTab() {
       ocSpan.className = 'tn-oc';
       ocSpan.innerHTML = `${item.q.outcome} <span class="tn-unit">${item.q.unit}</span><span class="tn-grammar">📌 ${item.q.tests}</span>`;
 
-      row.append(lvlSpan, ocSpan, makeScoreCell(item.lvl, item.qi, true));
+      row.append(lvlSpan, ocSpan, makeScoreCell(item.lvl, item.qi, true), makePinBtn(item.lvl, item.qi));
       card.appendChild(row);
     });
 
@@ -1241,6 +1321,7 @@ function editScore(el, lvl, qi, fromTeach) {
     const newEl = makeScoreCell(lvl, qi, fromTeach);
     inp.replaceWith(newEl);
     updateLvlHeader(lvl);
+    renderFocusPanel();
     renderTeachNextTab();
     if(fromTeach) {
       // Also update the matching cell in the progress tab if visible
