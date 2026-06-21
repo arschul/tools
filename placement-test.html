@@ -1046,13 +1046,16 @@ const SK = _sid ? `efl-dashboard:placement:${_sid}` : 'efl_pt_student';
 function buildStudentRecord() {
   const scores = {};
   LEVELS.forEach(lvl => {
-    scores[lvl] = QB[lvl].map(() => ({ score: null, updated: null }));
+    scores[lvl] = QB[lvl].map(q => ({ score: null, unit: q.unit, outcome: q.outcome, updated: null }));
   });
   S.levelResults.forEach(r => {
     if(!r.questions) return;
     r.questions.forEach(q => {
+      const qData = QB[r.level][q.qNum - 1];
       scores[r.level][q.qNum - 1] = {
         score: q.strike ? null : q.score,
+        unit: qData ? qData.unit : (q.unit || ''),
+        outcome: qData ? qData.outcome : (q.outcome || ''),
         updated: q.strike ? null : new Date().toISOString()
       };
     });
