@@ -142,6 +142,7 @@
   .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
+  .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
 
   .empty{color:var(--muted);font-size:13px;padding:8px 0;}
   .empty-card{padding:34px;text-align:center;color:var(--muted);font-size:14px;}
@@ -316,39 +317,13 @@
     .drawer{grid-template-columns:1fr;}
     .cal-cell{min-height:60px;}
   }
-
-  .back-link {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 100000;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 999px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.18);
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-  .back-link:hover {
-    background: rgba(0,0,0,0.78);
-    transform: translateX(-2px);
-  }
 </style>
 </head>
 <body>
-<a class="back-link" href="../">← Tool Hub</a>
 
 <div class="sidebar">
   <div class="brand"><span class="dot"></span>EFL Dashboard</div>
+  <a href="../" style="display:flex;align-items:center;gap:6px;color:#7d869c;font-size:12px;text-decoration:none;margin:-16px 0 20px 2px;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7d869c'">← Tool Hub</a>
   <div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
     <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9"/></svg></div>
     Dashboard
@@ -394,7 +369,7 @@
 
 <script>
 /* ---------- constants ---------- */
-const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4], FLEX:[] };
+const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4] };
 const PALETTE = ['#4f6df5','#1f9d6f','#c98a1c','#d1453d','#8b5cf6','#0ea5b8','#e8618c','#6b7280'];
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -407,7 +382,6 @@ let state = {
   holidays: [],
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
-  bookedSessions: [],
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
   expandedClassId: null,
   openDrawer: null,
@@ -459,39 +433,11 @@ function formatDateLong(dateStr){
 function formatDateShort(dateStr){
   return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
-function scheduleLabel(s){ return {MW:'Mon / Wed',TT:'Tue / Thu',FLEX:'Flexible'}[s]||s; }
+function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function esc(str){
   return String(str ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-/* ─── placement tracker integration ─── */
-const PLK = 'efl-dashboard:placement:';
-function loadPlacementData(sid){
-  try{ return JSON.parse(localStorage.getItem(PLK+sid)); }catch{ return null; }
-}
-function placementAssessed(d){
-  if(!d?.scores) return 0;
-  return Object.values(d.scores).flat().filter(q=>q.score!==null).length;
-}
-function placementAvg(d){
-  if(!d?.scores) return null;
-  const all=Object.values(d.scores).flat().filter(q=>q.score!==null);
-  return all.length?Math.round(all.reduce((s,q)=>s+q.score,0)/all.length):null;
-}
-function placementUrl(sid, name, view=''){
-  const base='../placement-test.html';
-  const p=new URLSearchParams({studentId:sid, name});
-  if(view) p.set('view',view);
-  return base+'?'+p;
-}
-function levelColor(d){
-  const avg=placementAvg(d);
-  if(avg===null) return 'var(--accent)';
-  if(avg>=80) return 'var(--green)';
-  if(avg>=65) return 'var(--amber)';
-  return 'var(--red)';
 }
 function eventTypeLabel(type){ return {hw:'Homework',test:'Test',project:'Project',other:'Other'}[type] || type; }
 function attendanceLabel(a){ return {present:'Present',late:'Late',absent:'Absent'}[a] || '—'; }
@@ -504,20 +450,16 @@ function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
   const startStr = startOverride || cls.startDate;
-  const endStr   = endOverride   || cls.endDate;
+  const endStr = endOverride || cls.endDate;
   if(!startStr || !endStr) return null;
-  if(cls.schedule === 'FLEX'){
-    return state.bookedSessions.filter(s =>
-      s.classId===cls.id && s.date>=startStr && s.date<=endStr && !isHoliday(s.date)
-    ).length;
-  }
   const start = new Date(startStr+'T00:00:00');
-  const end   = new Date(endStr+'T00:00:00');
+  const end = new Date(endStr+'T00:00:00');
   if(start>end) return 0;
-  let count=0, d=new Date(start);
+  let count=0;
+  let d = new Date(start);
   while(d<=end){
-    const dow=d.getDay();
-    const dateStr=dateToStr(d.getFullYear(),d.getMonth(),d.getDate());
+    const dow = d.getDay();
+    const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
     if(SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
     d.setDate(d.getDate()+1);
   }
@@ -592,10 +534,7 @@ function renderDashboard(){
   const today = todayStr();
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
-  const todaysClasses = todayHoliday ? [] : [
-    ...state.classes.filter(c=>c.schedule!=='FLEX' && SCHEDULE_DAYS[c.schedule].includes(dow)),
-    ...state.classes.filter(c=>c.schedule==='FLEX' && state.bookedSessions.some(s=>s.classId===c.id&&s.date===today))
-  ];
+  const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
   const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
 
   document.getElementById('view-dashboard').innerHTML = `
@@ -607,8 +546,7 @@ function renderDashboard(){
     </div>
     <div class="dash-grid">
       <div class="card section">
-        <h3>Today's Classes</h3>
-        ${todayHoliday ? `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>` : (todaysClasses.length ? todaysClasses.map(c=>`
+        <h3>Today's Classes</h3>${todayHoliday ? `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>` : (todaysClasses.length ? todaysClasses.map(c=>`
           <div class="dash-row">
             <div class="dash-row-left">
               <span class="color-dot" style="background:${c.color}"></span>
@@ -636,6 +574,22 @@ function renderDashboard(){
         `).join('') : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`}
       </div>
     </div>
+    ${(()=>{ const ec = state.students.filter(s=>s.englishClub); return ec.length ? `
+    <div class="card section" style="margin-top:16px;">
+      <h3>⭐ English Club</h3>
+      ${ec.map(s=>{ const c = classById(s.classId); return `
+        <div class="dash-row">
+          <div class="dash-row-left">
+            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
+            <div>
+              <div class="dash-row-title">${esc(s.name)}</div>
+              <div class="dash-row-sub">${c?esc(c.name):'No class'}</div>
+            </div>
+          </div>
+          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">Report →</button>
+        </div>
+      `; }).join('')}
+    </div>` : ''; })()}
   `;
 }
 
@@ -683,7 +637,12 @@ function renderClassCard(c){
               ${students.map(s=>`
                 <div class="student-list-row">
                   <span class="student-name-link" onclick="navigate('student',{studentProfileId:'${s.id}', studentProfileReturn:'classes'})">${esc(s.name)}</span>
-                  <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
+                      ${s.englishClub?'⭐ English Club':'☆ English Club'}
+                    </button>
+                    <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -706,7 +665,6 @@ function openClassModal(classId){
       <select id="cm-schedule">
         <option value="MW" ${c?.schedule==='MW'?'selected':''}>Monday / Wednesday</option>
         <option value="TT" ${c?.schedule==='TT'?'selected':''}>Tuesday / Thursday</option>
-        <option value="FLEX" ${c?.schedule==='FLEX'?'selected':''}>Flexible (custom schedule)</option>
       </select>
     </div>
     <div class="field"><label>Time (optional)</label><input id="cm-time" type="time" value="${c?.time||''}"></div>
@@ -772,7 +730,13 @@ function addStudent(classId){
   scheduleSave('students', state.students);
   renderClasses();
 }
-function deleteStudent(studentId){
+function toggleEnglishClub(studentId){
+  const s = state.students.find(s=>s.id===studentId);
+  if(!s) return;
+  s.englishClub = !s.englishClub;
+  scheduleSave('students', state.students);
+  renderClasses();
+}
   if(!confirm('Remove this student from the class?')) return;
   state.students = state.students.filter(s=>s.id!==studentId);
   scheduleSave('students', state.students);
@@ -799,7 +763,7 @@ function renderRollCall(){
   if(created) scheduleSave('sessions', state.sessions);
 
   const dow = new Date(date+'T00:00:00').getDay();
-  const offSchedule = cls.schedule!=='FLEX' && !SCHEDULE_DAYS[cls.schedule].includes(dow);
+  const offSchedule = !SCHEDULE_DAYS[cls.schedule].includes(dow);
   const holiday = getHoliday(date);
 
   document.getElementById('view-rollcall').innerHTML = `
@@ -977,7 +941,7 @@ function renderStudentProfile(){
     <div class="topbar">
       <div>
         <button class="btn-ghost back-btn no-print" onclick="navigate('${returnView}')">${returnLabel}</button>
-        <h1>${esc(student.name)}</h1>
+        <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">⭐ English Club</span>`:''}</h1>
         <div class="meta">${cls?esc(cls.name):'No class'}${cls?.startDate&&cls?.endDate?` · ${formatDateShort(cls.startDate)} – ${formatDateShort(cls.endDate)}`:''}</div>
       </div>
       <button class="btn-accent no-print" onclick="window.print()">🖨️ Print Report</button>
@@ -992,35 +956,6 @@ function renderStudentProfile(){
         <button class="btn-ghost small" onclick="resetReportRange()">All time</button>
       </div>
     </div>
-    ${ (function(){
-      const pd = loadPlacementData(student.id);
-      const assessed = pd ? placementAssessed(pd) : 0;
-      const avg = pd ? placementAvg(pd) : null;
-      const lvlColor = pd ? levelColor(pd) : 'var(--accent)';
-      const testDate = pd ? new Date(pd.testDate).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '';
-      return `
-        <div class="card section no-print" style="margin-bottom:16px;border-left:4px solid ${lvlColor}">
-          <h3 style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-            Placement &amp; Progress
-            ${pd ? `<span class="badge green" style="background:${lvlColor}22;color:${lvlColor};border:1px solid ${lvlColor}55">${esc(pd.placement)}</span>` : ''}
-          </h3>
-          ${pd ? `
-            <div class="stat-row" style="margin-bottom:14px;">
-              <div class="card stat"><div style="font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:${lvlColor}">${esc(pd.placement)}</div><div class="stat-label">Placed at</div></div>
-              <div class="card stat"><div class="stat-num">${assessed}/162</div><div class="stat-label">Assessed</div></div>
-              <div class="card stat"><div class="stat-num" style="background:none;-webkit-background-clip:initial;color:${avg!==null?lvlColor:'var(--muted)'}">${avg!==null?avg+'%':'—'}</div><div class="stat-label">Overall avg</div></div>
-              <div class="card stat"><div class="stat-label" style="margin-bottom:4px">Test date</div><div style="font-size:13px;font-weight:600">${testDate}</div></div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <a class="btn-accent" href="${placementUrl(student.id,student.name,'tracker')}" target="_blank">📊 Open Tracker</a>
-              <a class="btn-ghost" href="${placementUrl(student.id,student.name)}" target="_blank">🔄 Run New Test</a>
-            </div>
-          ` : `
-            <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">No placement test on record for this student.</p>
-            <a class="btn-accent" href="${placementUrl(student.id,student.name)}" target="_blank">Run Placement Test →</a>
-          `}
-        </div>`;
-    })()}
     <div class="print-only" style="margin-bottom:10px;font-size:12px;color:var(--muted);">
       Period: ${fromVal?formatDateShort(fromVal):'Start'} – ${toVal?formatDateShort(toVal):'Present'}
     </div>
@@ -1124,7 +1059,7 @@ function renderReports(){
         <h3 style="display:flex;align-items:center;gap:8px;"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</h3>
         ${studentsInClass(c.id).length ? studentsInClass(c.id).map(s=>`
           <div class="dash-row">
-            <div class="dash-row-left" style="gap:8px">${(()=>{const _pd=loadPlacementData(s.id);return _pd?`<span class="badge green" style="font-size:10px">${esc(_pd.placement)}</span>`:''})()}<div class="dash-row-title">${esc(s.name)}</div></div>
+            <div class="dash-row-title">${esc(s.name)}${s.englishClub?` <span class="badge amber">⭐ English Club</span>`:''}</div>
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${s.id}', studentProfileReturn:'reports'})">View report →</button>
           </div>
         `).join('') : `<div class="empty">No students in this class yet.</div>`}
@@ -1154,8 +1089,7 @@ function renderCalendar(){
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
-    const classesToday = state.classes.filter(c=>c.schedule!=='FLEX'&&SCHEDULE_DAYS[c.schedule].includes(dow));
-    const flexToday = state.bookedSessions.filter(s=>s.date===dateStr).map(s=>({cls:classById(s.classId),time:s.time})).filter(x=>x.cls);
+    const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
     const eventsToday = state.events.filter(e=>e.date===dateStr);
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
@@ -1164,7 +1098,7 @@ function renderCalendar(){
         <div class="cal-date">${d}</div>
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?[...classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`),...flexToday.map(x=>`<div class="cal-tag" style="background:${x.cls.color}22;color:${x.cls.color};border-color:${x.cls.color}55">${esc(x.cls.name)}${x.time?' &middot; '+x.time:''}</div>`)].join(''):''}
+          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
         </div>
       </div>`;
@@ -1209,11 +1143,9 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>c.schedule!=='FLEX'&&SCHEDULE_DAYS[c.schedule].includes(dow));
-  const bookedToday  = state.bookedSessions.filter(s=>s.date===dateStr);
-  const eventsToday  = state.events.filter(e=>e.date===dateStr);
-  const holiday      = getHoliday(dateStr);
-  const flexClasses  = state.classes.filter(c=>c.schedule==='FLEX');
+  const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+  const eventsToday = state.events.filter(e=>e.date===dateStr);
+  const holiday = getHoliday(dateStr);
   showModal(`
     <h3>${formatDateLong(dateStr)}</h3>
     <div class="modal-section">
@@ -1239,32 +1171,6 @@ function openDayModal(dateStr){
             <button class="btn-ghost small" onclick="goToRollCall('${c.id}','${dateStr}');closeModal();">Roll Call →</button>
           </div>
         `).join('')}
-      </div>
-    ` : ''}
-    ${bookedToday.length ? `
-      <div class="modal-section">
-        <div class="modal-section-label">Booked Sessions</div>
-        ${bookedToday.map(s=>{ const c=classById(s.classId); return c?`
-          <div class="modal-row">
-            <span><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${s.time?' · '+s.time:''}</span>
-            <div style="display:flex;gap:6px">
-              <button class="btn-ghost small" onclick="goToRollCall('${s.classId}','${dateStr}');closeModal();">Roll Call →</button>
-              <button class="icon-btn danger" onclick="removeBookedSession('${s.id}','${dateStr}')">×</button>
-            </div>
-          </div>
-        `:''}).join('')}
-      </div>
-    ` : ''}
-    ${flexClasses.length ? `
-      <div class="modal-section">
-        <div class="modal-section-label">Book a Session</div>
-        <div class="field-row">
-          <select id="bs-class" style="flex:1">
-            ${flexClasses.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
-          </select>
-          <input type="time" id="bs-time" style="width:110px" placeholder="Time (optional)">
-          <button class="btn-ghost small" onclick="bookSession('${dateStr}')">Book</button>
-        </div>
       </div>
     ` : ''}
     <div class="modal-section">
@@ -1297,21 +1203,6 @@ function openDayModal(dateStr){
       <button class="btn-accent" onclick="addEvent('${dateStr}')">Add event</button>
     </div>
   `);
-}
-function bookSession(dateStr){
-  const classId = document.getElementById('bs-class').value;
-  const time    = document.getElementById('bs-time').value || null;
-  if(!classId) return;
-  state.bookedSessions.push({id:uid(), classId, date:dateStr, time});
-  scheduleSave('bookedSessions', state.bookedSessions);
-  renderCalendar();
-  openDayModal(dateStr);
-}
-function removeBookedSession(sessionId, dateStr){
-  state.bookedSessions = state.bookedSessions.filter(s=>s.id!==sessionId);
-  scheduleSave('bookedSessions', state.bookedSessions);
-  renderCalendar();
-  openDayModal(dateStr);
 }
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
@@ -1352,8 +1243,7 @@ function exportData(){
     students: state.students,
     sessions: state.sessions,
     events: state.events,
-    holidays: state.holidays,
-    bookedSessions: state.bookedSessions
+    holidays: state.holidays
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1386,13 +1276,11 @@ function importData(file){
     state.sessions = data.sessions || {};
     state.events = data.events || [];
     state.holidays = data.holidays || [];
-    state.bookedSessions = data.bookedSessions || [];
     saveKey('classes', state.classes);
     saveKey('students', state.students);
     saveKey('sessions', state.sessions);
     saveKey('events', state.events);
     saveKey('holidays', state.holidays);
-    saveKey('bookedSessions', state.bookedSessions);
     state.expandedClassId = null;
     state.openDrawer = null;
     state.reportsSelection = {classId:'', studentId:''};
@@ -1409,7 +1297,6 @@ async function init(){
   state.sessions = await loadKey('sessions', {});
   state.events = await loadKey('events', []);
   state.holidays = await loadKey('holidays', []);
-  state.bookedSessions = await loadKey('bookedSessions', []);
   navigate('dashboard');
 }
 init();
