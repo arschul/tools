@@ -737,6 +737,7 @@ function toggleEnglishClub(studentId){
   scheduleSave('students', state.students);
   renderClasses();
 }
+function deleteStudent(studentId){
   if(!confirm('Remove this student from the class?')) return;
   state.students = state.students.filter(s=>s.id!==studentId);
   scheduleSave('students', state.students);
