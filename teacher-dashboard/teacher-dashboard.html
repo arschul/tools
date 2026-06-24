@@ -662,7 +662,12 @@ function renderDashboard(){
   const today = todayStr();
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
-  const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+  const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>{
+    if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+    if(c.startDate && today < c.startDate) return false;
+    if(c.endDate && today > c.endDate) return false;
+    return true;
+  });
   const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
 
   document.getElementById('view-dashboard').innerHTML = `
@@ -1422,7 +1427,12 @@ function renderCalendar(){
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
-    const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+    const classesToday = state.classes.filter(c=>{
+      if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+      if(c.startDate && dateStr < c.startDate) return false;
+      if(c.endDate && dateStr > c.endDate) return false;
+      return true;
+    });
     const eventsToday = state.events.filter(e=>e.date===dateStr);
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
