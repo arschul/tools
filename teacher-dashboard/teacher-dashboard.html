@@ -388,7 +388,108 @@ let state = {
   studentProfileId: null,
   studentProfileReturn: 'reports',
   reportRange: { from: '', to: '' },
-  reportsSelection: { classId: '', studentId: '' }
+  reportsSelection: { classId: '', studentId: '' },
+  reportLang: 'en'
+};
+
+/* ---------- translations ---------- */
+const T = {
+  en: {
+    reportTitle: 'Student Report',
+    generatedOn: 'Generated on',
+    period: 'Period',
+    start: 'Start',
+    present2: 'Present',
+    reportPeriod: 'Report period',
+    to: 'to',
+    allTime: 'All time',
+    sessionsLogged: 'Sessions logged',
+    present: 'Present',
+    late: 'Late',
+    absent: 'Absent',
+    phoneUses: 'Phone uses (total)',
+    homeworkDone: 'Homework done',
+    attendance: 'Attendance',
+    attended: 'attended',
+    basedOn: n => `Based on ${n} recorded session${n===1?'':'s'}.`,
+    timeInClass: 'Time in class',
+    timeMissed: 'time missed',
+    outOf: (possible, n, dur) => `Out of ${possible} min possible (${n} session${n===1?'':'s'} × ${dur} min).`,
+    inClass: 'In class',
+    lateArrivals: 'Late arrivals',
+    leftEarly: 'Left early',
+    classesLost: 'Classes lost',
+    classesAbsent: (n, exp, from, to, rate) => exp!=null
+      ? `<b>${n}</b> class${n===1?'':'es'} marked absent out of <b>${exp}</b> expected class${exp===1?'':'es'} (${from} – ${to}, holidays excluded).<br>Attendance rate: <b>${rate}%</b>.`
+      : `<b>${n}</b> class${n===1?'':'es'} marked absent so far.`,
+    setDates: 'Set first/last class dates',
+    setDatesRest: ' on this class to calculate an expected total and attendance rate.',
+    date: 'Date',
+    lateMin: 'Late',
+    leftEarlyMin: 'Left early',
+    phone: 'Phone',
+    hw: 'HW',
+    englishOnly: 'English only',
+    notes: 'Notes',
+    yes: 'Yes',
+    no: 'No',
+    noRecords: 'No session records in this period.',
+    printBtn: '🖨️ Print Report',
+    backToReports: '← Back to Reports',
+    backToClasses: '← Back to Classes & Students',
+    englishClubBadge: '⭐ English Club',
+    langToggle: 'PT',
+    attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
+    englishLabels: {excellent:'Excellent', improve:'Room for improvement', unacceptable:'Unacceptable'},
+  },
+  pt: {
+    reportTitle: 'Relatório do Aluno',
+    generatedOn: 'Gerado em',
+    period: 'Período',
+    start: 'Início',
+    present2: 'Presente',
+    reportPeriod: 'Período do relatório',
+    to: 'até',
+    allTime: 'Todo o período',
+    sessionsLogged: 'Aulas registradas',
+    present: 'Presente',
+    late: 'Atrasado',
+    absent: 'Ausente',
+    phoneUses: 'Uso do celular (total)',
+    homeworkDone: 'Dever feito',
+    attendance: 'Presença',
+    attended: 'de presença',
+    basedOn: n => `Com base em ${n} aula${n===1?'':'s'} registrada${n===1?'':'s'}.`,
+    timeInClass: 'Tempo em aula',
+    timeMissed: 'tempo perdido',
+    outOf: (possible, n, dur) => `De ${possible} min possíveis (${n} aula${n===1?'':'s'} × ${dur} min).`,
+    inClass: 'Em aula',
+    lateArrivals: 'Atrasos',
+    leftEarly: 'Saiu mais cedo',
+    classesLost: 'Aulas perdidas',
+    classesAbsent: (n, exp, from, to, rate) => exp!=null
+      ? `<b>${n}</b> aula${n===1?'':'s'} com ausência de um total esperado de <b>${exp}</b> aula${exp===1?'':'s'} (${from} – ${to}, feriados excluídos).<br>Taxa de presença: <b>${rate}%</b>.`
+      : `<b>${n}</b> aula${n===1?'':'s'} com ausência registrada até o momento.`,
+    setDates: 'Defina as datas de início e fim da turma',
+    setDatesRest: ' para calcular o total esperado e a taxa de presença.',
+    date: 'Data',
+    lateMin: 'Atraso',
+    leftEarlyMin: 'Saída antecipada',
+    phone: 'Celular',
+    hw: 'Dever',
+    englishOnly: 'Só inglês',
+    notes: 'Observações',
+    yes: 'Sim',
+    no: 'Não',
+    noRecords: 'Nenhuma aula registrada neste período.',
+    printBtn: '🖨️ Imprimir Relatório',
+    backToReports: '← Voltar aos Relatórios',
+    backToClasses: '← Voltar a Turmas e Alunos',
+    englishClubBadge: '⭐ English Club',
+    langToggle: 'EN',
+    attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
+    englishLabels: {excellent:'Excelente', improve:'Pode melhorar', unacceptable:'Inaceitável'},
+  }
 };
 
 /* ---------- storage ---------- */
@@ -895,9 +996,10 @@ function setRollcallDate(date){
 
 /* ================= STUDENT PROFILE ================= */
 function renderStudentProfile(){
+  const t = T[state.reportLang];
   const student = state.students.find(s=>s.id===state.studentProfileId);
   const returnView = state.studentProfileReturn || 'reports';
-  const returnLabel = returnView==='classes' ? '← Back to Classes &amp; Students' : '← Back to Reports';
+  const returnLabel = returnView==='classes' ? t.backToClasses : t.backToReports;
   if(!student){
     document.getElementById('view-student').innerHTML = `
       <div class="topbar"><div><button class="btn-ghost back-btn" onclick="navigate('${returnView}')">${returnLabel}</button></div></div>
@@ -938,88 +1040,94 @@ function renderStudentProfile(){
   const absentMin = absent * duration;
   const inClassMin = Math.max(0, totalPossibleMin - lostLateMin - lostEarlyMin - absentMin);
 
+  const classesLostHtml = expected!=null
+    ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
+    : t.classesAbsent(classesLost, null) + ` <a class="no-print" onclick="navigate('classes');setTimeout(()=>openClassModal('${cls?.id}'),0)">${t.setDates}</a><span class="print-only">${t.setDates}</span>${t.setDatesRest}`;
+
   document.getElementById('view-student').innerHTML = `
     <div class="topbar">
       <div>
         <button class="btn-ghost back-btn no-print" onclick="navigate('${returnView}')">${returnLabel}</button>
-        <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">⭐ English Club</span>`:''}</h1>
+        <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">${t.englishClubBadge}</span>`:''}</h1>
         <div class="meta">${cls?esc(cls.name):'No class'}${cls?.startDate&&cls?.endDate?` · ${formatDateShort(cls.startDate)} – ${formatDateShort(cls.endDate)}`:''}</div>
       </div>
-      <button class="btn-accent no-print" onclick="window.print()">🖨️ Print Report</button>
+      <div style="display:flex;gap:10px;align-items:center;" class="no-print">
+        <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
+        <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
+      </div>
     </div>
-    <div class="print-only" style="margin-bottom:14px;font-size:12px;color:var(--muted);">Generated ${formatDateLong(todayStr())}</div>
+    <div class="print-only" style="margin-bottom:14px;font-size:12px;color:var(--muted);">${t.generatedOn} ${formatDateLong(todayStr())}</div>
     <div class="card section no-print" style="margin-bottom:16px;">
       <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
-        <label style="font-size:13px;font-weight:600;color:var(--muted);">Report period:</label>
+        <label style="font-size:13px;font-weight:600;color:var(--muted);">${t.reportPeriod}:</label>
         <input type="date" value="${fromVal}" onchange="setReportRange('from', this.value)">
-        <span style="color:var(--muted);font-size:13px;">to</span>
+        <span style="color:var(--muted);font-size:13px;">${t.to}</span>
         <input type="date" value="${toVal}" onchange="setReportRange('to', this.value)">
-        <button class="btn-ghost small" onclick="resetReportRange()">All time</button>
+        <button class="btn-ghost small" onclick="resetReportRange()">${t.allTime}</button>
       </div>
     </div>
     <div class="print-only" style="margin-bottom:10px;font-size:12px;color:var(--muted);">
-      Period: ${fromVal?formatDateShort(fromVal):'Start'} – ${toVal?formatDateShort(toVal):'Present'}
+      ${t.period}: ${fromVal?formatDateShort(fromVal):t.start} – ${toVal?formatDateShort(toVal):t.present2}
     </div>
     <div class="stat-row">
-      <div class="card stat"><div class="stat-num">${total}</div><div class="stat-label">Sessions logged</div></div>
-      <div class="card stat"><div class="stat-num">${present}</div><div class="stat-label">Present</div></div>
-      <div class="card stat"><div class="stat-num">${late}</div><div class="stat-label">Late</div></div>
-      <div class="card stat"><div class="stat-num">${absent}</div><div class="stat-label">Absent</div></div>
-      <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">Phone uses (total)</div></div>
-      <div class="card stat"><div class="stat-num">${hwTotal?Math.round(100*hwDone/hwTotal)+'%':'—'}</div><div class="stat-label">Homework done</div></div>
+      <div class="card stat"><div class="stat-num">${total}</div><div class="stat-label">${t.sessionsLogged}</div></div>
+      <div class="card stat"><div class="stat-num">${present}</div><div class="stat-label">${t.present}</div></div>
+      <div class="card stat"><div class="stat-num">${late}</div><div class="stat-label">${t.late}</div></div>
+      <div class="card stat"><div class="stat-num">${absent}</div><div class="stat-label">${t.absent}</div></div>
+      <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">${t.phoneUses}</div></div>
+      <div class="card stat"><div class="stat-num">${hwTotal?Math.round(100*hwDone/hwTotal)+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
     </div>
     <div class="charts-grid">
       <div class="card chart-card">
-        <h3>Attendance</h3>
-        <div class="chart-note">Based on ${total} recorded session${total===1?'':'s'}.</div>
+        <h3>${t.attendance}</h3>
+        <div class="chart-note">${t.basedOn(total)}</div>
         ${renderDonut([
-          {label:'Present', value:present, color:'var(--green)'},
-          {label:'Late', value:late, color:'var(--amber)'},
-          {label:'Absent', value:absent, color:'var(--red)'}
-        ], total?`${Math.round(100*(present+late)/total)}%`:'—', 'attended')}
+          {label:t.present, value:present, color:'var(--green)'},
+          {label:t.late, value:late, color:'var(--amber)'},
+          {label:t.absent, value:absent, color:'var(--red)'}
+        ], total?`${Math.round(100*(present+late)/total)}%`:'—', t.attended)}
       </div>
       <div class="card chart-card">
-        <h3>Time in class</h3>
-        <div class="chart-note">Out of ${totalPossibleMin} min possible (${total} session${total===1?'':'s'} × ${duration} min).</div>
+        <h3>${t.timeInClass}</h3>
+        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}</div>
         ${renderDonut([
-          {label:'In class', value:inClassMin, color:'var(--green)', unit:' min'},
-          {label:'Late arrivals', value:lostLateMin, color:'var(--amber)', unit:' min'},
-          {label:'Left early', value:lostEarlyMin, color:'var(--purple)', unit:' min'},
-          {label:'Absent', value:absentMin, color:'var(--red)', unit:' min'}
-        ], (lostLateMin+lostEarlyMin+absentMin)+' min', 'time missed')}
+          {label:t.inClass, value:inClassMin, color:'var(--green)', unit:' min'},
+          {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', unit:' min'},
+          {label:t.leftEarly, value:lostEarlyMin, color:'var(--purple)', unit:' min'},
+          {label:t.absent, value:absentMin, color:'var(--red)', unit:' min'}
+        ], (lostLateMin+lostEarlyMin+absentMin)+' min', t.timeMissed)}
       </div>
     </div>
     <div class="card section">
-      <h3>Classes lost</h3>
-      <div class="lost-summary">
-        <b>${classesLost}</b> class${classesLost===1?'':'es'} marked absent${expected!=null ? `
-        out of <b>${expected}</b> expected class${expected===1?'':'es'}
-        (${fromVal?formatDateShort(fromVal):'?'} – ${toVal?formatDateShort(toVal):'?'}, holidays excluded).<br>
-        Attendance rate: <b>${attendanceRate}%</b>.` : ` so far. <a class="no-print" onclick="navigate('classes');setTimeout(()=>openClassModal('${cls?.id}'),0)">Set first/last class dates</a><span class="print-only">Set first/last class dates</span> on this class to calculate an expected total and attendance rate.`}
-      </div>
+      <h3>${t.classesLost}</h3>
+      <div class="lost-summary">${classesLostHtml}</div>
     </div>
     <div class="card table-wrap">
       ${records.length ? `
       <table>
-        <thead><tr><th>Date</th><th>Attendance</th><th>Late</th><th>Left early</th><th>Phone</th><th>HW</th><th>English only</th><th>Notes</th></tr></thead>
+        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.englishOnly}</th><th>${t.notes}</th></tr></thead>
         <tbody>
           ${records.map(r=>`
             <tr>
               <td>${formatDateShort(r.date)}</td>
-              <td><span class="badge ${attendanceBadgeClass(r.attendance)}">${attendanceLabel(r.attendance)}</span></td>
+              <td><span class="badge ${attendanceBadgeClass(r.attendance)}">${t.attendanceLabels[r.attendance]||r.attendance}</span></td>
               <td>${r.lateMin?r.lateMin+' min':'—'}</td>
               <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
               <td>${r.phone||'—'}</td>
-              <td>${r.hw?(r.hw==='done'?'Yes':'No'):'—'}</td>
-              <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${englishLabel(r.english)}</span>`:'—'}</td>
+              <td>${r.hw?(r.hw==='done'?t.yes:t.no):'—'}</td>
+              <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
               <td>${r.notes?esc(r.notes):'—'}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      ` : `<div class="empty-card">No session records in this period.</div>`}
+      ` : `<div class="empty-card">${t.noRecords}</div>`}
     </div>
   `;
+}
+function toggleReportLang(){
+  state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
+  renderStudentProfile();
 }
 function setReportRange(which, val){
   state.reportRange[which] = val || '';
