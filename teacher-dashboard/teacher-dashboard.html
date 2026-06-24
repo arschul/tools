@@ -7,8 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --sidebar:#1c2436;
@@ -1058,7 +1056,6 @@ function renderStudentProfile(){
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
-        <button class="btn-ghost" onclick="downloadSinglePDF('${student.id}')">⬇ PDF</button>
         <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
       </div>
     </div>
@@ -1131,17 +1128,6 @@ function renderStudentProfile(){
     </div>
   `;
 }
-function downloadSinglePDF(studentId){
-  const student = state.students.find(s=>s.id===studentId);
-  if(!student) return;
-  const cls = classById(student.classId);
-  const fromVal = state.reportRange.from || cls?.startDate || 'start';
-  const toVal   = state.reportRange.to   || cls?.endDate   || 'now';
-  const doc = buildReportPDF(student, state.reportLang);
-  const filename = sanitizeFilename(`${cls?cls.name:'report'} - ${student.name} - ${fromVal} - ${toVal}.pdf`);
-  doc.save(filename);
-}
-
 function toggleReportLang(){
   state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
   renderStudentProfile();
@@ -1166,9 +1152,7 @@ function renderReports(){
   const selStudentId = state.reportsSelection.studentId;
 
   document.getElementById('view-reports').innerHTML = `
-    <div class="topbar"><div><h1>Reports</h1><div class="meta">Printable attendance &amp; observation reports per student</div></div>
-    ${state.classes.length ? `<button class="btn-accent no-print" id="bulk-dl-btn" onclick="bulkDownload('${selClassId}')">⬇ Download all as ZIP</button>` : ''}
-    </div>
+    <div class="topbar"><div><h1>Reports</h1><div class="meta">Printable attendance &amp; observation reports per student</div></div></div>
     ${state.classes.length ? `
       <div class="card section" style="margin-bottom:16px;">
         <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
@@ -1360,191 +1344,6 @@ function removeHoliday(dateStr){
   scheduleSave('holidays', state.holidays);
   renderCalendar();
   openDayModal(dateStr);
-}
-
-/* ================= BULK PDF DOWNLOAD ================= */
-function buildReportPDF(student, lang){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'mm', format:'a4'});
-  const t = T[lang];
-  const cls = classById(student.classId);
-  const PAGE_W = 210, PAGE_H = 297;
-  const ML = 14, MR = 14, MT = 16, usableW = PAGE_W - ML - MR;
-
-  const allRecords = [];
-  Object.keys(state.sessions).forEach(key=>{
-    const [classId, date] = splitSessionKey(key);
-    if(classId===student.classId && state.sessions[key][student.id])
-      allRecords.push({date, ...state.sessions[key][student.id]});
-  });
-  allRecords.sort((a,b)=>b.date.localeCompare(a.date));
-
-  const fromVal = state.reportRange.from || cls?.startDate || '';
-  const toVal   = state.reportRange.to   || cls?.endDate   || '';
-  const records = allRecords.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal));
-
-  const total    = records.length;
-  const absent   = records.filter(r=>r.attendance==='absent').length;
-  const late     = records.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
-  const present  = total - absent - late;
-  const totalPhone = records.reduce((s,r)=>s+(r.phone||0),0);
-  const hwTotal  = records.filter(r=>r.hw!=null).length;
-  const hwDone   = records.filter(r=>r.hw==='done').length;
-  const duration = cls?.duration||150;
-  const expected = cls ? expectedSessionsForClass(cls, fromVal||null, toVal||null) : null;
-  const attendanceRate = expected ? Math.round(100*(expected-absent)/expected) : null;
-  const attended = records.filter(r=>r.attendance!=='absent');
-  const totalPossMin = total*duration;
-  const lostLate  = attended.reduce((s,r)=>s+(r.lateMin||0),0);
-  const lostEarly = attended.reduce((s,r)=>s+(r.leftEarlyMin||0),0);
-  const absentMin = absent*duration;
-  const inClassMin= Math.max(0, totalPossMin-lostLate-lostEarly-absentMin);
-
-  let y = MT;
-  const lh = 6;
-  const checkPage = (need=10)=>{
-    if(y+need > PAGE_H-12){ doc.addPage(); y=MT; }
-  };
-
-  // ── header ──
-  doc.setFillColor(31,45,70);
-  doc.rect(0,0,PAGE_W,12,'F');
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text('EFL Teacher Dashboard', ML, 8);
-  doc.setFont('helvetica','normal');
-  doc.text(t.reportTitle, PAGE_W-MR, 8, {align:'right'});
-  y = 20;
-
-  // ── student name ──
-  doc.setTextColor(28,36,54);
-  doc.setFontSize(18); doc.setFont('helvetica','bold');
-  doc.text(student.name, ML, y); y += 7;
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.setTextColor(125,134,156);
-  const metaParts = [cls?cls.name:'', fromVal&&toVal?`${formatDateShort(fromVal)} – ${formatDateShort(toVal)}`:''  ].filter(Boolean);
-  doc.text(metaParts.join('  ·  '), ML, y); y += 5;
-  doc.text(`${t.generatedOn} ${formatDateLong(todayStr())}`, ML, y); y += 8;
-
-  // ── divider ──
-  doc.setDrawColor(227,231,240); doc.setLineWidth(0.3);
-  doc.line(ML, y, PAGE_W-MR, y); y += 7;
-
-  // ── stat boxes ──
-  const stats = [
-    [t.sessionsLogged, total],
-    [t.present,        present],
-    [t.late,           late],
-    [t.absent,         absent],
-    [t.phoneUses,      totalPhone],
-    [t.homeworkDone,   hwTotal?Math.round(100*hwDone/hwTotal)+'%':'—'],
-  ];
-  const bw = usableW/stats.length;
-  stats.forEach(([label,val],i)=>{
-    const bx = ML + i*bw;
-    doc.setFillColor(244,246,251);
-    doc.roundedRect(bx, y, bw-2, 16, 2, 2, 'F');
-    doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.setTextColor(79,109,245);
-    doc.text(String(val), bx+bw/2-1, y+8, {align:'center'});
-    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(125,134,156);
-    doc.text(label, bx+bw/2-1, y+13, {align:'center'});
-  });
-  y += 22;
-
-  // ── classes lost summary ──
-  doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(28,36,54);
-  doc.text(t.classesLost, ML, y); y += lh;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(60,70,90);
-  const summaryText = expected!=null
-    ? `${absent} ${lang==='pt'?'ausência(s)':'absence(s)'} / ${expected} ${lang==='pt'?'aulas esperadas':'expected classes'} — ${t.attendance}: ${attendanceRate}%`
-    : `${absent} ${lang==='pt'?'ausência(s)':'absence(s)'} ${lang==='pt'?'registradas até o momento':'recorded so far'}`;
-  doc.text(summaryText, ML, y); y += 8;
-
-  // ── table ──
-  checkPage(20);
-  doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(28,36,54);
-  doc.text(`${t.date} / ${t.attendance} / ${t.lateMin} / ${t.leftEarlyMin} / ${t.phone} / ${t.hw} / ${t.englishOnly} / ${t.notes}`, ML, y);
-  y += 2;
-  doc.setDrawColor(227,231,240); doc.line(ML,y,PAGE_W-MR,y); y+=4;
-
-  // col widths: date, att, late, early, phone, hw, english, notes
-  const cols = [18,22,14,20,14,12,28, usableW-18-22-14-20-14-12-28];
-  const headers = [t.date, t.attendance, t.lateMin, t.leftEarlyMin, t.phone, t.hw, t.englishOnly, t.notes];
-
-  // header row
-  doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(125,134,156);
-  let cx = ML;
-  headers.forEach((h,i)=>{ doc.text(h, cx, y); cx+=cols[i]; });
-  y+=5;
-  doc.setDrawColor(227,231,240); doc.line(ML,y,PAGE_W-MR,y); y+=3;
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(8);
-  records.forEach(r=>{
-    const attLabel = t.attendanceLabels[r.attendance]||r.attendance;
-    const engLabel = r.english ? (t.englishLabels[r.english]||r.english) : '—';
-    const hwLabel  = r.hw ? (r.hw==='done'?t.yes:t.no) : '—';
-    const notesText= r.notes || '—';
-    // wrap notes
-    const noteLines = doc.splitTextToSize(notesText, cols[7]-2);
-    const rowH = Math.max(lh, noteLines.length*4.5);
-    checkPage(rowH+3);
-    cx = ML;
-    doc.setTextColor(28,36,54);
-    const rowData = [
-      formatDateShort(r.date), attLabel,
-      r.lateMin?r.lateMin+' min':'—', r.leftEarlyMin?r.leftEarlyMin+' min':'—',
-      r.phone||'—', hwLabel, engLabel
-    ];
-    rowData.forEach((val,i)=>{ doc.text(String(val), cx, y+4); cx+=cols[i]; });
-    doc.text(noteLines, cx, y+4);
-    y += rowH+1;
-    doc.setDrawColor(240,242,248); doc.line(ML,y,PAGE_W-MR,y); y+=2;
-  });
-
-  return doc;
-}
-
-function sanitizeFilename(str){ return str.replace(/[\/\\:*?"<>|]/g,'_').trim(); }
-
-async function bulkDownload(classId){
-  const cls = classById(classId);
-  if(!cls){ alert('Select a class first.'); return; }
-  const students = studentsInClass(classId);
-  if(!students.length){ alert('No students in this class.'); return; }
-
-  const btn = document.getElementById('bulk-dl-btn');
-  const orig = btn.textContent;
-  btn.disabled = true;
-
-  const lang = state.reportLang;
-  const fromVal = state.reportRange.from || cls.startDate || '';
-  const toVal   = state.reportRange.to   || cls.endDate   || '';
-  const fromStr = fromVal ? fromVal : 'start';
-  const toStr   = toVal   ? toVal   : 'now';
-
-  const zip = new JSZip();
-  for(let i=0; i<students.length; i++){
-    const s = students[i];
-    btn.textContent = `Building ${i+1}/${students.length}…`;
-    await new Promise(r=>setTimeout(r,0)); // let UI breathe
-    const doc = buildReportPDF(s, lang);
-    const filename = sanitizeFilename(`${cls.name} - ${s.name} - ${fromStr} - ${toStr}.pdf`);
-    const pdfBytes = doc.output('arraybuffer');
-    zip.file(filename, pdfBytes);
-  }
-
-  btn.textContent = 'Zipping…';
-  await new Promise(r=>setTimeout(r,0));
-  const blob = await zip.generateAsync({type:'blob'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = sanitizeFilename(`${cls.name} - reports - ${fromStr} - ${toStr}.zip`);
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-
-  btn.textContent = orig;
-  btn.disabled = false;
 }
 
 /* ================= BACKUP / RESTORE ================= */
