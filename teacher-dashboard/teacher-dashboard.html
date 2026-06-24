@@ -1058,6 +1058,7 @@ function renderStudentProfile(){
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
+        <button class="btn-ghost" onclick="downloadSinglePDF('${student.id}')">⬇ PDF</button>
         <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
       </div>
     </div>
@@ -1130,6 +1131,17 @@ function renderStudentProfile(){
     </div>
   `;
 }
+function downloadSinglePDF(studentId){
+  const student = state.students.find(s=>s.id===studentId);
+  if(!student) return;
+  const cls = classById(student.classId);
+  const fromVal = state.reportRange.from || cls?.startDate || 'start';
+  const toVal   = state.reportRange.to   || cls?.endDate   || 'now';
+  const doc = buildReportPDF(student, state.reportLang);
+  const filename = sanitizeFilename(`${cls?cls.name:'report'} - ${student.name} - ${fromVal} - ${toVal}.pdf`);
+  doc.save(filename);
+}
+
 function toggleReportLang(){
   state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
   renderStudentProfile();
