@@ -1091,7 +1091,7 @@ function renderStudentProfile(){
       <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">${t.phoneUses}</div></div>
       <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
     </div>
-    <div class="charts-grid">
+    <div class="charts-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
       <div class="card chart-card">
         <h3>${t.attendance}</h3>
         <div class="chart-note">${t.basedOn(total)}</div>
@@ -1111,25 +1111,19 @@ function renderStudentProfile(){
           {label:t.absent, value:absentMin, color:'var(--red)', unit:' min'}
         ], (lostLateMin+lostEarlyMin+absentMin)+' min', t.timeMissed)}
       </div>
+      ${hwRecords.length ? `
+      <div class="card chart-card">
+        <h3>${t.homeworkDone}</h3>
+        <div class="chart-note">${t.basedOn(hwRecords.length)}</div>
+        ${(()=>{
+          const avg = hwAvg??0;
+          return renderDonut([
+            {label:state.reportLang==='pt'?'Feito (média)':'Done (avg)', value:avg, color:'var(--green)', unit:'%'},
+            {label:state.reportLang==='pt'?'Incompleto (média)':'Incomplete (avg)', value:100-avg, color:'var(--red)', unit:'%'}
+          ], avg+'%', state.reportLang==='pt'?'média':'average');
+        })()}
+      </div>` : ''}
     </div>
-    ${hwRecords.length ? `
-    <div class="card chart-card" style="margin-bottom:16px;">
-      <h3>${t.homeworkDone}</h3>
-      <div class="chart-note">${t.basedOn(hwRecords.length)}</div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
-        ${[...hwRecords].reverse().map(r=>{
-          const pct = typeof r.hw==='number' ? r.hw : (r.hw==='done'?100:0);
-          const color = pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
-          return `<div style="display:flex;align-items:center;gap:10px;font-size:12px;">
-            <span style="width:52px;flex-shrink:0;color:var(--muted);">${formatDateShort(r.date)}</span>
-            <div style="flex:1;background:var(--border);border-radius:999px;height:10px;overflow:hidden;">
-              <div style="width:${pct}%;background:${color};height:100%;border-radius:999px;transition:width .3s;"></div>
-            </div>
-            <span style="width:36px;text-align:right;font-weight:600;">${pct}%</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>` : ''}
     <div class="card section">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
