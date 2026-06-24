@@ -549,7 +549,7 @@ function attendanceBadgeClass(a){ return {present:'green',late:'amber',absent:'r
 function englishLabel(e){ return {excellent:'Excellent',improve:'Room for improvement',unacceptable:'Unacceptable'}[e] || '—'; }
 function englishBadgeClass(e){ return {excellent:'green',improve:'amber',unacceptable:'red'}[e] || ''; }
 function splitSessionKey(key){ const i=key.indexOf('_'); return [key.slice(0,i), key.slice(i+1)]; }
-function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:'done', english:'excellent', notes:''}; }
+function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', notes:''}; }
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
@@ -931,10 +931,11 @@ function renderDrawer(s, rec){
         <button onclick="adjustField('${s.id}','phone',1)">+</button>
       </div>
     </div>
-    <div class="field"><label>Homework</label>
-      <div class="pill-group">
-        <div class="pill green ${rec.hw==='done'?'on':''}" onclick="setField('${s.id}','hw','done')">Done</div>
-        <div class="pill red ${rec.hw==='not_done'?'on':''}" onclick="setField('${s.id}','hw','not_done')">Not done</div>
+    <div class="field"><label>Homework (%)</label>
+      <div class="stepper">
+        <button onclick="adjustField('${s.id}','hw',-10)">−</button>
+        <span class="val">${rec.hw??100}%</span>
+        <button onclick="adjustField('${s.id}','hw',10)">+</button>
       </div>
     </div>
     <div class="field full"><label>English only</label>
@@ -963,7 +964,11 @@ function setAttendance(studentId, val){
 }
 function adjustField(studentId, field, delta){
   const rec = getCurrentRecord(studentId);
-  rec[field] = Math.max(0, rec[field] + delta);
+  if(field==='hw'){
+    rec[field] = Math.min(100, Math.max(0, (rec[field]??100) + delta));
+  } else {
+    rec[field] = Math.max(0, rec[field] + delta);
+  }
   persistSessions();
   renderRollCall();
 }
@@ -1028,8 +1033,11 @@ function renderStudentProfile(){
   const late = records.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
   const present = total - absent - late;
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
-  const hwTotal = records.filter(r=>r.hw!=null).length;
-  const hwDone = records.filter(r=>r.hw==='done').length;
+  const hwRecords = records.filter(r=>r.hw!=null && r.hw!=='done' && r.hw!=='not_done' ? true : r.hw!=null);
+  const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>{
+    const v = typeof r.hw==='number' ? r.hw : (r.hw==='done'?100:0);
+    return s+v;
+  },0)/hwRecords.length) : null;
 
   const duration = cls?.duration || 150;
   const expected = cls ? expectedSessionsForClass(cls, fromVal||null, toVal||null) : null;
@@ -1067,6 +1075,7 @@ function renderStudentProfile(){
         <span style="color:var(--muted);font-size:13px;">${t.to}</span>
         <input type="date" value="${toVal}" onchange="setReportRange('to', this.value)">
         <button class="btn-ghost small" onclick="resetReportRange()">${t.allTime}</button>
+        <button class="btn-ghost small" onclick="navigate('${returnView}')" style="margin-left:auto;">← Change</button>
       </div>
     </div>
     <div class="print-only" style="margin-bottom:10px;font-size:12px;color:var(--muted);">
@@ -1078,7 +1087,7 @@ function renderStudentProfile(){
       <div class="card stat"><div class="stat-num">${late}</div><div class="stat-label">${t.late}</div></div>
       <div class="card stat"><div class="stat-num">${absent}</div><div class="stat-label">${t.absent}</div></div>
       <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">${t.phoneUses}</div></div>
-      <div class="card stat"><div class="stat-num">${hwTotal?Math.round(100*hwDone/hwTotal)+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
+      <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
     </div>
     <div class="charts-grid">
       <div class="card chart-card">
@@ -1117,7 +1126,7 @@ function renderStudentProfile(){
               <td>${r.lateMin?r.lateMin+' min':'—'}</td>
               <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
               <td>${r.phone||'—'}</td>
-              <td>${r.hw?(r.hw==='done'?t.yes:t.no):'—'}</td>
+              <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
               <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
               <td>${r.notes?esc(r.notes):'—'}</td>
             </tr>
@@ -1145,11 +1154,8 @@ function resetReportRange(){
 function renderReports(){
   if(!classById(state.reportsSelection.classId)) state.reportsSelection.classId = state.classes[0]?.id || '';
   const selClassId = state.reportsSelection.classId;
-  const studentsForClass = selClassId ? studentsInClass(selClassId) : [];
-  if(!studentsForClass.find(s=>s.id===state.reportsSelection.studentId)){
-    state.reportsSelection.studentId = studentsForClass[0]?.id || '';
-  }
-  const selStudentId = state.reportsSelection.studentId;
+  const fromVal = state.reportRange.from;
+  const toVal   = state.reportRange.to;
 
   document.getElementById('view-reports').innerHTML = `
     <div class="topbar"><div><h1>Reports</h1><div class="meta">Printable attendance &amp; observation reports per student</div></div></div>
@@ -1159,14 +1165,15 @@ function renderReports(){
           <select onchange="setReportsClass(this.value)">
             ${state.classes.map(c=>`<option value="${c.id}" ${c.id===selClassId?'selected':''}>${esc(c.name)}</option>`).join('')}
           </select>
-          <select onchange="setReportsStudent(this.value)" ${studentsForClass.length?'':'disabled'}>
-            ${studentsForClass.length ? studentsForClass.map(s=>`<option value="${s.id}" ${s.id===selStudentId?'selected':''}>${esc(s.name)}</option>`).join('') : `<option>No students in this class</option>`}
-          </select>
-          <button class="btn-accent" ${selStudentId?'':'disabled'} onclick="navigate('student',{studentProfileId:'${selStudentId}', studentProfileReturn:'reports'})">View Report →</button>
+          <label style="font-size:13px;font-weight:600;color:var(--muted);">Period:</label>
+          <input type="date" value="${fromVal}" onchange="setReportRangeFromReports('from',this.value)" placeholder="From">
+          <span style="color:var(--muted);font-size:13px;">–</span>
+          <input type="date" value="${toVal}" onchange="setReportRangeFromReports('to',this.value)" placeholder="To">
+          <button class="btn-ghost small" onclick="resetReportRangeFromReports()">All time</button>
         </div>
       </div>
     ` : ''}
-    ${state.classes.length ? state.classes.map(c=>`
+    ${state.classes.length ? state.classes.filter(c=>!selClassId||c.id===selClassId).map(c=>`
       <div class="card section" style="margin-bottom:12px;">
         <h3 style="display:flex;align-items:center;gap:8px;"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</h3>
         ${studentsInClass(c.id).length ? studentsInClass(c.id).map(s=>`
@@ -1181,11 +1188,15 @@ function renderReports(){
 }
 function setReportsClass(classId){
   state.reportsSelection.classId = classId;
-  state.reportsSelection.studentId = '';
   renderReports();
 }
-function setReportsStudent(studentId){
-  state.reportsSelection.studentId = studentId;
+function setReportRangeFromReports(which, val){
+  state.reportRange[which] = val || '';
+  renderReports();
+}
+function resetReportRangeFromReports(){
+  state.reportRange = {from:'', to:''};
+  renderReports();
 }
 
 /* ================= CALENDAR ================= */
