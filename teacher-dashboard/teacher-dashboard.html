@@ -243,6 +243,7 @@
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
   th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 12px;background:#fafbfd;border-bottom:1px solid var(--border);white-space:nowrap;}
   td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  td:last-child{white-space:normal;min-width:140px;max-width:260px;word-wrap:break-word;}
   tr:last-child td{border-bottom:none;}
 
   /* calendar */
@@ -301,7 +302,9 @@
     .donut{width:120px;height:120px;}
     .donut-center{inset:15px;}
     .table-wrap{break-inside:auto;}
-    .table-wrap table{min-width:0;font-size:11px;}
+    .table-wrap table{min-width:0;font-size:11px;table-layout:fixed;width:100%;}
+    .table-wrap table th:last-child,
+    .table-wrap table td:last-child{width:28%;white-space:normal;word-wrap:break-word;}
     thead{display:table-header-group;}
     tr{break-inside:avoid;}
   }
