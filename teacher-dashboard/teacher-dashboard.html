@@ -366,6 +366,7 @@
   <div id="view-calendar" class="view"></div>
   <div id="view-student" class="view"></div>
   <div id="view-reports" class="view"></div>
+  <div id="view-group-report" class="view"></div>
 </div>
 
 <div id="modal-root"></div>
@@ -607,7 +608,7 @@ function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
 function navigate(view, params={}){
   Object.assign(state, params);
   state.view = view;
-  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports'};
+  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports'};
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===navMap[view]));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
   if(view==='dashboard') renderDashboard();
@@ -616,6 +617,7 @@ function navigate(view, params={}){
   if(view==='calendar') renderCalendar();
   if(view==='student') renderStudentProfile();
   if(view==='reports') renderReports();
+  if(view==='group-report') renderGroupReport();
 }
 function goToRollCall(classId, date){
   state.rollcall.classId = classId;
@@ -1110,6 +1112,24 @@ function renderStudentProfile(){
         ], (lostLateMin+lostEarlyMin+absentMin)+' min', t.timeMissed)}
       </div>
     </div>
+    ${hwRecords.length ? `
+    <div class="card chart-card" style="margin-bottom:16px;">
+      <h3>${t.homeworkDone}</h3>
+      <div class="chart-note">${t.basedOn(hwRecords.length)}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        ${[...hwRecords].reverse().map(r=>{
+          const pct = typeof r.hw==='number' ? r.hw : (r.hw==='done'?100:0);
+          const color = pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+          return `<div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+            <span style="width:52px;flex-shrink:0;color:var(--muted);">${formatDateShort(r.date)}</span>
+            <div style="flex:1;background:var(--border);border-radius:999px;height:10px;overflow:hidden;">
+              <div style="width:${pct}%;background:${color};height:100%;border-radius:999px;transition:width .3s;"></div>
+            </div>
+            <span style="width:36px;text-align:right;font-weight:600;">${pct}%</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
     <div class="card section">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
@@ -1170,6 +1190,7 @@ function renderReports(){
           <span style="color:var(--muted);font-size:13px;">–</span>
           <input type="date" value="${toVal}" onchange="setReportRangeFromReports('to',this.value)" placeholder="To">
           <button class="btn-ghost small" onclick="resetReportRangeFromReports()">All time</button>
+          <button class="btn-accent" onclick="navigate('group-report')">Group Report →</button>
         </div>
       </div>
     ` : ''}
@@ -1197,6 +1218,125 @@ function setReportRangeFromReports(which, val){
 function resetReportRangeFromReports(){
   state.reportRange = {from:'', to:''};
   renderReports();
+}
+
+/* ================= GROUP REPORT ================= */
+function renderGroupReport(){
+  const t = T[state.reportLang];
+  const cls = classById(state.reportsSelection.classId);
+  if(!cls){
+    document.getElementById('view-group-report').innerHTML = `
+      <div class="topbar"><div><button class="btn-ghost back-btn no-print" onclick="navigate('reports')">← Back to Reports</button></div></div>
+      <div class="card empty-card">Select a class on the Reports page first.</div>`;
+    return;
+  }
+  const students = studentsInClass(cls.id);
+  const fromVal = state.reportRange.from || cls.startDate || '';
+  const toVal   = state.reportRange.to   || cls.endDate   || '';
+  const duration = cls.duration || 150;
+
+  const rows = students.map(s=>{
+    const recs = [];
+    Object.keys(state.sessions).forEach(key=>{
+      const [cid, date] = splitSessionKey(key);
+      if(cid===cls.id && state.sessions[key][s.id])
+        recs.push({date, ...state.sessions[key][s.id]});
+    });
+    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal));
+    const total   = filtered.length;
+    const absent  = filtered.filter(r=>r.attendance==='absent').length;
+    const late    = filtered.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
+    const present = total - absent - late;
+    const lostLate  = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.lateMin||0),0);
+    const lostEarly = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.leftEarlyMin||0),0);
+    const absentMin = absent * duration;
+    const totalPoss = total * duration;
+    const inClass   = Math.max(0, totalPoss - lostLate - lostEarly - absentMin);
+    const attRate   = total ? Math.round(100*(present+late)/total) : null;
+    const hwRecs    = filtered.filter(r=>r.hw!=null);
+    const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>{ const v=typeof r.hw==='number'?r.hw:(r.hw==='done'?100:0); return s+v; },0)/hwRecs.length) : null;
+    const phone     = filtered.reduce((s,r)=>s+(r.phone||0),0);
+    const expected  = expectedSessionsForClass(cls, fromVal||null, toVal||null);
+    const absRate   = expected ? Math.round(100*absent/expected) : null;
+    return {s, total, present, late, absent, attRate, absRate, inClass, totalPoss, hwAvg, phone};
+  });
+
+  // group averages
+  const avg = (arr, key) => { const v=arr.filter(r=>r[key]!=null); return v.length?Math.round(v.reduce((s,r)=>s+r[key],0)/v.length):null; };
+  const attAvg = avg(rows,'attRate');
+  const hwAvg  = avg(rows,'hwAvg');
+  const phoneTotal = rows.reduce((s,r)=>s+r.phone,0);
+
+  const badgeForPct = (pct, invert=false) => {
+    if(pct==null) return '—';
+    const good = invert ? pct<=10 : pct>=80;
+    const bad  = invert ? pct>=30 : pct<=50;
+    const cls2 = good?'green':bad?'red':'amber';
+    return `<span class="badge ${cls2}">${pct}%</span>`;
+  };
+
+  document.getElementById('view-group-report').innerHTML = `
+    <div class="topbar">
+      <div>
+        <button class="btn-ghost back-btn no-print" onclick="navigate('reports')">← Back to Reports</button>
+        <h1>${esc(cls.name)}</h1>
+        <div class="meta">${fromVal?formatDateShort(fromVal):'Start'} – ${toVal?formatDateShort(toVal):'Present'} · ${students.length} students</div>
+      </div>
+      <div style="display:flex;gap:10px;" class="no-print">
+        <button class="btn-ghost" onclick="toggleGroupReportLang()">${t.langToggle}</button>
+        <button class="btn-accent" onclick="window.print()">🖨️ ${state.reportLang==='pt'?'Imprimir':'Print'}</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="card stat"><div class="stat-num">${students.length}</div><div class="stat-label">${state.reportLang==='pt'?'Alunos':'Students'}</div></div>
+      <div class="card stat"><div class="stat-num">${attAvg!=null?attAvg+'%':'—'}</div><div class="stat-label">${t.attendance} (${state.reportLang==='pt'?'média':'avg'})</div></div>
+      <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone} (${state.reportLang==='pt'?'média':'avg'})</div></div>
+      <div class="card stat"><div class="stat-num">${phoneTotal}</div><div class="stat-label">${t.phoneUses}</div></div>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>${state.reportLang==='pt'?'Aluno':'Student'}</th>
+            <th>${state.reportLang==='pt'?'Aulas':'Sessions'}</th>
+            <th>${t.present}</th>
+            <th>${t.late}</th>
+            <th>${t.absent}</th>
+            <th>${state.reportLang==='pt'?'% Presença':'Att. rate'}</th>
+            <th>${state.reportLang==='pt'?'% Ausência':'Abs. rate'}</th>
+            <th>${state.reportLang==='pt'?'Tempo em aula':'In class'}</th>
+            <th>${t.hw} (${state.reportLang==='pt'?'média':'avg'})</th>
+            <th>${t.phone}</th>
+            <th>English Club</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(({s,total,present,late,absent,attRate,absRate,inClass,totalPoss,hwAvg,phone})=>`
+            <tr>
+              <td style="font-weight:600;cursor:pointer;" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">${esc(s.name)}</td>
+              <td>${total}</td>
+              <td>${present}</td>
+              <td>${late}</td>
+              <td>${absent}</td>
+              <td>${badgeForPct(attRate)}</td>
+              <td>${badgeForPct(absRate, true)}</td>
+              <td>${total?Math.round(inClass/totalPoss*100)+'%':'—'}</td>
+              <td>${hwAvg!=null?badgeForPct(hwAvg):'—'}</td>
+              <td>${phone||'—'}</td>
+              <td style="text-align:center;">${s.englishClub?'⭐':''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;" class="no-print">
+      ${state.reportLang==='pt'?'Clique no nome do aluno para ver o relatório individual.':'Click a student name to view their individual report.'}
+    </div>
+  `;
+}
+function toggleGroupReportLang(){
+  state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
+  renderGroupReport();
 }
 
 /* ================= CALENDAR ================= */
