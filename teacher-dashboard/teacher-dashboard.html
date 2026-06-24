@@ -445,6 +445,12 @@ const T = {
     langToggle: 'PT',
     attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
     englishLabels: {excellent:'Excellent', improve:'Room for improvement', unacceptable:'Unacceptable'},
+    missedHwFlag: '⚠ Missed HW',
+    lateHwSection: 'Previous session HW (was absent)',
+    lateHwLate: 'Brought late',
+    lateHwNo: 'Did not bring',
+    lateHwCol: 'Late HW',
+    lateHwLabels: {late:'Brought late', no_hw:'Did not bring'},
   },
   pt: {
     reportTitle: 'Relatório do Aluno',
@@ -493,6 +499,12 @@ const T = {
     langToggle: 'EN',
     attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
     englishLabels: {excellent:'Excelente', improve:'Pode melhorar', unacceptable:'Inaceitável'},
+    missedHwFlag: '⚠ Dever pendente',
+    lateHwSection: 'Dever da aula anterior (estava ausente)',
+    lateHwLate: 'Trouxe atrasado',
+    lateHwNo: 'Não trouxe',
+    lateHwCol: 'Dever atrasado',
+    lateHwLabels: {late:'Trouxe atrasado', no_hw:'Não trouxe'},
   }
 };
 
@@ -541,6 +553,16 @@ function formatDateShort(dateStr){
 function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
+function getPreviousClassDate(cls, fromDateStr){
+  const days = SCHEDULE_DAYS[cls.schedule];
+  let d = new Date(fromDateStr+'T00:00:00');
+  for(let i=0; i<60; i++){
+    d.setDate(d.getDate()-1);
+    const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+    if(days.includes(d.getDay()) && !isHoliday(dateStr)) return dateStr;
+  }
+  return null;
+}
 function esc(str){
   return String(str ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
@@ -878,6 +900,14 @@ function renderRollCall(){
 
   const session = state.sessions[sessionKey] || {};
 
+  // Find students absent in the immediately preceding non-holiday class session
+  const prevDate = getPreviousClassDate(cls, date);
+  const prevSessionKey = prevDate ? cls.id+'_'+prevDate : null;
+  const prevSession = prevSessionKey ? (state.sessions[prevSessionKey]||{}) : {};
+  const absentPrevSession = new Set(
+    students.filter(s=>prevSession[s.id]?.attendance==='absent').map(s=>s.id)
+  );
+
   document.getElementById('view-rollcall').innerHTML = `
     <div class="topbar">
       <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
@@ -896,27 +926,44 @@ function renderRollCall(){
         <span class="save-indicator" id="save-indicator"></span>
       </div>
       <div class="card roster-list">
-        ${students.map(s=>renderRosterRow(s, session[s.id])).join('')}
+        ${students.map(s=>renderRosterRow(s, session[s.id], absentPrevSession.has(s.id))).join('')}
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>` : ''}
   `;
 }
-function renderRosterRow(s, rec){
+function renderRosterRow(s, rec, missedHw=false){
   const open = state.openDrawer === s.id;
+  const hwOutcome = rec?.lateHwOutcome || null;
+  const showFlag = missedHw && !hwOutcome;
   return `
     <div class="roster-row ${open?'open':''}" onclick="toggleDrawer('${s.id}')">
-      <div class="student-name">${esc(s.name)}</div>
+      <div class="student-name">
+        ${esc(s.name)}
+        ${showFlag ? `<span class="badge amber" style="margin-left:8px;font-size:11px;">⚠ Missed HW</span>` : ''}
+        ${missedHw && hwOutcome==='late' ? `<span class="badge green" style="margin-left:8px;font-size:11px;">✓ Late HW</span>` : ''}
+        ${missedHw && hwOutcome==='no_hw' ? `<span class="badge red" style="margin-left:8px;font-size:11px;">✗ No HW</span>` : ''}
+      </div>
       <div class="seg" onclick="event.stopPropagation()">
-        <button class="present ${rec.attendance!=='absent'?'on':''}" onclick="setAttendance('${s.id}','present')">Present</button>
-        <button class="absent ${rec.attendance==='absent'?'on':''}" onclick="setAttendance('${s.id}','absent')">Absent</button>
+        <button class="present ${rec?.attendance!=='absent'?'on':''}" onclick="setAttendance('${s.id}','present')">Present</button>
+        <button class="absent ${rec?.attendance==='absent'?'on':''}" onclick="setAttendance('${s.id}','absent')">Absent</button>
       </div>
       <div class="detail-btn">Details ${open?'▾':'▸'}</div>
     </div>
-    <div class="drawer">${open?renderDrawer(s, rec):''}</div>
+    <div class="drawer">${open?renderDrawer(s, rec, missedHw):''}</div>
   `;
 }
-function renderDrawer(s, rec){
+function renderDrawer(s, rec, missedHw=false){
+  const hwOutcome = rec?.lateHwOutcome || null;
   return `
+    ${missedHw ? `
+    <div class="field full" style="grid-column:1/-1;background:var(--amber-soft);border-radius:10px;padding:12px 14px;">
+      <label style="color:var(--amber);">⚠ Previous session HW (was absent)</label>
+      <div class="pill-group" style="margin-top:8px;">
+        <div class="pill green ${hwOutcome==='late'?'on':''}" onclick="setLateHwOutcome('${s.id}','late')">✓ Brought late</div>
+        <div class="pill red ${hwOutcome==='no_hw'?'on':''}" onclick="setLateHwOutcome('${s.id}','no_hw')">✗ Did not bring</div>
+        ${hwOutcome ? `<div class="pill" onclick="setLateHwOutcome('${s.id}',null)" style="color:var(--muted);">Clear</div>` : ''}
+      </div>
+    </div>` : ''}
     <div class="field"><label>Late (minutes)</label>
       <div class="stepper">
         <button onclick="adjustField('${s.id}','lateMin',-1)">−</button>
@@ -982,6 +1029,12 @@ function adjustField(studentId, field, delta){
 function setField(studentId, field, val){
   const rec = getCurrentRecord(studentId);
   rec[field] = rec[field]===val ? null : val;
+  persistSessions();
+  renderRollCall();
+}
+function setLateHwOutcome(studentId, val){
+  const rec = getCurrentRecord(studentId);
+  rec.lateHwOutcome = val;
   persistSessions();
   renderRollCall();
 }
@@ -1140,7 +1193,7 @@ function renderStudentProfile(){
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
       <table>
-        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.englishOnly}</th><th>${t.notes}</th></tr></thead>
+        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.lateHwCol}</th><th>${t.englishOnly}</th><th>${t.notes}</th></tr></thead>
         <tbody>
           ${(()=>{
             // Merge records and holiday rows, sort by date descending
@@ -1162,6 +1215,7 @@ function renderStudentProfile(){
                   <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
                   <td>${r.phone||'—'}</td>
                   <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
+                  <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>` : '—'}</td>
                   <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
                   <td>${r.notes?esc(r.notes):'—'}</td>
                 </tr>`;
