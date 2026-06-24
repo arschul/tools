@@ -863,15 +863,20 @@ function renderRollCall(){
   const date = state.rollcall.date;
   const students = studentsInClass(cls.id);
   const sessionKey = cls.id + '_' + date;
-  if(!state.sessions[sessionKey]) state.sessions[sessionKey] = {};
-  const session = state.sessions[sessionKey];
-  let created = false;
-  students.forEach(s=>{ if(!session[s.id]){ session[s.id]=defaultRecord(); created=true; } });
-  if(created) scheduleSave('sessions', state.sessions);
-
   const dow = new Date(date+'T00:00:00').getDay();
   const offSchedule = !SCHEDULE_DAYS[cls.schedule].includes(dow);
   const holiday = getHoliday(date);
+
+  // Don't create session records for holidays
+  if(!holiday){
+    if(!state.sessions[sessionKey]) state.sessions[sessionKey] = {};
+    const session = state.sessions[sessionKey];
+    let created = false;
+    students.forEach(s=>{ if(!session[s.id]){ session[s.id]=defaultRecord(); created=true; } });
+    if(created) scheduleSave('sessions', state.sessions);
+  }
+
+  const session = state.sessions[sessionKey] || {};
 
   document.getElementById('view-rollcall').innerHTML = `
     <div class="topbar">
@@ -883,9 +888,9 @@ function renderRollCall(){
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
       </div>
     </div>
-    ${holiday?`<div class="warn-banner">🎉 ${formatDateLong(date)} is marked as a holiday: ${esc(holiday.label)}.</div>`:''}
-    ${offSchedule?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls.schedule)}).</div>`:''}
-    ${students.length ? `
+    ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
+    ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls.schedule)}).</div>`:''}
+    ${!holiday && students.length ? `
       <div class="rollcall-actions">
         <button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>
         <span class="save-indicator" id="save-indicator"></span>
@@ -893,7 +898,7 @@ function renderRollCall(){
       <div class="card roster-list">
         ${students.map(s=>renderRosterRow(s, session[s.id])).join('')}
       </div>
-    ` : `<div class="card empty-card">No students in this class yet. Add students in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>`}
+    ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>` : ''}
   `;
 }
 function renderRosterRow(s, rec){
@@ -1028,7 +1033,11 @@ function renderStudentProfile(){
 
   const fromVal = state.reportRange.from || cls?.startDate || '';
   const toVal = state.reportRange.to || cls?.endDate || '';
-  const records = allRecords.filter(r => (!fromVal || r.date>=fromVal) && (!toVal || r.date<=toVal));
+  const allPeriodRecords = allRecords.filter(r => (!fromVal || r.date>=fromVal) && (!toVal || r.date<=toVal));
+
+  // Separate holiday records from real records
+  const holidayDates = allPeriodRecords.filter(r=>isHoliday(r.date)).map(r=>r.date);
+  const records = allPeriodRecords.filter(r=>!isHoliday(r.date));
 
   const total = records.length;
   const absent = records.filter(r=>r.attendance==='absent').length;
@@ -1129,22 +1138,35 @@ function renderStudentProfile(){
       <div class="lost-summary">${classesLostHtml}</div>
     </div>
     <div class="card table-wrap">
-      ${records.length ? `
+      ${records.length||holidayDates.length ? `
       <table>
         <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.englishOnly}</th><th>${t.notes}</th></tr></thead>
         <tbody>
-          ${records.map(r=>`
-            <tr>
-              <td>${formatDateShort(r.date)}</td>
-              <td><span class="badge ${attendanceBadgeClass(r.attendance)}">${t.attendanceLabels[r.attendance]||r.attendance}</span></td>
-              <td>${r.lateMin?r.lateMin+' min':'—'}</td>
-              <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
-              <td>${r.phone||'—'}</td>
-              <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
-              <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
-              <td>${r.notes?esc(r.notes):'—'}</td>
-            </tr>
-          `).join('')}
+          ${(()=>{
+            // Merge records and holiday rows, sort by date descending
+            const allRows = [
+              ...records.map(r=>({...r, _type:'record'})),
+              ...holidayDates.map(date=>({date, _type:'holiday', _label: getHoliday(date)?.label||'Holiday'}))
+            ].sort((a,b)=>b.date.localeCompare(a.date));
+            return allRows.map(r=>{
+              if(r._type==='holiday') return `
+                <tr style="background:var(--purple-soft);">
+                  <td>${formatDateShort(r.date)}</td>
+                  <td colspan="7" style="color:var(--purple);font-weight:600;">🎉 ${esc(r._label)}</td>
+                </tr>`;
+              return `
+                <tr>
+                  <td>${formatDateShort(r.date)}</td>
+                  <td><span class="badge ${attendanceBadgeClass(r.attendance)}">${t.attendanceLabels[r.attendance]||r.attendance}</span></td>
+                  <td>${r.lateMin?r.lateMin+' min':'—'}</td>
+                  <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
+                  <td>${r.phone||'—'}</td>
+                  <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
+                  <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
+                  <td>${r.notes?esc(r.notes):'—'}</td>
+                </tr>`;
+            }).join('');
+          })()}
         </tbody>
       </table>
       ` : `<div class="empty-card">${t.noRecords}</div>`}
@@ -1236,7 +1258,7 @@ function renderGroupReport(){
       if(cid===cls.id && state.sessions[key][s.id])
         recs.push({date, ...state.sessions[key][s.id]});
     });
-    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal));
+    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal)&&!isHoliday(r.date));
     const total   = filtered.length;
     const absent  = filtered.filter(r=>r.attendance==='absent').length;
     const late    = filtered.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
