@@ -17,13 +17,11 @@
     --muted: #7a84a8;
     --accent: #5b8dee;
     --accent2: #3d6bd4;
-
-    --c1: #e55555; /* 1 - ruim */
-    --c2: #e5873a; /* 2 */
-    --c3: #d4b93e; /* 3 */
-    --c4: #5aaf6e; /* 4 */
-    --c5: #3cb8a0; /* 5 - excelente */
-
+    --c1: #e55555;
+    --c2: #e5873a;
+    --c3: #d4b93e;
+    --c4: #5aaf6e;
+    --c5: #3cb8a0;
     --radius: 14px;
     --font-body: 'DM Sans', sans-serif;
     --font-display: 'DM Serif Display', serif;
@@ -40,117 +38,6 @@
     overflow: hidden;
   }
 
-  /* ── SIDEBAR ── */
-  #sidebar {
-    width: 240px;
-    min-width: 240px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-  }
-
-  #sidebar-header {
-    padding: 24px 20px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  #sidebar-header h2 {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    color: var(--text);
-    letter-spacing: 0.01em;
-  }
-  #sidebar-header p {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  #student-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  #student-list::-webkit-scrollbar { width: 4px; }
-  #student-list::-webkit-scrollbar-track { background: transparent; }
-  #student-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-  .student-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.15s;
-    border: 1px solid transparent;
-    position: relative;
-  }
-  .student-item:hover { background: var(--card); }
-  .student-item.active {
-    background: var(--card2);
-    border-color: var(--border2);
-  }
-  .student-avatar {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 600;
-    flex-shrink: 0;
-    color: #fff;
-    letter-spacing: 0.03em;
-  }
-  .student-name-label {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--text);
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .student-delete {
-    opacity: 0;
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: opacity 0.15s, color 0.15s;
-  }
-  .student-item:hover .student-delete { opacity: 1; }
-  .student-delete:hover { color: var(--c1); }
-
-  #add-student-btn {
-    margin: 0 10px 10px;
-    padding: 9px;
-    background: none;
-    border: 1px dashed var(--border2);
-    border-radius: 10px;
-    color: var(--muted);
-    font-family: var(--font-body);
-    font-size: 0.82rem;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  #add-student-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(91,141,238,0.06);
-  }
-
-  /* ── MAIN ── */
   #main {
     flex: 1;
     display: flex;
@@ -189,24 +76,15 @@
     transition: all 0.15s;
     letter-spacing: 0.01em;
   }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent2); }
   .btn-ghost {
     background: var(--card);
     border: 1px solid var(--border2);
     color: var(--muted);
   }
   .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
-  .btn-success { background: var(--c5); color: #0d1a17; }
-  .btn-success:hover { filter: brightness(1.1); }
 
-  #workspace {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
+  #workspace { flex: 1; display: flex; overflow: hidden; }
 
-  /* ── EDITOR PANEL ── */
   #editor-panel {
     width: 380px;
     min-width: 340px;
@@ -245,16 +123,9 @@
   .field-group input[type="text"]:focus { border-color: var(--accent); }
   .field-group input[type="text"]::placeholder { color: var(--muted); }
 
-  /* Slider row */
   .slider-block { display: flex; flex-direction: column; gap: 8px; }
-  .slider-header {
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .slider-label {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--text);
-  }
+  .slider-header { display: flex; align-items: center; justify-content: space-between; }
+  .slider-label { font-size: 0.82rem; font-weight: 500; color: var(--text); }
   .slider-badge {
     font-size: 0.72rem;
     font-weight: 600;
@@ -285,16 +156,8 @@
   }
   input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); }
 
-  .divider {
-    height: 1px;
-    background: var(--border);
-  }
+  .divider { height: 1px; background: var(--border); }
 
-  #editor-actions {
-    display: flex; gap: 10px;
-  }
-
-  /* ── PREVIEW PANEL ── */
   #preview-panel {
     flex: 1;
     overflow-y: auto;
@@ -307,7 +170,6 @@
   #preview-panel::-webkit-scrollbar { width: 6px; }
   #preview-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-  /* ── REPORT CARD ── */
   #report-card {
     width: 100%;
     max-width: 580px;
@@ -327,7 +189,6 @@
     justify-content: space-between;
     gap: 16px;
   }
-  .rc-header-left {}
   .rc-school {
     font-size: 0.68rem;
     font-weight: 600;
@@ -342,11 +203,7 @@
     color: var(--text);
     line-height: 1.1;
   }
-  .rc-date {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-top: 6px;
-  }
+  .rc-date { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
   .rc-avatar {
     width: 52px; height: 52px;
     border-radius: 50%;
@@ -366,7 +223,6 @@
     padding: 14px 8px;
     text-align: center;
     border-right: 1px solid var(--border);
-    position: relative;
   }
   .rc-score-cell:last-child { border-right: none; }
   .rc-score-icon { font-size: 1.1rem; margin-bottom: 4px; }
@@ -387,16 +243,8 @@
 
   .rc-body { padding: 26px 32px 30px; display: flex; flex-direction: column; gap: 20px; }
 
-  .rc-section {}
-  .rc-section-header {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 8px;
-  }
-  .rc-section-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  .rc-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .rc-section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .rc-section-title {
     font-size: 0.68rem;
     font-weight: 700;
@@ -405,13 +253,8 @@
     color: var(--muted);
     flex: 1;
   }
-  .rc-section-stars {
-    display: flex; gap: 2px;
-  }
-  .rc-section-star {
-    width: 8px; height: 8px;
-    border-radius: 2px;
-  }
+  .rc-section-stars { display: flex; gap: 2px; }
+  .rc-section-star { width: 8px; height: 8px; border-radius: 2px; }
   .rc-section-text {
     font-size: 0.88rem;
     color: #c8cfe8;
@@ -428,11 +271,7 @@
     align-items: center;
     justify-content: space-between;
   }
-  .rc-footer-text {
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-style: italic;
-  }
+  .rc-footer-text { font-size: 0.72rem; color: var(--muted); font-style: italic; }
   #copy-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 16px;
@@ -449,7 +288,6 @@
   #copy-btn:hover { color: var(--text); border-color: var(--accent); }
   #copy-btn.copied { color: var(--c5); border-color: var(--c5); }
 
-  /* ── TOAST ── */
   #toast {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(20px);
@@ -464,29 +302,8 @@
     pointer-events: none;
     z-index: 100;
   }
-  #toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ── EMPTY STATE ── */
-  #empty-state {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 12px;
-    color: var(--muted);
-    text-align: center;
-    padding: 40px;
-  }
-  #empty-state.show { display: flex; }
-  #empty-state .es-icon { font-size: 3rem; opacity: 0.4; }
-  #empty-state h3 { font-family: var(--font-display); font-size: 1.2rem; color: var(--text); }
-  #empty-state p { font-size: 0.83rem; max-width: 260px; }
-
-  /* scrollbar global */
   * { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
 
   .back-link {
@@ -510,44 +327,22 @@
     border: 1px solid rgba(255,255,255,0.18);
     transition: background 0.2s ease, transform 0.2s ease;
   }
-  .back-link:hover {
-    background: rgba(0,0,0,0.78);
-    transform: translateX(-2px);
-  }
+  .back-link:hover { background: rgba(0,0,0,0.78); transform: translateX(-2px); }
 </style>
 </head>
 <body>
-<a class="back-link" href="../">← Tool Hub</a>
+<a class="back-link" href="../">&#8592; Tool Hub</a>
 
-<!-- SIDEBAR -->
-<aside id="sidebar">
-  <div id="sidebar-header">
-    <h2>Boletim</h2>
-    <p>Gerador de Relatórios</p>
-  </div>
-  <div id="student-list"></div>
-  <button id="add-student-btn">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-    Adicionar Aluno
-  </button>
-</aside>
-
-<!-- MAIN -->
 <main id="main">
   <div id="topbar">
     <div id="topbar-title">Gerador de <span>Boletim</span></div>
-    <div style="display:flex;gap:10px;">
-      <button class="btn btn-ghost" id="regen-btn">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5A4.5 4.5 0 0111 4M11 4V1.5M11 4H8.5M11 6.5A4.5 4.5 0 012 9M2 9v2.5M2 9h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Regenerar Texto
-      </button>
-    </div>
+    <button class="btn btn-ghost" id="regen-btn">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5A4.5 4.5 0 0111 4M11 4V1.5M11 4H8.5M11 6.5A4.5 4.5 0 012 9M2 9v2.5M2 9h2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Regenerar Texto
+    </button>
   </div>
 
   <div id="workspace">
-    <!-- EDITOR -->
     <div id="editor-panel">
       <div class="field-group">
         <label>Nome do Aluno(a)</label>
@@ -558,7 +353,7 @@
 
       <div class="slider-block">
         <div class="slider-header">
-          <span class="slider-label">📚 Vocabulário</span>
+          <span class="slider-label">&#128218; Vocabul&#225;rio</span>
           <span class="slider-badge" id="badge-vocab">Excelente</span>
         </div>
         <input type="range" id="sl-vocab" min="1" max="5" value="5">
@@ -566,7 +361,7 @@
 
       <div class="slider-block">
         <div class="slider-header">
-          <span class="slider-label">📝 Gramática</span>
+          <span class="slider-label">&#128221; Gram&#225;tica</span>
           <span class="slider-badge" id="badge-grammar">Excelente</span>
         </div>
         <input type="range" id="sl-grammar" min="1" max="5" value="5">
@@ -574,7 +369,7 @@
 
       <div class="slider-block">
         <div class="slider-header">
-          <span class="slider-label">🌟 Comportamento</span>
+          <span class="slider-label">&#11088; Comportamento</span>
           <span class="slider-badge" id="badge-behavior">Excelente</span>
         </div>
         <input type="range" id="sl-behavior" min="1" max="5" value="5">
@@ -582,7 +377,7 @@
 
       <div class="slider-block">
         <div class="slider-header">
-          <span class="slider-label">🇧🇷 Uso de Português</span>
+          <span class="slider-label">&#127463;&#127479; Uso de Portugu&#234;s</span>
           <span class="slider-badge" id="badge-port">Excelente</span>
         </div>
         <input type="range" id="sl-port" min="1" max="5" value="5">
@@ -590,35 +385,25 @@
 
       <div class="slider-block">
         <div class="slider-header">
-          <span class="slider-label">📋 Tarefas de Casa</span>
+          <span class="slider-label">&#128203; Tarefas de Casa</span>
           <span class="slider-badge" id="badge-homework">Excelente</span>
         </div>
         <input type="range" id="sl-homework" min="1" max="5" value="5">
       </div>
-
-      <div class="divider"></div>
-
-      <div id="editor-actions">
-        <button class="btn btn-primary" id="save-btn" style="flex:1;">Salvar Aluno</button>
-      </div>
     </div>
 
-    <!-- PREVIEW -->
     <div id="preview-panel">
       <div id="report-card">
         <div class="rc-header">
           <div class="rc-header-left">
-            <div class="rc-school">Relatório de Desempenho</div>
-            <div class="rc-student" id="rc-name">—</div>
+            <div class="rc-school">Relat&#243;rio de Desempenho</div>
+            <div class="rc-student" id="rc-name">&#8212;</div>
             <div class="rc-date" id="rc-date"></div>
           </div>
           <div class="rc-avatar" id="rc-avatar"></div>
         </div>
-
         <div class="rc-scores" id="rc-scores"></div>
-
         <div class="rc-body" id="rc-body"></div>
-
         <div class="rc-footer">
           <span class="rc-footer-text">Gerado pelo professor(a)</span>
           <button id="copy-btn">
@@ -631,16 +416,14 @@
   </div>
 </main>
 
-<div id="toast">✓ Copiado com sucesso!</div>
+<div id="toast"></div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────────────────
-
 const RATINGS = {
   1: "Precisa melhorar muito",
   2: "Precisa melhorar",
   3: "Regular",
-  4: "Bom",
+  4: "Muito Bom",
   5: "Excelente"
 };
 
@@ -659,544 +442,439 @@ const AVATAR_COLORS = [
 const COMMENTS = {
   vocab: {
     1: [
-      "Seu vocabulário está muito limitado, tornando a comunicação básica um desafio constante.",
-      "É urgente que você invista em memorizar novas palavras para conseguir se expressar com mais clareza.",
-      "A escassez de vocabulário está impedindo o seu progresso e requer atenção imediata.",
-      "Você encontra dificuldades frequentes para encontrar as palavras certas, o que compromete a comunicação.",
-      "Seu repertório de palavras é muito restrito para o nível esperado nesta etapa do curso.",
-      "Recomendo fortemente o uso de flashcards e listas de vocabulário para superar essa lacuna.",
-      "Sem uma base de vocabulário mais sólida, fica difícil avançar para conteúdos mais complexos.",
-      "Você precisa criar o hábito de anotar e revisar palavras novas diariamente."
+      "O vocabul\u00e1rio ainda \u00e9 muito limitado, dificultando at\u00e9 situa\u00e7\u00f5es b\u00e1sicas de comunica\u00e7\u00e3o. Uma boa estrat\u00e9gia \u00e9 reservar 10 minutos por dia para revisar palavras novas usando aplicativos como Anki ou Quizlet.",
+      "A escassez de palavras est\u00e1 impedindo o progresso de forma significativa. Manter um caderno de vocabul\u00e1rio e anotar pelo menos cinco palavras novas por aula pode fazer uma grande diferen\u00e7a.",
+      "A dificuldade em encontrar as palavras certas compromete muito a comunica\u00e7\u00e3o em ingl\u00eas. Criar listas tem\u00e1ticas de vocabul\u00e1rio e revi\u00e1-las semanalmente pode ajudar bastante.",
+      "O repert\u00f3rio de palavras ainda est\u00e1 muito restrito para o n\u00edvel esperado nesta etapa. Ler textos simples em ingl\u00eas toda semana \u00e9 um \u00f3timo come\u00e7o para absorver palavras de forma natural.",
+      "Sem uma base vocabular mais s\u00f3lida, fica dif\u00edcil avan\u00e7ar para conte\u00fados mais complexos. O uso di\u00e1rio de flashcards \u00e9 uma das formas mais eficazes de superar essa lacuna.",
+      "A falta de variedade de palavras limita muito a express\u00e3o em ingl\u00eas. Assistir a v\u00eddeos curtos em ingl\u00eas com legendas pode ajudar a expandir o repert\u00f3rio de forma envolvente.",
+      "O vocabul\u00e1rio atual torna a comunica\u00e7\u00e3o muito dif\u00edcil e exige aten\u00e7\u00e3o imediata. Criar o h\u00e1bito de anotar e revisar todas as palavras novas que aparecem nas aulas \u00e9 fundamental nesse momento.",
+      "O repert\u00f3rio precisa ser ampliado com urg\u00eancia para que o aprendizado avan\u00e7e. Repetir palavras novas em voz alta e us\u00e1-las em frases pr\u00f3prias \u00e9 uma excelente forma de fixa\u00e7\u00e3o."
     ],
     2: [
-      "Seu vocabulário cobre situações básicas, mas precisa ser ampliado para progredir no curso.",
-      "Você se faz entender, mas comete erros frequentes de vocabulário que afetam a precisão.",
-      "É importante que você dedique mais tempo à aquisição de novas palavras e expressões.",
-      "Você tem potencial, mas a falta de variedade de vocabulário limita sua expressão.",
-      "Com um pouco mais de esforço no estudo de vocabulário, seu desempenho vai melhorar bastante.",
-      "Muitas vezes você recorre às mesmas palavras repetidamente, o que empobrece o discurso.",
-      "Recomendo a leitura em inglês para enriquecer seu repertório de forma natural.",
-      "Sua evolução depende diretamente de quanto você investir em aprender palavras novas."
+      "O vocabul\u00e1rio cobre situa\u00e7\u00f5es b\u00e1sicas, mas precisa ser ampliado para comunica\u00e7\u00e3o mais fluente. Ler not\u00edcias ou hist\u00f3rias curtas em ingl\u00eas toda semana pode expandir o repert\u00f3rio de forma natural.",
+      "A comunica\u00e7\u00e3o em ingl\u00eas \u00e9 poss\u00edvel, mas erros de vocabul\u00e1rio ainda afetam a precis\u00e3o. Rever as palavras aprendidas em aula e criar exemplos pr\u00f3prios com elas ajuda muito na fixa\u00e7\u00e3o.",
+      "A falta de variedade no vocabul\u00e1rio ainda limita a express\u00e3o. Tentar usar palavras novas em frases durante a semana acelera bastante a memoriza\u00e7\u00e3o.",
+      "H\u00e1 potencial claro, mas o vocabul\u00e1rio ainda precisa crescer para acompanhar o n\u00edvel do curso. Criar uma lista pessoal de palavras e revi\u00e1-la antes de cada aula \u00e9 uma \u00f3tima pr\u00e1tica.",
+      "Com mais dedica\u00e7\u00e3o ao vocabul\u00e1rio, o desempenho vai melhorar bastante. O uso de aplicativos de repeti\u00e7\u00e3o espa\u00e7ada, como Anki, \u00e9 uma das estrat\u00e9gias mais eficazes para isso.",
+      "As mesmas palavras acabam sendo usadas repetidamente, o que empobrece a comunica\u00e7\u00e3o. Escolher tr\u00eas palavras novas por semana e tent\u00e1-las em conversas reais j\u00e1 \u00e9 um grande avan\u00e7o.",
+      "A evolu\u00e7\u00e3o depende diretamente de quanto investimento houver em aprender palavras novas. A leitura em ingl\u00eas \u2014 mesmo que curta \u2014 \u00e9 uma das melhores formas de enriquecer o repert\u00f3rio.",
+      "O vocabul\u00e1rio precisa crescer para sustentar conversas mais longas e complexas. Assistir a s\u00e9ries ou v\u00eddeos curtos em ingl\u00eas \u00e9 uma forma divertida e eficaz de absorver novas palavras."
     ],
     3: [
-      "Seu vocabulário é adequado para a maioria das situações, mas ainda pode ser mais variado e preciso.",
-      "Você consegue se comunicar bem, mas tem dificuldades com palavras e expressões mais complexas.",
-      "Seu desempenho é consistente, mas há muito espaço para crescimento e aprimoramento.",
-      "Você está no caminho certo — continue expandindo seu vocabulário para chegar ao próximo nível.",
-      "A prática contínua com palavras novas vai fazer uma grande diferença na sua fluência.",
-      "Você compreende bem o vocabulário apresentado em aula, mas ainda depende de suporte para palavras novas.",
-      "Seu desempenho é sólido no básico, mas o vocabulário avançado ainda é um ponto de desenvolvimento.",
-      "Recomendo manter uma lista pessoal de palavras e revisá-las semanalmente."
+      "O vocabul\u00e1rio \u00e9 adequado para a maioria das situa\u00e7\u00f5es, mas ainda pode ser mais variado e preciso. Manter um di\u00e1rio pessoal em ingl\u00eas \u00e9 uma excelente forma de colocar palavras novas em pr\u00e1tica.",
+      "A comunica\u00e7\u00e3o acontece bem, mas h\u00e1 dificuldades com express\u00f5es mais complexas ou espec\u00edficas. Ler textos do n\u00edvel seguinte pode ser um bom desafio para ampliar o repert\u00f3rio.",
+      "O desempenho \u00e9 consistente, mas h\u00e1 espa\u00e7o para crescimento no vocabul\u00e1rio. Criar conex\u00f5es entre palavras novas e situa\u00e7\u00f5es do dia a dia ajuda muito na memoriza\u00e7\u00e3o a longo prazo.",
+      "O vocabul\u00e1rio apresentado em aula \u00e9 bem assimilado, mas h\u00e1 depend\u00eancia de suporte para palavras novas. Expor-se ao ingl\u00eas fora da sala \u2014 por filmes, podcasts ou leitura \u2014 pode fazer uma grande diferen\u00e7a.",
+      "O desempenho \u00e9 s\u00f3lido no b\u00e1sico, mas o vocabul\u00e1rio mais avan\u00e7ado ainda est\u00e1 em desenvolvimento. Separar 15 minutos por semana para revisar palavras do n\u00edvel seguinte pode acelerar muito a evolu\u00e7\u00e3o.",
+      "A comunica\u00e7\u00e3o funciona bem, mas a escolha de palavras poderia ser mais variada e precisa. Experimentar parafrasear frases conhecidas usando sin\u00f4nimos \u00e9 uma \u00f3tima forma de enriquecer o vocabul\u00e1rio.",
+      "O caminho est\u00e1 certo \u2014 continuar expandindo o vocabul\u00e1rio \u00e9 o pr\u00f3ximo passo natural. Ouvir podcasts em ingl\u00eas para iniciantes \u00e9 uma forma pr\u00e1tica de ampliar o repert\u00f3rio sem esfor\u00e7o excessivo.",
+      "A compreens\u00e3o do vocabul\u00e1rio em aula \u00e9 boa, mas a produ\u00e7\u00e3o ainda pode ser mais rica. Praticar escrita livre em ingl\u00eas \u2014 mesmo que curta \u2014 ajuda a usar as palavras de forma mais ativa."
     ],
     4: [
-      "Seu vocabulário é amplo e você o utiliza com segurança e naturalidade na maioria das situações.",
-      "Você demonstra um ótimo domínio de palavras e expressões, se comunicando com clareza e precisão.",
-      "Raramente você precisa de ajuda para encontrar a palavra certa — isso é um ótimo sinal.",
-      "Seu vocabulário sólido reflete o compromisso que você tem com seu aprendizado.",
-      "Você já domina um repertório rico e está pronto para explorar vocabulário ainda mais avançado.",
-      "A forma como você usa as palavras demonstra maturidade linguística e esforço contínuo.",
-      "Seu vocabulário está claramente acima da média da turma — continue assim.",
-      "Com esse nível de vocabulário, sua fluência vai evoluir muito rapidamente."
+      "O vocabul\u00e1rio \u00e9 amplo e usado com seguran\u00e7a na maioria das situa\u00e7\u00f5es, mas ainda h\u00e1 espa\u00e7o para crescer. Para alcan\u00e7ar o n\u00edvel m\u00e1ximo, vale explorar express\u00f5es idiom\u00e1ticas e collocations mais avan\u00e7ados.",
+      "H\u00e1 \u00f3timo dom\u00ednio de palavras e express\u00f5es, com comunica\u00e7\u00e3o clara e precisa. Para ir al\u00e9m, incluir vocabul\u00e1rio formal e acad\u00eamico nas produ\u00e7\u00f5es pode enriquecer ainda mais a express\u00e3o.",
+      "Raramente h\u00e1 necessidade de buscar ajuda para encontrar a palavra certa \u2014 isso \u00e9 muito positivo. Para dar o pr\u00f3ximo passo, escrever textos mais longos ajuda a testar e expandir os limites do vocabul\u00e1rio.",
+      "O repert\u00f3rio \u00e9 rico e reflete comprometimento genuino com o aprendizado, mas ainda tem espa\u00e7o para crescer. Para aprimorar ainda mais, explorar palavras em contextos diferentes \u2014 como literatura ou not\u00edcias \u2014 pode fazer a diferen\u00e7a.",
+      "O vocabul\u00e1rio est\u00e1 claramente acima da m\u00e9dia e contribui para uma comunica\u00e7\u00e3o fluente. O pr\u00f3ximo desafio \u00e9 usar palavras menos frequentes com a mesma naturalidade j\u00e1 demonstrada com as mais comuns.",
+      "A forma como as palavras s\u00e3o utilizadas demonstra maturidade lingu\u00edstica e esfor\u00e7o consistente. Para crescer ainda mais, vale prestar aten\u00e7\u00e3o em como falantes nativos combinam palavras em contextos reais.",
+      "O vocabul\u00e1rio \u00e9 s\u00f3lido e quase nunca compromete a comunica\u00e7\u00e3o, mas a excel\u00eancia exige mais. O foco agora pode ser reduzir repeti\u00e7\u00f5es e variar mais as escolhas lexicais.",
+      "Com esse n\u00edvel de vocabul\u00e1rio, a flu\u00eancia pode avan\u00e7ar rapidamente. Para consolidar e ir al\u00e9m, tentar usar palavras novas logo ap\u00f3s aprender \u00e9 a melhor forma de torn\u00e1-las permanentes."
     ],
     5: [
-      "Seu vocabulário é rico, variado e sofisticado — você se comunica com fluência e precisão impressionantes.",
-      "Você tem um domínio excepcional das palavras, usando-as de forma criativa e sempre no contexto certo.",
-      "Você se destaca pelo uso preciso e diversificado do vocabulário, digno de muito reconhecimento.",
-      "Seu conhecimento lexical é impressionante e reflete anos de dedicação ao aprendizado.",
-      "Você usa o vocabulário com uma desenvoltura que eleva toda a sua comunicação a um nível superior.",
-      "Sua escolha de palavras é sempre precisa, rica e adequada ao contexto — parabéns!",
-      "Você tem um controle avançado do vocabulário que coloca você entre os melhores da turma.",
-      "Seu nível de vocabulário é uma das suas maiores forças — continue desenvolvendo essa habilidade."
+      "O vocabul\u00e1rio \u00e9 rico, variado e sofisticado \u2014 a comunica\u00e7\u00e3o acontece com flu\u00eancia e precis\u00e3o impressionantes.",
+      "H\u00e1 dom\u00ednio excepcional das palavras, usadas de forma criativa e sempre no contexto certo \u2014 parab\u00e9ns!",
+      "A precis\u00e3o e a diversidade no uso do vocabul\u00e1rio s\u00e3o destaque no desempenho \u2014 resultado de muito esfor\u00e7o.",
+      "O conhecimento lexical \u00e9 impressionante e reflete dedica\u00e7\u00e3o intensa ao aprendizado do idioma.",
+      "As palavras s\u00e3o usadas com desenvoltura que eleva toda a comunica\u00e7\u00e3o a um n\u00edvel avan\u00e7ado \u2014 excelente!",
+      "A escolha de palavras \u00e9 sempre precisa, rica e adequada ao contexto \u2014 um exemplo para toda a turma.",
+      "O controle avan\u00e7ado do vocabul\u00e1rio \u00e9 uma das maiores for\u00e7as no aprendizado \u2014 continue desenvolvendo essa habilidade.",
+      "O n\u00edvel de vocabul\u00e1rio alcan\u00e7ado \u00e9 resultado de muito esfor\u00e7o e dedica\u00e7\u00e3o \u2014 parab\u00e9ns pelo resultado!"
     ]
   },
   grammar: {
     1: [
-      "Sua compreensão das regras gramaticais é muito limitada, dificultando bastante a construção de frases.",
-      "Erros gramaticais graves e frequentes prejudicam a clareza e a coerência das suas mensagens.",
-      "Você tem grande dificuldade em aplicar até mesmo as regras básicas de gramática do idioma.",
-      "É essencial que você revise os fundamentos gramaticais com urgência para poder progredir.",
-      "A estrutura das suas frases é constantemente incorreta, o que compromete a compreensão.",
-      "Sem melhorar a gramática, será muito difícil avançar para os próximos conteúdos do curso.",
-      "Recomendo fortemente exercícios gramaticais extras para consolidar os pontos mais básicos.",
-      "Você precisará de um esforço considerável para superar as lacunas gramaticais identificadas."
+      "A compreens\u00e3o das regras gramaticais ainda \u00e9 muito limitada, dificultando a constru\u00e7\u00e3o de frases coerentes. Rever os fundamentos com um material de apoio do n\u00edvel b\u00e1sico \u00e9 o passo mais importante agora.",
+      "Erros gramaticais graves e frequentes comprometem a clareza das mensagens. Praticar exerc\u00edcios curtos de gram\u00e1tica todos os dias, come\u00e7ando pelas estruturas mais simples, pode gerar avan\u00e7os r\u00e1pidos.",
+      "H\u00e1 grande dificuldade em aplicar at\u00e9 mesmo as regras b\u00e1sicas do idioma. Usar um caderno para anotar as regras e exemplos explicados em aula pode facilitar bastante a revis\u00e3o em casa.",
+      "A estrutura das frases \u00e9 constantemente incorreta, o que dificulta muito a comunica\u00e7\u00e3o. Praticar a constru\u00e7\u00e3o de frases simples \u2014 sujeito, verbo, complemento \u2014 \u00e9 um bom ponto de partida.",
+      "Sem avan\u00e7ar na gram\u00e1tica, ser\u00e1 dif\u00edcil progredir para os pr\u00f3ximos conte\u00fados. Pedir exerc\u00edcios extras de revis\u00e3o ao professor pode ajudar a identificar e corrigir os erros mais recorrentes.",
+      "Os erros gramaticais s\u00e3o t\u00e3o frequentes que afetam a compreens\u00e3o do que \u00e9 dito. Dedicar tempo de estudo extra \u00e0 gram\u00e1tica b\u00e1sica \u2014 verbo to be, presente simples \u2014 \u00e9 fundamental nesse momento.",
+      "As lacunas gramaticais identificadas precisam de aten\u00e7\u00e3o urgente e consistente. Praticar com v\u00eddeos curtos de gram\u00e1tica no YouTube, revisando uma regra por semana, \u00e9 uma boa estrat\u00e9gia.",
+      "A aplica\u00e7\u00e3o das regras gramaticais ainda \u00e9 um grande desafio. Revisar as anota\u00e7\u00f5es de aula em casa, tentando reformular as frases com erro, \u00e9 um exerc\u00edcio muito eficaz."
     ],
     2: [
-      "Você consegue se comunicar minimamente, mas comete erros gramaticais que prejudicam a clareza.",
-      "A estrutura das suas frases é inconsistente e precisa de atenção e prática contínua.",
-      "É importante revisar as regras gramaticais para conseguir se comunicar com mais precisão e confiança.",
-      "Você demonstra conhecimento básico, mas tem dificuldade em aplicar as regras de forma consistente.",
-      "Com foco nas regras fundamentais, seu desempenho vai evoluir consideravelmente.",
-      "Muitos dos erros que você comete são os mesmos repetidamente — revise e pratique mais.",
-      "Seu progresso será acelerado com exercícios específicos nos pontos onde você mais erra.",
-      "Ainda há confusão entre estruturas básicas que precisam ser consolidadas."
+      "A comunica\u00e7\u00e3o \u00e9 poss\u00edvel, mas erros gramaticais comprometem a precis\u00e3o com frequ\u00eancia. Identificar os erros mais repetidos e criar um guia pessoal de regras pode ajudar muito na corre\u00e7\u00e3o.",
+      "A estrutura das frases ainda \u00e9 inconsistente e precisa de pr\u00e1tica cont\u00ednua. Escrever pequenos par\u00e1grafos em ingl\u00eas toda semana \u00e9 uma forma eficiente de consolidar as regras na pr\u00e1tica.",
+      "H\u00e1 conhecimento b\u00e1sico, mas dificuldade em aplicar as regras de forma consistente. Fazer exerc\u00edcios de completar frases com foco nas estruturas que mais geram d\u00favida pode acelerar o progresso.",
+      "Com foco nas regras fundamentais, o desempenho pode evoluir consideravelmente. Rever a gram\u00e1tica de forma sistem\u00e1tica \u2014 uma estrutura por semana \u2014 \u00e9 uma abordagem que funciona muito bem.",
+      "Os mesmos erros se repetem com frequ\u00eancia \u2014 revis\u00e3o e pr\u00e1tica s\u00e3o fundamentais. Pedir ao professor que marque os erros nos textos escritos \u00e9 uma excelente forma de identificar padr\u00f5es problem\u00e1ticos.",
+      "O progresso vai ser acelerado com exerc\u00edcios espec\u00edficos nos pontos que mais geram dificuldade. Usar apps de gram\u00e1tica interativos pode tornar a pr\u00e1tica mais din\u00e2mica e eficiente.",
+      "Ainda h\u00e1 confus\u00e3o entre estruturas b\u00e1sicas que precisam ser consolidadas. Praticar a produ\u00e7\u00e3o oral com aten\u00e7\u00e3o nas estruturas \u2014 mesmo que devagar \u2014 ajuda a criar automatismo gramatical.",
+      "A gram\u00e1tica ainda dificulta uma comunica\u00e7\u00e3o mais clara e natural. Ouvir e repetir frases em ingl\u00eas em voz alta \u00e9 uma t\u00e9cnica excelente para internalizar as estruturas corretas."
     ],
     3: [
-      "Sua gramática é adequada para a maioria das situações, mas ainda ocorrem erros em construções complexas.",
-      "Você estrutura frases corretamente na maior parte do tempo, mas ainda comete deslizes ocasionais.",
-      "Seu desempenho é consistente, mas há espaço para aprimorar a precisão e a naturalidade das construções.",
-      "Você está no caminho certo — a prática contínua é essencial para consolidar as regras.",
-      "Sua gramática permite uma comunicação eficiente, mas a fluência pode ser melhorada com mais estudo.",
-      "Você entende as regras, mas às vezes hesita na aplicação — mais prática oral vai ajudar bastante.",
-      "Com um pouco mais de atenção aos detalhes gramaticais, seu nível vai dar um salto significativo.",
-      "Seu desempenho é sólido, mas você ainda depende de verificação para construções mais elaboradas."
+      "A gram\u00e1tica \u00e9 adequada para a maioria das situa\u00e7\u00f5es, mas erros ainda ocorrem em constru\u00e7\u00f5es complexas. Prestar aten\u00e7\u00e3o especial a phrasal verbs e tempos compostos pode dar um salto significativo no n\u00edvel.",
+      "Frases s\u00e3o constru\u00eddas corretamente na maior parte do tempo, mas deslizes ocorrem ocasionalmente. Rever as estruturas que mais causam erros \u2014 como question tags e condicionais \u2014 pode ajudar a elimin\u00e1-los.",
+      "O desempenho \u00e9 consistente, mas h\u00e1 espa\u00e7o para aprimorar a precis\u00e3o e a naturalidade das constru\u00e7\u00f5es. Praticar a reformula\u00e7\u00e3o de textos \u2014 reescrever par\u00e1grafos com estruturas variadas \u2014 \u00e9 um exerc\u00edcio muito \u00fatil.",
+      "As regras s\u00e3o entendidas, mas h\u00e1 hesita\u00e7\u00e3o na aplica\u00e7\u00e3o \u2014 mais pr\u00e1tica oral vai ajudar bastante. Participar das atividades de fala em aula com mais frequ\u00eancia \u00e9 uma \u00f3tima forma de criar automatismo.",
+      "A gram\u00e1tica permite comunica\u00e7\u00e3o eficiente, mas a flu\u00eancia pode ser aprimorada com mais pr\u00e1tica. Escrever pequenos textos em ingl\u00eas e pedir feedback ao professor \u00e9 uma forma concreta de identificar pontos a melhorar.",
+      "Com um pouco mais de aten\u00e7\u00e3o aos detalhes gramaticais, o n\u00edvel pode dar um salto significativo. Manter um caderno de erros \u2014 anotando a forma correta ao lado de cada erro \u2014 \u00e9 uma estrat\u00e9gia muito eficaz.",
+      "O desempenho \u00e9 s\u00f3lido, mas ainda h\u00e1 depend\u00eancia de verifica\u00e7\u00e3o para constru\u00e7\u00f5es mais elaboradas. Tentar construir frases complexas sem apoio em aula \u00e9 uma forma de testar e fortalecer a gram\u00e1tica.",
+      "A gram\u00e1tica est\u00e1 bem estabelecida para o n\u00edvel atual, mas o pr\u00f3ximo passo exige mais precis\u00e3o. Ler textos um pouco acima do n\u00edvel atual, prestando aten\u00e7\u00e3o nas estruturas usadas, pode acelerar muito o progresso."
     ],
     4: [
-      "Sua gramática é sólida e você constrói frases claras, corretas e cada vez mais complexas.",
-      "Você demonstra ótimo domínio da estrutura da língua, se expressando com clareza e segurança.",
-      "Você raramente comete erros gramaticais e usa as regras de forma natural e confiante.",
-      "Seu conhecimento gramatical é excelente e reflete o comprometimento com o aprendizado.",
-      "Você tem uma base gramatical muito forte e está pronto para explorar estruturas mais avançadas.",
-      "A precisão gramatical das suas falas e textos está claramente acima da média da turma.",
-      "Você domina as estruturas do idioma com desenvoltura — isso faz toda a diferença na comunicação.",
-      "Sua gramática é um dos seus pontos fortes e contribui muito para sua fluência geral."
+      "A gram\u00e1tica \u00e9 s\u00f3lida e as frases s\u00e3o constru\u00eddas de forma clara e correta na grande maioria das situa\u00e7\u00f5es. Para alcan\u00e7ar a excel\u00eancia, vale trabalhar a naturalidade em constru\u00e7\u00f5es mais complexas, como voz passiva e discurso indireto.",
+      "H\u00e1 \u00f3timo dom\u00ednio da estrutura da l\u00edngua, com express\u00e3o clara e segura \u2014 mas ainda h\u00e1 espa\u00e7o para refinar. Explorar o uso de conectores e organizadores textuais pode tornar a comunica\u00e7\u00e3o ainda mais sofisticada.",
+      "Erros gramaticais s\u00e3o raros e as regras s\u00e3o usadas com muita confian\u00e7a. O pr\u00f3ximo passo \u00e9 praticar estruturas mais avan\u00e7adas, como condicionais complexas e tempos verbais menos frequentes.",
+      "O conhecimento gramatical \u00e9 excelente e reflete muito comprometimento com o aprendizado. Para chegar ao pr\u00f3ximo n\u00edvel, vale prestar aten\u00e7\u00e3o \u00e0 gram\u00e1tica em textos aut\u00eanticos \u2014 livros, artigos, filmes.",
+      "A base gramatical \u00e9 muito forte e h\u00e1 condi\u00e7\u00f5es de explorar estruturas mais avan\u00e7adas. Praticar a escrita formal e acad\u00eamica \u00e9 uma excelente forma de aprofundar o dom\u00ednio gramatical.",
+      "A precis\u00e3o gramatical est\u00e1 claramente acima da m\u00e9dia da turma, o que \u00e9 muito positivo. Para crescer ainda mais, tentar usar estruturas novas com inten\u00e7\u00e3o \u2014 em vez de s\u00f3 as j\u00e1 dominadas \u2014 pode ampliar o repert\u00f3rio gramatical.",
+      "As estruturas do idioma s\u00e3o dominadas com muita desenvoltura \u2014 isso faz diferen\u00e7a real na comunica\u00e7\u00e3o. Rever esporadicamente as estruturas que menos aparecem na fala ajuda a mant\u00ea-las ativas.",
+      "A gram\u00e1tica \u00e9 um dos pontos fortes e contribui muito para a flu\u00eancia geral. Para refinar ainda mais, prestar aten\u00e7\u00e3o nos erros residuais \u2014 pequenos deslizes que ainda ocorrem \u2014 \u00e9 o foco ideal agora."
     ],
     5: [
-      "Sua gramática é impecável, permitindo uma comunicação precisa, elegante e completamente natural.",
-      "Você tem um domínio excepcional das regras e estruturas do idioma — digno de grande reconhecimento.",
-      "Você se destaca pela precisão gramatical e pela riqueza das suas construções.",
-      "Seu conhecimento gramatical é impressionante e coloca você no topo da turma.",
-      "Você usa a gramática com uma fluidez que eleva toda a sua proficiência a um nível avançado.",
-      "Seus textos e falas demonstram gramática impecável mesmo em situações de comunicação espontânea.",
-      "Você tem controle pleno das estruturas do idioma — parabéns pelo esforço e dedicação.",
-      "Sua gramática é exemplar e serve de referência para toda a turma."
+      "A gram\u00e1tica \u00e9 impec\u00e1vel, permitindo comunica\u00e7\u00e3o precisa, elegante e completamente natural \u2014 resultado de muito esfor\u00e7o.",
+      "H\u00e1 dom\u00ednio excepcional das regras e estruturas do idioma \u2014 digno de grande reconhecimento e admira\u00e7\u00e3o.",
+      "A precis\u00e3o gramatical e a riqueza das constru\u00e7\u00f5es s\u00e3o destaque no desempenho \u2014 parab\u00e9ns pelo n\u00edvel alcan\u00e7ado!",
+      "O conhecimento gramatical \u00e9 impressionante e coloca o desempenho no topo da turma \u2014 continue assim!",
+      "A gram\u00e1tica \u00e9 usada com uma fluidez que eleva toda a profici\u00eancia a um n\u00edvel muito avan\u00e7ado \u2014 excelente!",
+      "Os textos e as falas demonstram gram\u00e1tica impec\u00e1vel mesmo em situa\u00e7\u00f5es de comunica\u00e7\u00e3o espont\u00e2nea \u2014 muito bem!",
+      "H\u00e1 controle pleno das estruturas do idioma em todos os contextos \u2014 parab\u00e9ns pelo esfor\u00e7o e pela dedica\u00e7\u00e3o!",
+      "A gram\u00e1tica exemplar \u00e9 uma das maiores for\u00e7as no desempenho e serve de refer\u00eancia para toda a turma."
     ]
   },
   behavior: {
     1: [
-      "Sua postura em sala de aula precisa de atenção urgente, pois está prejudicando seu aprendizado e o dos colegas.",
-      "O excesso de conversas paralelas e a agitação comprometem o ambiente e o andamento das aulas.",
-      "É fundamental que você se esforce para manter o foco e respeitar o espaço coletivo de aprendizado.",
-      "Sua atitude tem impactado negativamente a dinâmica da turma e precisa mudar.",
-      "Falta de respeito e disciplina em sala são pontos que precisam ser trabalhados com urgência.",
-      "Você demonstra dificuldade em seguir as regras da aula, o que prejudica sua própria evolução.",
-      "É preciso que você compreenda que o ambiente de sala de aula exige responsabilidade de todos.",
-      "Conversas fora de hora e falta de atenção são hábitos que precisam ser corrigidos imediatamente."
+      "A postura em sala de aula precisa de aten\u00e7\u00e3o urgente, pois est\u00e1 prejudicando o aprendizado de todos. Estabelecer uma meta pessoal de manter o foco por pelo menos 10 minutos seguidos pode ser um bom come\u00e7o.",
+      "O excesso de conversas paralelas e agita\u00e7\u00e3o compromete o ambiente de aprendizado. Combinar com o professor um sinal discreto para retomar o foco pode ajudar a criar consci\u00eancia sobre os momentos de distrac\u00e3o.",
+      "A postura atual tem impactado negativamente a din\u00e2mica da turma e precisa mudar. Sentar mais pr\u00f3ximo do professor durante as aulas pode ajudar a manter o foco e reduzir as distra\u00e7\u00f5es.",
+      "H\u00e1 dificuldade em seguir as regras da aula, o que prejudica a pr\u00f3pria evolu\u00e7\u00e3o. Conversar com o professor fora da aula sobre estrat\u00e9gias de foco pode abrir um caminho muito mais produtivo.",
+      "Conversas fora de hora e falta de aten\u00e7\u00e3o s\u00e3o h\u00e1bitos que precisam ser corrigidos com urg\u00eancia. Deixar o celular guardado durante a aula inteira \u00e9 uma mudan\u00e7a simples que faz uma diferen\u00e7a enorme.",
+      "O comportamento atual dificulta o aproveitamento do conte\u00fado e afeta os colegas ao redor. Tentar uma postura mais ativa \u2014 respondendo \u00e0s perguntas do professor \u2014 pode transformar o engajamento na aula.",
+      "A falta de respeito \u00e0s regras da aula \u00e9 um ponto que precisa ser trabalhado com seriedade. Refletir sobre o impacto do pr\u00f3prio comportamento nos colegas pode ser um exerc\u00edcio muito valioso.",
+      "A postura em sala est\u00e1 abaixo do esperado e exige uma mudan\u00e7a de atitude. Criar uma rotina de chegada \u2014 guardar o celular, abrir o caderno \u2014 pode ajudar a entrar no modo de estudo."
     ],
     2: [
-      "Sua participação em sala pode ser mais focada e disciplinada para aproveitar melhor as aulas.",
-      "Você consegue acompanhar as aulas, mas as conversas com os colegas acabam dispersando a todos.",
-      "Pequenas mudanças no seu comportamento fariam uma grande diferença no seu aprendizado.",
-      "Você tem potencial, mas a distração frequente impede que você aproveite todo o conteúdo.",
-      "Seria muito bom ver você mais engajado e menos distraído durante as explicações.",
-      "Você às vezes perde momentos importantes da aula por falta de atenção — vale prestar mais cuidado.",
-      "Com mais foco e disciplina, seu desempenho poderia melhorar consideravelmente.",
-      "Seu comportamento é aceitável, mas ainda há muito espaço para evoluir em termos de postura."
+      "A participa\u00e7\u00e3o em sala pode ser mais focada e consistente para aproveitar melhor as aulas. Tentar responder pelo menos uma pergunta por aula \u00e9 uma boa forma de aumentar o engajamento gradualmente.",
+      "O conte\u00fado \u00e9 acompanhado, mas as conversas com os colegas acabam dispersando a turma. Sentar pr\u00f3ximo a quem mant\u00e9m o foco pode ajudar a reduzir as distra\u00e7\u00f5es durante as explica\u00e7\u00f5es.",
+      "H\u00e1 potencial claro, mas a distrac\u00e3o frequente impede que todo o conte\u00fado seja aproveitado. Anotar os pontos principais durante a aula \u00e9 uma estrat\u00e9gia simples que ajuda a manter a aten\u00e7\u00e3o.",
+      "O comportamento \u00e9 aceit\u00e1vel, mas ainda h\u00e1 muito espa\u00e7o para evoluir em termos de postura. Estabelecer um desafio pessoal \u2014 como ficar uma aula inteira sem usar o celular \u2014 pode ser transformador.",
+      "Pequenas mudan\u00e7as de comportamento fariam uma grande diferen\u00e7a no aprendizado. Chegar \u00e0 aula com uma pergunta preparada pode aumentar o engajamento de forma natural.",
+      "Momentos importantes da aula s\u00e3o perdidos \u00e0s vezes por falta de aten\u00e7\u00e3o. Desenvolver o h\u00e1bito de fazer anota\u00e7\u00f5es durante as explica\u00e7\u00f5es \u00e9 uma \u00f3tima forma de manter o foco.",
+      "Com mais foco e disciplina, o desempenho poderia melhorar consideravelmente. Tentar manter contato visual com o professor durante as explica\u00e7\u00f5es pode ajudar muito a manter a concentra\u00e7\u00e3o.",
+      "O comportamento est\u00e1 melhorando, mas ainda h\u00e1 momentos de dispers\u00e3o que valem ser trabalhados. Pedir ao professor para ser chamado durante as atividades pode aumentar o senso de responsabilidade."
     ],
     3: [
-      "Sua participação é geralmente boa, mas você ainda se distrai ocasionalmente durante as atividades.",
-      "Você presta atenção na maior parte do tempo, mas pode se envolver ainda mais nas propostas da aula.",
-      "Seu comportamento é adequado, mas há espaço para uma postura ainda mais ativa e participativa.",
-      "Você consegue manter o foco, mas pode se beneficiar de uma maior concentração nos momentos-chave.",
-      "Sua postura é consistente, mas o engajamento com a aula pode ser mais ativo e entusiasmado.",
-      "Você respeita o ambiente da sala, mas às vezes se desconecta da dinâmica da aula.",
-      "Com uma atitude um pouco mais proativa, você aproveitaria muito mais as oportunidades de aprendizado.",
-      "Você é tranquilo e respeitoso, mas poderia participar mais das discussões e atividades."
+      "A participa\u00e7\u00e3o \u00e9 geralmente boa, mas h\u00e1 momentos de distrac\u00e3o durante as atividades. Participar mais ativamente das din\u00e2micas em grupo pode ajudar a manter o engajamento elevado durante toda a aula.",
+      "A aten\u00e7\u00e3o \u00e9 mantida na maior parte do tempo, mas h\u00e1 espa\u00e7o para um envolvimento ainda mais ativo. Tentar iniciar respostas sem esperar a vez pode ser uma forma de aumentar a participa\u00e7\u00e3o de forma natural.",
+      "A postura \u00e9 adequada, mas h\u00e1 espa\u00e7o para uma atitude ainda mais ativa e participativa. Fazer perguntas durante as aulas \u2014 mesmo que simples \u2014 demonstra engajamento e acelera o aprendizado.",
+      "O foco \u00e9 mantido, mas a concentra\u00e7\u00e3o pode aumentar nos momentos-chave da aula. Tentar rever as anota\u00e7\u00f5es logo ap\u00f3s a aula, ainda com o conte\u00fado fresco, pode ajudar muito na fixa\u00e7\u00e3o.",
+      "A postura \u00e9 consistente, mas o engajamento com a aula poderia ser mais entusiasmado. Encarar a aula com uma atitude de curiosidade \u2014 tentando descobrir algo novo em cada encontro \u2014 pode transformar a experi\u00eancia.",
+      "O ambiente de sala \u00e9 respeitado, mas h\u00e1 momentos de desconex\u00e3o com a din\u00e2mica da aula. Contribuir com exemplos pessoais durante as explica\u00e7\u00f5es \u00e9 uma forma eficaz de manter o engajamento.",
+      "Com uma atitude um pouco mais proativa, haveria muito mais aproveitamento das oportunidades de aprendizado. Tentar liderar ou iniciar discuss\u00f5es em atividades de grupo pode desenvolver tanto a participa\u00e7\u00e3o quanto o idioma.",
+      "A postura \u00e9 tranquila e respeitosa, mas poderia haver mais participa\u00e7\u00e3o nas discuss\u00f5es. Responder \u00e0s perguntas do professor \u2014 mesmo sem ter certeza \u2014 \u00e9 uma excelente forma de praticar e crescer."
     ],
     4: [
-      "Você demonstra excelente postura em sala de aula e participa de forma positiva e construtiva.",
-      "Sua educação e prestatividade contribuem para um ambiente de aprendizado mais agradável para todos.",
-      "Você está sempre engajado nas atividades propostas — isso reflete sua maturidade e responsabilidade.",
-      "Seu comportamento exemplar serve de inspiração para os colegas da turma.",
-      "Você é responsável, focado e tem uma atitude que favorece muito o seu próprio aprendizado.",
-      "Sua presença em sala é sempre positiva — você agrega tanto para o grupo quanto para você mesmo.",
-      "Você demonstra respeito consistente pelas regras e pelos colegas — parabéns pela maturidade.",
-      "Sua atitude em sala de aula é muito elogiável e contribui para um ambiente mais produtivo."
+      "A postura em sala de aula \u00e9 muito boa, com participa\u00e7\u00e3o positiva e construtiva na maioria das aulas. Para chegar ao n\u00edvel mais alto, vale tentar liderar mais momentos em grupo e incentivar os colegas tamb\u00e9m.",
+      "H\u00e1 muito engajamento e responsabilidade nas atividades propostas \u2014 isso reflete maturidade real. Para crescer ainda mais, participar das partes da aula que s\u00e3o mais desafiadoras pode fazer muita diferen\u00e7a.",
+      "O comportamento contribui para um ambiente melhor para todos na turma. O pr\u00f3ximo passo seria transformar esse engajamento em lideran\u00e7a \u2014 iniciando trocas e discuss\u00f5es de forma espont\u00e2nea.",
+      "O foco \u00e9 mantido com consist\u00eancia e a postura favorece muito o pr\u00f3prio aprendizado. Para chegar ao n\u00edvel de excel\u00eancia, manter esse engajamento nos momentos de maior cansa\u00e7o ou dificuldade \u00e9 o grande desafio.",
+      "A presen\u00e7a em sala \u00e9 sempre positiva e agrega tanto para o grupo quanto para o pr\u00f3prio aprendizado. Para ir al\u00e9m, assumir um papel mais ativo nas din\u00e2micas de grupo pode enriquecer ainda mais a experi\u00eancia.",
+      "H\u00e1 respeito consistente pelas regras e pelos colegas, o que \u00e9 muito valioso. Para alcan\u00e7ar o n\u00edvel de excel\u00eancia, vale tentar manter esse mesmo engajamento mesmo quando o conte\u00fado \u00e9 mais dif\u00edcil.",
+      "A atitude em sala \u00e9 muito elogiavel e contribui para um ambiente mais produtivo para todos. Tentar usar o ingl\u00eas em momentos espont\u00e2neos \u2014 n\u00e3o s\u00f3 quando solicitado \u2014 \u00e9 um bom pr\u00f3ximo passo.",
+      "O comportamento demonstra comprometimento real com o aprendizado. Para atingir o n\u00edvel mais alto, vale tentar engajar ainda mais durante as atividades de pr\u00e1tica oral e intera\u00e7\u00e3o."
     ],
     5: [
-      "Seu comportamento em sala é impecável — você demonstra respeito, foco e dedicação em todo momento.",
-      "Você é um exemplo de disciplina e postura para toda a turma — sua atitude eleva a energia da aula.",
-      "Sua participação é sempre ativa e construtiva, contribuindo enormemente para a dinâmica do grupo.",
-      "Sua maturidade e respeito em sala são dignos de muito reconhecimento e admiração.",
-      "Você tem sido um exemplo para os colegas pelo compromisso e seriedade com que leva o aprendizado.",
-      "Sua atitude positiva e engajada torna as aulas mais ricas e produtivas para todos.",
-      "Você combina entusiasmo com respeito — é uma combinação rara e muito valiosa em sala de aula.",
-      "Seu comportamento exemplar reflete o quanto você valoriza o seu próprio desenvolvimento."
+      "O comportamento em sala \u00e9 impec\u00e1vel \u2014 h\u00e1 respeito, foco e dedica\u00e7\u00e3o em cada momento da aula.",
+      "\u00c9 um exemplo de disciplina e postura para toda a turma \u2014 a atitude eleva a energia de cada aula.",
+      "A participa\u00e7\u00e3o \u00e9 sempre ativa e construtiva, contribuindo enormemente para a din\u00e2mica do grupo.",
+      "A maturidade e o respeito demonstrados em sala s\u00e3o dignos de muito reconhecimento e admira\u00e7\u00e3o.",
+      "O comprometimento e a seriedade com que o aprendizado \u00e9 encarado inspiram os colegas ao redor.",
+      "A atitude positiva e engajada torna as aulas mais ricas e produtivas para toda a turma \u2014 muito bem!",
+      "O entusiasmo \u00e9 combinado com respeito \u2014 uma combina\u00e7\u00e3o rara e muito valiosa em sala de aula.",
+      "O comportamento exemplar reflete o quanto o pr\u00f3prio desenvolvimento \u00e9 valorizado \u2014 parab\u00e9ns!"
     ]
   },
   port: {
     1: [
-      "O uso excessivo do português em sala está comprometendo sua imersão e dificultando seu progresso.",
-      "É essencial que você faça um esforço consciente para se comunicar em inglês durante as aulas.",
-      "O hábito de recorrer ao português impede o desenvolvimento natural da sua fluência.",
-      "Você precisa de uma mudança urgente nesse aspecto para não comprometer sua evolução no idioma.",
-      "A dependência do português em sala limita a prática tanto sua quanto dos seus colegas.",
-      "Entendo que é desafiador, mas falar apenas em inglês é fundamental para o seu aprendizado.",
-      "Quanto menos você usar o português, mais rápido você vai desenvolver confiança no idioma.",
-      "Mesmo para perguntas simples, tente sempre usar o inglês — isso faz uma diferença enorme."
+      "O uso excessivo do portugu\u00eas em sala est\u00e1 comprometendo a imers\u00e3o e dificultando o progresso. Tentar substituir palavras simples j\u00e1 conhecidas em ingl\u00eas \u2014 como 'yes', 'okay', 'I don't know' \u2014 pode ser um bom come\u00e7o.",
+      "\u00c9 essencial fazer um esfor\u00e7o consciente para se comunicar em ingl\u00eas durante as aulas. Uma boa estrat\u00e9gia \u00e9 combinar com o professor uma 'penalidade' divertida para cada vez que o portugu\u00eas escapar.",
+      "O h\u00e1bito de recorrer ao portugu\u00eas impede o desenvolvimento natural da flu\u00eancia. Praticar as frases mais usadas no dia a dia em ingl\u00eas \u2014 cumprimentos, pedidos de ajuda, perguntas \u2014 pode reduzir muito essa depend\u00eancia.",
+      "A depend\u00eancia do portugu\u00eas limita a pr\u00e1tica tanto pr\u00f3pria quanto dos colegas. Tentar formular qualquer d\u00favida primeiro em ingl\u00eas, mesmo que de forma imperfeita, j\u00e1 \u00e9 um grande avan\u00e7o.",
+      "Quanto menos o portugu\u00eas for usado em aula, mais r\u00e1pida ser\u00e1 a evolu\u00e7\u00e3o no idioma. Criar um pequeno gloss\u00e1rio de frases \u00fateis para usar na aula pode reduzir bastante a depend\u00eancia do portugu\u00eas.",
+      "O uso frequente do portugu\u00eas \u00e9 um h\u00e1bito que precisa mudar para que o aprendizado avan\u00e7e. Uma dica pr\u00e1tica \u00e9 tentar pensar em ingl\u00eas antes de falar \u2014 mesmo que por um segundo \u2014 para criar o h\u00e1bito.",
+      "A imers\u00e3o em ingl\u00eas \u00e9 uma das ferramentas mais poderosas do curso, e ela come\u00e7a em sala de aula. Escolher uma frase em ingl\u00eas por aula para usar com os colegas pode ajudar a criar o h\u00e1bito gradualmente.",
+      "Mesmo para perguntas simples, tentar usar o ingl\u00eas faz uma diferen\u00e7a enorme no aprendizado. Pedir ao professor para ensinar as frases mais \u00fateis em ingl\u00eas e pratic\u00e1-las toda aula \u00e9 uma \u00f3tima estrat\u00e9gia."
     ],
     2: [
-      "Você consegue se expressar em inglês, mas ainda recorre ao português com mais frequência do que o ideal.",
-      "É importante que você se esforce mais para usar o inglês como principal ferramenta de comunicação.",
-      "Você tem potencial para se comunicar em inglês, mas o uso do português ainda é um obstáculo.",
-      "Seu progresso pode ser acelerado com a redução do uso do português durante as aulas.",
-      "Tente se desafiar a pensar e responder sempre em inglês, mesmo que seja mais difícil.",
-      "Cada momento em que você escolhe o inglês ao invés do português é uma vitória importante.",
-      "Com mais comprometimento com o inglês em sala, sua fluência vai evoluir muito mais rápido.",
-      "O uso frequente do português é um hábito que pode ser mudado com determinação e prática."
+      "O ingl\u00eas \u00e9 usado para comunica\u00e7\u00e3o b\u00e1sica, mas o portugu\u00eas ainda aparece com frequ\u00eancia. Tentar expressar ideias em ingl\u00eas \u2014 mesmo que imperfeitas \u2014 \u00e9 muito mais produtivo do que recorrer ao portugu\u00eas.",
+      "H\u00e1 potencial para se comunicar em ingl\u00eas, mas o uso do portugu\u00eas ainda \u00e9 um obst\u00e1culo. Combinar com um colega de sala para se ajudarem a manter o ingl\u00eas durante as atividades pode ser muito eficaz.",
+      "O progresso pode ser acelerado com a redu\u00e7\u00e3o do uso do portugu\u00eas durante as aulas. Tentar usar sempre o ingl\u00eas quando h\u00e1 outra pessoa por perto para ouvir \u2014 a confian\u00e7a aumenta com a pr\u00e1tica.",
+      "O uso frequente do portugu\u00eas \u00e9 um h\u00e1bito que pode ser mudado com determina\u00e7\u00e3o. Cada vez que o portugu\u00eas 'escapar', tentar repetir a mesma ideia em ingl\u00eas logo em seguida \u00e9 uma \u00f3tima forma de corrigir.",
+      "Cada momento em que o ingl\u00eas \u00e9 escolhido em vez do portugu\u00eas \u00e9 uma conquista importante. Desafiar-se a passar uma aula inteira sem usar o portugu\u00eas pode ser muito motivador.",
+      "Com mais comprometimento com o ingl\u00eas em sala, a flu\u00eancia vai evoluir muito mais r\u00e1pido. Ouvir m\u00fasicas ou assistir a v\u00eddeos curtos em ingl\u00eas em casa pode criar mais conforto com o idioma.",
+      "O uso do portugu\u00eas ainda \u00e9 uma limita\u00e7\u00e3o no desenvolvimento da flu\u00eancia. Preparar com anteced\u00eancia frases que costumam vir em portugu\u00eas \u2014 como pedir para repetir \u2014 pode ajudar bastante.",
+      "O ingl\u00eas ainda n\u00e3o \u00e9 a primeira escolha na maioria das situa\u00e7\u00f5es, mas isso pode mudar com pr\u00e1tica. Tentar usar express\u00f5es do cotidiano em ingl\u00eas fora da sala de aula \u00e9 uma pr\u00e1tica muito eficiente."
     ],
     3: [
-      "Você se comunica em inglês na maior parte do tempo, mas ainda utiliza o português ocasionalmente.",
-      "Sua tentativa de manter o inglês é notável, mas há espaço para aprimorar ainda mais essa disciplina.",
-      "Continue se esforçando para se comunicar apenas em inglês — você está no caminho certo.",
-      "Seu comportamento está evoluindo bem, mas o uso do português ainda é um ponto de atenção.",
-      "Mesmo em momentos de dúvida, tente formular sua pergunta em inglês — você vai conseguir.",
-      "Você já demonstra boa disposição para usar o inglês, mas ainda há momentos de recaída para o português.",
-      "Com uma pequena mudança de hábito, você conseguirá manter a imersão completa em inglês.",
-      "Você está progredindo bem nesse aspecto — um pouquinho mais de esforço e chega lá!"
+      "O ingl\u00eas \u00e9 usado na maior parte do tempo, mas h\u00e1 momentos de reca\u00edda para o portugu\u00eas. Tentar formular qualquer d\u00favida em ingl\u00eas antes de recorrer ao portugu\u00eas \u2014 mesmo que com erros \u2014 \u00e9 um \u00f3timo desafio.",
+      "A tentativa de manter o ingl\u00eas \u00e9 not\u00e1vel, mas a disciplina pode ser aprimorada. Em situa\u00e7\u00f5es de d\u00favida, tentar adivinhar a palavra em ingl\u00eas antes de pedir ajuda em portugu\u00eas \u00e9 uma estrat\u00e9gia excelente.",
+      "O comportamento est\u00e1 evoluindo bem, mas o portugu\u00eas ainda aparece ocasionalmente. Praticar as frases mais usadas em sala \u2014 como 'How do you say...?' ou 'Can you repeat that?' \u2014 elimina muito da necessidade de recorrer ao portugu\u00eas.",
+      "H\u00e1 boa disposi\u00e7\u00e3o para usar o ingl\u00eas, mas ainda h\u00e1 momentos de reca\u00edda. Cada aula que termina com menos uso do portugu\u00eas do que a anterior j\u00e1 \u00e9 uma vit\u00f3ria \u2014 manter esse progresso \u00e9 o foco.",
+      "Mesmo em momentos de d\u00favida, tentar formular a pergunta em ingl\u00eas \u00e9 uma meta alcan\u00e7\u00e1vel. Anotar as perguntas que costumam vir em portugu\u00eas e tentar tradu\u00ezi-las com anteced\u00eancia \u00e9 uma boa prepara\u00e7\u00e3o.",
+      "Com uma pequena mudan\u00e7a de h\u00e1bito, manter a imers\u00e3o completa em ingl\u00eas \u00e9 totalmente poss\u00edvel. Pedir ao professor que corrija gentilmente cada vez que o portugu\u00eas escapar pode ajudar a criar mais consci\u00eancia.",
+      "Est\u00e1 progredindo bem nesse aspecto \u2014 um pouco mais de esfor\u00e7o constante pode fazer uma grande diferen\u00e7a. Tentar usar o ingl\u00eas em pequenas intera\u00e7\u00f5es do dia a dia \u2014 mesmo fora da escola \u2014 \u00e9 um passo importante.",
+      "O esfor\u00e7o para manter o ingl\u00eas \u00e9 vis\u00edvel e merece reconhecimento. Para dar o pr\u00f3ximo passo, o desafio \u00e9 manter esse esfor\u00e7o tamb\u00e9m nos momentos mais dif\u00edceis ou quando o assunto \u00e9 mais complexo."
     ],
     4: [
-      "Você se comunica em inglês com frequência e segurança, contribuindo para um ambiente de imersão.",
-      "Seu esforço para evitar o português em sala de aula é muito louvável e impacta diretamente no seu aprendizado.",
-      "Você já se sente confortável para se expressar apenas em inglês — isso é um avanço enorme.",
-      "Seu comprometimento em falar somente inglês reflete a seriedade com que você leva o curso.",
-      "A prática constante do idioma em sala de aula é um grande diferencial no seu aprendizado.",
-      "Você raramente recorre ao português, e isso mostra muita maturidade e disciplina.",
-      "Sua imersão em sala é consistente e serve de exemplo positivo para os colegas.",
-      "Você entendeu que falar em inglês o tempo todo é uma das chaves mais importantes para a fluência."
+      "O ingl\u00eas \u00e9 usado com frequ\u00eancia e seguran\u00e7a, contribuindo para um \u00f3timo ambiente de imers\u00e3o. Para atingir o n\u00edvel de excel\u00eancia, vale tentar manter o ingl\u00eas tamb\u00e9m nos momentos de maior dificuldade ou frustra\u00e7\u00e3o.",
+      "O esfor\u00e7o para evitar o portugu\u00eas em sala \u00e9 muito not\u00e1vel e impacta diretamente no aprendizado. O pr\u00f3ximo passo seria usar o ingl\u00eas de forma ainda mais espont\u00e2nea, sem esperar pela atividade estruturada.",
+      "J\u00e1 h\u00e1 muito conforto para se expressar em ingl\u00eas \u2014 isso \u00e9 um avan\u00e7o enorme no curso. Para chegar ao n\u00edvel mais alto, criar o h\u00e1bito de pensar em ingl\u00eas \u2014 e n\u00e3o apenas falar \u2014 pode transformar a flu\u00eancia.",
+      "O comprometimento em falar ingl\u00eas reflete a seriedade com que o curso \u00e9 levado. Para ir al\u00e9m, tentar usar o ingl\u00eas em conversas mais informais com colegas \u2014 antes e depois da aula \u2014 \u00e9 um excelente exerc\u00edcio.",
+      "O portugu\u00eas raramente aparece, o que demonstra muita maturidade e disciplina. Para atingir a imers\u00e3o total, vale tentar usar o ingl\u00eas mesmo em situa\u00e7\u00f5es pequenas, como agradecer ou cumprimentar.",
+      "A imers\u00e3o em sala \u00e9 consistente e serve de exemplo positivo para os colegas. Para crescer ainda mais, buscar vocabul\u00e1rio em ingl\u00eas para situa\u00e7\u00f5es cotidianas \u2014 ao inv\u00e9s de traduzir mentalmente do portugu\u00eas \u2014 pode acelerar muito o progresso.",
+      "A compreens\u00e3o de que falar em ingl\u00eas o tempo todo \u00e9 a chave para a flu\u00eancia j\u00e1 est\u00e1 bem estabelecida. O desafio agora \u00e9 tornar isso um reflexo autom\u00e1tico, sem necessidade de esfor\u00e7o consciente.",
+      "O desempenho \u00e9 muito bom nesse aspecto e est\u00e1 pr\u00f3ximo da excel\u00eancia. Tentar se comunicar exclusivamente em ingl\u00eas com o professor \u2014 inclusive fora das atividades formais \u2014 pode ser o passo final."
     ],
     5: [
-      "Você se comunica exclusivamente em inglês em sala de aula — isso otimiza muito o seu aprendizado.",
-      "Sua disciplina em manter o inglês o tempo todo é um exemplo notável de comprometimento.",
-      "Você demonstra alto nível de maturidade ao manter a imersão completa durante toda a aula.",
-      "Seu uso consistente do inglês é impressionante e contribui imensamente para o desenvolvimento da sua fluência.",
-      "Você compreendeu que a imersão é a chave do sucesso e aplica isso com excelência.",
-      "Mesmo em situações difíceis, você insiste no inglês — isso faz toda a diferença na sua evolução.",
-      "Sua dedicação à imersão em sala é exemplar e inspira os colegas a fazerem o mesmo.",
-      "Você é um modelo de como deve ser a postura de um aluno comprometido com a fluência."
+      "O ingl\u00eas \u00e9 usado exclusivamente em sala de aula \u2014 isso otimiza o aprendizado de forma impressionante.",
+      "A disciplina em manter o ingl\u00eas o tempo todo \u00e9 um exemplo not\u00e1vel de comprometimento com o aprendizado.",
+      "Alto n\u00edvel de maturidade \u00e9 demonstrado ao manter a imers\u00e3o completa durante toda a aula \u2014 parab\u00e9ns!",
+      "O uso consistente do ingl\u00eas contribui imensamente para o desenvolvimento da flu\u00eancia \u2014 continue assim!",
+      "A compreens\u00e3o de que a imers\u00e3o \u00e9 a chave do sucesso \u00e9 aplicada com excel\u00eancia em cada aula.",
+      "Mesmo em situa\u00e7\u00f5es dif\u00edceis, o ingl\u00eas \u00e9 mantido \u2014 isso faz toda a diferen\u00e7a na evolu\u00e7\u00e3o do idioma.",
+      "A dedica\u00e7\u00e3o \u00e0 imers\u00e3o em sala \u00e9 exemplar e inspira os colegas a fazerem o mesmo \u2014 muito bem!",
+      "\u00c9 um modelo de como deve ser a postura de algu\u00e9m comprometido com a flu\u00eancia real no idioma."
     ]
   },
   homework: {
     1: [
-      "A entrega das suas tarefas é muito inconsistente, o que prejudica a fixação do conteúdo trabalhado.",
-      "É fundamental que você comece a realizar todas as tarefas de casa para consolidar o que foi aprendido.",
-      "A qualidade das tarefas entregues está abaixo do esperado e exige muito mais dedicação.",
-      "Você precisa assumir a responsabilidade pelas suas atividades de casa para progredir no curso.",
-      "A falta de comprometimento com as tarefas tem impactado negativamente o seu aprendizado.",
-      "Sem a prática em casa, o conteúdo visto em aula não se consolida — as tarefas são essenciais.",
-      "Você está perdendo uma oportunidade importante de praticar e fixar o que foi ensinado.",
-      "É preciso uma mudança urgente de postura em relação à realização das atividades de casa."
+      "A entrega das tarefas \u00e9 muito inconsistente, o que prejudica a fixa\u00e7\u00e3o do conte\u00fado. Estabelecer um hor\u00e1rio fixo por semana dedicado \u00e0s tarefas pode ajudar a criar consist\u00eancia e responsabilidade.",
+      "\u00c9 fundamental come\u00e7ar a realizar todas as tarefas de casa para consolidar o que \u00e9 aprendido em aula. Separar um hor\u00e1rio curto \u2014 mesmo que 20 minutos \u2014 logo ap\u00f3s a aula, enquanto o conte\u00fado ainda est\u00e1 fresco, pode funcionar muito bem.",
+      "A qualidade das tarefas entregues est\u00e1 abaixo do esperado e exige muito mais dedica\u00e7\u00e3o. Fazer a tarefa em partes menores \u2014 ao inv\u00e9s de deixar para a \u00faltima hora \u2014 pode transformar a qualidade das entregas.",
+      "A falta de comprometimento com as tarefas tem impactado negativamente o aprendizado. Pedir ao professor que marque os exerc\u00edcios mais importantes pode ajudar a priorizar melhor o tempo de estudo em casa.",
+      "Sem a pr\u00e1tica em casa, o conte\u00fado visto em aula n\u00e3o se consolida da forma necess\u00e1ria. Come\u00e7ar sempre pela atividade mais f\u00e1cil das tarefas pode reduzir a resist\u00eancia inicial e tornar o h\u00e1bito mais sustent\u00e1vel.",
+      "As tarefas s\u00e3o uma extens\u00e3o essencial do aprendizado da sala de aula \u2014 e est\u00e3o sendo negligenciadas. Combinar com um colega para fazer as tarefas juntos online pode aumentar muito a motiva\u00e7\u00e3o e a consist\u00eancia.",
+      "A oportunidade de praticar e fixar o conte\u00fado em casa est\u00e1 sendo perdida com frequ\u00eancia. Usar lembretes no celular para as tarefas pode ajudar a criar o h\u00e1bito de n\u00e3o deixa-las para depois.",
+      "Uma mudan\u00e7a de postura em rela\u00e7\u00e3o \u00e0s atividades de casa \u00e9 necess\u00e1ria para progredir. Conversar com o professor sobre a carga das tarefas \u2014 caso seja muito alta \u2014 pode ajudar a encontrar um equil\u00edbrio mais vi\u00e1vel."
     ],
     2: [
-      "Você entrega suas tarefas, mas a qualidade do trabalho precisa ser bem mais caprichada.",
-      "Seu progresso pode ser acelerado com um maior comprometimento nas atividades de casa.",
-      "É importante que você complete as atividades com mais atenção, cuidado e dedicação.",
-      "Sua dedicação às tarefas é mediana e pode ser bastante aprimorada para resultados melhores.",
-      "Você tem potencial, mas precisa focar mais na consistência e na qualidade das entregas.",
-      "As tarefas que você entrega mostram que foi feito às pressas — vale dedicar mais tempo.",
-      "Com mais capricho e atenção nos detalhes, suas tarefas vão refletir melhor o seu potencial.",
-      "Uma entrega incompleta ou descuidada não ajuda na fixação do conteúdo — vale o esforço extra."
+      "As tarefas s\u00e3o entregues, mas a qualidade precisa de muito mais cuidado e aten\u00e7\u00e3o. Reler a tarefa antes de entregar \u2014 pelo menos uma vez \u2014 pode reduzir bastante os erros e melhorar a qualidade.",
+      "O progresso pode ser acelerado com maior comprometimento nas atividades de casa. Fazer as tarefas em mais de uma sess\u00e3o curta, revisando o que foi feito em cada uma, pode melhorar bastante a qualidade.",
+      "As atividades precisam ser completadas com mais aten\u00e7\u00e3o, cuidado e dedica\u00e7\u00e3o. Usar o caderno de aula como refer\u00eancia enquanto faz as tarefas pode ajudar a evitar os erros mais comuns.",
+      "A dedica\u00e7\u00e3o \u00e0s tarefas est\u00e1 aqu\u00e9m do potencial e pode ser muito aprimorada. Escolher um lugar tranquilo e sem distra\u00e7\u00f5es para fazer as tarefas pode fazer uma grande diferen\u00e7a no resultado.",
+      "As tarefas entregues mostram que foram feitas com pressa \u2014 vale dedicar mais tempo a elas. Come\u00e7ar as tarefas com pelo menos um dia de anteced\u00eancia permite uma revis\u00e3o mais calma e cuidadosa.",
+      "A consist\u00eancia nas entregas precisa de melhorias para sustentar o progresso no curso. Pedir ao professor dicas de estudo para cada tipo de atividade pode tornar o tempo de tarefa mais eficiente.",
+      "Com mais capricho e aten\u00e7\u00e3o nos detalhes, as tarefas v\u00e3o refletir muito melhor o potencial real. Verificar as respostas usando os recursos de aula \u2014 como notas e materiais \u2014 antes de entregar \u00e9 uma boa pr\u00e1tica.",
+      "Uma entrega incompleta ou descuidada n\u00e3o ajuda na fixa\u00e7\u00e3o do conte\u00fado \u2014 o esfor\u00e7o extra vale muito. Tentar explicar em voz alta o que foi feito na tarefa \u00e9 uma forma poderosa de checar a compreens\u00e3o."
     ],
     3: [
-      "Você entrega suas tarefas na maior parte do tempo, mas a qualidade pode variar bastante.",
-      "Sua dedicação às atividades de casa é consistente, mas ainda pode ser aprimorada.",
-      "Você está no caminho certo com as tarefas, mas a revisão do trabalho é fundamental para evitar erros.",
-      "Sua atenção aos detalhes nas tarefas de casa pode ser aprimorada — capriche um pouco mais.",
-      "Você entrega com regularidade, mas às vezes as tarefas parecem não ter sido revisadas antes de entregar.",
-      "Seu desempenho é bom, mas você pode se beneficiar de um maior esforço e cuidado em cada atividade.",
-      "Uma leitura extra antes de entregar pode fazer uma grande diferença na qualidade das suas tarefas.",
-      "Continue entregando com regularidade — é um bom hábito, agora foque em melhorar a qualidade."
+      "As tarefas s\u00e3o entregues na maior parte do tempo, mas a qualidade pode variar bastante. Fazer uma releitura r\u00e1pida antes de entregar \u2014 buscando erros de escrita e gram\u00e1tica \u2014 pode melhorar bastante a consist\u00eancia.",
+      "A dedica\u00e7\u00e3o \u00e0s atividades de casa \u00e9 consistente, mas ainda pode ser aprimorada. Anotar as d\u00favidas que surgem ao fazer as tarefas e traz\u00ea-las para a aula seguinte transforma o dever de casa em aprendizado ativo.",
+      "O caminho est\u00e1 certo com as tarefas, mas a revis\u00e3o do trabalho \u00e9 fundamental para evitar erros desnecess\u00e1rios. Fazer as tarefas um dia antes do prazo garante tempo para reler com calma e corrigir pequenos deslizes.",
+      "A aten\u00e7\u00e3o aos detalhes nas tarefas de casa pode ser aprimorada. Verificar especificamente os pontos gramaticais trabalhados em cada aula durante a realiza\u00e7\u00e3o das tarefas pode ajudar muito na precis\u00e3o.",
+      "As tarefas s\u00e3o entregues com regularidade, mas \u00e0s vezes parecem n\u00e3o ter sido revisadas antes da entrega. Criar o h\u00e1bito de reler o que foi escrito em voz alta ajuda a perceber erros que passam despercebidos na leitura silenciosa.",
+      "O desempenho \u00e9 bom, mas pode se beneficiar de maior esfor\u00e7o e cuidado em cada atividade. Fazer as tarefas com o caderno de aula ao lado, conferindo as explica\u00e7\u00f5es, pode torn\u00e1-las muito mais precisas.",
+      "A regularidade nas entregas \u00e9 muito positiva \u2014 agora o foco pode ser melhorar a qualidade. Tentar fazer a tarefa sem consultar a tradu\u00e7\u00e3o diretamente \u2014 usando o racioc\u00ednio em ingl\u00eas primeiro \u2014 \u00e9 um \u00f3timo exerc\u00edcio.",
+      "O h\u00e1bito de entregar as tarefas est\u00e1 bem estabelecido. Para crescer ainda mais, tentar ir al\u00e9m do m\u00ednimo pedido \u2014 fazendo exemplos extras ou escrevendo um pouco mais \u2014 pode acelerar bastante o aprendizado."
     ],
     4: [
-      "Você entrega todas as suas tarefas com consistência e pontualidade — muito bom!",
-      "A qualidade do seu trabalho é excelente e demonstra o comprometimento que você tem com o curso.",
-      "Você se dedica às tarefas de casa e isso tem um impacto positivo muito claro na sua performance.",
-      "Seu comprometimento com as atividades de casa é sólido e reflete muita responsabilidade.",
-      "Você está sempre em dia com as tarefas, o que demonstra ótima organização e disciplina.",
-      "A qualidade e a regularidade das suas entregas estão claramente acima da média da turma.",
-      "Você leva as tarefas a sério, e isso faz toda a diferença nos resultados que você alcança.",
-      "Sua dedicação fora da sala de aula é um dos fatores que mais contribuem para seu progresso."
+      "As tarefas s\u00e3o entregues com consist\u00eancia e qualidade \u2014 um reflexo muito claro do comprometimento com o curso. Para alcan\u00e7ar a excel\u00eancia, tentar ir al\u00e9m do que \u00e9 pedido \u2014 com exemplos extras ou frases adicionais \u2014 pode fazer uma grande diferen\u00e7a.",
+      "A qualidade do trabalho \u00e9 muito boa e demonstra real dedica\u00e7\u00e3o. Para chegar ao n\u00edvel mais alto, vale revisar as tarefas com um olhar cr\u00edtico \u2014 buscando pequenos erros que podem escapar na primeira leitura.",
+      "H\u00e1 comprometimento s\u00f3lido com as atividades de casa e isso tem impacto positivo claro na performance. Para crescer ainda mais, usar as tarefas como oportunidade de experimentar estruturas e vocabul\u00e1rio novos pode enriquecer muito as entregas.",
+      "As tarefas s\u00e3o sempre em dia, o que demonstra \u00f3tima organiza\u00e7\u00e3o e disciplina. Para ir al\u00e9m, antecipar a tarefa \u2014 come\u00e7ando antes do prazo \u2014 permite uma revis\u00e3o mais cuidadosa e um resultado ainda melhor.",
+      "A qualidade e a regularidade das entregas est\u00e3o claramente acima da m\u00e9dia. Para atingir o n\u00edvel de excel\u00eancia, vale prestar aten\u00e7\u00e3o aos pequenos detalhes que ainda geram imprecis\u00e3o \u2014 como pontua\u00e7\u00e3o e conc\u00f3rdia.",
+      "As tarefas s\u00e3o levadas a s\u00e9rio, e isso faz toda a diferen\u00e7a nos resultados alcan\u00e7ados. Para crescer ainda mais, buscar feedback espec\u00edfico do professor sobre as tarefas \u2014 perguntando o que poderia ter sido feito melhor \u2014 \u00e9 uma pr\u00e1tica muito valiosa.",
+      "A dedica\u00e7\u00e3o fora da sala de aula \u00e9 um dos fatores que mais contribuem para o progresso. Para alcan\u00e7ar o mais alto n\u00edvel, enriquecer as respostas com mais contexto e detalhes \u2014 em vez de apenas responder o m\u00ednimo \u2014 pode transformar a qualidade.",
+      "O comprometimento com as tarefas \u00e9 muito s\u00f3lido e pr\u00f3ximo da excel\u00eancia. Para dar o passo final, tentar reler cada tarefa do ponto de vista de quem vai l\u00ea-la ajuda a refinar a comunica\u00e7\u00e3o de forma significativa."
     ],
     5: [
-      "Você entrega todas as tarefas no prazo e com qualidade excepcional — parabéns!",
-      "Sua dedicação às atividades de casa é um exemplo para toda a turma.",
-      "Sua organização e comprometimento com as tarefas são simplesmente impecáveis.",
-      "Você demonstra uma seriedade impressionante em cada trabalho que entrega.",
-      "Sua performance com as tarefas está em um nível exemplar — o esforço é muito digno de reconhecimento.",
-      "Você nunca falha nas entregas e sempre apresenta trabalhos de altíssima qualidade — excelente!",
-      "Sua disciplina fora da sala de aula é um dos seus maiores diferenciais no aprendizado.",
-      "Cada tarefa entregada por você reflete cuidado, atenção e dedicação genuína — continue assim!"
+      "Todas as tarefas s\u00e3o entregues dentro do prazo e com qualidade excepcional \u2014 parab\u00e9ns pelo comprometimento!",
+      "A dedica\u00e7\u00e3o \u00e0s atividades de casa \u00e9 um exemplo para toda a turma \u2014 o esfor\u00e7o \u00e9 muito digno de reconhecimento.",
+      "A organiza\u00e7\u00e3o e o comprometimento com as tarefas s\u00e3o simplesmente impec\u00e1veis \u2014 continue assim!",
+      "Cada trabalho entregue reflete seriedade, cuidado e dedica\u00e7\u00e3o genu\u00edna \u2014 isso faz toda a diferen\u00e7a no aprendizado.",
+      "A performance com as tarefas est\u00e1 em um n\u00edvel exemplar \u2014 o esfor\u00e7o \u00e9 digno de muito reconhecimento e admira\u00e7\u00e3o.",
+      "Nunca h\u00e1 falhas nas entregas, e os trabalhos apresentam sempre alt\u00edssima qualidade \u2014 excelente!",
+      "A disciplina fora da sala de aula \u00e9 um dos maiores diferenciais no aprendizado \u2014 um exemplo inspirador.",
+      "Cada tarefa entregue reflete cuidado, aten\u00e7\u00e3o e dedica\u00e7\u00e3o genu\u00edna \u2014 continue nesse ritmo excelente!"
     ]
   }
 };
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
 
-let students = [];
-let activeId = null;
-let currentComments = {};
+var currentComments = {};
+var avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
 
-function newStudent() {
-  return {
-    id: Date.now() + Math.random(),
-    name: '',
-    vocab: 5, grammar: 5, behavior: 5, port: 5, homework: 5,
-    comments: {}
-  };
+function pickComment(cat, level) {
+  var pool = COMMENTS[cat][level];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
-
-function getStudent() { return students.find(s => s.id === activeId); }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
 function init() {
-  const s = newStudent();
-  students.push(s);
-  activeId = s.id;
-  renderSidebar();
-  loadStudent(s.id);
   updateDate();
-}
-
-function updateDate() {
-  const now = new Date();
-  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  document.getElementById('rc-date').textContent =
-    `${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
-}
-
-// ── SIDEBAR ──────────────────────────────────────────────────────────────────
-
-function renderSidebar() {
-  const list = document.getElementById('student-list');
-  list.innerHTML = '';
-  students.forEach(s => {
-    const div = document.createElement('div');
-    div.className = 'student-item' + (s.id === activeId ? ' active' : '');
-    div.dataset.id = s.id;
-
-    const initials = s.name
-      ? s.name.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase()
-      : '?';
-    const color = AVATAR_COLORS[students.indexOf(s) % AVATAR_COLORS.length];
-
-    div.innerHTML = `
-      <div class="student-avatar" style="background:${color}">${initials}</div>
-      <span class="student-name-label">${s.name || 'Novo Aluno'}</span>
-      <button class="student-delete" data-id="${s.id}" title="Remover">×</button>
-    `;
-    div.addEventListener('click', e => {
-      if (e.target.classList.contains('student-delete')) return;
-      saveCurrentStudent();
-      activeId = s.id;
-      renderSidebar();
-      loadStudent(s.id);
-    });
-    div.querySelector('.student-delete').addEventListener('click', e => {
-      e.stopPropagation();
-      removeStudent(s.id);
-    });
-    list.appendChild(div);
-  });
-}
-
-function removeStudent(id) {
-  if (students.length <= 1) {
-    showToast('Deve haver pelo menos um aluno.');
-    return;
-  }
-  students = students.filter(s => s.id !== id);
-  if (activeId === id) {
-    activeId = students[0].id;
-    loadStudent(activeId);
-  }
-  renderSidebar();
-}
-
-// ── LOAD / SAVE ───────────────────────────────────────────────────────────────
-
-function loadStudent(id) {
-  const s = students.find(st => st.id === id);
-  if (!s) return;
-  document.getElementById('student-name').value = s.name;
-  document.getElementById('sl-vocab').value = s.vocab;
-  document.getElementById('sl-grammar').value = s.grammar;
-  document.getElementById('sl-behavior').value = s.behavior;
-  document.getElementById('sl-port').value = s.port;
-  document.getElementById('sl-homework').value = s.homework;
   updateAllBadges();
-  currentComments = { ...s.comments };
-  // generate comments if missing
-  ['vocab','grammar','behavior','port','homework'].forEach(cat => {
-    if (!currentComments[cat]) currentComments[cat] = pickComment(cat, s[cat === 'port' ? 'port' : cat]);
-  });
+  generateAllComments();
   renderPreview();
 }
 
-function saveCurrentStudent() {
-  const s = getStudent();
-  if (!s) return;
-  s.name = document.getElementById('student-name').value.trim();
-  s.vocab = +document.getElementById('sl-vocab').value;
-  s.grammar = +document.getElementById('sl-grammar').value;
-  s.behavior = +document.getElementById('sl-behavior').value;
-  s.port = +document.getElementById('sl-port').value;
-  s.homework = +document.getElementById('sl-homework').value;
-  s.comments = { ...currentComments };
+function updateDate() {
+  var now = new Date();
+  var months = ['janeiro','fevereiro','mar\u00e7o','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  document.getElementById('rc-date').textContent =
+    now.getDate() + ' de ' + months[now.getMonth()] + ' de ' + now.getFullYear();
 }
 
-function pickComment(cat, level) {
-  const pool = COMMENTS[cat][level];
-  return pool[Math.floor(Math.random() * pool.length)];
+function generateAllComments() {
+  var cats = ['vocab','grammar','behavior','port','homework'];
+  for (var i = 0; i < cats.length; i++) {
+    var cat = cats[i];
+    var val = +document.getElementById('sl-' + cat).value;
+    currentComments[cat] = pickComment(cat, val);
+  }
 }
 
 // ── BADGES ───────────────────────────────────────────────────────────────────
 
-const sliderMap = {
-  'sl-vocab': { badge: 'badge-vocab', cat: 'vocab' },
-  'sl-grammar': { badge: 'badge-grammar', cat: 'grammar' },
+var sliderMap = {
+  'sl-vocab':    { badge: 'badge-vocab',    cat: 'vocab' },
+  'sl-grammar':  { badge: 'badge-grammar',  cat: 'grammar' },
   'sl-behavior': { badge: 'badge-behavior', cat: 'behavior' },
-  'sl-port': { badge: 'badge-port', cat: 'port' },
+  'sl-port':     { badge: 'badge-port',     cat: 'port' },
   'sl-homework': { badge: 'badge-homework', cat: 'homework' }
 };
 
 function updateBadge(sliderId) {
-  const { badge, cat } = sliderMap[sliderId];
-  const val = +document.getElementById(sliderId).value;
-  const el = document.getElementById(badge);
+  var info = sliderMap[sliderId];
+  var val = +document.getElementById(sliderId).value;
+  var el = document.getElementById(info.badge);
   el.textContent = RATINGS[val];
   el.style.background = LEVEL_COLORS[val];
-
-  // update slider track
-  const sl = document.getElementById(sliderId);
-  const pct = ((val - 1) / 4) * 100;
-  sl.style.background = `linear-gradient(to right, ${LEVEL_COLORS[val]} ${pct}%, #2a3048 ${pct}%)`;
+  var pct = ((val - 1) / 4) * 100;
+  document.getElementById(sliderId).style.background =
+    'linear-gradient(to right, ' + LEVEL_COLORS[val] + ' ' + pct + '%, #2a3048 ' + pct + '%)';
 }
 
 function updateAllBadges() {
-  Object.keys(sliderMap).forEach(updateBadge);
+  var ids = Object.keys(sliderMap);
+  for (var i = 0; i < ids.length; i++) {
+    updateBadge(ids[i]);
+  }
 }
 
 // ── PREVIEW ──────────────────────────────────────────────────────────────────
 
-const CAT_META = [
-  { key: 'vocab',    label: 'Vocabulário',        icon: '📚', slId: 'sl-vocab' },
-  { key: 'grammar',  label: 'Gramática',           icon: '📝', slId: 'sl-grammar' },
-  { key: 'behavior', label: 'Comportamento',       icon: '🌟', slId: 'sl-behavior' },
-  { key: 'port',     label: 'Uso de Português',    icon: '🇧🇷', slId: 'sl-port' },
-  { key: 'homework', label: 'Tarefas de Casa',     icon: '📋', slId: 'sl-homework' }
+var CAT_META = [
+  { key: 'vocab',    label: 'Vocabul\u00e1rio',     icon: '\uD83D\uDCDA', slId: 'sl-vocab' },
+  { key: 'grammar',  label: 'Gram\u00e1tica',        icon: '\uD83D\uDCDD', slId: 'sl-grammar' },
+  { key: 'behavior', label: 'Comportamento',    icon: '\u2B50', slId: 'sl-behavior' },
+  { key: 'port',     label: 'Uso de Portugu\u00eas', icon: '\uD83C\uDDE7\uD83C\uDDF7', slId: 'sl-port' },
+  { key: 'homework', label: 'Tarefas de Casa',  icon: '\uD83D\uDCCB', slId: 'sl-homework' }
 ];
 
 function renderPreview() {
-  const name = document.getElementById('student-name').value.trim() || 'Aluno(a)';
-  const initials = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  const s = getStudent();
-  const colorIdx = s ? students.indexOf(s) % AVATAR_COLORS.length : 0;
+  var name = document.getElementById('student-name').value.trim() || '\u2014';
+  var initials = name === '\u2014' ? '?' :
+    name.split(' ').slice(0,2).map(function(w){ return w[0]; }).join('').toUpperCase();
 
-  // Header
   document.getElementById('rc-name').textContent = name;
-  const av = document.getElementById('rc-avatar');
+  var av = document.getElementById('rc-avatar');
   av.textContent = initials;
-  av.style.background = AVATAR_COLORS[colorIdx];
+  av.style.background = avatarColor;
 
   // Scores row
-  const scoresEl = document.getElementById('rc-scores');
+  var scoresEl = document.getElementById('rc-scores');
   scoresEl.innerHTML = '';
-  CAT_META.forEach(m => {
-    const val = +document.getElementById(m.slId).value;
-    const col = LEVEL_COLORS[val];
-    const cell = document.createElement('div');
+  for (var i = 0; i < CAT_META.length; i++) {
+    var m = CAT_META[i];
+    var val = +document.getElementById(m.slId).value;
+    var col = LEVEL_COLORS[val];
+    var cell = document.createElement('div');
     cell.className = 'rc-score-cell';
-    cell.innerHTML = `
-      <div class="rc-score-icon">${m.icon}</div>
-      <div class="rc-score-val" style="color:${col}">${val}</div>
-      <div class="rc-score-key">${m.label.split(' ')[0]}</div>
-    `;
+    cell.innerHTML =
+      '<div class="rc-score-icon">' + m.icon + '</div>' +
+      '<div class="rc-score-val" style="color:' + col + '">' + val + '</div>' +
+      '<div class="rc-score-key">' + m.label.split(' ')[0] + '</div>';
     scoresEl.appendChild(cell);
-  });
+  }
 
   // Body sections
-  const bodyEl = document.getElementById('rc-body');
+  var bodyEl = document.getElementById('rc-body');
   bodyEl.innerHTML = '';
-  CAT_META.forEach(m => {
-    const val = +document.getElementById(m.slId).value;
-    const col = LEVEL_COLORS[val];
-    const text = currentComments[m.key] || pickComment(m.key, val);
+  for (var j = 0; j < CAT_META.length; j++) {
+    var m2 = CAT_META[j];
+    var val2 = +document.getElementById(m2.slId).value;
+    var col2 = LEVEL_COLORS[val2];
+    var text = currentComments[m2.key] || pickComment(m2.key, val2);
 
-    // Build mini stars (5 squares)
-    let stars = '';
-    for (let i = 1; i <= 5; i++) {
-      stars += `<span class="rc-section-star" style="background:${i<=val?col:'#2a3048'}"></span>`;
+    var stars = '';
+    for (var s = 1; s <= 5; s++) {
+      stars += '<span class="rc-section-star" style="background:' + (s <= val2 ? col2 : '#2a3048') + '"></span>';
     }
 
-    const sec = document.createElement('div');
+    var sec = document.createElement('div');
     sec.className = 'rc-section';
-    sec.innerHTML = `
-      <div class="rc-section-header">
-        <span class="rc-section-dot" style="background:${col}"></span>
-        <span class="rc-section-title">${m.label}</span>
-        <div class="rc-section-stars">${stars}</div>
-      </div>
-      <div class="rc-section-text">${text}</div>
-    `;
+    sec.innerHTML =
+      '<div class="rc-section-header">' +
+        '<span class="rc-section-dot" style="background:' + col2 + '"></span>' +
+        '<span class="rc-section-title">' + m2.label + '</span>' +
+        '<div class="rc-section-stars">' + stars + '</div>' +
+      '</div>' +
+      '<div class="rc-section-text">' + text + '</div>';
     bodyEl.appendChild(sec);
-  });
+  }
 }
 
 function buildPlainText() {
-  const name = document.getElementById('student-name').value.trim() || 'Aluno(a)';
-  const now = new Date();
-  const months=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  let txt = `RELATÓRIO DE DESEMPENHO\n${name}\n${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}\n\n`;
-  CAT_META.forEach(m => {
-    const val = +document.getElementById(m.slId).value;
-    txt += `${m.label}: ${RATINGS[val]}\n`;
-    txt += `${currentComments[m.key] || ''}\n\n`;
-  });
+  var name = document.getElementById('student-name').value.trim() || '\u2014';
+  var now = new Date();
+  var months = ['janeiro','fevereiro','mar\u00e7o','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var txt = 'RELAT\u00d3RIO DE DESEMPENHO\n' + name + '\n' +
+    now.getDate() + ' de ' + months[now.getMonth()] + ' de ' + now.getFullYear() + '\n\n';
+  for (var i = 0; i < CAT_META.length; i++) {
+    var m = CAT_META[i];
+    var val = +document.getElementById(m.slId).value;
+    txt += m.label + ': ' + RATINGS[val] + '\n';
+    txt += (currentComments[m.key] || '') + '\n\n';
+  }
   return txt.trim();
 }
 
 // ── EVENTS ───────────────────────────────────────────────────────────────────
 
-document.getElementById('student-name').addEventListener('input', () => {
-  const s = getStudent();
-  if (s) s.name = document.getElementById('student-name').value.trim();
-  renderSidebar();
-  renderPreview();
-});
+document.getElementById('student-name').addEventListener('input', renderPreview);
 
-Object.keys(sliderMap).forEach(slId => {
-  document.getElementById(slId).addEventListener('input', () => {
-    const { cat } = sliderMap[slId];
-    const val = +document.getElementById(slId).value;
-    currentComments[cat] = pickComment(cat, val);
-    updateBadge(slId);
-    renderPreview();
-  });
-});
+(function() {
+  var ids = Object.keys(sliderMap);
+  for (var i = 0; i < ids.length; i++) {
+    (function(slId) {
+      document.getElementById(slId).addEventListener('input', function() {
+        var cat = sliderMap[slId].cat;
+        var val = +document.getElementById(slId).value;
+        currentComments[cat] = pickComment(cat, val);
+        updateBadge(slId);
+        renderPreview();
+      });
+    })(ids[i]);
+  }
+})();
 
-document.getElementById('add-student-btn').addEventListener('click', () => {
-  saveCurrentStudent();
-  const s = newStudent();
-  students.push(s);
-  activeId = s.id;
-  currentComments = {};
-  renderSidebar();
-  loadStudent(s.id);
-});
-
-document.getElementById('save-btn').addEventListener('click', () => {
-  saveCurrentStudent();
-  renderSidebar();
-  showToast('Aluno salvo com sucesso!');
-});
-
-document.getElementById('regen-btn').addEventListener('click', () => {
-  currentComments = {};
-  CAT_META.forEach(m => {
-    const val = +document.getElementById(m.slId).value;
-    currentComments[m.key] = pickComment(m.key, val);
-  });
+document.getElementById('regen-btn').addEventListener('click', function() {
+  generateAllComments();
   renderPreview();
   showToast('Textos regenerados!');
 });
 
-document.getElementById('copy-btn').addEventListener('click', () => {
-  navigator.clipboard.writeText(buildPlainText()).then(() => {
-    const btn = document.getElementById('copy-btn');
+document.getElementById('copy-btn').addEventListener('click', function() {
+  navigator.clipboard.writeText(buildPlainText()).then(function() {
+    var btn = document.getElementById('copy-btn');
     btn.classList.add('copied');
     btn.querySelector('svg').innerHTML = '<path d="M2 7l4 4L11 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
     showToast('Boletim copiado!');
-    setTimeout(() => {
+    setTimeout(function() {
       btn.classList.remove('copied');
       btn.querySelector('svg').innerHTML = '<rect x="4.5" y="4.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8.5 4.5V3A1.5 1.5 0 007 1.5H3A1.5 1.5 0 001.5 3v4A1.5 1.5 0 003 8.5h1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>';
     }, 2500);
@@ -1204,10 +882,10 @@ document.getElementById('copy-btn').addEventListener('click', () => {
 });
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = '✓ ' + msg;
+  var t = document.getElementById('toast');
+  t.textContent = '\u2713 ' + msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  setTimeout(function() { t.classList.remove('show'); }, 2200);
 }
 
 // ── GO ────────────────────────────────────────────────────────────────────────
