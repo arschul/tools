@@ -629,7 +629,7 @@ function renderDonut(slices, centerLabel, centerSub){
 /* ---------- modal ---------- */
 function showModal(html){
   document.getElementById('modal-root').innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal-overlay" onmousedown="this._downOnSelf = (event.target===this)" onclick="if(event.target===this && this._downOnSelf) closeModal()">
       <div class="modal">${html}</div>
     </div>`;
 }
