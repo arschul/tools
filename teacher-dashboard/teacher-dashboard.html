@@ -803,6 +803,7 @@ function openClassModal(classId){
   showModal(`
     <h3>${c?'Edit class':'Add class'}</h3>
     <div class="field"><label>Class name</label><input id="cm-name" type="text" value="${c?esc(c.name):''}" placeholder="e.g. Turma B1"></div>
+    <div id="cm-name-error" style="color:var(--red);font-size:12px;margin:-8px 0 12px;display:none;">Please enter a class name.</div>
     <div class="field"><label>Days</label>
       <div class="day-checks" style="display:flex;gap:6px;flex-wrap:wrap;">
         ${DAY_ABBR.map((abbr,i)=>{
@@ -838,7 +839,11 @@ function selectSwatch(el, color){
 }
 function saveClass(classId){
   const name = document.getElementById('cm-name').value.trim();
-  if(!name) return;
+  if(!name){
+    document.getElementById('cm-name-error').style.display = 'block';
+    document.getElementById('cm-name').focus();
+    return;
+  }
   const days = Array.from(document.querySelectorAll('.cm-day:checked')).map(el=>parseInt(el.value)).sort((a,b)=>a-b);
   const time = document.getElementById('cm-time').value;
   const color = document.getElementById('cm-color').value;
@@ -1659,4 +1664,5 @@ init();
 </script>
 </body>
 </html>
+
 
