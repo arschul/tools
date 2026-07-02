@@ -6,18 +6,21 @@
 <title>EFL Teacher Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --sidebar:#1c2436;
-    --sidebar-accent:#2a3650;
-    --bg:#f4f6fb;
+    --sidebar:#122234;
+    --sidebar-accent:#1d3149;
+    --bg:#faf8f3;
     --card:#ffffff;
-    --border:#e3e7f0;
-    --text:#1c2436;
-    --muted:#7d869c;
-    --accent:#4f6df5;
-    --accent-soft:#e8ecff;
+    --border:#e8e5db;
+    --text:#182838;
+    --muted:#7b8494;
+    --accent:#0e8e88;          /* teal — brand / interactive */
+    --accent-deep:#0a6d68;
+    --accent-soft:#dbf0ee;
+    --marker:#ffce3a;          /* highlighter yellow — signature */
+    --marker-soft:#fff3c4;
     --green:#1f9d6f;
     --green-soft:#e3f7ee;
     --amber:#c98a1c;
@@ -28,37 +31,42 @@
     --purple-soft:#efe7ff;
     --gray:#6b7280;
     --gray-soft:#eef0f4;
-    --accent-grad: linear-gradient(135deg, #4f6df5 0%, #8b5cf6 100%);
-    --radius:16px;
+    --accent-grad: linear-gradient(135deg, #12a89c 0%, #0a6d68 100%);
+    --radius:14px;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     font-family:'Inter',sans-serif;
     background:
-      radial-gradient(circle at 100% 0%, #eef1fd 0%, transparent 45%),
-      radial-gradient(circle at 0% 100%, #eef7f3 0%, transparent 40%),
+      radial-gradient(120% 80% at 100% -5%, #fdf3da 0%, transparent 42%),
+      radial-gradient(110% 90% at -5% 105%, #e4f3f1 0%, transparent 40%),
       var(--bg);
     color:var(--text);
     display:flex;
     min-height:100vh;
+    -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:'Sora',sans-serif;margin:0;}
+  h1,h2,h3{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;margin:0;letter-spacing:-.02em;}
   a{color:var(--accent);cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
+  .view.active{animation:viewIn .28s cubic-bezier(.2,.8,.2,1) both;}
+  @keyframes viewIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 
   /* Sidebar */
   .sidebar{
     width:230px;
     background:
-      radial-gradient(circle at 25% 0%, rgba(79,109,245,.35), transparent 55%),
-      radial-gradient(circle at 90% 80%, rgba(139,92,246,.18), transparent 50%),
-      linear-gradient(165deg, #1c2436 0%, #20283e 55%, #181f30 100%);
+      radial-gradient(circle at 25% 0%, rgba(18,168,156,.32), transparent 55%),
+      radial-gradient(circle at 90% 85%, rgba(255,206,58,.12), transparent 50%),
+      linear-gradient(165deg, #122234 0%, #16293e 55%, #0d1826 100%);
     color:#cfd6e8;
     padding:24px 18px;
     flex-shrink:0;
   }
   .sidebar .brand{
-    font-family:'Sora',sans-serif;
+    font-family:'Bricolage Grotesque','Segoe UI',sans-serif;
     font-weight:700;
     font-size:18px;
     letter-spacing:-.01em;
@@ -83,8 +91,9 @@
   }
   .nav-item:hover{color:#fff;background:rgba(255,255,255,.05);}
   .nav-item.active{
-    background:rgba(255,255,255,.06);
+    background:rgba(255,255,255,.07);
     color:#fff;
+    box-shadow:inset 3px 0 0 var(--marker);
   }
   .nav-icon-badge{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;
@@ -96,9 +105,9 @@
   .nav-icon-badge svg{width:16px;height:16px;}
   .nav-item:hover .nav-icon-badge{background:rgba(255,255,255,.12);color:#fff;}
   .nav-item.active .nav-icon-badge{
-    background:var(--accent-grad);
-    color:#fff;
-    box-shadow:0 4px 14px -2px rgba(79,109,245,.6);
+    background:var(--marker);
+    color:#122234;
+    box-shadow:0 4px 14px -2px rgba(255,206,58,.55);
   }
   .sidebar-divider{height:1px;background:rgba(255,255,255,.08);margin:10px 4px 10px;}
 
@@ -111,7 +120,13 @@
     display:flex;justify-content:space-between;align-items:flex-start;
     margin-bottom:18px;flex-wrap:wrap;gap:12px;
   }
-  .topbar h1{font-size:24px;letter-spacing:-.01em;}
+  .topbar h1{font-size:27px;font-weight:700;letter-spacing:-.02em;}
+  .topbar h1::after{
+    content:"";display:block;width:44px;height:5px;margin-top:8px;border-radius:3px;
+    background:var(--marker);transform:skewX(-14deg);transform-origin:left;
+    animation:markerIn .45s cubic-bezier(.2,.8,.2,1) both .1s;
+  }
+  @keyframes markerIn{from{transform:skewX(-14deg) scaleX(0);}to{transform:skewX(-14deg) scaleX(1);}}
   .topbar .meta{color:var(--muted);font-size:13px;margin-top:4px;}
   .back-btn{margin-bottom:8px;}
 
@@ -151,12 +166,13 @@
 
   /* stat row */
   .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;}
-  .stat{padding:16px;text-align:center;}
+  .stat{padding:18px 16px;text-align:center;transition:transform .16s, box-shadow .16s;}
+  .stat:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(24,40,56,.04), 0 14px 34px -18px rgba(24,40,56,.28);}
   .stat-num{
-    font-family:'Sora',sans-serif;font-size:26px;font-weight:700;
-    background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+    font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-size:32px;font-weight:800;
+    color:var(--text);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;
   }
-  .stat-label{font-size:12px;color:var(--muted);margin-top:4px;}
+  .stat-label{font-size:12px;color:var(--muted);margin-top:6px;font-weight:500;}
 
   /* dashboard */
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -170,7 +186,9 @@
   @media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
 
   /* classes & students */
-  .class-card{margin-bottom:12px;overflow:hidden;}
+  .section h3, .chart-card h3{padding-left:11px;border-left:3px solid var(--accent);border-radius:1px;}
+  .class-card{margin-bottom:12px;overflow:hidden;transition:transform .16s, box-shadow .16s;}
+  .class-card:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(24,40,56,.04), 0 16px 38px -20px rgba(24,40,56,.3);}
   .class-card-head{display:flex;justify-content:space-between;align-items:center;padding:16px;gap:10px;}
   .class-card-head .dash-row-left{flex:1;cursor:pointer;}
   .class-card-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
@@ -248,7 +266,7 @@
 
   /* calendar */
   .cal-nav{display:flex;align-items:center;gap:10px;}
-  .cal-month-label{font-family:'Sora',sans-serif;font-weight:600;font-size:15px;min-width:140px;text-align:center;}
+  .cal-month-label{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-weight:600;font-size:15px;min-width:140px;text-align:center;}
   .cal-grid-wrap{padding:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
@@ -256,8 +274,9 @@
   .cal-cell:hover{border-color:var(--accent);}
   .cal-cell.empty{border:none;cursor:default;background:transparent;}
   .cal-cell.empty:hover{border:none;}
-  .cal-cell.today{background:var(--accent-soft);border-color:var(--accent);}
+  .cal-cell.today{background:var(--marker-soft);border-color:var(--marker);box-shadow:inset 0 0 0 1px var(--marker);}
   .cal-date{font-weight:600;font-size:13px;}
+  .cal-cell.today .cal-date{color:#8a6a00;}
   .cal-items{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
   .cal-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;}
   .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);align-items:center;}
@@ -274,11 +293,11 @@
   .donut{width:140px;height:140px;border-radius:50%;position:relative;flex-shrink:0;}
   .donut svg{display:block;width:100%;height:100%;}
   .donut-center{position:absolute;inset:18px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
-  .donut-num{font-family:'Sora',sans-serif;font-weight:700;font-size:20px;}
+  .donut-num{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-weight:700;font-size:20px;}
   .donut-sub{font-size:11px;color:var(--muted);}
   .donut-legend{display:flex;flex-direction:column;gap:6px;font-size:13px;flex:1;}
   .lost-summary{font-size:13px;line-height:1.7;}
-  .lost-summary b{font-family:'Sora',sans-serif;}
+  .lost-summary b{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;}
   @media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
 
   /* print */
