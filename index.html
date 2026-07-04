@@ -297,6 +297,37 @@
             font-size: 0.875rem;
         }
 
+        .featured-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 1.75rem;
+            gap: 1.25rem;
+        }
+
+        .featured-card .icon {
+            width: 52px;
+            height: 52px;
+            background: rgba(255,255,255,0.25);
+            font-size: 1.5rem;
+        }
+
+        .featured-card .content h4 {
+            color: #fff;
+            font-size: 1.15rem;
+        }
+
+        .featured-card .content p {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .featured-card:hover {
+            border-color: transparent;
+        }
+
+        .section-title.featured-title {
+            margin-bottom: 0.75rem;
+        }
+
         .search-box {
             background: var(--card);
             border: 2px solid var(--border);
@@ -378,16 +409,21 @@
 
 
         <section class="section fade-in">
-            <h2 class="section-title">🧰 Tools</h2>
-            <div class="links-grid" id="toolsGrid">
-
-                <div class="link-card" data-name="teacher dashboard classes roll call reports" onclick="goToLink('teacher-dashboard/teacher-dashboard.html')">
+            <h2 class="section-title featured-title">⭐ Featured</h2>
+            <div class="links-grid">
+                <div class="link-card featured-card" data-name="teacher dashboard classes roll call reports" onclick="goToLink('teacher-dashboard/teacher-dashboard.html')">
                     <div class="icon">📊</div>
                     <div class="content">
                         <h4>Teacher Dashboard</h4>
                         <p>Manage classes &amp; students, take roll call, log observations, and generate printable attendance reports.</p>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="section fade-in">
+            <h2 class="section-title">🧰 Tools</h2>
+            <div class="links-grid" id="toolsGrid">
 
                 <div class="link-card" data-name="aura tracker" onclick="goToLink('aura-tracker/aura-tracker.html')">
                     <div class="icon">🏛️</div>
