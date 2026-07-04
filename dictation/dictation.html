@@ -399,7 +399,7 @@ const A2_FILLERS = {
   time: ["seven o'clock","eight thirty","noon","midnight","six fifteen","nine forty-five"],
   chore: ["buy some milk and bread","clean the kitchen","walk the dog","water the plants","pick up the kids","finish the report","pay the bills","book the tickets"],
   object: ["his umbrella","her keys","the invoice","the tickets","his passport","her laptop charger","the shopping list"],
-  place: ["the office","downtown","the airport","the new mall","the dentist","the train station"],
+  place: ["the office","the gym","the airport","the new mall","the dentist","the train station"],
   duration: ["two years","six months","almost a decade","several weeks","a few days","three summers"],
   event: ["a trip to the coast","a birthday party","a team meeting","a school reunion","a weekend getaway","a work conference"],
   day: ["Friday afternoon","Monday morning","next Tuesday","the weekend","early next week","Thursday evening"]
@@ -424,7 +424,8 @@ const B1_FILLERS = {
   trait: ["talented","hard-working","reliable","persuasive","organized","ambitious"],
   event: ["the show had already started","the doors had closed","the train had left","the interview had ended"],
   suggestion: ["reconsider the whole plan","postpone the launch","hire an extra assistant","revise the budget","contact the supplier"],
-  difficulty: ["the tight deadline","the limited budget","the bad weather","the staff shortage","the technical issues"]
+  difficulty: ["the tight deadline","the limited budget","the bad weather","the staff shortage","the technical issues"],
+  worry: ["the deadline","the budget","that email","the presentation","what they think","the interview"]
 };
 const B1_FRAMES = [
   { template:"Although {0}, they decided to {1}.", slots:["cond1","action1"], count:15 },
@@ -434,7 +435,7 @@ const B1_FRAMES = [
   { template:"By the time we arrived, {0}.", slots:["event"], count:6 },
   { template:"He suggested that we should {0}.", slots:["suggestion"], count:8 },
   { template:"Despite {0}, the team managed to finish on time.", slots:["difficulty"], count:8 },
-  { template:"If I were you, I wouldn't worry about {0}.", slots:["claim"], count:6 }
+  { template:"If I were you, I wouldn't worry about {0}.", slots:["worry"], count:6 }
 ];
 
 const B2_FILLERS = {
