@@ -661,7 +661,27 @@
     </div>
 
     <div class="panel">
-      <h2><span class="step-num">3</span> Choose a mode</h2>
+      <h2><span class="step-num">3</span> Choose conversation length</h2>
+      <div class="level-grid" id="lengthGrid" style="grid-template-columns: 1fr 1fr 1fr;">
+        <button class="level-btn length-btn active" data-length="short" type="button">Short <span class="lvl-desc">1 exchange each</span></button>
+        <button class="level-btn length-btn" data-length="long" type="button">Long <span class="lvl-desc">4–5 exchanges each</span></button>
+        <button class="level-btn length-btn" data-length="custom" type="button">Custom <span class="lvl-desc">Mix short + long</span></button>
+      </div>
+      <div id="customLengthPanel" style="display:none; margin-top:16px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+          <label style="font-size:0.85rem; color:var(--text-dim); white-space:nowrap; min-width:120px;">Short conversations</label>
+          <input type="number" id="customShortCount" value="5" min="0" max="50" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text); font-family:inherit;">
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <label style="font-size:0.85rem; color:var(--text-dim); white-space:nowrap; min-width:120px;">Long conversations</label>
+          <input type="number" id="customLongCount" value="5" min="0" max="50" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text); font-family:inherit;">
+        </div>
+        <p style="font-size:0.78rem; color:var(--text-faint); margin-top:10px;">Custom sessions always play short conversations first, then move to long ones.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="step-num">4</span> Choose a mode</h2>
       <div class="level-grid" id="modeGrid" style="grid-template-columns: 1fr 1fr;">
         <button class="level-btn mode-btn active" data-mode="listen" type="button">🎧 Listen <span class="lvl-desc">Play the dialogue</span></button>
         <button class="level-btn mode-btn" data-mode="game" type="button">🎮 Game <span class="lvl-desc">Hidden script + questions</span></button>
@@ -669,7 +689,7 @@
     </div>
 
     <div class="panel" id="teamSetupPanel" style="display:none;">
-      <h2><span class="step-num">4</span> Teams &amp; rounds</h2>
+      <h2><span class="step-num">5</span> Teams &amp; rounds</h2>
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
         <label style="font-size:0.85rem; color:var(--text-dim); white-space:nowrap;">Number of teams</label>
         <select id="teamCountSelect" style="max-width:90px;">
@@ -684,7 +704,7 @@
     </div>
 
     <button class="start-btn" onclick="startSession()">Start →</button>
-    <footer>50 conversations per level · vocabulary varies automatically every time</footer>
+    <footer>50 short + 50 long conversations per level · vocabulary varies automatically every time</footer>
   </div>
 
   <!-- ================= PLAYER SCREEN (Listen mode) ================= -->
@@ -700,21 +720,7 @@
     <div class="convo-card">
       <div class="convo-id" id="convoIdLabel">Conversation 1 of 50</div>
 
-      <div class="line a" id="lineA">
-        <div class="avatar">1</div>
-        <div class="line-content">
-          <div class="line-speaker">Voice 1</div>
-          <div class="line-text" id="textA">—</div>
-        </div>
-      </div>
-
-      <div class="line b" id="lineB">
-        <div class="avatar">2</div>
-        <div class="line-content">
-          <div class="line-speaker">Voice 2</div>
-          <div class="line-text" id="textB">—</div>
-        </div>
-      </div>
+      <div id="lineContainer"></div>
 
       <div class="transport">
         <button class="btn-round" onclick="prevConvo()" title="Previous conversation">⏮</button>
@@ -756,20 +762,7 @@
 
       <!-- Revealed dialogue (shown after reveal) -->
       <div id="gameDialogueReveal" style="display:none;">
-        <div class="line a" id="gameLineA">
-          <div class="avatar">1</div>
-          <div class="line-content">
-            <div class="line-speaker">Voice 1</div>
-            <div class="line-text" id="gameTextA">—</div>
-          </div>
-        </div>
-        <div class="line b" id="gameLineB">
-          <div class="avatar">2</div>
-          <div class="line-content">
-            <div class="line-speaker">Voice 2</div>
-            <div class="line-text" id="gameTextB">—</div>
-          </div>
-        </div>
+        <div id="gameLineContainer"></div>
       </div>
 
       <div class="transport" id="gameAudioTransport">
@@ -808,6 +801,14 @@
 <script src="convos-b1.js"></script>
 <script src="convos-b2.js"></script>
 <script src="questions.js"></script>
+<script src="convosLong-a1.js"></script>
+<script src="convosLong-a2.js"></script>
+<script src="convosLong-b1.js"></script>
+<script src="convosLong-b2.js"></script>
+<script src="questionsLong-a1.js"></script>
+<script src="questionsLong-a2.js"></script>
+<script src="questionsLong-b1.js"></script>
+<script src="questionsLong-b2.js"></script>
 <script>
 /* ---------------- Theme ---------------- */
 function toggleTheme() {
@@ -833,19 +834,39 @@ const ALL_CONVOS = {
   B2: (typeof CONVOS_B2 !== 'undefined') ? CONVOS_B2 : [],
 };
 
+const ALL_CONVOS_LONG = {
+  A1: (typeof CONVOS_LONG_A1 !== 'undefined') ? CONVOS_LONG_A1 : [],
+  A2: (typeof CONVOS_LONG_A2 !== 'undefined') ? CONVOS_LONG_A2 : [],
+  B1: (typeof CONVOS_LONG_B1 !== 'undefined') ? CONVOS_LONG_B1 : [],
+  B2: (typeof CONVOS_LONG_B2 !== 'undefined') ? CONVOS_LONG_B2 : [],
+};
+
+const ALL_QUESTIONS_LONG = {
+  A1: (typeof QUESTIONS_LONG_A1 !== 'undefined') ? QUESTIONS_LONG_A1 : {},
+  A2: (typeof QUESTIONS_LONG_A2 !== 'undefined') ? QUESTIONS_LONG_A2 : {},
+  B1: (typeof QUESTIONS_LONG_B1 !== 'undefined') ? QUESTIONS_LONG_B1 : {},
+  B2: (typeof QUESTIONS_LONG_B2 !== 'undefined') ? QUESTIONS_LONG_B2 : {},
+};
+
 let state = {
   level: 'A1',
   mode: 'listen',
+  length: 'short',     // 'short' | 'long' | 'custom'
+  customShortCount: 5,
+  customLongCount: 5,
   voiceA: null,
   voiceB: null,
   rate: 0.9,
   currentConvo: null,
+  currentIsLong: false,
   currentIndex: -1,
-  filledP1: '',
-  filledP2: '',
+  turns: [],           // normalized [{speaker:'A'|'B', text}] for the current convo
   isPlaying: false,
   utterA: null,
   utterB: null,
+  // session queue (used by both Listen and Game mode so Custom ordering is respected)
+  queue: [],           // [{convo, isLong}]
+  queuePos: -1,
   // game mode
   gameQuestions: [],
   gameAnswers: ['', '', ''],
@@ -931,14 +952,24 @@ document.getElementById('rateSlider').addEventListener('input', (e) => {
 });
 
 /* ---------------- Level selection ---------------- */
-document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(btn => {
+document.querySelectorAll('#levelGrid .level-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#levelGrid .level-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.level = btn.dataset.level;
   });
 });
 document.querySelector('.level-btn[data-level="A1"]').classList.add('active');
+
+/* ---------------- Length selection ---------------- */
+document.querySelectorAll('.length-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.length-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.length = btn.dataset.length;
+    document.getElementById('customLengthPanel').style.display = (state.length === 'custom') ? 'block' : 'none';
+  });
+});
 
 /* ---------------- Mode selection ---------------- */
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -977,11 +1008,53 @@ function fillTemplate(str) {
   });
 }
 
-function pickRandomConvo(level) {
-  const list = ALL_CONVOS[level];
-  if (!list || !list.length) return null;
-  const idx = Math.floor(Math.random() * list.length);
-  return { convo: list[idx], idx };
+/* ---------------- Turn normalization (short convos have single-line p1/p2, long convos have arrays) ---------------- */
+function convoToTurns(convo) {
+  const p1 = Array.isArray(convo.p1) ? convo.p1 : [convo.p1];
+  const p2 = Array.isArray(convo.p2) ? convo.p2 : [convo.p2];
+  const turns = [];
+  const maxLen = Math.max(p1.length, p2.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < p1.length) turns.push({ speaker: 'A', text: fillTemplate(p1[i]) });
+    if (i < p2.length) turns.push({ speaker: 'B', text: fillTemplate(p2[i]) });
+  }
+  return turns;
+}
+
+/* ---------------- Session queue building (Short / Long / Custom) ---------------- */
+function shuffledIndices(n) {
+  const arr = Array.from({ length: n }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function buildSessionQueue(level, lengthMode, shortCount, longCount) {
+  const shortList = ALL_CONVOS[level] || [];
+  const longList = ALL_CONVOS_LONG[level] || [];
+  const queue = [];
+
+  function addRandom(list, isLong, count) {
+    if (!list.length || count <= 0) return;
+    const order = shuffledIndices(list.length);
+    for (let i = 0; i < count; i++) {
+      const idx = order[i % order.length];
+      queue.push({ convo: list[idx], isLong });
+    }
+  }
+
+  if (lengthMode === 'short') {
+    addRandom(shortList, false, shortList.length);
+  } else if (lengthMode === 'long') {
+    addRandom(longList, true, longList.length);
+  } else if (lengthMode === 'custom') {
+    // Custom always sequences short convos first, then long convos
+    addRandom(shortList, false, shortCount);
+    addRandom(longList, true, longCount);
+  }
+  return queue;
 }
 
 /* ---------------- Screen transitions ---------------- */
@@ -995,6 +1068,17 @@ function startSession() {
   state.voiceA = availableVoices[selA.value];
   state.voiceB = availableVoices[selB.value];
   state.rate = parseFloat(document.getElementById('rateSlider').value);
+
+  if (state.length === 'custom') {
+    state.customShortCount = parseInt(document.getElementById('customShortCount').value) || 0;
+    state.customLongCount = parseInt(document.getElementById('customLongCount').value) || 0;
+  }
+  state.queue = buildSessionQueue(state.level, state.length, state.customShortCount, state.customLongCount);
+  state.queuePos = -1;
+  if (!state.queue.length) {
+    alert('No conversations are available for this level/length combination. Please choose different settings.');
+    return;
+  }
 
   document.getElementById('setupScreen').style.display = 'none';
 
@@ -1033,48 +1117,65 @@ function backToSetup() {
   document.getElementById('setupScreen').style.display = 'block';
 }
 
-/* ---------------- Conversation navigation ---------------- */
-function loadConvo(level, idx) {
+/* ---------------- Conversation navigation (Listen mode uses the session queue) ---------------- */
+function renderLines(containerId, turns) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  turns.forEach((turn, i) => {
+    const cls = turn.speaker === 'A' ? 'a' : 'b';
+    const voiceLabel = turn.speaker === 'A' ? 'Voice 1' : 'Voice 2';
+    const div = document.createElement('div');
+    div.className = `line ${cls}`;
+    div.id = `${containerId}-line-${i}`;
+    div.innerHTML = `
+      <div class="avatar">${turn.speaker === 'A' ? '1' : '2'}</div>
+      <div class="line-content">
+        <div class="line-speaker">${voiceLabel}</div>
+        <div class="line-text">${escapeHtml(turn.text)}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function loadConvoAt(queuePos) {
   window.speechSynthesis.cancel();
   state.isPlaying = false;
   document.getElementById('playBtn').textContent = '▶';
-  resetLineStyles();
 
-  const list = ALL_CONVOS[level];
-  state.currentConvo = list[idx];
-  state.currentIndex = idx;
-  state.filledP1 = fillTemplate(state.currentConvo.p1);
-  state.filledP2 = fillTemplate(state.currentConvo.p2);
+  const item = state.queue[queuePos];
+  if (!item) return;
+  state.queuePos = queuePos;
+  state.currentConvo = item.convo;
+  state.currentIsLong = item.isLong;
+  state.turns = convoToTurns(item.convo);
 
-  document.getElementById('textA').textContent = state.filledP1;
-  document.getElementById('textB').textContent = state.filledP2;
+  renderLines('lineContainer', state.turns);
   document.getElementById('convoIdLabel').textContent =
-    `Conversation ${idx + 1} of ${list.length} · ${level}`;
+    `Conversation ${queuePos + 1} of ${state.queue.length} · ${state.level}${item.isLong ? ' · Long' : ''}`;
   document.getElementById('progressLabel').textContent = 'Ready';
   document.getElementById('progressFill').style.width = '0%';
 }
 
 function newConversation() {
-  const result = pickRandomConvo(state.level);
-  if (!result) return;
-  loadConvo(state.level, result.idx);
+  if (!state.queue.length) return;
+  loadConvoAt(0);
 }
 
 function nextConvo() {
-  const list = ALL_CONVOS[state.level];
-  const idx = (state.currentIndex + 1) % list.length;
-  loadConvo(state.level, idx);
+  if (!state.queue.length) return;
+  const idx = (state.queuePos + 1) % state.queue.length;
+  loadConvoAt(idx);
 }
 
 function prevConvo() {
-  const list = ALL_CONVOS[state.level];
-  const idx = (state.currentIndex - 1 + list.length) % list.length;
-  loadConvo(state.level, idx);
+  if (!state.queue.length) return;
+  const idx = (state.queuePos - 1 + state.queue.length) % state.queue.length;
+  loadConvoAt(idx);
 }
 
 function resetLineStyles() {
-  document.getElementById('lineA').classList.remove('speaking');
-  document.getElementById('lineB').classList.remove('speaking');
+  document.querySelectorAll('#lineContainer .line').forEach(el => el.classList.remove('speaking'));
 }
 
 /* ---------------- Playback ---------------- */
@@ -1094,31 +1195,14 @@ function playConversation() {
   window.speechSynthesis.cancel();
   state.isPlaying = true;
   document.getElementById('playBtn').textContent = '⏸';
-  document.getElementById('progressFill').style.width = '10%';
-  document.getElementById('progressLabel').textContent = 'Voice 1 speaking…';
-
-  const lineA = document.getElementById('lineA');
-  const lineB = document.getElementById('lineB');
   resetLineStyles();
-  lineA.classList.add('speaking');
 
-  const uA = new SpeechSynthesisUtterance(state.filledP1);
-  uA.voice = state.voiceA;
-  uA.rate = state.rate;
+  const turns = state.turns;
+  const total = turns.length;
 
-  uA.onend = () => {
+  function speakTurn(i) {
     if (!state.isPlaying) return;
-    lineA.classList.remove('speaking');
-    lineB.classList.add('speaking');
-    document.getElementById('progressFill').style.width = '55%';
-    document.getElementById('progressLabel').textContent = 'Voice 2 speaking…';
-
-    const uB = new SpeechSynthesisUtterance(state.filledP2);
-    uB.voice = state.voiceB;
-    uB.rate = state.rate;
-
-    uB.onend = () => {
-      lineB.classList.remove('speaking');
+    if (i >= total) {
       document.getElementById('progressFill').style.width = '100%';
       document.getElementById('progressLabel').textContent = 'Finished';
       state.isPlaying = false;
@@ -1126,35 +1210,38 @@ function playConversation() {
 
       if (document.getElementById('autoAdvance').checked) {
         setTimeout(() => {
-          newConversation();
+          nextConvo();
           setTimeout(playConversation, 400);
         }, 700);
       }
-    };
-    uB.onerror = () => {
+      return;
+    }
+
+    resetLineStyles();
+    const lineEl = document.getElementById(`lineContainer-line-${i}`);
+    if (lineEl) lineEl.classList.add('speaking');
+    const pct = Math.round(((i + 1) / (total + 1)) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent =
+      turns[i].speaker === 'A' ? 'Voice 1 speaking…' : 'Voice 2 speaking…';
+
+    const u = new SpeechSynthesisUtterance(turns[i].text);
+    u.voice = turns[i].speaker === 'A' ? state.voiceA : state.voiceB;
+    u.rate = state.rate;
+    u.onend = () => speakTurn(i + 1);
+    u.onerror = () => {
       state.isPlaying = false;
       document.getElementById('playBtn').textContent = '▶';
     };
-    window.speechSynthesis.speak(uB);
-  };
-  uA.onerror = () => {
-    state.isPlaying = false;
-    document.getElementById('playBtn').textContent = '▶';
-  };
+    window.speechSynthesis.speak(u);
+  }
 
-  window.speechSynthesis.speak(uA);
+  speakTurn(0);
 }
 
 /* ================= GAME MODE ================= */
 const ALL_QUESTIONS = (typeof QUESTIONS !== 'undefined') ? QUESTIONS : {};
 const Q_LABELS = ['Easy', 'Medium', 'Hard'];
-
-function pickRandomGameConvo(level) {
-  const list = ALL_CONVOS[level];
-  if (!list || !list.length) return null;
-  const idx = Math.floor(Math.random() * list.length);
-  return { convo: list[idx], idx };
-}
 
 function renderScoreboard() {
   const board = document.getElementById('scoreboard');
@@ -1171,16 +1258,16 @@ function renderScoreboard() {
 
 function newGameRound() {
   window.speechSynthesis.cancel();
-  const result = pickRandomGameConvo(state.level);
-  if (!result) return;
+  if (!state.queue.length) return;
+  const nextPos = (state.queuePos + 1) % state.queue.length;
+  const item = state.queue[nextPos];
+  state.queuePos = nextPos;
+  state.currentConvo = item.convo;
+  state.currentIsLong = item.isLong;
+  state.turns = convoToTurns(item.convo);
 
-  state.currentConvo = result.convo;
-  state.currentIndex = result.idx;
-  state.filledP1 = fillTemplate(state.currentConvo.p1);
-  state.filledP2 = fillTemplate(state.currentConvo.p2);
-
-  const levelQuestions = ALL_QUESTIONS[state.level] || {};
-  state.gameQuestions = levelQuestions[state.currentConvo.id] || [
+  const questionBank = item.isLong ? (ALL_QUESTIONS_LONG[state.level] || {}) : (ALL_QUESTIONS[state.level] || {});
+  state.gameQuestions = questionBank[state.currentConvo.id] || [
     "What is Person 1 talking about?",
     "What detail does Person 2 add?",
     "What might happen next, based on this conversation?"
@@ -1190,10 +1277,9 @@ function newGameRound() {
   state.gameStep = 0;
   state.gameRevealed = false;
 
-  document.getElementById('gameTextA').textContent = state.filledP1;
-  document.getElementById('gameTextB').textContent = state.filledP2;
+  renderLines('gameLineContainer', state.turns);
   document.getElementById('gameConvoIdLabel').textContent =
-    `Conversation ${result.idx + 1} of ${ALL_CONVOS[state.level].length} · ${state.level}`;
+    `Conversation ${nextPos + 1} of ${state.queue.length} · ${state.level}${item.isLong ? ' · Long' : ''}`;
   document.getElementById('gameLevelPill').textContent = state.level;
   document.getElementById('gameHiddenNotice').style.display = 'block';
   document.getElementById('gameDialogueReveal').style.display = 'none';
@@ -1210,32 +1296,30 @@ function newGameRound() {
 
 function playGameAudio() {
   window.speechSynthesis.cancel();
-  document.getElementById('gameProgressLabel').textContent = 'Voice 1 speaking…';
   document.getElementById('gamePlayBtn').textContent = '⏸ Playing…';
 
-  const uA = new SpeechSynthesisUtterance(state.filledP1);
-  uA.voice = state.voiceA;
-  uA.rate = state.rate;
+  const turns = state.turns;
+  const total = turns.length;
 
-  uA.onend = () => {
-    document.getElementById('gameProgressLabel').textContent = 'Voice 2 speaking…';
-    const uB = new SpeechSynthesisUtterance(state.filledP2);
-    uB.voice = state.voiceB;
-    uB.rate = state.rate;
-    uB.onend = () => {
+  function speakTurn(i) {
+    if (i >= total) {
       document.getElementById('gameProgressLabel').textContent = 'Finished playing';
       document.getElementById('gamePlayBtn').textContent = '▶ Play audio again';
-    };
-    uB.onerror = () => {
+      return;
+    }
+    document.getElementById('gameProgressLabel').textContent =
+      turns[i].speaker === 'A' ? 'Voice 1 speaking…' : 'Voice 2 speaking…';
+    const u = new SpeechSynthesisUtterance(turns[i].text);
+    u.voice = turns[i].speaker === 'A' ? state.voiceA : state.voiceB;
+    u.rate = state.rate;
+    u.onend = () => speakTurn(i + 1);
+    u.onerror = () => {
       document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
     };
-    window.speechSynthesis.speak(uB);
-  };
-  uA.onerror = () => {
-    document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
-  };
+    window.speechSynthesis.speak(u);
+  }
 
-  window.speechSynthesis.speak(uA);
+  speakTurn(0);
 }
 
 function renderQuestionArea() {
