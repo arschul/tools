@@ -427,6 +427,58 @@
     display: none;
   }
 
+  /* ---------- Game mode question flow ---------- */
+  .q-block {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .q-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .q-tag.easy { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+  .q-tag.medium { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+  .q-tag.hard { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+  .q-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 12px; }
+  .q-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 48px;
+  }
+  .q-answered {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    padding: 4px 2px;
+  }
+  .q-answered strong { color: var(--text); }
+  .q-submit {
+    margin-top: 12px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #0b0e17;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
   footer {
     text-align: center;
     color: var(--text-faint);
@@ -484,16 +536,24 @@
       </div>
     </div>
 
-    <button class="start-btn" onclick="startSession()">Start listening →</button>
+    <div class="panel">
+      <h2><span class="step-num">3</span> Choose a mode</h2>
+      <div class="level-grid" id="modeGrid" style="grid-template-columns: 1fr 1fr;">
+        <button class="level-btn mode-btn active" data-mode="listen" type="button">🎧 Listen <span class="lvl-desc">Play the dialogue</span></button>
+        <button class="level-btn mode-btn" data-mode="game" type="button">🎮 Game <span class="lvl-desc">Hidden script + questions</span></button>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startSession()">Start →</button>
     <footer>50 conversations per level · vocabulary varies automatically every time</footer>
   </div>
 
-  <!-- ================= PLAYER SCREEN ================= -->
+  <!-- ================= PLAYER SCREEN (Listen mode) ================= -->
   <div class="player-screen" id="playerScreen">
     <div class="player-topbar">
       <div class="level-pill" id="levelPill">A1</div>
       <div class="topbar-actions">
-        <button class="icon-btn" onclick="backToSetup()">⚙ Voices</button>
+        <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
         <button class="icon-btn" onclick="newConversation()">🔀 Random</button>
       </div>
     </div>
@@ -535,6 +595,59 @@
     </div>
   </div>
 
+  <!-- ================= GAME SCREEN ================= -->
+  <div class="player-screen" id="gameScreen">
+    <div class="player-topbar">
+      <div class="level-pill" id="gameLevelPill">A1</div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
+        <button class="icon-btn" onclick="newGameRound()">🔀 New conversation</button>
+      </div>
+    </div>
+
+    <div class="convo-card">
+      <div class="convo-id" id="gameConvoIdLabel">Conversation 1 of 50</div>
+
+      <!-- Hidden dialogue placeholder -->
+      <div id="gameHiddenNotice" style="text-align:center; padding: 18px 10px; color: var(--text-dim); font-size: 0.95rem;">
+        🔒 The script is hidden. Play the audio, then answer each question below.
+      </div>
+
+      <!-- Revealed dialogue (shown after reveal) -->
+      <div id="gameDialogueReveal" style="display:none;">
+        <div class="line a" id="gameLineA">
+          <div class="avatar">1</div>
+          <div class="line-content">
+            <div class="line-speaker">Voice 1</div>
+            <div class="line-text" id="gameTextA">—</div>
+          </div>
+        </div>
+        <div class="line b" id="gameLineB">
+          <div class="avatar">2</div>
+          <div class="line-content">
+            <div class="line-speaker">Voice 2</div>
+            <div class="line-text" id="gameTextB">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button class="btn-play" onclick="playGameAudio()" id="gamePlayBtn" title="Play audio">▶ Play audio</button>
+      </div>
+
+      <div class="progress-row">
+        <span id="gameProgressLabel">Ready</span>
+      </div>
+
+      <!-- Question flow -->
+      <div id="questionArea" style="margin-top: 24px;"></div>
+
+      <div id="revealArea" style="display:none; margin-top: 20px; text-align:center;">
+        <button class="icon-btn" onclick="revealScript()" style="font-size: 0.95rem; padding: 12px 24px;">📜 Reveal script &amp; review answers</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script src="wordbanks.js"></script>
@@ -542,6 +655,7 @@
 <script src="convos-a2.js"></script>
 <script src="convos-b1.js"></script>
 <script src="convos-b2.js"></script>
+<script src="questions.js"></script>
 <script>
 /* ---------------- Theme ---------------- */
 function toggleTheme() {
@@ -569,6 +683,7 @@ const ALL_CONVOS = {
 
 let state = {
   level: 'A1',
+  mode: 'listen',
   voiceA: null,
   voiceB: null,
   rate: 0.9,
@@ -578,7 +693,12 @@ let state = {
   filledP2: '',
   isPlaying: false,
   utterA: null,
-  utterB: null
+  utterB: null,
+  // game mode
+  gameQuestions: [],
+  gameAnswers: ['', '', ''],
+  gameStep: 0,
+  gameRevealed: false
 };
 
 /* ---------------- Voice loading ---------------- */
@@ -643,14 +763,23 @@ document.getElementById('rateSlider').addEventListener('input', (e) => {
 });
 
 /* ---------------- Level selection ---------------- */
-document.querySelectorAll('.level-btn').forEach(btn => {
+document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.level = btn.dataset.level;
   });
 });
 document.querySelector('.level-btn[data-level="A1"]').classList.add('active');
+
+/* ---------------- Mode selection ---------------- */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+  });
+});
 
 /* ---------------- Word bank filling ---------------- */
 function fillTemplate(str) {
@@ -681,10 +810,18 @@ function startSession() {
   state.rate = parseFloat(document.getElementById('rateSlider').value);
 
   document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('playerScreen').style.display = 'block';
-  document.getElementById('levelPill').textContent = state.level;
 
-  newConversation();
+  if (state.mode === 'game') {
+    document.getElementById('playerScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('gameLevelPill').textContent = state.level;
+    newGameRound();
+  } else {
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('playerScreen').style.display = 'block';
+    document.getElementById('levelPill').textContent = state.level;
+    newConversation();
+  }
 }
 
 function backToSetup() {
@@ -692,6 +829,7 @@ function backToSetup() {
   state.isPlaying = false;
   document.getElementById('playBtn').textContent = '▶';
   document.getElementById('playerScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'block';
 }
 
@@ -805,6 +943,138 @@ function playConversation() {
   };
 
   window.speechSynthesis.speak(uA);
+}
+
+/* ================= GAME MODE ================= */
+const ALL_QUESTIONS = (typeof QUESTIONS !== 'undefined') ? QUESTIONS : {};
+const Q_LABELS = ['Easy', 'Medium', 'Hard'];
+
+function pickRandomGameConvo(level) {
+  const list = ALL_CONVOS[level];
+  if (!list || !list.length) return null;
+  const idx = Math.floor(Math.random() * list.length);
+  return { convo: list[idx], idx };
+}
+
+function newGameRound() {
+  window.speechSynthesis.cancel();
+  const result = pickRandomGameConvo(state.level);
+  if (!result) return;
+
+  state.currentConvo = result.convo;
+  state.currentIndex = result.idx;
+  state.filledP1 = fillTemplate(state.currentConvo.p1);
+  state.filledP2 = fillTemplate(state.currentConvo.p2);
+
+  const levelQuestions = ALL_QUESTIONS[state.level] || {};
+  state.gameQuestions = levelQuestions[state.currentConvo.id] || [
+    "What is Person 1 talking about?",
+    "What detail does Person 2 add?",
+    "What might happen next, based on this conversation?"
+  ];
+  state.gameAnswers = ['', '', ''];
+  state.gameStep = 0;
+  state.gameRevealed = false;
+
+  document.getElementById('gameTextA').textContent = state.filledP1;
+  document.getElementById('gameTextB').textContent = state.filledP2;
+  document.getElementById('gameConvoIdLabel').textContent =
+    `Conversation ${result.idx + 1} of ${ALL_CONVOS[state.level].length} · ${state.level}`;
+  document.getElementById('gameLevelPill').textContent = state.level;
+  document.getElementById('gameHiddenNotice').style.display = 'block';
+  document.getElementById('gameDialogueReveal').style.display = 'none';
+  document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('gameProgressLabel').textContent = 'Ready';
+  document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+
+  renderQuestionArea();
+}
+
+function playGameAudio() {
+  window.speechSynthesis.cancel();
+  document.getElementById('gameProgressLabel').textContent = 'Voice 1 speaking…';
+  document.getElementById('gamePlayBtn').textContent = '⏸ Playing…';
+
+  const uA = new SpeechSynthesisUtterance(state.filledP1);
+  uA.voice = state.voiceA;
+  uA.rate = state.rate;
+
+  uA.onend = () => {
+    document.getElementById('gameProgressLabel').textContent = 'Voice 2 speaking…';
+    const uB = new SpeechSynthesisUtterance(state.filledP2);
+    uB.voice = state.voiceB;
+    uB.rate = state.rate;
+    uB.onend = () => {
+      document.getElementById('gameProgressLabel').textContent = 'Finished playing';
+      document.getElementById('gamePlayBtn').textContent = '▶ Play audio again';
+    };
+    uB.onerror = () => {
+      document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+    };
+    window.speechSynthesis.speak(uB);
+  };
+  uA.onerror = () => {
+    document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+  };
+
+  window.speechSynthesis.speak(uA);
+}
+
+function renderQuestionArea() {
+  const area = document.getElementById('questionArea');
+  area.innerHTML = '';
+
+  // Render already-answered questions as read-only summaries
+  for (let i = 0; i < state.gameStep; i++) {
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.innerHTML = `
+      <span class="q-tag ${Q_LABELS[i].toLowerCase()}">${Q_LABELS[i]}</span>
+      <div class="q-text">${state.gameQuestions[i]}</div>
+      <div class="q-answered">Your answer: <strong>${escapeHtml(state.gameAnswers[i]) || '(blank)'}</strong></div>
+    `;
+    area.appendChild(block);
+  }
+
+  if (state.gameStep < 3) {
+    const i = state.gameStep;
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.innerHTML = `
+      <span class="q-tag ${Q_LABELS[i].toLowerCase()}">${Q_LABELS[i]}</span>
+      <div class="q-text">${state.gameQuestions[i]}</div>
+      <textarea class="q-input" id="qInput" rows="2" placeholder="Type the answer here…"></textarea>
+      <br>
+      <button class="q-submit" onclick="submitGameAnswer()">Submit answer →</button>
+    `;
+    area.appendChild(block);
+    setTimeout(() => {
+      const inp = document.getElementById('qInput');
+      if (inp) inp.focus();
+    }, 50);
+  } else {
+    document.getElementById('revealArea').style.display = 'block';
+  }
+}
+
+function submitGameAnswer() {
+  const inp = document.getElementById('qInput');
+  state.gameAnswers[state.gameStep] = inp ? inp.value.trim() : '';
+  state.gameStep++;
+  renderQuestionArea();
+}
+
+function revealScript() {
+  state.gameRevealed = true;
+  document.getElementById('gameHiddenNotice').style.display = 'none';
+  document.getElementById('gameDialogueReveal').style.display = 'block';
+  document.getElementById('revealArea').style.display = 'none';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
 }
 </script>
 </body>
