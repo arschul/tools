@@ -1086,7 +1086,9 @@ function startSession() {
     const nameInputs = Array.from(document.querySelectorAll('.team-name-input'));
     state.teams = nameInputs.map((inp, i) => ({
       name: inp.value.trim() || `Team ${i + 1}`,
-      score: 0
+      score: 0,
+      queue: buildSessionQueue(state.level, state.length, state.customShortCount, state.customLongCount),
+      queuePos: -1
     }));
     state.roundsPerTeam = parseInt(document.getElementById('roundsPerTeam').value) || 3;
     state.currentTeamIndex = 0;
@@ -1258,10 +1260,11 @@ function renderScoreboard() {
 
 function newGameRound() {
   window.speechSynthesis.cancel();
-  if (!state.queue.length) return;
-  const nextPos = (state.queuePos + 1) % state.queue.length;
-  const item = state.queue[nextPos];
-  state.queuePos = nextPos;
+  const team = state.teams[state.currentTeamIndex];
+  if (!team || !team.queue.length) return;
+  const nextPos = (team.queuePos + 1) % team.queue.length;
+  const item = team.queue[nextPos];
+  team.queuePos = nextPos;
   state.currentConvo = item.convo;
   state.currentIsLong = item.isLong;
   state.turns = convoToTurns(item.convo);
@@ -1279,7 +1282,7 @@ function newGameRound() {
 
   renderLines('gameLineContainer', state.turns);
   document.getElementById('gameConvoIdLabel').textContent =
-    `Conversation ${nextPos + 1} of ${state.queue.length} · ${state.level}${item.isLong ? ' · Long' : ''}`;
+    `Conversation ${nextPos + 1} of ${team.queue.length} · ${state.level}${item.isLong ? ' · Long' : ''}`;
   document.getElementById('gameLevelPill').textContent = state.level;
   document.getElementById('gameHiddenNotice').style.display = 'block';
   document.getElementById('gameDialogueReveal').style.display = 'none';
