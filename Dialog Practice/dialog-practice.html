@@ -1000,8 +1000,11 @@ document.getElementById('teamCountSelect').addEventListener('change', renderTeam
 renderTeamNameInputs();
 
 /* ---------------- Word bank filling ---------------- */
-function fillTemplate(str) {
+function fillTemplate(str, resolved) {
   return str.replace(/\[(\w+)\]/g, (match, category) => {
+    if (resolved && Object.prototype.hasOwnProperty.call(resolved, category)) {
+      return resolved[category];
+    }
     const bank = WORD_BANKS[category];
     if (!bank) return match;
     return bank[Math.floor(Math.random() * bank.length)];
@@ -1012,11 +1015,23 @@ function fillTemplate(str) {
 function convoToTurns(convo) {
   const p1 = Array.isArray(convo.p1) ? convo.p1 : [convo.p1];
   const p2 = Array.isArray(convo.p2) ? convo.p2 : [convo.p2];
+
+  // Resolve each placeholder category to ONE consistent value for this conversation instance,
+  // so a category referenced more than once (e.g. two "[sport]" mentions) stays consistent.
+  const allText = p1.join(' ') + ' ' + p2.join(' ');
+  const categories = new Set();
+  allText.replace(/\[(\w+)\]/g, (match, category) => { categories.add(category); return match; });
+  const resolved = {};
+  categories.forEach(category => {
+    const bank = WORD_BANKS[category];
+    if (bank) resolved[category] = bank[Math.floor(Math.random() * bank.length)];
+  });
+
   const turns = [];
   const maxLen = Math.max(p1.length, p2.length);
   for (let i = 0; i < maxLen; i++) {
-    if (i < p1.length) turns.push({ speaker: 'A', text: fillTemplate(p1[i]) });
-    if (i < p2.length) turns.push({ speaker: 'B', text: fillTemplate(p2[i]) });
+    if (i < p1.length) turns.push({ speaker: 'A', text: fillTemplate(p1[i], resolved) });
+    if (i < p2.length) turns.push({ speaker: 'B', text: fillTemplate(p2[i], resolved) });
   }
   return turns;
 }
