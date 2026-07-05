@@ -479,6 +479,130 @@
     cursor: pointer;
   }
 
+  /* ---------- Team setup ---------- */
+  .team-name-input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  /* ---------- Scoreboard ---------- */
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .score-chip {
+    flex: 1;
+    min-width: 120px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .score-chip.on-turn {
+    border-color: var(--accent-a);
+    background: var(--accent-a-bg);
+  }
+  .score-chip .team-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .score-chip.on-turn .team-name { color: var(--accent-a); }
+  .score-chip .team-score {
+    font-family: 'Sora', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-top: 2px;
+  }
+  .turn-banner {
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--accent-a-bg);
+    color: var(--accent-a);
+    font-weight: 700;
+    margin-bottom: 18px;
+    font-size: 0.95rem;
+  }
+
+  /* ---------- Grading panel ---------- */
+  .grade-block {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .grade-q-text { font-weight: 600; margin-bottom: 4px; }
+  .grade-answer { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 12px; }
+  .grade-answer strong { color: var(--text); }
+  .grade-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .grade-btn {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-weight: 800;
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .grade-btn.selected {
+    border-color: var(--accent-a);
+    background: var(--accent-a);
+    color: #0b0e17;
+  }
+  .round-summary {
+    text-align: center;
+    padding: 18px;
+    font-size: 1.05rem;
+  }
+  .round-summary .earned {
+    font-family: 'Sora', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent-a);
+    margin: 8px 0;
+  }
+  .winner-banner {
+    text-align: center;
+    padding: 30px 20px;
+  }
+  .winner-banner .trophy { font-size: 3rem; margin-bottom: 10px; }
+  .winner-banner h2 { font-size: 1.6rem; margin: 0 0 6px; }
+  .final-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 320px;
+    margin: 20px auto 0;
+  }
+  .final-score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-weight: 700;
+  }
+  .final-score-row.winner {
+    border-color: var(--accent-a);
+    background: var(--accent-a-bg);
+    color: var(--accent-a);
+  }
+
   footer {
     text-align: center;
     color: var(--text-faint);
@@ -544,6 +668,21 @@
       </div>
     </div>
 
+    <div class="panel" id="teamSetupPanel" style="display:none;">
+      <h2><span class="step-num">4</span> Teams &amp; rounds</h2>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <label style="font-size:0.85rem; color:var(--text-dim); white-space:nowrap;">Number of teams</label>
+        <select id="teamCountSelect" style="max-width:90px;">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+        <label style="font-size:0.85rem; color:var(--text-dim); white-space:nowrap; margin-left:14px;">Rounds per team</label>
+        <input type="number" id="roundsPerTeam" value="3" min="1" max="10" style="width:70px; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--bg-elevated); color:var(--text); font-family:inherit;">
+      </div>
+      <div id="teamNameInputs" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
+    </div>
+
     <button class="start-btn" onclick="startSession()">Start →</button>
     <footer>50 conversations per level · vocabulary varies automatically every time</footer>
   </div>
@@ -601,11 +740,13 @@
       <div class="level-pill" id="gameLevelPill">A1</div>
       <div class="topbar-actions">
         <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
-        <button class="icon-btn" onclick="newGameRound()">🔀 New conversation</button>
       </div>
     </div>
 
-    <div class="convo-card">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="turn-banner" id="turnBanner">Team 1's turn — Round 1 of 3</div>
+
+    <div class="convo-card" id="gameCard">
       <div class="convo-id" id="gameConvoIdLabel">Conversation 1 of 50</div>
 
       <!-- Hidden dialogue placeholder -->
@@ -631,7 +772,7 @@
         </div>
       </div>
 
-      <div class="transport">
+      <div class="transport" id="gameAudioTransport">
         <button class="btn-play" onclick="playGameAudio()" id="gamePlayBtn" title="Play audio">▶ Play audio</button>
       </div>
 
@@ -643,8 +784,19 @@
       <div id="questionArea" style="margin-top: 24px;"></div>
 
       <div id="revealArea" style="display:none; margin-top: 20px; text-align:center;">
-        <button class="icon-btn" onclick="revealScript()" style="font-size: 0.95rem; padding: 12px 24px;">📜 Reveal script &amp; review answers</button>
+        <button class="icon-btn" onclick="revealScript()" style="font-size: 0.95rem; padding: 12px 24px;">📜 Reveal script &amp; grade answers</button>
       </div>
+
+      <!-- Grading panel (shown after reveal) -->
+      <div id="gradingArea" style="display:none; margin-top: 20px;"></div>
+    </div>
+
+    <!-- Winner screen -->
+    <div class="convo-card winner-banner" id="winnerScreen" style="display:none;">
+      <div class="trophy">🏆</div>
+      <h2 id="winnerTitle">Game over!</h2>
+      <div class="final-scores" id="finalScores"></div>
+      <button class="start-btn" onclick="backToSetup()" style="margin-top:24px;">Back to start screen</button>
     </div>
   </div>
 
@@ -698,8 +850,16 @@ let state = {
   gameQuestions: [],
   gameAnswers: ['', '', ''],
   gameStep: 0,
-  gameRevealed: false
+  gameRevealed: false,
+  gameGrades: [null, null, null],
+  // team competition
+  teams: [],       // [{name, score}]
+  roundsPerTeam: 3,
+  currentTeamIndex: 0,
+  currentRoundNumber: 1  // round number for the team currently on turn
 };
+
+const GRADE_POINTS = { A: 4, B: 3, C: 2, D: 1, F: 0 };
 
 /* ---------------- Voice loading ---------------- */
 let availableVoices = [];
@@ -786,8 +946,27 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.mode = btn.dataset.mode;
+    document.getElementById('teamSetupPanel').style.display = (state.mode === 'game') ? 'block' : 'none';
   });
 });
+
+/* ---------------- Team setup ---------------- */
+function renderTeamNameInputs() {
+  const count = parseInt(document.getElementById('teamCountSelect').value);
+  const wrap = document.getElementById('teamNameInputs');
+  const existing = Array.from(wrap.querySelectorAll('.team-name-input')).map(i => i.value);
+  wrap.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'team-name-input';
+    input.placeholder = `Team ${i + 1} name`;
+    input.value = existing[i] || `Team ${i + 1}`;
+    wrap.appendChild(input);
+  }
+}
+document.getElementById('teamCountSelect').addEventListener('change', renderTeamNameInputs);
+renderTeamNameInputs();
 
 /* ---------------- Word bank filling ---------------- */
 function fillTemplate(str) {
@@ -820,8 +999,19 @@ function startSession() {
   document.getElementById('setupScreen').style.display = 'none';
 
   if (state.mode === 'game') {
+    const nameInputs = Array.from(document.querySelectorAll('.team-name-input'));
+    state.teams = nameInputs.map((inp, i) => ({
+      name: inp.value.trim() || `Team ${i + 1}`,
+      score: 0
+    }));
+    state.roundsPerTeam = parseInt(document.getElementById('roundsPerTeam').value) || 3;
+    state.currentTeamIndex = 0;
+    state.currentRoundNumber = 1;
+
     document.getElementById('playerScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('winnerScreen').style.display = 'none';
+    document.getElementById('gameCard').style.display = 'block';
     document.getElementById('gameLevelPill').textContent = state.level;
     newGameRound();
   } else {
@@ -838,6 +1028,8 @@ function backToSetup() {
   document.getElementById('playBtn').textContent = '▶';
   document.getElementById('playerScreen').style.display = 'none';
   document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('winnerScreen').style.display = 'none';
+  document.getElementById('gameCard').style.display = 'block';
   document.getElementById('setupScreen').style.display = 'block';
 }
 
@@ -964,6 +1156,19 @@ function pickRandomGameConvo(level) {
   return { convo: list[idx], idx };
 }
 
+function renderScoreboard() {
+  const board = document.getElementById('scoreboard');
+  board.innerHTML = '';
+  state.teams.forEach((team, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'score-chip' + (i === state.currentTeamIndex ? ' on-turn' : '');
+    chip.innerHTML = `<div class="team-name">${escapeHtml(team.name)}</div><div class="team-score">${team.score}</div>`;
+    board.appendChild(chip);
+  });
+  document.getElementById('turnBanner').textContent =
+    `${state.teams[state.currentTeamIndex].name}'s turn — Round ${state.currentRoundNumber} of ${state.roundsPerTeam}`;
+}
+
 function newGameRound() {
   window.speechSynthesis.cancel();
   const result = pickRandomGameConvo(state.level);
@@ -981,6 +1186,7 @@ function newGameRound() {
     "What might happen next, based on this conversation?"
   ];
   state.gameAnswers = ['', '', ''];
+  state.gameGrades = [null, null, null];
   state.gameStep = 0;
   state.gameRevealed = false;
 
@@ -992,9 +1198,13 @@ function newGameRound() {
   document.getElementById('gameHiddenNotice').style.display = 'block';
   document.getElementById('gameDialogueReveal').style.display = 'none';
   document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('gradingArea').style.display = 'none';
+  document.getElementById('questionArea').style.display = 'block';
+  document.getElementById('gameAudioTransport').style.display = 'flex';
   document.getElementById('gameProgressLabel').textContent = 'Ready';
   document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
 
+  renderScoreboard();
   renderQuestionArea();
 }
 
@@ -1077,6 +1287,92 @@ function revealScript() {
   document.getElementById('gameHiddenNotice').style.display = 'none';
   document.getElementById('gameDialogueReveal').style.display = 'block';
   document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('questionArea').style.display = 'none';
+  renderGradingArea();
+}
+
+function renderGradingArea() {
+  const area = document.getElementById('gradingArea');
+  area.style.display = 'block';
+  area.innerHTML = '';
+
+  for (let i = 0; i < 3; i++) {
+    const block = document.createElement('div');
+    block.className = 'grade-block';
+    const grades = ['A', 'B', 'C', 'D', 'F'];
+    const btnsHtml = grades.map(g =>
+      `<button class="grade-btn${state.gameGrades[i] === g ? ' selected' : ''}" onclick="selectGrade(${i}, '${g}')">${g}</button>`
+    ).join('');
+    block.innerHTML = `
+      <span class="q-tag ${Q_LABELS[i].toLowerCase()}">${Q_LABELS[i]}</span>
+      <div class="grade-q-text">${state.gameQuestions[i]}</div>
+      <div class="grade-answer">Answer: <strong>${escapeHtml(state.gameAnswers[i]) || '(blank)'}</strong></div>
+      <div class="grade-btns">${btnsHtml}</div>
+    `;
+    area.appendChild(block);
+  }
+
+  const allGraded = state.gameGrades.every(g => g !== null);
+  const btnRow = document.createElement('div');
+  btnRow.style.textAlign = 'center';
+  btnRow.style.marginTop = '16px';
+  const roundTotal = state.gameGrades.reduce((sum, g) => sum + (g ? GRADE_POINTS[g] : 0), 0);
+  btnRow.innerHTML = allGraded
+    ? `<div class="round-summary">Points earned this round<div class="earned">${roundTotal} / 12</div></div>
+       <button class="start-btn" onclick="confirmRoundGrades()">Confirm &amp; continue →</button>`
+    : `<p style="text-align:center; color:var(--text-faint); font-size:0.85rem;">Grade all three questions to continue.</p>`;
+  area.appendChild(btnRow);
+}
+
+function selectGrade(i, grade) {
+  state.gameGrades[i] = grade;
+  renderGradingArea();
+}
+
+function confirmRoundGrades() {
+  const roundTotal = state.gameGrades.reduce((sum, g) => sum + (g ? GRADE_POINTS[g] : 0), 0);
+  state.teams[state.currentTeamIndex].score += roundTotal;
+  advanceToNextTurn();
+}
+
+function advanceToNextTurn() {
+  const isLastTeam = state.currentTeamIndex === state.teams.length - 1;
+
+  if (isLastTeam && state.currentRoundNumber >= state.roundsPerTeam) {
+    showWinnerScreen();
+    return;
+  }
+
+  if (isLastTeam) {
+    state.currentTeamIndex = 0;
+    state.currentRoundNumber++;
+  } else {
+    state.currentTeamIndex++;
+  }
+
+  newGameRound();
+}
+
+function showWinnerScreen() {
+  document.getElementById('gameCard').style.display = 'none';
+  document.getElementById('winnerScreen').style.display = 'block';
+
+  const sorted = [...state.teams].sort((a, b) => b.score - a.score);
+  const topScore = sorted[0].score;
+  const winners = sorted.filter(t => t.score === topScore);
+
+  document.getElementById('winnerTitle').textContent = winners.length > 1
+    ? `It's a tie! ${winners.map(w => w.name).join(' & ')}`
+    : `${winners[0].name} wins!`;
+
+  const finalScores = document.getElementById('finalScores');
+  finalScores.innerHTML = '';
+  sorted.forEach(team => {
+    const row = document.createElement('div');
+    row.className = 'final-score-row' + (team.score === topScore ? ' winner' : '');
+    row.innerHTML = `<span>${escapeHtml(team.name)}</span><span>${team.score} pts</span>`;
+    finalScores.appendChild(row);
+  });
 }
 
 function escapeHtml(str) {
