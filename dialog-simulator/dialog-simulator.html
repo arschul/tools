@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialogue Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1420;
+    --bg-elevated: #161d2e;
+    --bg-card: #1b2338;
+    --border: #2a3450;
+    --text: #eef1f8;
+    --text-dim: #9aa4bd;
+    --text-faint: #64708f;
+    --accent-a: #22d3c8;   /* teal — voice A */
+    --accent-b: #c084fc;   /* violet — voice B */
+    --accent-a-bg: rgba(34, 211, 200, 0.12);
+    --accent-b-bg: rgba(192, 132, 252, 0.12);
+    --success: #4ade80;
+    --radius: 14px;
+    --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
+  html[data-theme="light"] {
+    --bg: #f5f6fa;
+    --bg-elevated: #ffffff;
+    --bg-card: #ffffff;
+    --border: #e1e5f0;
+    --text: #171c2b;
+    --text-dim: #5b6482;
+    --text-faint: #8891ab;
+    --accent-a: #0e9c92;
+    --accent-b: #9333ea;
+    --accent-a-bg: rgba(14, 156, 146, 0.08);
+    --accent-b-bg: rgba(147, 51, 234, 0.08);
+    --shadow: 0 8px 24px rgba(30,40,80,0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+  h1, h2, h3, .display { font-family: 'Sora', sans-serif; }
+
+  .back-link {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 100000;
+    background: rgba(20, 25, 40, 0.75);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: transform 0.15s, background 0.15s;
+  }
+  .back-link:hover { transform: translateY(-1px); background: rgba(30,35,55,0.9); }
+
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100000;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+  }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 24px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .hero-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: var(--shadow);
+  }
+  .hero h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .hero p {
+    color: var(--text-dim);
+    margin: 0;
+    font-size: 0.98rem;
+  }
+
+  /* ---------- Setup panel ---------- */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    font-size: 1.05rem;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel h2 .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-a-bg);
+    color: var(--accent-a);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 560px) {
+    .voice-grid { grid-template-columns: 1fr; }
+  }
+  .voice-card {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .voice-card.a { border-color: var(--accent-a); background: var(--accent-a-bg); }
+  .voice-card.b { border-color: var(--accent-b); background: var(--accent-b-bg); }
+  .voice-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .voice-card.a .voice-label { color: var(--accent-a); }
+  .voice-card.b .voice-label { color: var(--accent-b); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+
+  select, .test-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  select { margin-bottom: 8px; cursor: pointer; }
+  .test-btn {
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  .test-btn:hover { opacity: 0.8; }
+
+  .rate-row {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .rate-row label { font-size: 0.85rem; color: var(--text-dim); white-space: nowrap; }
+  .rate-row input[type=range] { flex: 1; accent-color: var(--accent-a); }
+  .rate-val { font-size: 0.85rem; font-weight: 700; width: 36px; text-align: right; }
+
+  /* ---------- Level & filter selectors ---------- */
+  .level-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 560px) {
+    .level-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .level-btn {
+    padding: 14px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .level-btn .lvl-desc {
+    display: block;
+    font-weight: 500;
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+  .level-btn.active {
+    border-color: var(--accent-a);
+    background: var(--accent-a-bg);
+    color: var(--accent-a);
+  }
+  .level-btn.active .lvl-desc { color: var(--accent-a); opacity: 0.75; }
+
+  .start-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #0b0e17;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 1.05rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s;
+  }
+  .start-btn:hover { transform: translateY(-2px); }
+  .start-btn:active { transform: translateY(0); }
+
+  /* ---------- Player screen ---------- */
+  .player-screen { display: none; }
+  .player-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .level-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .topbar-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+  }
+  .icon-btn:hover { border-color: var(--accent-a); }
+
+  .convo-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: var(--shadow);
+    min-height: 260px;
+  }
+  .convo-id {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    margin-bottom: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .line {
+    display: flex;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    border: 1.5px solid transparent;
+    transition: all 0.2s;
+    opacity: 0.55;
+  }
+  .line.speaking {
+    opacity: 1;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+  }
+  .line.a { background: var(--accent-a-bg); }
+  .line.a.speaking { border-color: var(--accent-a); }
+  .line.b { background: var(--accent-b-bg); }
+  .line.b.speaking { border-color: var(--accent-b); }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-family: 'Sora', sans-serif;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+  }
+  .line.a .avatar { background: var(--accent-a); color: #0b0e17; }
+  .line.b .avatar { background: var(--accent-b); color: #0b0e17; }
+  .line-content { flex: 1; }
+  .line-speaker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .line.a .line-speaker { color: var(--accent-a); }
+  .line.b .line-speaker { color: var(--accent-b); }
+  .line-text { font-size: 1.15rem; line-height: 1.5; }
+
+  .transport {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 22px;
+  }
+  .transport button {
+    border: none;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    border-radius: 999px;
+    transition: transform 0.15s;
+  }
+  .transport button:hover { transform: translateY(-2px); }
+  .btn-round {
+    width: 48px; height: 48px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border) !important;
+    color: var(--text);
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-play {
+    width: 68px; height: 68px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #0b0e17;
+    font-size: 1.4rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  .autoplay-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .autoplay-row input { accent-color: var(--accent-a); }
+
+  .no-voices-warning {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid #f87171;
+    color: #f87171;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-top: 16px;
+    display: none;
+  }
+
+  /* ---------- Game mode question flow ---------- */
+  .q-block {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .q-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+  }
+  .q-tag.easy { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+  .q-tag.medium { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+  .q-tag.hard { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+  .q-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 12px; }
+  .q-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 48px;
+  }
+  .q-answered {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    padding: 4px 2px;
+  }
+  .q-answered strong { color: var(--text); }
+  .q-submit {
+    margin-top: 12px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #0b0e17;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.78rem;
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="../">← Tool Hub</a>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
+<div class="wrap">
+
+  <!-- ================= SETUP SCREEN ================= -->
+  <div id="setupScreen">
+    <div class="hero">
+      <div class="hero-icon">🎧</div>
+      <h1>Dialogue Player</h1>
+      <p>Listen to short leveled conversations, read aloud by two voices.</p>
+    </div>
+
+    <div class="panel">
+      <h2><span class="step-num">1</span> Choose two voices</h2>
+      <div class="voice-grid">
+        <div class="voice-card a">
+          <div class="voice-label"><span class="dot"></span> Voice 1</div>
+          <select id="voiceSelectA"></select>
+          <button class="test-btn" onclick="testVoice('A')">▶ Test voice</button>
+        </div>
+        <div class="voice-card b">
+          <div class="voice-label"><span class="dot"></span> Voice 2</div>
+          <select id="voiceSelectB"></select>
+          <button class="test-btn" onclick="testVoice('B')">▶ Test voice</button>
+        </div>
+      </div>
+      <div class="rate-row">
+        <label for="rateSlider">Speech rate</label>
+        <input type="range" id="rateSlider" min="0.6" max="1.3" step="0.05" value="0.9">
+        <span class="rate-val" id="rateVal">0.9×</span>
+      </div>
+      <div class="no-voices-warning" id="noVoicesWarning">
+        No voices were found on this device/browser. Try Chrome or Edge, or check your OS's text-to-speech settings.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="step-num">2</span> Choose a CEFR level</h2>
+      <div class="level-grid" id="levelGrid">
+        <button class="level-btn" data-level="A1">A1 <span class="lvl-desc">Beginner</span></button>
+        <button class="level-btn" data-level="A2">A2 <span class="lvl-desc">Elementary</span></button>
+        <button class="level-btn" data-level="B1">B1 <span class="lvl-desc">Intermediate</span></button>
+        <button class="level-btn" data-level="B2">B2 <span class="lvl-desc">Upper-Int.</span></button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="step-num">3</span> Choose a mode</h2>
+      <div class="level-grid" id="modeGrid" style="grid-template-columns: 1fr 1fr;">
+        <button class="level-btn mode-btn active" data-mode="listen" type="button">🎧 Listen <span class="lvl-desc">Play the dialogue</span></button>
+        <button class="level-btn mode-btn" data-mode="game" type="button">🎮 Game <span class="lvl-desc">Hidden script + questions</span></button>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startSession()">Start →</button>
+    <footer>50 conversations per level · vocabulary varies automatically every time</footer>
+  </div>
+
+  <!-- ================= PLAYER SCREEN (Listen mode) ================= -->
+  <div class="player-screen" id="playerScreen">
+    <div class="player-topbar">
+      <div class="level-pill" id="levelPill">A1</div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
+        <button class="icon-btn" onclick="newConversation()">🔀 Random</button>
+      </div>
+    </div>
+
+    <div class="convo-card">
+      <div class="convo-id" id="convoIdLabel">Conversation 1 of 50</div>
+
+      <div class="line a" id="lineA">
+        <div class="avatar">1</div>
+        <div class="line-content">
+          <div class="line-speaker">Voice 1</div>
+          <div class="line-text" id="textA">—</div>
+        </div>
+      </div>
+
+      <div class="line b" id="lineB">
+        <div class="avatar">2</div>
+        <div class="line-content">
+          <div class="line-speaker">Voice 2</div>
+          <div class="line-text" id="textB">—</div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button class="btn-round" onclick="prevConvo()" title="Previous conversation">⏮</button>
+        <button class="btn-play" onclick="togglePlay()" id="playBtn" title="Play">▶</button>
+        <button class="btn-round" onclick="nextConvo()" title="Next conversation">⏭</button>
+      </div>
+
+      <div class="progress-row">
+        <span id="progressLabel">Ready</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="autoplay-row">
+        <input type="checkbox" id="autoAdvance">
+        <label for="autoAdvance">Auto-advance to a new random conversation when finished</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAME SCREEN ================= -->
+  <div class="player-screen" id="gameScreen">
+    <div class="player-topbar">
+      <div class="level-pill" id="gameLevelPill">A1</div>
+      <div class="topbar-actions">
+        <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
+        <button class="icon-btn" onclick="newGameRound()">🔀 New conversation</button>
+      </div>
+    </div>
+
+    <div class="convo-card">
+      <div class="convo-id" id="gameConvoIdLabel">Conversation 1 of 50</div>
+
+      <!-- Hidden dialogue placeholder -->
+      <div id="gameHiddenNotice" style="text-align:center; padding: 18px 10px; color: var(--text-dim); font-size: 0.95rem;">
+        🔒 The script is hidden. Play the audio, then answer each question below.
+      </div>
+
+      <!-- Revealed dialogue (shown after reveal) -->
+      <div id="gameDialogueReveal" style="display:none;">
+        <div class="line a" id="gameLineA">
+          <div class="avatar">1</div>
+          <div class="line-content">
+            <div class="line-speaker">Voice 1</div>
+            <div class="line-text" id="gameTextA">—</div>
+          </div>
+        </div>
+        <div class="line b" id="gameLineB">
+          <div class="avatar">2</div>
+          <div class="line-content">
+            <div class="line-speaker">Voice 2</div>
+            <div class="line-text" id="gameTextB">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button class="btn-play" onclick="playGameAudio()" id="gamePlayBtn" title="Play audio">▶ Play audio</button>
+      </div>
+
+      <div class="progress-row">
+        <span id="gameProgressLabel">Ready</span>
+      </div>
+
+      <!-- Question flow -->
+      <div id="questionArea" style="margin-top: 24px;"></div>
+
+      <div id="revealArea" style="display:none; margin-top: 20px; text-align:center;">
+        <button class="icon-btn" onclick="revealScript()" style="font-size: 0.95rem; padding: 12px 24px;">📜 Reveal script &amp; review answers</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="wordbanks.js"></script>
+<script src="convos-a1.js"></script>
+<script src="convos-a2.js"></script>
+<script src="convos-b1.js"></script>
+<script src="convos-b2.js"></script>
+<script src="questions.js"></script>
+<script>
+/* ---------------- Theme ---------------- */
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+(function() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('themeBtn').textContent = saved === 'dark' ? '☀️' : '🌙';
+  });
+})();
+
+/* ---------------- State ---------------- */
+const ALL_CONVOS = {
+  A1: (typeof CONVOS_A1 !== 'undefined') ? CONVOS_A1 : [],
+  A2: (typeof CONVOS_A2 !== 'undefined') ? CONVOS_A2 : [],
+  B1: (typeof CONVOS_B1 !== 'undefined') ? CONVOS_B1 : [],
+  B2: (typeof CONVOS_B2 !== 'undefined') ? CONVOS_B2 : [],
+};
+
+let state = {
+  level: 'A1',
+  mode: 'listen',
+  voiceA: null,
+  voiceB: null,
+  rate: 0.9,
+  currentConvo: null,
+  currentIndex: -1,
+  filledP1: '',
+  filledP2: '',
+  isPlaying: false,
+  utterA: null,
+  utterB: null,
+  // game mode
+  gameQuestions: [],
+  gameAnswers: ['', '', ''],
+  gameStep: 0,
+  gameRevealed: false
+};
+
+/* ---------------- Voice loading ---------------- */
+let availableVoices = [];
+
+function populateVoiceList() {
+  availableVoices = window.speechSynthesis.getVoices();
+  const selA = document.getElementById('voiceSelectA');
+  const selB = document.getElementById('voiceSelectB');
+
+  if (!availableVoices.length) {
+    document.getElementById('noVoicesWarning').style.display = 'block';
+    return;
+  }
+  document.getElementById('noVoicesWarning').style.display = 'none';
+
+  const prevA = selA.value, prevB = selB.value;
+  selA.innerHTML = '';
+  selB.innerHTML = '';
+
+  availableVoices.forEach((v, i) => {
+    const label = `${v.name} (${v.lang})`;
+    const optA = document.createElement('option');
+    optA.value = i; optA.textContent = label;
+    selA.appendChild(optA);
+    const optB = document.createElement('option');
+    optB.value = i; optB.textContent = label;
+    selB.appendChild(optB);
+  });
+
+  // default: pick two different voices if possible
+  if (prevA !== '' && availableVoices[prevA]) { selA.value = prevA; }
+  if (prevB !== '' && availableVoices[prevB]) { selB.value = prevB; }
+  if (selA.value === selB.value && availableVoices.length > 1) {
+    selB.value = (parseInt(selA.value) + 1) % availableVoices.length;
+  }
+}
+
+if (typeof window.speechSynthesis !== 'undefined') {
+  populateVoiceList();
+  window.speechSynthesis.onvoiceschanged = populateVoiceList;
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('noVoicesWarning').style.display = 'block';
+    document.getElementById('noVoicesWarning').textContent = 'Speech synthesis is not supported in this browser.';
+  });
+}
+
+function testVoice(which) {
+  const selId = which === 'A' ? 'voiceSelectA' : 'voiceSelectB';
+  const idx = document.getElementById(selId).value;
+  if (idx === '' || !availableVoices[idx]) return;
+  const u = new SpeechSynthesisUtterance("Hi there! This is a quick voice test.");
+  u.voice = availableVoices[idx];
+  u.rate = parseFloat(document.getElementById('rateSlider').value);
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+document.getElementById('rateSlider').addEventListener('input', (e) => {
+  document.getElementById('rateVal').textContent = e.target.value + '×';
+});
+
+/* ---------------- Level selection ---------------- */
+document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.level-btn:not(.mode-btn)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.level = btn.dataset.level;
+  });
+});
+document.querySelector('.level-btn[data-level="A1"]').classList.add('active');
+
+/* ---------------- Mode selection ---------------- */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+  });
+});
+
+/* ---------------- Word bank filling ---------------- */
+function fillTemplate(str) {
+  return str.replace(/\[(\w+)\]/g, (match, category) => {
+    const bank = WORD_BANKS[category];
+    if (!bank) return match;
+    return bank[Math.floor(Math.random() * bank.length)];
+  });
+}
+
+function pickRandomConvo(level) {
+  const list = ALL_CONVOS[level];
+  if (!list || !list.length) return null;
+  const idx = Math.floor(Math.random() * list.length);
+  return { convo: list[idx], idx };
+}
+
+/* ---------------- Screen transitions ---------------- */
+function startSession() {
+  const selA = document.getElementById('voiceSelectA');
+  const selB = document.getElementById('voiceSelectB');
+  if (selA.value === '' || selB.value === '') {
+    alert('Please make sure two voices are selected (or check that your browser supports speech synthesis).');
+    return;
+  }
+  state.voiceA = availableVoices[selA.value];
+  state.voiceB = availableVoices[selB.value];
+  state.rate = parseFloat(document.getElementById('rateSlider').value);
+
+  document.getElementById('setupScreen').style.display = 'none';
+
+  if (state.mode === 'game') {
+    document.getElementById('playerScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('gameLevelPill').textContent = state.level;
+    newGameRound();
+  } else {
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('playerScreen').style.display = 'block';
+    document.getElementById('levelPill').textContent = state.level;
+    newConversation();
+  }
+}
+
+function backToSetup() {
+  window.speechSynthesis.cancel();
+  state.isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('playerScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'block';
+}
+
+/* ---------------- Conversation navigation ---------------- */
+function loadConvo(level, idx) {
+  window.speechSynthesis.cancel();
+  state.isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶';
+  resetLineStyles();
+
+  const list = ALL_CONVOS[level];
+  state.currentConvo = list[idx];
+  state.currentIndex = idx;
+  state.filledP1 = fillTemplate(state.currentConvo.p1);
+  state.filledP2 = fillTemplate(state.currentConvo.p2);
+
+  document.getElementById('textA').textContent = state.filledP1;
+  document.getElementById('textB').textContent = state.filledP2;
+  document.getElementById('convoIdLabel').textContent =
+    `Conversation ${idx + 1} of ${list.length} · ${level}`;
+  document.getElementById('progressLabel').textContent = 'Ready';
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+function newConversation() {
+  const result = pickRandomConvo(state.level);
+  if (!result) return;
+  loadConvo(state.level, result.idx);
+}
+
+function nextConvo() {
+  const list = ALL_CONVOS[state.level];
+  const idx = (state.currentIndex + 1) % list.length;
+  loadConvo(state.level, idx);
+}
+
+function prevConvo() {
+  const list = ALL_CONVOS[state.level];
+  const idx = (state.currentIndex - 1 + list.length) % list.length;
+  loadConvo(state.level, idx);
+}
+
+function resetLineStyles() {
+  document.getElementById('lineA').classList.remove('speaking');
+  document.getElementById('lineB').classList.remove('speaking');
+}
+
+/* ---------------- Playback ---------------- */
+function togglePlay() {
+  if (state.isPlaying) {
+    window.speechSynthesis.cancel();
+    state.isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶';
+    resetLineStyles();
+    document.getElementById('progressLabel').textContent = 'Paused';
+  } else {
+    playConversation();
+  }
+}
+
+function playConversation() {
+  window.speechSynthesis.cancel();
+  state.isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('progressFill').style.width = '10%';
+  document.getElementById('progressLabel').textContent = 'Voice 1 speaking…';
+
+  const lineA = document.getElementById('lineA');
+  const lineB = document.getElementById('lineB');
+  resetLineStyles();
+  lineA.classList.add('speaking');
+
+  const uA = new SpeechSynthesisUtterance(state.filledP1);
+  uA.voice = state.voiceA;
+  uA.rate = state.rate;
+
+  uA.onend = () => {
+    if (!state.isPlaying) return;
+    lineA.classList.remove('speaking');
+    lineB.classList.add('speaking');
+    document.getElementById('progressFill').style.width = '55%';
+    document.getElementById('progressLabel').textContent = 'Voice 2 speaking…';
+
+    const uB = new SpeechSynthesisUtterance(state.filledP2);
+    uB.voice = state.voiceB;
+    uB.rate = state.rate;
+
+    uB.onend = () => {
+      lineB.classList.remove('speaking');
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressLabel').textContent = 'Finished';
+      state.isPlaying = false;
+      document.getElementById('playBtn').textContent = '▶';
+
+      if (document.getElementById('autoAdvance').checked) {
+        setTimeout(() => {
+          newConversation();
+          setTimeout(playConversation, 400);
+        }, 700);
+      }
+    };
+    uB.onerror = () => {
+      state.isPlaying = false;
+      document.getElementById('playBtn').textContent = '▶';
+    };
+    window.speechSynthesis.speak(uB);
+  };
+  uA.onerror = () => {
+    state.isPlaying = false;
+    document.getElementById('playBtn').textContent = '▶';
+  };
+
+  window.speechSynthesis.speak(uA);
+}
+
+/* ================= GAME MODE ================= */
+const ALL_QUESTIONS = (typeof QUESTIONS !== 'undefined') ? QUESTIONS : {};
+const Q_LABELS = ['Easy', 'Medium', 'Hard'];
+
+function pickRandomGameConvo(level) {
+  const list = ALL_CONVOS[level];
+  if (!list || !list.length) return null;
+  const idx = Math.floor(Math.random() * list.length);
+  return { convo: list[idx], idx };
+}
+
+function newGameRound() {
+  window.speechSynthesis.cancel();
+  const result = pickRandomGameConvo(state.level);
+  if (!result) return;
+
+  state.currentConvo = result.convo;
+  state.currentIndex = result.idx;
+  state.filledP1 = fillTemplate(state.currentConvo.p1);
+  state.filledP2 = fillTemplate(state.currentConvo.p2);
+
+  const levelQuestions = ALL_QUESTIONS[state.level] || {};
+  state.gameQuestions = levelQuestions[state.currentConvo.id] || [
+    "What is Person 1 talking about?",
+    "What detail does Person 2 add?",
+    "What might happen next, based on this conversation?"
+  ];
+  state.gameAnswers = ['', '', ''];
+  state.gameStep = 0;
+  state.gameRevealed = false;
+
+  document.getElementById('gameTextA').textContent = state.filledP1;
+  document.getElementById('gameTextB').textContent = state.filledP2;
+  document.getElementById('gameConvoIdLabel').textContent =
+    `Conversation ${result.idx + 1} of ${ALL_CONVOS[state.level].length} · ${state.level}`;
+  document.getElementById('gameLevelPill').textContent = state.level;
+  document.getElementById('gameHiddenNotice').style.display = 'block';
+  document.getElementById('gameDialogueReveal').style.display = 'none';
+  document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('gameProgressLabel').textContent = 'Ready';
+  document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+
+  renderQuestionArea();
+}
+
+function playGameAudio() {
+  window.speechSynthesis.cancel();
+  document.getElementById('gameProgressLabel').textContent = 'Voice 1 speaking…';
+  document.getElementById('gamePlayBtn').textContent = '⏸ Playing…';
+
+  const uA = new SpeechSynthesisUtterance(state.filledP1);
+  uA.voice = state.voiceA;
+  uA.rate = state.rate;
+
+  uA.onend = () => {
+    document.getElementById('gameProgressLabel').textContent = 'Voice 2 speaking…';
+    const uB = new SpeechSynthesisUtterance(state.filledP2);
+    uB.voice = state.voiceB;
+    uB.rate = state.rate;
+    uB.onend = () => {
+      document.getElementById('gameProgressLabel').textContent = 'Finished playing';
+      document.getElementById('gamePlayBtn').textContent = '▶ Play audio again';
+    };
+    uB.onerror = () => {
+      document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+    };
+    window.speechSynthesis.speak(uB);
+  };
+  uA.onerror = () => {
+    document.getElementById('gamePlayBtn').textContent = '▶ Play audio';
+  };
+
+  window.speechSynthesis.speak(uA);
+}
+
+function renderQuestionArea() {
+  const area = document.getElementById('questionArea');
+  area.innerHTML = '';
+
+  // Render already-answered questions as read-only summaries
+  for (let i = 0; i < state.gameStep; i++) {
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.innerHTML = `
+      <span class="q-tag ${Q_LABELS[i].toLowerCase()}">${Q_LABELS[i]}</span>
+      <div class="q-text">${state.gameQuestions[i]}</div>
+      <div class="q-answered">Your answer: <strong>${escapeHtml(state.gameAnswers[i]) || '(blank)'}</strong></div>
+    `;
+    area.appendChild(block);
+  }
+
+  if (state.gameStep < 3) {
+    const i = state.gameStep;
+    const block = document.createElement('div');
+    block.className = 'q-block';
+    block.innerHTML = `
+      <span class="q-tag ${Q_LABELS[i].toLowerCase()}">${Q_LABELS[i]}</span>
+      <div class="q-text">${state.gameQuestions[i]}</div>
+      <textarea class="q-input" id="qInput" rows="2" placeholder="Type the answer here…"></textarea>
+      <br>
+      <button class="q-submit" onclick="submitGameAnswer()">Submit answer →</button>
+    `;
+    area.appendChild(block);
+    setTimeout(() => {
+      const inp = document.getElementById('qInput');
+      if (inp) inp.focus();
+    }, 50);
+  } else {
+    document.getElementById('revealArea').style.display = 'block';
+  }
+}
+
+function submitGameAnswer() {
+  const inp = document.getElementById('qInput');
+  state.gameAnswers[state.gameStep] = inp ? inp.value.trim() : '';
+  state.gameStep++;
+  renderQuestionArea();
+}
+
+function revealScript() {
+  state.gameRevealed = true;
+  document.getElementById('gameHiddenNotice').style.display = 'none';
+  document.getElementById('gameDialogueReveal').style.display = 'block';
+  document.getElementById('revealArea').style.display = 'none';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
