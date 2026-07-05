@@ -704,8 +704,16 @@ let state = {
 /* ---------------- Voice loading ---------------- */
 let availableVoices = [];
 
+const ALLOWED_VOICE_NAMES = ['sonia', 'ryan', 'ava', 'andrew'];
+
 function populateVoiceList() {
-  availableVoices = window.speechSynthesis.getVoices();
+  const allVoices = window.speechSynthesis.getVoices();
+  availableVoices = allVoices.filter(v => {
+    if (v.default) return true;
+    const nameLower = v.name.toLowerCase();
+    return ALLOWED_VOICE_NAMES.some(n => nameLower.includes(n));
+  });
+
   const selA = document.getElementById('voiceSelectA');
   const selB = document.getElementById('voiceSelectB');
 
