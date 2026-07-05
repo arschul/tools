@@ -632,12 +632,12 @@ const QUESTIONS = {
     "26": [
       "What is Person 1 asking about?",
       "Has Person 2 thought about it?",
-      "What might be appealing about getting a pet like this?"
+      "Why might someone have dreamed about this when they were younger?"
     ],
     "27": [
-      "What does Person 1 struggle with?",
+      "What does Person 1 miss?",
       "Does Person 2 relate?",
-      "Why might this subject be hard even after years of study?"
+      "Why might cravings be hardest right after quitting something?"
     ],
     "28": [
       "What job does the family member have?",
@@ -690,14 +690,14 @@ const QUESTIONS = {
       "Why might a sport require both of these things equally?"
     ],
     "38": [
-      "What does Person 1 miss?",
-      "Why did they stop eating it?",
-      "What might have caused Person 1 to give it up?"
+      "What does Person 1 suggest they do?",
+      "What does Person 2 propose instead?",
+      "Why might it be smart to visit before a busy season?"
     ],
     "39": [
-      "What job has the family member had for years?",
+      "What has Person 1 been reading about?",
       "How does Person 2 react?",
-      "What might make someone stay in a job for over a decade?"
+      "Why might someone want to cut back after reading this?"
     ],
     "40": [
       "What is Person 1 deciding between?",
@@ -705,54 +705,54 @@ const QUESTIONS = {
       "Which path might suit Person 1 better, based on their personality?"
     ],
     "41": [
-      "What does Person 1 ask about?",
-      "Does Person 2 agree they rely on it?",
-      "How might people's daily habits change without this?"
+      "What does Person 1 say about this hobby?",
+      "How does Person 2 respond?",
+      "Why might a hobby someone once disliked become enjoyable later?"
     ],
     "42": [
-      "What is Person 1 saving for?",
-      "Does Person 2 have an itinerary?",
-      "What should Person 1 plan first before the trip?"
+      "What does Person 1 ask about their generation?",
+      "How does Person 2 respond?",
+      "Why might habits from childhood be different from those today?"
     ],
     "43": [
-      "What did the teacher say about the exam?",
+      "What tradition does Person 1 mention?",
       "How does Person 2 react?",
-      "What should the students do now to prepare?"
+      "Why might food traditions be common in families?"
     ],
     "44": [
-      "What has Person 1 noticed?",
-      "Does Person 2 agree?",
-      "Why might more people be getting into this hobby now?"
+      "What is Person 1 trying to convince their parents of?",
+      "How does Person 2 react?",
+      "What might make studying abroad a valuable experience?"
     ],
     "45": [
       "What does Person 1 ask about?",
-      "How does Person 2 feel during this season?",
-      "What could explain this seasonal change in mood?"
+      "How does Person 2 feel about the idea?",
+      "What personality traits might suit this kind of work?"
     ],
     "46": [
-      "What news does Person 1 share?",
-      "How does Person 2 react?",
-      "What kind of job interview might this be, based on context?"
+      "What has Person 1 been putting off?",
+      "What does Person 2 suggest?",
+      "Why might someone delay a purchase like this for months?"
     ],
     "47": [
-      "What problem does Person 1 have?",
-      "What does Person 2 suggest?",
-      "What habit could help Person 1 avoid this problem in future?"
+      "What has Person 1 noticed about the weather?",
+      "Does Person 2 agree?",
+      "What could explain this season feeling colder than expected?"
     ],
     "48": [
-      "What is Person 1 asking about?",
-      "What does Person 2 think?",
-      "Why might this sport need both skill and strength?"
+      "What is Person 1 sharing about their friend?",
+      "How does Person 2 react?",
+      "What challenges might come with moving for a new career?"
     ],
     "49": [
-      "What are they planning to do?",
-      "When do they want to go?",
-      "Why might they want to go before the crowds arrive?"
+      "What is Person 1 asking about?",
+      "Which option does Person 2 say keeps them more motivated?",
+      "Why might a class environment help someone stay motivated?"
     ],
     "50": [
-      "What has Person 1 noticed?",
-      "How is it affecting sleep?",
-      "What could someone do to reduce this effect before bed?"
+      "What news does Person 1 share?",
+      "How does Person 2 react?",
+      "Why might adopting from a shelter be meaningful to some people?"
     ]
   },
   "B2": {
