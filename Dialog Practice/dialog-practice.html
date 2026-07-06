@@ -885,25 +885,37 @@ const GRADE_POINTS = { A: 4, B: 3, C: 2, D: 1, F: 0 };
 /* ---------------- Voice loading ---------------- */
 let availableVoices = [];
 
-const ALLOWED_VOICE_NAMES = ['sonia', 'ryan', 'ava', 'andrew'];
+// Each entry requires the name plus its specific variant AND "online" to avoid duplicate/wrong-variant matches
+const ALLOWED_VOICES = [
+  { name: 'sonia', variant: 'online', label: 'Sonia', region: 'UK' },
+  { name: 'ryan', variant: 'online', label: 'Ryan', region: 'UK' },
+  { name: 'ava', variant: 'multilingual', label: 'Ava', region: 'US' },
+  { name: 'andrew', variant: 'multilingual', label: 'Andrew', region: 'US' }
+];
+
+function matchAllowedVoice(v) {
+  const nameLower = v.name.toLowerCase();
+  if (!nameLower.includes('online')) return null;
+  return ALLOWED_VOICES.find(av => nameLower.includes(av.name) && nameLower.includes(av.variant)) || null;
+}
 
 function shortVoiceLabel(v) {
-  const nameLower = v.name.toLowerCase();
-  const match = ALLOWED_VOICE_NAMES.find(n => nameLower.includes(n));
-  if (match) {
-    const displayName = match.charAt(0).toUpperCase() + match.slice(1);
-    const region = v.lang.toUpperCase().includes('GB') ? 'UK' : 'US';
-    return `${displayName} - ${region}`;
-  }
+  const match = matchAllowedVoice(v);
+  if (match) return `${match.label} - ${match.region}`;
   return `${v.name} (${v.lang})`;
 }
 
 function populateVoiceList() {
   const allVoices = window.speechSynthesis.getVoices();
+  const seenLabels = new Set();
   availableVoices = allVoices.filter(v => {
     if (v.default) return true;
-    const nameLower = v.name.toLowerCase();
-    return ALLOWED_VOICE_NAMES.some(n => nameLower.includes(n));
+    const match = matchAllowedVoice(v);
+    if (!match) return false;
+    const label = shortVoiceLabel(v);
+    if (seenLabels.has(label)) return false; // dedupe identical Name - Region entries
+    seenLabels.add(label);
+    return true;
   });
 
   const selA = document.getElementById('voiceSelectA');
