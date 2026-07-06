@@ -929,7 +929,7 @@ function openContactParentsModal(studentId){
       <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(cp.reason||'')}</textarea>
     </div>
     <div class="modal-actions">
-      ${cp.reason?`<button class="btn-ghost" onclick="clearContactParents('${studentId}');closeModal()">✓ Mark done</button>`:''}
+      ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ Mark done</button>`:''}
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn-accent" onclick="saveContactParents('${studentId}')">Save flag</button>
     </div>
@@ -1010,7 +1010,7 @@ function renderRollCall(){
   const students = studentsInClass(cls.id);
   const sessionKey = cls.id + '_' + date;
   const dow = new Date(date+'T00:00:00').getDay();
-  const offSchedule = !SCHEDULE_DAYS[cls.schedule].includes(dow);
+  const offSchedule = !cls.schedule || !SCHEDULE_DAYS[cls.schedule] || !SCHEDULE_DAYS[cls.schedule].includes(dow);
   const holiday = getHoliday(date);
 
   // Don't create session records for holidays
