@@ -9,7 +9,7 @@ const CONVOS_A2 = [
     "id": 2,
     "level": "A2",
     "p1": "What did you do last weekend?",
-    "p2": "I went to [place] with my [family]."
+    "p2": "I went to [destination] with my [family]."
   },
   {
     "id": 3,
@@ -80,7 +80,7 @@ const CONVOS_A2 = [
   {
     "id": 14,
     "level": "A2",
-    "p1": "How was your trip to [place]?",
+    "p1": "How was your trip to [destination]?",
     "p2": "It was amazing, we stayed for a whole week."
   },
   {
