@@ -554,6 +554,7 @@ function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function getPreviousClassDate(cls, fromDateStr){
+  if(!cls.schedule || !SCHEDULE_DAYS[cls.schedule]) return null;
   const days = SCHEDULE_DAYS[cls.schedule];
   let d = new Date(fromDateStr+'T00:00:00');
   for(let i=0; i<60; i++){
@@ -673,7 +674,7 @@ function _renderDashboard(el){
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
   const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>{
-    if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+    if(!c.schedule || !SCHEDULE_DAYS[c.schedule] || !SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
     if(c.startDate && today < c.startDate) return false;
     if(c.endDate && today > c.endDate) return false;
     return true;
@@ -1519,7 +1520,7 @@ function renderCalendar(){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
     const classesToday = state.classes.filter(c=>{
-      if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+      if(!c.schedule || !SCHEDULE_DAYS[c.schedule] || !SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
       if(c.startDate && dateStr < c.startDate) return false;
       if(c.endDate && dateStr > c.endDate) return false;
       return true;
@@ -1577,7 +1578,7 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
+  const classesToday = state.classes.filter(c=>c.schedule && SCHEDULE_DAYS[c.schedule] && SCHEDULE_DAYS[c.schedule].includes(dow));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
   const holiday = getHoliday(dateStr);
   showModal(`
