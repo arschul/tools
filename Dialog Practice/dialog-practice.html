@@ -887,6 +887,17 @@ let availableVoices = [];
 
 const ALLOWED_VOICE_NAMES = ['sonia', 'ryan', 'ava', 'andrew'];
 
+function shortVoiceLabel(v) {
+  const nameLower = v.name.toLowerCase();
+  const match = ALLOWED_VOICE_NAMES.find(n => nameLower.includes(n));
+  if (match) {
+    const displayName = match.charAt(0).toUpperCase() + match.slice(1);
+    const region = v.lang.toUpperCase().includes('GB') ? 'UK' : 'US';
+    return `${displayName} - ${region}`;
+  }
+  return `${v.name} (${v.lang})`;
+}
+
 function populateVoiceList() {
   const allVoices = window.speechSynthesis.getVoices();
   availableVoices = allVoices.filter(v => {
@@ -909,7 +920,7 @@ function populateVoiceList() {
   selB.innerHTML = '';
 
   availableVoices.forEach((v, i) => {
-    const label = `${v.name} (${v.lang})`;
+    const label = shortVoiceLabel(v);
     const optA = document.createElement('option');
     optA.value = i; optA.textContent = label;
     selA.appendChild(optA);
