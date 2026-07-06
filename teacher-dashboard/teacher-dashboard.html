@@ -1287,6 +1287,14 @@ function renderStudentProfile(){
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
     </div>
+    ${student.contactParents?.reason ? `
+    <div class="card section" style="border-left:4px solid var(--red);">
+      <h3>📞 ${state.reportLang==='pt'?'Contato com Responsáveis':'Contact Parents'}</h3>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+        <span class="badge red">${esc(student.contactParents.category)}</span>
+        <span style="font-size:13px;color:var(--text);">${esc(student.contactParents.reason)}</span>
+      </div>
+    </div>` : ''}
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
       <table>
