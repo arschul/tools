@@ -577,6 +577,7 @@ function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
+  if(!cls.schedule || !SCHEDULE_DAYS[cls.schedule]) return null;
   const startStr = startOverride || cls.startDate;
   const endStr = endOverride || cls.endDate;
   if(!startStr || !endStr) return null;
@@ -731,8 +732,7 @@ function _renderDashboard(el){
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>
-          </div>
+            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>          </div>
         </div>`; }).join('')}
     </div>` : '';
 
@@ -929,8 +929,7 @@ function openContactParentsModal(studentId){
       <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(cp.reason||'')}</textarea>
     </div>
     <div class="modal-actions">
-      ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ Mark done</button>`:''}
-      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ Mark done</button>`:''}      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn-accent" onclick="saveContactParents('${studentId}')">Save flag</button>
     </div>
   `);
