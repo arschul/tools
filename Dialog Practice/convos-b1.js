@@ -50,7 +50,7 @@ const CONVOS_B1 = [
   {
     "id": 9,
     "level": "B1",
-    "p1": "We're planning a trip to [place] next [season], are you interested?",
+    "p1": "We're planning a trip to [destination] next [season], are you interested?",
     "p2": "Definitely, I've wanted to go there for years."
   },
   {
@@ -134,7 +134,7 @@ const CONVOS_B1 = [
   {
     "id": 23,
     "level": "B1",
-    "p1": "My [family] recently moved to [place] for work.",
+    "p1": "My [family] recently moved to [destination] for work.",
     "p2": "That's a big change, how is she adjusting?"
   },
   {
@@ -182,7 +182,7 @@ const CONVOS_B1 = [
   {
     "id": 31,
     "level": "B1",
-    "p1": "I've started saving money to travel to [place] next year.",
+    "p1": "I've started saving money to travel to [destination] next year.",
     "p2": "That's exciting, do you have an itinerary yet?"
   },
   {
@@ -224,7 +224,7 @@ const CONVOS_B1 = [
   {
     "id": 38,
     "level": "B1",
-    "p1": "We should really visit [place] before the summer crowds arrive.",
+    "p1": "We should really visit [destination] before the summer crowds arrive.",
     "p2": "Good point, let's plan it for next month."
   },
   {
@@ -284,7 +284,7 @@ const CONVOS_B1 = [
   {
     "id": 48,
     "level": "B1",
-    "p1": "My friend just moved to [place] to pursue a career in [job].",
+    "p1": "My friend just moved to [destination] to pursue a career in [job].",
     "p2": "That's a bold move, I hope it works out for her."
   },
   {
