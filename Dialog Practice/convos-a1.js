@@ -128,7 +128,7 @@ const CONVOS_A1 = [
   {
     "id": 22,
     "level": "A1",
-    "p1": "Do you go to [place] on weekends?",
+    "p1": "Do you go to [destination] on weekends?",
     "p2": "Yes, with my friends."
   },
   {
@@ -200,7 +200,7 @@ const CONVOS_A1 = [
   {
     "id": 34,
     "level": "A1",
-    "p1": "Can we go to [place] today?",
+    "p1": "Can we go to [destination] today?",
     "p2": "Yes, that sounds fun."
   },
   {
