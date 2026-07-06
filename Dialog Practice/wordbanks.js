@@ -3,8 +3,9 @@
 const WORD_BANKS = {
   object: ["wallet", "phone", "backpack", "umbrella", "notebook", "watch", "water bottle", "jacket", "charger", "hat"],
   food: ["pizza", "sushi", "tacos", "pasta", "ice cream", "salad", "burger", "soup", "sandwich", "rice and beans"],
+  dinner_food: ["pasta", "rice and beans", "soup", "a stew", "grilled chicken", "lasagna", "a stir-fry", "tacos"],
   drink: ["coffee", "tea", "orange juice", "water", "soda", "smoothie", "hot chocolate", "lemonade"],
-  place: ["the park", "the mall", "the beach", "the library", "the gym", "downtown", "the movies", "the market", "school", "the cafe"],
+  place: ["the park", "the mall", "the beach", "the library", "the gym", "downtown", "the movies", "the market", "the school", "the cafe"],
   destination: ["the beach", "the mountains", "another city", "a lake house", "a national park", "the coast", "a small town nearby", "a big city", "the countryside", "an amusement park"],
   country: ["Canada", "Portugal", "Japan", "Australia", "Ireland", "Germany", "New Zealand", "Italy", "the Netherlands", "South Korea"],
   city: ["this city", "our city", "the capital", "the city center", "the suburbs", "downtown areas", "big cities", "smaller cities", "urban areas", "this region"],
