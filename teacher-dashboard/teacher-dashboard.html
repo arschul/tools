@@ -709,10 +709,13 @@ function renderDashboard(){
     </div>
     ${(()=>{
       const cp = state.students.filter(s=>s.contactParents?.reason);
-      return cp.length ? `
+      if(!cp.length) return '';
+      // store ids on window for onclick safety
+      window._cpIds = cp.map(s=>s.id);
+      return `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
       <h3>📞 Contact Parents</h3>
-      ${cp.map(s=>{ const c=classById(s.classId); return `
+      ${cp.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
             ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
@@ -722,17 +725,21 @@ function renderDashboard(){
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="clearContactParents('${s.id}')">✓ Done</button>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._cpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <button class="icon-btn" onclick="clearContactParents(window._cpIds[${i}])">✓ Done</button>
           </div>
         </div>
       `; }).join('')}
-    </div>` : '';
+    </div>`;
     })()}
-    ${(()=>{ const ec = state.students.filter(s=>s.englishClub); return ec.length ? `
+    ${(()=>{
+      const ec = state.students.filter(s=>s.englishClub);
+      if(!ec.length) return '';
+      window._ecIds = ec.map(s=>s.id);
+      return `
     <div class="card section" style="margin-top:16px;">
       <h3>⭐ English Club</h3>
-      ${ec.map(s=>{ const c = classById(s.classId); return `
+      ${ec.map((s,i)=>{ const c = classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
             ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
@@ -741,10 +748,11 @@ function renderDashboard(){
               <div class="dash-row-sub">${c?esc(c.name):'No class'}</div>
             </div>
           </div>
-          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">Report →</button>
+          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._ecIds[${i}],studentProfileReturn:'reports'})">Report →</button>
         </div>
       `; }).join('')}
-    </div>` : ''; })()}
+    </div>`;
+    })()}
   `;
 }
 
@@ -793,8 +801,8 @@ function renderClassCard(c){
                 <div class="student-list-row">
                   <span class="student-name-link" onclick="navigate('student',{studentProfileId:'${s.id}', studentProfileReturn:'classes'})">${esc(s.name)}</span>
                   <div style="display:flex;align-items:center;gap:8px;">
-                    <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="Contact parents">
-                      ${s.contactParents?.reason?'📞':'📞'}
+                    <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="${s.contactParents?.reason?'Contact parents flagged — click to edit':'Flag for contact parents'}">
+                      📞${s.contactParents?.reason?' ●':''}
                     </button>
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
@@ -928,7 +936,7 @@ function clearContactParents(studentId){
   if(!s) return;
   s.contactParents = null;
   scheduleSave('students', state.students);
-  renderDashboard();
+  if(state.view==='dashboard') renderDashboard();
   if(state.view==='classes') renderClasses();
 }
 
