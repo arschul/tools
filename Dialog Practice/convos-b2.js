@@ -230,7 +230,7 @@ const CONVOS_B2 = [
   {
     "id": 39,
     "level": "B2",
-    "p1": "My friend was offered a chance to study abroad in [place] next year.",
+    "p1": "My friend was offered a chance to study abroad in [country] next year.",
     "p2": "That's a huge opportunity, though relocating comes with its own challenges."
   },
   {
