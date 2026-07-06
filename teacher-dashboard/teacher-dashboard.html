@@ -651,6 +651,15 @@ function goToRollCall(classId, date){
 /* ================= DASHBOARD ================= */
 function renderDashboard(){
   const el = document.getElementById('view-dashboard');
+  try { _renderDashboard(el); }
+  catch(e){
+    el.innerHTML = `<div class="card empty-card" style="color:var(--red);">
+      <b>Dashboard error — please copy this and report it:</b><br><br>
+      <code style="font-size:12px;word-break:break-all;">${esc(e?.stack||e?.message||String(e))}</code>
+    </div>`;
+  }
+}
+function _renderDashboard(el){
   if(!state.classes.length){
     el.innerHTML = `
       <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(todayStr())}</div></div></div>
