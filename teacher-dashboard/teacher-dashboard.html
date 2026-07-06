@@ -588,7 +588,7 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
   while(d<=end){
     const dow = d.getDay();
     const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
-    if(SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
+    if(cls.schedule && SCHEDULE_DAYS[cls.schedule] && SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
     d.setDate(d.getDate()+1);
   }
   return count;
@@ -948,9 +948,36 @@ function saveContactParents(studentId){
 }
 function clearContactParents(studentId){
   const s = state.students.find(st=>st.id===studentId);
+  if(!s || !s.contactParents?.reason) return;
+  showModal(`
+    <h3>📞 Log Call — ${esc(s.name)}</h3>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Before marking done, write a brief summary of the conversation. This will appear on the student's report.</p>
+    <div class="field"><label>Call date</label><input id="cp-call-date" type="date" value="${todayStr()}"></div>
+    <div class="field"><label>Summary of conversation</label>
+      <textarea id="cp-summary" rows="4" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:13px;" placeholder="e.g. Spoke with mother about attendance. She was unaware of 3 absences and committed to improving punctuality."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="confirmCallDone('${studentId}')">Save &amp; Mark Done</button>
+    </div>
+  `);
+}
+function confirmCallDone(studentId){
+  const s = state.students.find(st=>st.id===studentId);
   if(!s) return;
+  const summary = document.getElementById('cp-summary').value.trim();
+  const callDate = document.getElementById('cp-call-date').value;
+  if(!summary){ alert('Please enter a summary of the conversation.'); return; }
+  if(!s.contactParentsHistory) s.contactParentsHistory = [];
+  s.contactParentsHistory.unshift({
+    date: callDate,
+    category: s.contactParents.category,
+    reason: s.contactParents.reason,
+    summary
+  });
   s.contactParents = null;
   scheduleSave('students', state.students);
+  closeModal();
   if(state.view==='dashboard') renderDashboard();
   if(state.view==='classes') renderClasses();
 }
@@ -1287,13 +1314,24 @@ function renderStudentProfile(){
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
     </div>
-    ${student.contactParents?.reason ? `
+    ${(student.contactParents?.reason || student.contactParentsHistory?.length) ? `
     <div class="card section" style="border-left:4px solid var(--red);">
       <h3>📞 ${state.reportLang==='pt'?'Contato com Responsáveis':'Contact Parents'}</h3>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;">
+      ${student.contactParents?.reason ? `
+      <div style="margin-bottom:12px;padding:10px 14px;background:var(--red-soft);border-radius:10px;">
+        <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px;">${state.reportLang==='pt'?'⚠ Pendente':'⚠ Pending'}</div>
         <span class="badge red">${esc(student.contactParents.category)}</span>
-        <span style="font-size:13px;color:var(--text);">${esc(student.contactParents.reason)}</span>
-      </div>
+        <span style="font-size:13px;color:var(--text);margin-left:8px;">${esc(student.contactParents.reason)}</span>
+      </div>` : ''}
+      ${(student.contactParentsHistory||[]).map(h=>`
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:12px;font-weight:600;color:var(--muted);">${formatDateShort(h.date)}</span>
+          <span class="badge red">${esc(h.category)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;"><b>${state.reportLang==='pt'?'Motivo':'Reason'}:</b> ${esc(h.reason)}</div>
+        <div style="font-size:13px;color:var(--text);"><b>${state.reportLang==='pt'?'Resumo':'Summary'}:</b> ${esc(h.summary)}</div>
+      </div>`).join('')}
     </div>` : ''}
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
