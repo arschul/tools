@@ -713,6 +713,7 @@
       <div class="level-pill" id="levelPill">A1</div>
       <div class="topbar-actions">
         <button class="icon-btn" onclick="backToSetup()">🏠 Start screen</button>
+        <button class="icon-btn" onclick="toggleTranscript()" id="transcriptToggleBtn">👁 Show script</button>
         <button class="icon-btn" onclick="newConversation()">🔀 Random</button>
       </div>
     </div>
@@ -721,6 +722,9 @@
       <div class="convo-id" id="convoIdLabel">Conversation 1 of 50</div>
 
       <div id="lineContainer"></div>
+      <div id="transcriptHiddenNotice" style="text-align:center; padding: 18px 10px; color: var(--text-dim); font-size: 0.95rem;">
+        🔒 Script is hidden. Press play and listen, or tap "Show script" above.
+      </div>
 
       <div class="transport">
         <button class="btn-round" onclick="prevConvo()" title="Previous conversation">⏮</button>
@@ -862,6 +866,7 @@ let state = {
   currentIndex: -1,
   turns: [],           // normalized [{speaker:'A'|'B', text}] for the current convo
   isPlaying: false,
+  transcriptVisible: false, // Listen mode script visibility, hidden by default
   utterA: null,
   utterB: null,
   // session queue (used by both Listen and Game mode so Custom ordering is respected)
@@ -1142,6 +1147,7 @@ function startSession() {
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('playerScreen').style.display = 'block';
     document.getElementById('levelPill').textContent = state.level;
+    state.transcriptVisible = false;
     newConversation();
   }
 }
@@ -1191,10 +1197,31 @@ function loadConvoAt(queuePos) {
   state.turns = convoToTurns(item.convo);
 
   renderLines('lineContainer', state.turns);
+  applyTranscriptVisibility();
   document.getElementById('convoIdLabel').textContent =
     `Conversation ${queuePos + 1} of ${state.queue.length} · ${state.level}${item.isLong ? ' · Long' : ''}`;
   document.getElementById('progressLabel').textContent = 'Ready';
   document.getElementById('progressFill').style.width = '0%';
+}
+
+function applyTranscriptVisibility() {
+  const container = document.getElementById('lineContainer');
+  const notice = document.getElementById('transcriptHiddenNotice');
+  const btn = document.getElementById('transcriptToggleBtn');
+  if (state.transcriptVisible) {
+    container.style.display = 'block';
+    notice.style.display = 'none';
+    btn.textContent = '🙈 Hide script';
+  } else {
+    container.style.display = 'none';
+    notice.style.display = 'block';
+    btn.textContent = '👁 Show script';
+  }
+}
+
+function toggleTranscript() {
+  state.transcriptVisible = !state.transcriptVisible;
+  applyTranscriptVisibility();
 }
 
 function newConversation() {
