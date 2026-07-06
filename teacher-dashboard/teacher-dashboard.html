@@ -650,8 +650,9 @@ function goToRollCall(classId, date){
 
 /* ================= DASHBOARD ================= */
 function renderDashboard(){
+  const el = document.getElementById('view-dashboard');
   if(!state.classes.length){
-    document.getElementById('view-dashboard').innerHTML = `
+    el.innerHTML = `
       <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(todayStr())}</div></div></div>
       <div class="card empty-card">
         <p>Welcome! Start by adding your first class.</p>
@@ -670,52 +671,46 @@ function renderDashboard(){
   });
   const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
 
-  document.getElementById('view-dashboard').innerHTML = `
-    <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
-    <div class="stat-row">
-      <div class="card stat"><div class="stat-num">${state.classes.length}</div><div class="stat-label">Classes</div></div>
-      <div class="card stat"><div class="stat-num">${state.students.length}</div><div class="stat-label">Students</div></div>
-      <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
-    </div>
-    <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
-      <div class="card section">
-        <h3>Today's Classes</h3>${todayHoliday ? `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>` : (todaysClasses.length ? todaysClasses.map(c=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              <span class="color-dot" style="background:${c.color}"></span>
-              <div>
-                <div class="dash-row-title">${esc(c.name)}</div>
-                <div class="dash-row-sub">${c.time?c.time+' · ':''}${studentsInClass(c.id).length} students</div>
-              </div>
-            </div>
-            <button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>
+  // — Today's classes —
+  let todayHtml = '';
+  if(todayHoliday){
+    todayHtml = `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>`;
+  } else if(todaysClasses.length){
+    todayHtml = todaysClasses.map(c=>`
+      <div class="dash-row">
+        <div class="dash-row-left">
+          <span class="color-dot" style="background:${c.color}"></span>
+          <div>
+            <div class="dash-row-title">${esc(c.name)}</div>
+            <div class="dash-row-sub">${c.time?c.time+' · ':''}${studentsInClass(c.id).length} students</div>
           </div>
-        `).join('') : `<div class="empty">No classes scheduled today.</div>`)}
+        </div>
+        <button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>
+      </div>`).join('');
+  } else {
+    todayHtml = `<div class="empty">No classes scheduled today.</div>`;
+  }
+
+  // — Upcoming —
+  const upcomingHtml = upcoming.length ? upcoming.map(e=>`
+    <div class="dash-row">
+      <div class="dash-row-left">
+        <span class="badge ${e.type}">${eventTypeLabel(e.type)}</span>
+        <div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(e.title)}</div>
+          <div class="dash-row-sub">${formatDateShort(e.date)}${e.classId?' · '+esc(classById(e.classId)?.name||''):''}</div>
+        </div>
       </div>
-      <div class="card section">
-        <h3>Upcoming</h3>
-        ${upcoming.length ? upcoming.map(e=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              <span class="badge ${e.type}">${eventTypeLabel(e.type)}</span>
-              <div>
-                <div class="dash-row-title" style="font-size:15px;">${esc(e.title)}</div>
-                <div class="dash-row-sub">${formatDateShort(e.date)}${e.classId?(' · '+esc(classById(e.classId)?.name||'')):''}</div>
-              </div>
-            </div>
-          </div>
-        `).join('') : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`}
-      </div>
-    </div>
-    ${(()=>{
-      const cp = state.students.filter(s=>s.contactParents?.reason);
-      if(!cp.length) return '';
-      // store ids on window for onclick safety
-      window._cpIds = cp.map(s=>s.id);
-      return `
+    </div>`).join('')
+    : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`;
+
+  // — Contact Parents —
+  const cpStudents = state.students.filter(s=>s.contactParents?.reason);
+  window._dashCpIds = cpStudents.map(s=>s.id);
+  const cpHtml = cpStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
       <h3>📞 Contact Parents</h3>
-      ${cp.map((s,i)=>{ const c=classById(s.classId); return `
+      ${cpStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
             ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
@@ -725,21 +720,19 @@ function renderDashboard(){
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._cpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="clearContactParents(window._cpIds[${i}])">✓ Done</button>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>
           </div>
-        </div>
-      `; }).join('')}
-    </div>`;
-    })()}
-    ${(()=>{
-      const ec = state.students.filter(s=>s.englishClub);
-      if(!ec.length) return '';
-      window._ecIds = ec.map(s=>s.id);
-      return `
+        </div>`; }).join('')}
+    </div>` : '';
+
+  // — English Club —
+  const ecStudents = state.students.filter(s=>s.englishClub);
+  window._dashEcIds = ecStudents.map(s=>s.id);
+  const ecHtml = ecStudents.length ? `
     <div class="card section" style="margin-top:16px;">
       <h3>⭐ English Club</h3>
-      ${ec.map((s,i)=>{ const c = classById(s.classId); return `
+      ${ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
             ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
@@ -748,11 +741,23 @@ function renderDashboard(){
               <div class="dash-row-sub">${c?esc(c.name):'No class'}</div>
             </div>
           </div>
-          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._ecIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-        </div>
-      `; }).join('')}
-    </div>`;
-    })()}
+          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashEcIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+        </div>`; }).join('')}
+    </div>` : '';
+
+  el.innerHTML = `
+    <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
+    <div class="stat-row">
+      <div class="card stat"><div class="stat-num">${state.classes.length}</div><div class="stat-label">Classes</div></div>
+      <div class="card stat"><div class="stat-num">${state.students.length}</div><div class="stat-label">Students</div></div>
+      <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
+      <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
+      <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
+    </div>
+    ${cpHtml}
+    ${ecHtml}
   `;
 }
 
