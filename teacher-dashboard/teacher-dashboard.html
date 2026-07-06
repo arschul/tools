@@ -6,21 +6,18 @@
 <title>EFL Teacher Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --sidebar:#122234;
-    --sidebar-accent:#1d3149;
-    --bg:#faf8f3;
+    --sidebar:#1c2436;
+    --sidebar-accent:#2a3650;
+    --bg:#f4f6fb;
     --card:#ffffff;
-    --border:#e8e5db;
-    --text:#182838;
-    --muted:#7b8494;
-    --accent:#0e8e88;          /* teal — brand / interactive */
-    --accent-deep:#0a6d68;
-    --accent-soft:#dbf0ee;
-    --marker:#ffce3a;          /* highlighter yellow — signature */
-    --marker-soft:#fff3c4;
+    --border:#e3e7f0;
+    --text:#1c2436;
+    --muted:#7d869c;
+    --accent:#4f6df5;
+    --accent-soft:#e8ecff;
     --green:#1f9d6f;
     --green-soft:#e3f7ee;
     --amber:#c98a1c;
@@ -31,42 +28,37 @@
     --purple-soft:#efe7ff;
     --gray:#6b7280;
     --gray-soft:#eef0f4;
-    --accent-grad: linear-gradient(135deg, #12a89c 0%, #0a6d68 100%);
-    --radius:14px;
+    --accent-grad: linear-gradient(135deg, #4f6df5 0%, #8b5cf6 100%);
+    --radius:16px;
   }
   *{box-sizing:border-box;}
   body{
     margin:0;
     font-family:'Inter',sans-serif;
     background:
-      radial-gradient(120% 80% at 100% -5%, #fdf3da 0%, transparent 42%),
-      radial-gradient(110% 90% at -5% 105%, #e4f3f1 0%, transparent 40%),
+      radial-gradient(circle at 100% 0%, #eef1fd 0%, transparent 45%),
+      radial-gradient(circle at 0% 100%, #eef7f3 0%, transparent 40%),
       var(--bg);
     color:var(--text);
     display:flex;
     min-height:100vh;
-    -webkit-font-smoothing:antialiased;
   }
-  h1,h2,h3{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;margin:0;letter-spacing:-.02em;}
+  h1,h2,h3{font-family:'Sora',sans-serif;margin:0;}
   a{color:var(--accent);cursor:pointer;}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
-  .view.active{animation:viewIn .28s cubic-bezier(.2,.8,.2,1) both;}
-  @keyframes viewIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
-  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 
   /* Sidebar */
   .sidebar{
     width:230px;
     background:
-      radial-gradient(circle at 25% 0%, rgba(18,168,156,.32), transparent 55%),
-      radial-gradient(circle at 90% 85%, rgba(255,206,58,.12), transparent 50%),
-      linear-gradient(165deg, #122234 0%, #16293e 55%, #0d1826 100%);
+      radial-gradient(circle at 25% 0%, rgba(79,109,245,.35), transparent 55%),
+      radial-gradient(circle at 90% 80%, rgba(139,92,246,.18), transparent 50%),
+      linear-gradient(165deg, #1c2436 0%, #20283e 55%, #181f30 100%);
     color:#cfd6e8;
     padding:24px 18px;
     flex-shrink:0;
   }
   .sidebar .brand{
-    font-family:'Bricolage Grotesque','Segoe UI',sans-serif;
+    font-family:'Sora',sans-serif;
     font-weight:700;
     font-size:18px;
     letter-spacing:-.01em;
@@ -91,9 +83,8 @@
   }
   .nav-item:hover{color:#fff;background:rgba(255,255,255,.05);}
   .nav-item.active{
-    background:rgba(255,255,255,.07);
+    background:rgba(255,255,255,.06);
     color:#fff;
-    box-shadow:inset 3px 0 0 var(--marker);
   }
   .nav-icon-badge{
     width:30px;height:30px;border-radius:9px;flex-shrink:0;
@@ -105,9 +96,9 @@
   .nav-icon-badge svg{width:16px;height:16px;}
   .nav-item:hover .nav-icon-badge{background:rgba(255,255,255,.12);color:#fff;}
   .nav-item.active .nav-icon-badge{
-    background:var(--marker);
-    color:#122234;
-    box-shadow:0 4px 14px -2px rgba(255,206,58,.55);
+    background:var(--accent-grad);
+    color:#fff;
+    box-shadow:0 4px 14px -2px rgba(79,109,245,.6);
   }
   .sidebar-divider{height:1px;background:rgba(255,255,255,.08);margin:10px 4px 10px;}
 
@@ -120,13 +111,7 @@
     display:flex;justify-content:space-between;align-items:flex-start;
     margin-bottom:18px;flex-wrap:wrap;gap:12px;
   }
-  .topbar h1{font-size:27px;font-weight:700;letter-spacing:-.02em;}
-  .topbar h1::after{
-    content:"";display:block;width:44px;height:5px;margin-top:8px;border-radius:3px;
-    background:var(--marker);transform:skewX(-14deg);transform-origin:left;
-    animation:markerIn .45s cubic-bezier(.2,.8,.2,1) both .1s;
-  }
-  @keyframes markerIn{from{transform:skewX(-14deg) scaleX(0);}to{transform:skewX(-14deg) scaleX(1);}}
+  .topbar h1{font-size:24px;letter-spacing:-.01em;}
   .topbar .meta{color:var(--muted);font-size:13px;margin-top:4px;}
   .back-btn{margin-bottom:8px;}
 
@@ -166,13 +151,12 @@
 
   /* stat row */
   .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px;}
-  .stat{padding:18px 16px;text-align:center;transition:transform .16s, box-shadow .16s;}
-  .stat:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(24,40,56,.04), 0 14px 34px -18px rgba(24,40,56,.28);}
+  .stat{padding:16px;text-align:center;}
   .stat-num{
-    font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-size:32px;font-weight:800;
-    color:var(--text);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;
+    font-family:'Sora',sans-serif;font-size:26px;font-weight:700;
+    background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  .stat-label{font-size:12px;color:var(--muted);margin-top:6px;font-weight:500;}
+  .stat-label{font-size:12px;color:var(--muted);margin-top:4px;}
 
   /* dashboard */
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -186,9 +170,7 @@
   @media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
 
   /* classes & students */
-  .section h3, .chart-card h3{padding-left:11px;border-left:3px solid var(--accent);border-radius:1px;}
-  .class-card{margin-bottom:12px;overflow:hidden;transition:transform .16s, box-shadow .16s;}
-  .class-card:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(24,40,56,.04), 0 16px 38px -20px rgba(24,40,56,.3);}
+  .class-card{margin-bottom:12px;overflow:hidden;}
   .class-card-head{display:flex;justify-content:space-between;align-items:center;padding:16px;gap:10px;}
   .class-card-head .dash-row-left{flex:1;cursor:pointer;}
   .class-card-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
@@ -266,7 +248,7 @@
 
   /* calendar */
   .cal-nav{display:flex;align-items:center;gap:10px;}
-  .cal-month-label{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-weight:600;font-size:15px;min-width:140px;text-align:center;}
+  .cal-month-label{font-family:'Sora',sans-serif;font-weight:600;font-size:15px;min-width:140px;text-align:center;}
   .cal-grid-wrap{padding:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
@@ -274,9 +256,8 @@
   .cal-cell:hover{border-color:var(--accent);}
   .cal-cell.empty{border:none;cursor:default;background:transparent;}
   .cal-cell.empty:hover{border:none;}
-  .cal-cell.today{background:var(--marker-soft);border-color:var(--marker);box-shadow:inset 0 0 0 1px var(--marker);}
+  .cal-cell.today{background:var(--accent-soft);border-color:var(--accent);}
   .cal-date{font-weight:600;font-size:13px;}
-  .cal-cell.today .cal-date{color:#8a6a00;}
   .cal-items{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
   .cal-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;}
   .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);align-items:center;}
@@ -293,11 +274,11 @@
   .donut{width:140px;height:140px;border-radius:50%;position:relative;flex-shrink:0;}
   .donut svg{display:block;width:100%;height:100%;}
   .donut-center{position:absolute;inset:18px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
-  .donut-num{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;font-weight:700;font-size:20px;}
+  .donut-num{font-family:'Sora',sans-serif;font-weight:700;font-size:20px;}
   .donut-sub{font-size:11px;color:var(--muted);}
   .donut-legend{display:flex;flex-direction:column;gap:6px;font-size:13px;flex:1;}
   .lost-summary{font-size:13px;line-height:1.7;}
-  .lost-summary b{font-family:'Bricolage Grotesque','Segoe UI',sans-serif;}
+  .lost-summary b{font-family:'Sora',sans-serif;}
   @media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
 
   /* print */
@@ -392,11 +373,7 @@
 
 <script>
 /* ---------- constants ---------- */
-const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4] }; // legacy presets, kept for old classes
-function classDays(cls){
-  if(Array.isArray(cls.days) && cls.days.length) return cls.days;
-  return SCHEDULE_DAYS[cls.schedule] || [];
-}
+const SCHEDULE_DAYS = { MW:[1,3], TT:[2,4] };
 const PALETTE = ['#4f6df5','#1f9d6f','#c98a1c','#d1453d','#8b5cf6','#0ea5b8','#e8618c','#6b7280'];
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
@@ -573,16 +550,11 @@ function formatDateLong(dateStr){
 function formatDateShort(dateStr){
   return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
-const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function scheduleLabel(cls){
-  const days = typeof cls === 'string' ? (SCHEDULE_DAYS[cls]||[]) : classDays(cls);
-  const sorted = [...days].sort((a,b)=>a-b);
-  return sorted.map(d=>DAY_ABBR[d]).join(' / ') || 'No days set';
-}
+function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function getPreviousClassDate(cls, fromDateStr){
-  const days = classDays(cls);
+  const days = SCHEDULE_DAYS[cls.schedule];
   let d = new Date(fromDateStr+'T00:00:00');
   for(let i=0; i<60; i++){
     d.setDate(d.getDate()-1);
@@ -615,7 +587,7 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
   while(d<=end){
     const dow = d.getDay();
     const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
-    if(classDays(cls).includes(dow) && !isHoliday(dateStr)) count++;
+    if(SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
     d.setDate(d.getDate()+1);
   }
   return count;
@@ -648,7 +620,7 @@ function renderDonut(slices, centerLabel, centerSub){
 /* ---------- modal ---------- */
 function showModal(html){
   document.getElementById('modal-root').innerHTML = `
-    <div class="modal-overlay" onmousedown="this._downOnSelf = (event.target===this)" onclick="if(event.target===this && this._downOnSelf) closeModal()">
+    <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
       <div class="modal">${html}</div>
     </div>`;
 }
@@ -691,7 +663,7 @@ function renderDashboard(){
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
   const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>{
-    if(!classDays(c).includes(dow)) return false;
+    if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
     if(c.startDate && today < c.startDate) return false;
     if(c.endDate && today > c.endDate) return false;
     return true;
@@ -705,7 +677,7 @@ function renderDashboard(){
       <div class="card stat"><div class="stat-num">${state.students.length}</div><div class="stat-label">Students</div></div>
       <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
     </div>
-    <div class="dash-grid">
+    <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section">
         <h3>Today's Classes</h3>${todayHoliday ? `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>` : (todaysClasses.length ? todaysClasses.map(c=>`
           <div class="dash-row">
@@ -727,7 +699,7 @@ function renderDashboard(){
             <div class="dash-row-left">
               <span class="badge ${e.type}">${eventTypeLabel(e.type)}</span>
               <div>
-                <div class="dash-row-title">${esc(e.title)}</div>
+                <div class="dash-row-title" style="font-size:15px;">${esc(e.title)}</div>
                 <div class="dash-row-sub">${formatDateShort(e.date)}${e.classId?(' · '+esc(classById(e.classId)?.name||'')):''}</div>
               </div>
             </div>
@@ -735,6 +707,28 @@ function renderDashboard(){
         `).join('') : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`}
       </div>
     </div>
+    ${(()=>{
+      const cp = state.students.filter(s=>s.contactParents?.reason);
+      return cp.length ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
+      <h3>📞 Contact Parents</h3>
+      ${cp.map(s=>{ const c=classById(s.classId); return `
+        <div class="dash-row">
+          <div class="dash-row-left">
+            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
+            <div>
+              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span></div>
+              <div class="dash-row-sub">${esc(s.contactParents.reason)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">Report →</button>
+            <button class="icon-btn" onclick="clearContactParents('${s.id}')">✓ Done</button>
+          </div>
+        </div>
+      `; }).join('')}
+    </div>` : '';
+    })()}
     ${(()=>{ const ec = state.students.filter(s=>s.englishClub); return ec.length ? `
     <div class="card section" style="margin-top:16px;">
       <h3>⭐ English Club</h3>
@@ -778,7 +772,7 @@ function renderClassCard(c){
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
             <div class="dash-row-title">${esc(c.name)}</div>
-            <div class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students</div>
+            <div class="dash-row-sub">${scheduleLabel(c.schedule)}${c.time?' · '+c.time:''} · ${students.length} students</div>
           </div>
           <span class="chevron" style="margin-left:8px;">${expanded?'▾':'▸'}</span>
         </div>
@@ -799,6 +793,9 @@ function renderClassCard(c){
                 <div class="student-list-row">
                   <span class="student-name-link" onclick="navigate('student',{studentProfileId:'${s.id}', studentProfileReturn:'classes'})">${esc(s.name)}</span>
                   <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="Contact parents">
+                      ${s.contactParents?.reason?'📞':'📞'}
+                    </button>
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
                     </button>
@@ -822,16 +819,11 @@ function openClassModal(classId){
   showModal(`
     <h3>${c?'Edit class':'Add class'}</h3>
     <div class="field"><label>Class name</label><input id="cm-name" type="text" value="${c?esc(c.name):''}" placeholder="e.g. Turma B1"></div>
-    <div id="cm-name-error" style="color:var(--red);font-size:12px;margin:-8px 0 12px;display:none;">Please enter a class name.</div>
-    <div class="field"><label>Days</label>
-      <div class="day-checks" style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${DAY_ABBR.map((abbr,i)=>{
-          const checked = c ? classDays(c).includes(i) : (i===1||i===3);
-          return `<label style="display:flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid var(--border,#ccc);border-radius:6px;cursor:pointer;">
-            <input type="checkbox" class="cm-day" value="${i}" ${checked?'checked':''}> ${abbr}
-          </label>`;
-        }).join('')}
-      </div>
+    <div class="field"><label>Schedule</label>
+      <select id="cm-schedule">
+        <option value="MW" ${c?.schedule==='MW'?'selected':''}>Monday / Wednesday</option>
+        <option value="TT" ${c?.schedule==='TT'?'selected':''}>Tuesday / Thursday</option>
+      </select>
     </div>
     <div class="field"><label>Time (optional)</label><input id="cm-time" type="time" value="${c?.time||''}"></div>
     <div class="field-row">
@@ -858,12 +850,8 @@ function selectSwatch(el, color){
 }
 function saveClass(classId){
   const name = document.getElementById('cm-name').value.trim();
-  if(!name){
-    document.getElementById('cm-name-error').style.display = 'block';
-    document.getElementById('cm-name').focus();
-    return;
-  }
-  const days = Array.from(document.querySelectorAll('.cm-day:checked')).map(el=>parseInt(el.value)).sort((a,b)=>a-b);
+  if(!name) return;
+  const schedule = document.getElementById('cm-schedule').value;
   const time = document.getElementById('cm-time').value;
   const color = document.getElementById('cm-color').value;
   const startDate = document.getElementById('cm-start').value || null;
@@ -871,9 +859,9 @@ function saveClass(classId){
   const duration = parseInt(document.getElementById('cm-duration').value) || 150;
   if(classId){
     const c = classById(classId);
-    c.name=name; c.days=days; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate; c.duration=duration;
+    c.name=name; c.schedule=schedule; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate; c.duration=duration;
   }else{
-    state.classes.push({id:uid(), name, days, time, color, startDate, endDate, duration});
+    state.classes.push({id:uid(), name, schedule, time, color, startDate, endDate, duration});
   }
   scheduleSave('classes', state.classes);
   closeModal();
@@ -900,6 +888,50 @@ function addStudent(classId){
   scheduleSave('students', state.students);
   renderClasses();
 }
+function openContactParentsModal(studentId){
+  const s = state.students.find(st=>st.id===studentId);
+  if(!s) return;
+  const cp = s.contactParents || {};
+  showModal(`
+    <h3>📞 Contact Parents — ${esc(s.name)}</h3>
+    <div class="field"><label>Reason category</label>
+      <select id="cp-cat">
+        <option value="English Club" ${cp.category==='English Club'?'selected':''}>English Club</option>
+        <option value="Grades" ${cp.category==='Grades'?'selected':''}>Grades</option>
+        <option value="Behavior" ${cp.category==='Behavior'?'selected':''}>Behavior</option>
+        <option value="Other" ${cp.category==='Other'||!cp.category?'selected':''}>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Notes / reason</label>
+      <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(cp.reason||'')}</textarea>
+    </div>
+    <div class="modal-actions">
+      ${cp.reason?`<button class="btn-ghost" onclick="clearContactParents('${studentId}');closeModal()">✓ Mark done</button>`:''}
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="saveContactParents('${studentId}')">Save flag</button>
+    </div>
+  `);
+}
+function saveContactParents(studentId){
+  const s = state.students.find(st=>st.id===studentId);
+  if(!s) return;
+  const cat = document.getElementById('cp-cat').value;
+  const reason = document.getElementById('cp-reason').value.trim();
+  if(!reason){ alert('Please enter a reason.'); return; }
+  s.contactParents = {category: cat, reason};
+  scheduleSave('students', state.students);
+  closeModal();
+  renderClasses();
+}
+function clearContactParents(studentId){
+  const s = state.students.find(st=>st.id===studentId);
+  if(!s) return;
+  s.contactParents = null;
+  scheduleSave('students', state.students);
+  renderDashboard();
+  if(state.view==='classes') renderClasses();
+}
+
 function toggleEnglishClub(studentId){
   const s = state.students.find(s=>s.id===studentId);
   if(!s) return;
@@ -928,7 +960,7 @@ function renderRollCall(){
   const students = studentsInClass(cls.id);
   const sessionKey = cls.id + '_' + date;
   const dow = new Date(date+'T00:00:00').getDay();
-  const offSchedule = !classDays(cls).includes(dow);
+  const offSchedule = !SCHEDULE_DAYS[cls.schedule].includes(dow);
   const holiday = getHoliday(date);
 
   // Don't create session records for holidays
@@ -961,7 +993,7 @@ function renderRollCall(){
       </div>
     </div>
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
-    ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls)}).</div>`:''}
+    ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls.schedule)}).</div>`:''}
     ${!holiday && students.length ? `
       <div class="rollcall-actions">
         <button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>
@@ -1165,7 +1197,7 @@ function renderStudentProfile(){
     <div class="topbar">
       <div>
         <button class="btn-ghost back-btn no-print" onclick="navigate('${returnView}')">${returnLabel}</button>
-        <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">${t.englishClubBadge}</span>`:''}</h1>
+        <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">${t.englishClubBadge}</span>`:''}${student.contactParents?.reason?` <span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(student.contactParents.category)}</span>`:''}</h1>
         <div class="meta">${cls?esc(cls.name):'No class'}${cls?.startDate&&cls?.endDate?` · ${formatDateShort(cls.startDate)} – ${formatDateShort(cls.endDate)}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
@@ -1465,7 +1497,7 @@ function renderCalendar(){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
     const classesToday = state.classes.filter(c=>{
-      if(!classDays(c).includes(dow)) return false;
+      if(!SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
       if(c.startDate && dateStr < c.startDate) return false;
       if(c.endDate && dateStr > c.endDate) return false;
       return true;
@@ -1523,7 +1555,7 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>classDays(c).includes(dow));
+  const classesToday = state.classes.filter(c=>SCHEDULE_DAYS[c.schedule].includes(dow));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
   const holiday = getHoliday(dateStr);
   showModal(`
@@ -1683,5 +1715,3 @@ init();
 </script>
 </body>
 </html>
-
-
