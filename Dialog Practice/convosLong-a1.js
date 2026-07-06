@@ -1,54 +1,904 @@
 const CONVOS_LONG_A1 = [
-{"id":1,"level":"A1","p1":["Hi! What's your name?","I'm Leo. Nice to meet you!","Do you like [food]?","Me too! Do you like [drink] as well?","Cool. See you at [place] tomorrow?"],"p2":["My name is Ana. What's yours?","Nice to meet you too!","Yes, I love [food]!","Yes, I drink it every day.","Yes, see you there!"]},
-{"id":2,"level":"A1","p1":["Where do you live?","Is it far from school?","Do you walk to school?","What time do you leave home?","That's early! Do you like walking?"],"p2":["I live near [place].","No, it's very close.","Yes, I walk every morning.","I leave at [time] o'clock.","Yes, I like it a lot."]},
-{"id":3,"level":"A1","p1":["Do you have any pets?","What's its name?","Is it friendly?","Does it like to play?","That's nice! Can I meet it?"],"p2":["Yes, I have a [animal].","Its name is Max.","Yes, very friendly.","Yes, it loves to play in [place].","Sure, come to my house!"]},
-{"id":4,"level":"A1","p1":["What's your favorite subject?","Why do you like it?","Do you have [subject] today?","Who is your teacher?","Great! Good luck today."],"p2":["I like [subject].","It's fun and easy for me.","Yes, at [time] o'clock.","My teacher is very nice.","Thank you!"]},
-{"id":5,"level":"A1","p1":["Do you play [sport]?","Where do you play?","Who do you play with?","Is it fun?","Can I come and watch?"],"p2":["Yes, every weekend.","At [place].","I play with my [family].","Yes, it's really fun.","Yes, of course!"]},
-{"id":6,"level":"A1","p1":["What day is it today?","Do you have school today?","What time does it start?","Do you like your school?","That's great to hear."],"p2":["It's [day].","Yes, I have [subject] class.","It starts at [time] o'clock.","Yes, I like it very much.","Thank you!"]},
-{"id":7,"level":"A1","p1":["Is it [weather] today?","Do you like this weather?","What do you do in this weather?","Do you go outside too?","Sounds nice!"],"p2":["Yes, very [weather].","Yes, I like it a lot.","I like to stay at [place].","Sometimes, with my [family].","Yes, it is!"]},
-{"id":8,"level":"A1","p1":["Do you want some [food]?","Here you go.","Do you want [drink] too?","Is it good?","I'm happy you like it."],"p2":["Yes, please!","Thank you very much.","Yes, that would be great.","Yes, it's delicious!","Me too, thank you!"]},
-{"id":9,"level":"A1","p1":["How old are you?","When is your birthday?","Do you have a party?","What do you do at the party?","Sounds like fun!"],"p2":["I am fourteen years old.","It's in [season].","Yes, with my [family].","We eat [food] and play games.","Yes, it is!"]},
-{"id":10,"level":"A1","p1":["What's your favorite color?","Do you have a [color] [object]?","Where did you get it?","Is it new?","It sounds nice."],"p2":["I like [color].","Yes, I have one.","At [place].","Yes, it's very new.","Thank you!"]},
-{"id":11,"level":"A1","p1":["Do you have brothers or sisters?","What's their name?","Are they older or younger?","Do you play together?","That sounds fun."],"p2":["Yes, I have a [family].","Their name is Sam.","Younger than me.","Yes, every day.","Yes, it is!"]},
-{"id":12,"level":"A1","p1":["What time do you wake up?","Do you eat breakfast?","What do you eat?","Do you like [food] for breakfast?","That sounds healthy!"],"p2":["I wake up at [time] o'clock.","Yes, every morning.","I eat [food].","Yes, I love it.","Thank you!"]},
-{"id":13,"level":"A1","p1":["Do you like [movie_genre] movies?","What's your favorite one?","Who do you watch with?","Where do you watch it?","Sounds like a good time!"],"p2":["Yes, I love them.","I like a funny one.","I watch with my [family].","At [place].","Yes, it is!"]},
-{"id":14,"level":"A1","p1":["Is your [family] at home?","What is she doing?","Is she in the kitchen?","Is she cooking [dinner_food]?","That sounds delicious!"],"p2":["Yes, she is in the kitchen.","She is cooking dinner.","Yes, she is.","Yes, she is!","Yes, it is!"]},
-{"id":15,"level":"A1","p1":["What's for lunch today?","Is it your favorite?","Do you eat at school?","Who do you eat with?","Sounds fun!"],"p2":["We're having [food].","Yes, it is!","Yes, every day.","I eat with my friends.","Yes, it is!"]},
-{"id":16,"level":"A1","p1":["Do you like [sport]?","Do you watch it on TV?","Who is your favorite player?","Do you play it too?","That's great!"],"p2":["Yes, I love it.","Yes, every weekend.","I like a player from [place].","Yes, every day.","Thank you!"]},
-{"id":17,"level":"A1","p1":["What's the weather like today?","Is it [weather]?","Do you need a jacket?","Where are you going?","Have a good day!"],"p2":["It's very nice.","Yes, a little.","Yes, I think so.","I'm going to [place].","Thank you, you too!"]},
-{"id":18,"level":"A1","p1":["Do you like [hobby]?","When do you do it?","Who do you do it with?","Is it fun?","That sounds nice!"],"p2":["Yes, I love it.","Every weekend.","With my [family].","Yes, very fun.","Yes, it is!"]},
-{"id":19,"level":"A1","p1":["What day do you have [subject] class?","What time is the class?","Do you like the class?","Who is your teacher?","That's wonderful!"],"p2":["On [day].","At [time] o'clock.","Yes, very much.","My teacher is very kind.","Thank you!"]},
-{"id":20,"level":"A1","p1":["Do you want to go to [place]?","When can we go?","What time should we meet?","Should we bring [food]?","Great, see you then!"],"p2":["Yes, let's go now.","How about [day]?","Let's meet at [time] o'clock.","Yes, that's a good idea.","See you then!"]},
-{"id":21,"level":"A1","p1":["Is it [weather] outside?","Should I wear a coat?","Are you going outside too?","Where are you going?","Have fun!"],"p2":["Yes, take a jacket.","Yes, I think so.","Yes, to [place].","I'm going to see my [family].","Thank you!"]},
-{"id":22,"level":"A1","p1":["Do you like [drink]?","When do you drink it?","Do you drink it every day?","Is it your favorite?","That's nice!"],"p2":["Yes, I love it.","In the morning.","Yes, every day.","Yes, it is.","Thank you!"]},
-{"id":23,"level":"A1","p1":["What's your favorite animal?","Do you have one at home?","What's its name?","Is it big or small?","That sounds cute!"],"p2":["I like [animal].","Yes, I have one.","Its name is Rocky.","It's quite small.","Yes, it is!"]},
-{"id":24,"level":"A1","p1":["Do you go to [place] on weekends?","Who do you go with?","What do you do there?","Do you like it?","Sounds like fun!"],"p2":["Yes, every weekend.","With my [family].","We eat [food] and talk.","Yes, I love it.","Yes, it is!"]},
-{"id":25,"level":"A1","p1":["What's your favorite [subject] activity?","Do you do it every week?","Is it difficult?","Do you need help sometimes?","That's good to know!"],"p2":["I like reading.","Yes, every week.","No, it's easy for me.","Sometimes, yes.","Thank you!"]},
-{"id":26,"level":"A1","p1":["Do you like [food] or [drink] more?","Why do you like it?","When do you have it?","Do you share it with your [family]?","Sounds delicious!"],"p2":["I like [food] more.","It tastes really good.","Every [day].","Yes, always.","Yes, it is!"]},
-{"id":27,"level":"A1","p1":["Is today [day]?","Do you have [subject] class today?","What time does it start?","Are you ready for it?","Good luck!"],"p2":["Yes, it is.","Yes, I do.","At [time] o'clock.","Yes, I am.","Thank you!"]},
-{"id":28,"level":"A1","p1":["What color is your [object]?","Do you like that color?","Where did you buy it?","Was it expensive?","That's a good price!"],"p2":["It's [color].","Yes, very much.","At [place].","No, it was cheap.","Yes, it was!"]},
-{"id":29,"level":"A1","p1":["Do you have a [animal] or a [animal]?","What do you feed it?","Does it sleep a lot?","Where does it sleep?","That sounds cozy!"],"p2":["I have a dog.","I feed it dog food.","Yes, a lot.","It sleeps in my room.","Yes, it is!"]},
-{"id":30,"level":"A1","p1":["What's your favorite season?","Why do you like [season]?","What do you do in [season]?","Do you go to [place]?","Sounds like fun!"],"p2":["I like [season].","The weather is nice.","I play [sport].","Yes, sometimes.","Yes, it is!"]},
-{"id":31,"level":"A1","p1":["Do you help at home?","What do you do?","Do you like helping?","Who else helps?","That's very kind!"],"p2":["Yes, every day.","I clean my room.","Yes, I like it.","My [family] helps too.","Thank you!"]},
-{"id":32,"level":"A1","p1":["What time is it now?","Are we late for [subject]?","Should we hurry?","Where is the class?","Let's go quickly!"],"p2":["It's [time] o'clock.","No, we have time.","A little, yes.","At [place].","Okay, let's go!"]},
-{"id":33,"level":"A1","p1":["Do you like [hobby] or [sport] more?","Which one is more fun?","Do you do it alone?","Where do you play?","That sounds great!"],"p2":["I like [sport] more.","[sport] is more fun for me.","No, with friends.","At the park.","Yes, it is!"]},
-{"id":34,"level":"A1","p1":["Is your birthday in [season]?","How old will you be?","Will you have a party?","What food will you have?","Happy early birthday!"],"p2":["Yes, it is.","I will be fifteen.","Yes, a small one.","We will have [food].","Thank you so much!"]},
-{"id":35,"level":"A1","p1":["Do you like your [family]?","Do you see them every day?","What do you do together?","Is it fun?","That's lovely!"],"p2":["Yes, very much.","Yes, every day.","We eat [food] together.","Yes, it is.","Thank you!"]},
-{"id":36,"level":"A1","p1":["What's the weather like in [season]?","Is it [weather]?","Do you like that?","What do you wear?","Sounds nice!"],"p2":["It's usually nice.","Yes, sometimes.","Yes, I love it.","I wear light clothes.","Yes, it is!"]},
-{"id":37,"level":"A1","p1":["Do you have [subject] homework today?","Is it difficult?","When will you do it?","Do you need help?","Good luck with it!"],"p2":["Yes, a little.","No, it's easy.","After school today.","No, I'm okay.","Thank you!"]},
-{"id":38,"level":"A1","p1":["What do you usually drink at [place]?","Do you like it there?","Who do you go with?","How often do you go?","Sounds fun!"],"p2":["I drink [drink].","Yes, very much.","With my friends.","Every [day].","Yes, it is!"]},
-{"id":39,"level":"A1","p1":["Do you like your [object]?","Where do you keep it?","Is it useful?","Did someone give it to you?","That's a nice gift!"],"p2":["Yes, I love it.","In my bag.","Yes, very useful.","Yes, my [family] did.","Yes, it was!"]},
-{"id":40,"level":"A1","p1":["What time do you go to bed?","Are you tired now?","What did you do today?","Did you have [subject] class?","Sleep well!"],"p2":["I go to bed at [time].","Yes, a little.","I went to school.","Yes, I did.","Thank you, you too!"]},
-{"id":41,"level":"A1","p1":["Do you like going to [place]?","What do you do there?","Do you go every [day]?","Who do you go with?","Sounds like a nice routine!"],"p2":["Yes, I love it.","I meet my friends.","Yes, every week.","With my [family].","Yes, it is!"]},
-{"id":42,"level":"A1","p1":["What's your favorite [food]?","Do you eat it often?","Who cooks it for you?","Is it hard to make?","That sounds tasty!"],"p2":["I like [food].","Yes, every week.","My [family] cooks it.","No, it's easy.","Yes, it is!"]},
-{"id":43,"level":"A1","p1":["Do you like school?","What's your favorite part?","Do you have many friends there?","Do you like your teachers?","That's wonderful!"],"p2":["Yes, very much.","I like [subject] class.","Yes, many friends.","Yes, they are kind.","Thank you!"]},
-{"id":44,"level":"A1","p1":["Is it [day] today?","Do you have [subject] class?","What time is it?","Are you excited?","Have a great class!"],"p2":["Yes, it is.","Yes, I do.","At [time] o'clock.","Yes, very excited.","Thank you!"]},
-{"id":45,"level":"A1","p1":["Do you like [animal]s?","Have you ever had one?","Would you like one now?","What would you name it?","That's a cute name!"],"p2":["Yes, very much.","Yes, when I was small.","Yes, I would love one.","I would call it Luna.","Thank you!"]},
-{"id":46,"level":"A1","p1":["What's your favorite thing to do at [place]?","Do you go there often?","Who do you usually go with?","Is it always fun?","Sounds like a great spot!"],"p2":["I like to relax there.","Yes, every week.","With my [family].","Yes, always.","Yes, it is!"]},
-{"id":47,"level":"A1","p1":["Do you like [weather] days?","What do you do on those days?","Do you stay at [place]?","Do you drink [drink] then?","Sounds cozy!"],"p2":["Yes, I love them.","I read or watch movies.","Yes, usually.","Yes, hot [drink].","Yes, it is!"]},
-{"id":48,"level":"A1","p1":["Do you like your [subject] teacher?","Why do you like them?","Do they give a lot of homework?","Is the class fun?","That's great to hear!"],"p2":["Yes, very much.","They explain things well.","Sometimes, yes.","Yes, very fun.","Thank you!"]},
-{"id":49,"level":"A1","p1":["What do you do after school?","Do you play [sport]?","Do you do homework first?","What time do you finish?","Sounds like a busy day!"],"p2":["I go home first.","Yes, sometimes.","Yes, always first.","Around [time] o'clock.","Yes, it is!"]},
-{"id":50,"level":"A1","p1":["Do you like your neighborhood?","Is it near [place]?","Do you have friends nearby?","Is it a quiet area?","Sounds like a nice place to live!"],"p2":["Yes, very much.","Yes, quite close.","Yes, a few friends.","Yes, very quiet.","Yes, it is!"]}
+  {
+    "id": 1,
+    "level": "A1",
+    "p1": [
+      "Hi! What's your name?",
+      "I'm Leo. Nice to meet you!",
+      "Do you like [food]?",
+      "Me too! Do you like [drink] as well?",
+      "Cool. See you at [place] tomorrow?"
+    ],
+    "p2": [
+      "My name is Ana. What's yours?",
+      "Nice to meet you too!",
+      "Yes, I love [food]!",
+      "Yes, I drink it every day.",
+      "Yes, see you there!"
+    ]
+  },
+  {
+    "id": 2,
+    "level": "A1",
+    "p1": [
+      "Where do you live?",
+      "Is it far from school?",
+      "Do you walk to school?",
+      "What time do you leave home?",
+      "That's early! Do you like walking?"
+    ],
+    "p2": [
+      "I live near [place].",
+      "No, it's very close.",
+      "Yes, I walk every morning.",
+      "I leave at [time] o'clock.",
+      "Yes, I like it a lot."
+    ]
+  },
+  {
+    "id": 3,
+    "level": "A1",
+    "p1": [
+      "Do you have any pets?",
+      "What's its name?",
+      "Is it friendly?",
+      "Does it like to play?",
+      "That's nice! Can I meet it?"
+    ],
+    "p2": [
+      "Yes, I have a [animal].",
+      "Its name is Max.",
+      "Yes, very friendly.",
+      "Yes, it loves to play in [place].",
+      "Sure, come to my house!"
+    ]
+  },
+  {
+    "id": 4,
+    "level": "A1",
+    "p1": [
+      "What's your favorite subject?",
+      "Why do you like it?",
+      "Do you have [subject] today?",
+      "Who is your teacher?",
+      "Great! Good luck today."
+    ],
+    "p2": [
+      "I like [subject].",
+      "It's fun and easy for me.",
+      "Yes, at [time] o'clock.",
+      "My teacher is very nice.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 5,
+    "level": "A1",
+    "p1": [
+      "Do you play [sport]?",
+      "Where do you play?",
+      "Who do you play with?",
+      "Is it fun?",
+      "Can I come and watch?"
+    ],
+    "p2": [
+      "Yes, every weekend.",
+      "At [place].",
+      "I play with my [family].",
+      "Yes, it's really fun.",
+      "Yes, of course!"
+    ]
+  },
+  {
+    "id": 6,
+    "level": "A1",
+    "p1": [
+      "What day is it today?",
+      "Do you have school today?",
+      "What time does it start?",
+      "Do you like your school?",
+      "That's great to hear."
+    ],
+    "p2": [
+      "It's [day].",
+      "Yes, I have [subject] class.",
+      "It starts at [time] o'clock.",
+      "Yes, I like it very much.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 7,
+    "level": "A1",
+    "p1": [
+      "Is it [weather] today?",
+      "Do you like this weather?",
+      "What do you do in this weather?",
+      "Do you go outside too?",
+      "Sounds nice!"
+    ],
+    "p2": [
+      "Yes, very [weather].",
+      "Yes, I like it a lot.",
+      "I like to stay at [place].",
+      "Sometimes, with my [family].",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 8,
+    "level": "A1",
+    "p1": [
+      "Do you want some [food]?",
+      "Here you go.",
+      "Do you want [drink] too?",
+      "Is it good?",
+      "I'm happy you like it."
+    ],
+    "p2": [
+      "Yes, please!",
+      "Thank you very much.",
+      "Yes, that would be great.",
+      "Yes, it's delicious!",
+      "Me too, thank you!"
+    ]
+  },
+  {
+    "id": 9,
+    "level": "A1",
+    "p1": [
+      "How old are you?",
+      "When is your birthday?",
+      "Do you have a party?",
+      "What do you do at the party?",
+      "Sounds like fun!"
+    ],
+    "p2": [
+      "I am fourteen years old.",
+      "It's in [season].",
+      "Yes, with my [family].",
+      "We eat [food] and play games.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 10,
+    "level": "A1",
+    "p1": [
+      "What's your favorite color?",
+      "Do you have a [color] [object]?",
+      "Where did you get it?",
+      "Is it new?",
+      "It sounds nice."
+    ],
+    "p2": [
+      "I like [color].",
+      "Yes, I have one.",
+      "At [place].",
+      "Yes, it's very new.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 11,
+    "level": "A1",
+    "p1": [
+      "Do you have brothers or sisters?",
+      "What's their name?",
+      "Are they older or younger?",
+      "Do you play together?",
+      "That sounds fun."
+    ],
+    "p2": [
+      "Yes, I have a [family].",
+      "Their name is Sam.",
+      "Younger than me.",
+      "Yes, every day.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 12,
+    "level": "A1",
+    "p1": [
+      "What time do you wake up?",
+      "Do you eat breakfast?",
+      "What do you eat?",
+      "Do you like [food] for breakfast?",
+      "That sounds healthy!"
+    ],
+    "p2": [
+      "I wake up at [time] o'clock.",
+      "Yes, every morning.",
+      "I eat [food].",
+      "Yes, I love it.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 13,
+    "level": "A1",
+    "p1": [
+      "Do you like [movie_genre] movies?",
+      "What's your favorite one?",
+      "Who do you watch with?",
+      "Where do you watch it?",
+      "Sounds like a good time!"
+    ],
+    "p2": [
+      "Yes, I love them.",
+      "I like a funny one.",
+      "I watch with my [family].",
+      "At [place].",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 14,
+    "level": "A1",
+    "p1": [
+      "Is your [family] at home?",
+      "What is she doing?",
+      "Is she in the kitchen?",
+      "Is she cooking [dinner_food]?",
+      "That sounds delicious!"
+    ],
+    "p2": [
+      "Yes, she is in the kitchen.",
+      "She is cooking dinner.",
+      "Yes, she is.",
+      "Yes, she is!",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 15,
+    "level": "A1",
+    "p1": [
+      "What's for lunch today?",
+      "Is it your favorite?",
+      "Do you eat at school?",
+      "Who do you eat with?",
+      "Sounds fun!"
+    ],
+    "p2": [
+      "We're having [food].",
+      "Yes, it is!",
+      "Yes, every day.",
+      "I eat with my friends.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 16,
+    "level": "A1",
+    "p1": [
+      "Do you like [sport]?",
+      "Do you watch it on TV?",
+      "Who is your favorite player?",
+      "Do you play it too?",
+      "That's great!"
+    ],
+    "p2": [
+      "Yes, I love it.",
+      "Yes, every weekend.",
+      "I like a player from [place].",
+      "Yes, every day.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 17,
+    "level": "A1",
+    "p1": [
+      "What's the weather like today?",
+      "Is it [weather]?",
+      "Do you need a jacket?",
+      "Where are you going?",
+      "Have a good day!"
+    ],
+    "p2": [
+      "It's very nice.",
+      "Yes, a little.",
+      "Yes, I think so.",
+      "I'm going to [place].",
+      "Thank you, you too!"
+    ]
+  },
+  {
+    "id": 18,
+    "level": "A1",
+    "p1": [
+      "Do you like [hobby]?",
+      "When do you do it?",
+      "Who do you do it with?",
+      "Is it fun?",
+      "That sounds nice!"
+    ],
+    "p2": [
+      "Yes, I love it.",
+      "Every weekend.",
+      "With my [family].",
+      "Yes, very fun.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 19,
+    "level": "A1",
+    "p1": [
+      "What day do you have [subject] class?",
+      "What time is the class?",
+      "Do you like the class?",
+      "Who is your teacher?",
+      "That's wonderful!"
+    ],
+    "p2": [
+      "On [day].",
+      "At [time] o'clock.",
+      "Yes, very much.",
+      "My teacher is very kind.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 20,
+    "level": "A1",
+    "p1": [
+      "Do you want to go to [destination]?",
+      "When can we go?",
+      "What time should we meet?",
+      "Should we bring [food]?",
+      "Great, see you then!"
+    ],
+    "p2": [
+      "Yes, let's go now.",
+      "How about [day]?",
+      "Let's meet at [time] o'clock.",
+      "Yes, that's a good idea.",
+      "See you then!"
+    ]
+  },
+  {
+    "id": 21,
+    "level": "A1",
+    "p1": [
+      "Is it [weather] outside?",
+      "Should I wear a coat?",
+      "Are you going outside too?",
+      "Where are you going?",
+      "Have fun!"
+    ],
+    "p2": [
+      "Yes, take a jacket.",
+      "Yes, I think so.",
+      "Yes, to [place].",
+      "I'm going to see my [family].",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 22,
+    "level": "A1",
+    "p1": [
+      "Do you like [drink]?",
+      "When do you drink it?",
+      "Do you drink it every day?",
+      "Is it your favorite?",
+      "That's nice!"
+    ],
+    "p2": [
+      "Yes, I love it.",
+      "In the morning.",
+      "Yes, every day.",
+      "Yes, it is.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 23,
+    "level": "A1",
+    "p1": [
+      "What's your favorite animal?",
+      "Do you have one at home?",
+      "What's its name?",
+      "Is it big or small?",
+      "That sounds cute!"
+    ],
+    "p2": [
+      "I like [animal].",
+      "Yes, I have one.",
+      "Its name is Rocky.",
+      "It's quite small.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 24,
+    "level": "A1",
+    "p1": [
+      "Do you go to [destination] on weekends?",
+      "Who do you go with?",
+      "What do you do there?",
+      "Do you like it?",
+      "Sounds like fun!"
+    ],
+    "p2": [
+      "Yes, every weekend.",
+      "With my [family].",
+      "We eat [food] and talk.",
+      "Yes, I love it.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 25,
+    "level": "A1",
+    "p1": [
+      "What's your favorite [subject] activity?",
+      "Do you do it every week?",
+      "Is it difficult?",
+      "Do you need help sometimes?",
+      "That's good to know!"
+    ],
+    "p2": [
+      "I like reading.",
+      "Yes, every week.",
+      "No, it's easy for me.",
+      "Sometimes, yes.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 26,
+    "level": "A1",
+    "p1": [
+      "Do you like [food] or [drink] more?",
+      "Why do you like it?",
+      "When do you have it?",
+      "Do you share it with your [family]?",
+      "Sounds delicious!"
+    ],
+    "p2": [
+      "I like [food] more.",
+      "It tastes really good.",
+      "Every [day].",
+      "Yes, always.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 27,
+    "level": "A1",
+    "p1": [
+      "Is today [day]?",
+      "Do you have [subject] class today?",
+      "What time does it start?",
+      "Are you ready for it?",
+      "Good luck!"
+    ],
+    "p2": [
+      "Yes, it is.",
+      "Yes, I do.",
+      "At [time] o'clock.",
+      "Yes, I am.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 28,
+    "level": "A1",
+    "p1": [
+      "What color is your [object]?",
+      "Do you like that color?",
+      "Where did you buy it?",
+      "Was it expensive?",
+      "That's a good price!"
+    ],
+    "p2": [
+      "It's [color].",
+      "Yes, very much.",
+      "At [place].",
+      "No, it was cheap.",
+      "Yes, it was!"
+    ]
+  },
+  {
+    "id": 29,
+    "level": "A1",
+    "p1": [
+      "Do you have a [animal] or a [animal]?",
+      "What do you feed it?",
+      "Does it sleep a lot?",
+      "Where does it sleep?",
+      "That sounds cozy!"
+    ],
+    "p2": [
+      "I have a dog.",
+      "I feed it dog food.",
+      "Yes, a lot.",
+      "It sleeps in my room.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 30,
+    "level": "A1",
+    "p1": [
+      "What's your favorite season?",
+      "Why do you like [season]?",
+      "What do you do in [season]?",
+      "Do you go to [place]?",
+      "Sounds like fun!"
+    ],
+    "p2": [
+      "I like [season].",
+      "The weather is nice.",
+      "I play [sport].",
+      "Yes, sometimes.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 31,
+    "level": "A1",
+    "p1": [
+      "Do you help at home?",
+      "What do you do?",
+      "Do you like helping?",
+      "Who else helps?",
+      "That's very kind!"
+    ],
+    "p2": [
+      "Yes, every day.",
+      "I clean my room.",
+      "Yes, I like it.",
+      "My [family] helps too.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 32,
+    "level": "A1",
+    "p1": [
+      "What time is it now?",
+      "Are we late for [subject]?",
+      "Should we hurry?",
+      "Where is the class?",
+      "Let's go quickly!"
+    ],
+    "p2": [
+      "It's [time] o'clock.",
+      "No, we have time.",
+      "A little, yes.",
+      "At [place].",
+      "Okay, let's go!"
+    ]
+  },
+  {
+    "id": 33,
+    "level": "A1",
+    "p1": [
+      "Do you like [hobby] or [sport] more?",
+      "Which one is more fun?",
+      "Do you do it alone?",
+      "Where do you play?",
+      "That sounds great!"
+    ],
+    "p2": [
+      "I like [sport] more.",
+      "[sport] is more fun for me.",
+      "No, with friends.",
+      "At the park.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 34,
+    "level": "A1",
+    "p1": [
+      "Is your birthday in [season]?",
+      "How old will you be?",
+      "Will you have a party?",
+      "What food will you have?",
+      "Happy early birthday!"
+    ],
+    "p2": [
+      "Yes, it is.",
+      "I will be fifteen.",
+      "Yes, a small one.",
+      "We will have [food].",
+      "Thank you so much!"
+    ]
+  },
+  {
+    "id": 35,
+    "level": "A1",
+    "p1": [
+      "Do you like your [family]?",
+      "Do you see them every day?",
+      "What do you do together?",
+      "Is it fun?",
+      "That's lovely!"
+    ],
+    "p2": [
+      "Yes, very much.",
+      "Yes, every day.",
+      "We eat [food] together.",
+      "Yes, it is.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 36,
+    "level": "A1",
+    "p1": [
+      "What's the weather like in [season]?",
+      "Is it [weather]?",
+      "Do you like that?",
+      "What do you wear?",
+      "Sounds nice!"
+    ],
+    "p2": [
+      "It's usually nice.",
+      "Yes, sometimes.",
+      "Yes, I love it.",
+      "I wear light clothes.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 37,
+    "level": "A1",
+    "p1": [
+      "Do you have [subject] homework today?",
+      "Is it difficult?",
+      "When will you do it?",
+      "Do you need help?",
+      "Good luck with it!"
+    ],
+    "p2": [
+      "Yes, a little.",
+      "No, it's easy.",
+      "After school today.",
+      "No, I'm okay.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 38,
+    "level": "A1",
+    "p1": [
+      "What do you usually drink at [place]?",
+      "Do you like it there?",
+      "Who do you go with?",
+      "How often do you go?",
+      "Sounds fun!"
+    ],
+    "p2": [
+      "I drink [drink].",
+      "Yes, very much.",
+      "With my friends.",
+      "Every [day].",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 39,
+    "level": "A1",
+    "p1": [
+      "Do you like your [object]?",
+      "Where do you keep it?",
+      "Is it useful?",
+      "Did someone give it to you?",
+      "That's a nice gift!"
+    ],
+    "p2": [
+      "Yes, I love it.",
+      "In my bag.",
+      "Yes, very useful.",
+      "Yes, my [family] did.",
+      "Yes, it was!"
+    ]
+  },
+  {
+    "id": 40,
+    "level": "A1",
+    "p1": [
+      "What time do you go to bed?",
+      "Are you tired now?",
+      "What did you do today?",
+      "Did you have [subject] class?",
+      "Sleep well!"
+    ],
+    "p2": [
+      "I go to bed at [time].",
+      "Yes, a little.",
+      "I went to school.",
+      "Yes, I did.",
+      "Thank you, you too!"
+    ]
+  },
+  {
+    "id": 41,
+    "level": "A1",
+    "p1": [
+      "Do you like going to [place]?",
+      "What do you do there?",
+      "Do you go every [day]?",
+      "Who do you go with?",
+      "Sounds like a nice routine!"
+    ],
+    "p2": [
+      "Yes, I love it.",
+      "I meet my friends.",
+      "Yes, every week.",
+      "With my [family].",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 42,
+    "level": "A1",
+    "p1": [
+      "What's your favorite [food]?",
+      "Do you eat it often?",
+      "Who cooks it for you?",
+      "Is it hard to make?",
+      "That sounds tasty!"
+    ],
+    "p2": [
+      "I like [food].",
+      "Yes, every week.",
+      "My [family] cooks it.",
+      "No, it's easy.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 43,
+    "level": "A1",
+    "p1": [
+      "Do you like school?",
+      "What's your favorite part?",
+      "Do you have many friends there?",
+      "Do you like your teachers?",
+      "That's wonderful!"
+    ],
+    "p2": [
+      "Yes, very much.",
+      "I like [subject] class.",
+      "Yes, many friends.",
+      "Yes, they are kind.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 44,
+    "level": "A1",
+    "p1": [
+      "Is it [day] today?",
+      "Do you have [subject] class?",
+      "What time is it?",
+      "Are you excited?",
+      "Have a great class!"
+    ],
+    "p2": [
+      "Yes, it is.",
+      "Yes, I do.",
+      "At [time] o'clock.",
+      "Yes, very excited.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 45,
+    "level": "A1",
+    "p1": [
+      "Do you like [animal]s?",
+      "Have you ever had one?",
+      "Would you like one now?",
+      "What would you name it?",
+      "That's a cute name!"
+    ],
+    "p2": [
+      "Yes, very much.",
+      "Yes, when I was small.",
+      "Yes, I would love one.",
+      "I would call it Luna.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 46,
+    "level": "A1",
+    "p1": [
+      "What's your favorite thing to do at [place]?",
+      "Do you go there often?",
+      "Who do you usually go with?",
+      "Is it always fun?",
+      "Sounds like a great spot!"
+    ],
+    "p2": [
+      "I like to relax there.",
+      "Yes, every week.",
+      "With my [family].",
+      "Yes, always.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 47,
+    "level": "A1",
+    "p1": [
+      "Do you like [weather] days?",
+      "What do you do on those days?",
+      "Do you stay at [place]?",
+      "Do you drink [drink] then?",
+      "Sounds cozy!"
+    ],
+    "p2": [
+      "Yes, I love them.",
+      "I read or watch movies.",
+      "Yes, usually.",
+      "Yes, hot [drink].",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 48,
+    "level": "A1",
+    "p1": [
+      "Do you like your [subject] teacher?",
+      "Why do you like them?",
+      "Do they give a lot of homework?",
+      "Is the class fun?",
+      "That's great to hear!"
+    ],
+    "p2": [
+      "Yes, very much.",
+      "They explain things well.",
+      "Sometimes, yes.",
+      "Yes, very fun.",
+      "Thank you!"
+    ]
+  },
+  {
+    "id": 49,
+    "level": "A1",
+    "p1": [
+      "What do you do after school?",
+      "Do you play [sport]?",
+      "Do you do homework first?",
+      "What time do you finish?",
+      "Sounds like a busy day!"
+    ],
+    "p2": [
+      "I go home first.",
+      "Yes, sometimes.",
+      "Yes, always first.",
+      "Around [time] o'clock.",
+      "Yes, it is!"
+    ]
+  },
+  {
+    "id": 50,
+    "level": "A1",
+    "p1": [
+      "Do you like your neighborhood?",
+      "Is it near [place]?",
+      "Do you have friends nearby?",
+      "Is it a quiet area?",
+      "Sounds like a nice place to live!"
+    ],
+    "p2": [
+      "Yes, very much.",
+      "Yes, quite close.",
+      "Yes, a few friends.",
+      "Yes, very quiet.",
+      "Yes, it is!"
+    ]
+  }
 ];
 
 if (typeof module !== 'undefined' && module.exports) module.exports = CONVOS_LONG_A1;
