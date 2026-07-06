@@ -1,7 +1,7 @@
 // Word bank categories for Dialogue Player
 // Each category is an array of interchangeable words/phrases used to fill [placeholder] slots in conversations.
 const WORD_BANKS = {
-  object: ["wallet", "phone", "keys", "backpack", "umbrella", "notebook", "glasses", "watch", "headphones", "water bottle"],
+  object: ["wallet", "phone", "backpack", "umbrella", "notebook", "watch", "water bottle", "jacket", "charger", "hat"],
   food: ["pizza", "sushi", "tacos", "pasta", "ice cream", "salad", "burger", "soup", "sandwich", "rice and beans"],
   drink: ["coffee", "tea", "orange juice", "water", "soda", "smoothie", "hot chocolate", "lemonade"],
   place: ["the park", "the mall", "the beach", "the library", "the gym", "downtown", "the movies", "the market", "school", "the cafe"],
