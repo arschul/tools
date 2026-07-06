@@ -1,54 +1,904 @@
 const CONVOS_LONG_B1 = [
-{"id":1,"level":"B1","p1":["Have you thought about what you want to study after school?","What's making you hesitate?","Have you talked to a career counselor about it?","It might help you make a clearer decision.","Let me know how it goes."],"p2":["I've been considering [subject], but I'm not fully sure yet.","I'm worried about the job opportunities afterward.","Not yet, but I probably should soon.","You're right, I'll book an appointment this week.","I definitely will, thanks for the advice."]},
-{"id":2,"level":"B1","p1":["Do you think social media has a positive or negative effect on teenagers?","What do you mean by that?","Do you limit your own screen time?","That's a smart habit to have.","Maybe I should try that too."],"p2":["Honestly, I think it depends a lot on how it's used.","Well, it can help people stay connected, but it can also cause stress.","I try to, especially before bed.","Thanks, it's made a real difference in how I sleep.","I'd definitely recommend it."]},
-{"id":3,"level":"B1","p1":["What do you think is the biggest challenge facing [place] right now?","Do you think public transport could help solve that?","Would you give up your own transportation for it?","That's a fair point to consider.","I hope the city improves it soon."],"p2":["I'd say it's probably traffic and pollution.","Yes, if more people actually used it regularly.","I think I would, if it were more reliable.","It really depends on convenience for most people.","Me too, it would benefit everyone."]},
-{"id":4,"level":"B1","p1":["If you could change one thing about our school, what would it be?","What kind of variety are you thinking of?","Do you think students would engage more that way?","You should suggest that to the student council.","Let me know if you need support."],"p2":["I'd probably add more variety to the [subject] curriculum.","More practical projects instead of just theory.","Definitely, it would make lessons feel more relevant.","That's actually a great idea, I might do that.","I will, thanks for the encouragement."]},
-{"id":5,"level":"B1","p1":["Would you rather live in a big city or a small town?","What draws you to that lifestyle?","Wouldn't you miss the opportunities in a city though?","That's a valid perspective to have.","It sounds like you've made up your mind."],"p2":["I think I'd prefer a small town, honestly.","It feels calmer and everyone knows each other.","Maybe, but I value peace and quiet more.","Thanks, I've thought about it a lot.","Pretty much, yes."]},
-{"id":6,"level":"B1","p1":["Do you think it's important to learn a second language?","Which language would you choose if you could pick any?","What's motivating you to learn it?","That sounds like an exciting goal.","Good luck with it!"],"p2":["Absolutely, it opens up so many opportunities.","Probably Spanish, since it's related to travel.","I'd love to travel through South America someday.","It really is, I've already started practicing.","Thank you, I appreciate that."]},
-{"id":7,"level":"B1","p1":["How do you usually deal with stress before exams?","Does that actually help you feel calmer?","Do you take any breaks while studying?","That sounds like a healthy balance.","I should try that method too."],"p2":["I try to organize my [subject] notes early.","Yes, having a plan reduces my anxiety a lot.","Definitely, I take short breaks every hour.","I think so, it keeps me from burning out.","You should, it's worked really well for me."]},
-{"id":8,"level":"B1","p1":["What's your opinion on [movie_genre] movies becoming so popular lately?","Do you prefer them over other genres?","Which one impressed you the most recently?","Was it worth recommending to others?","I'll add it to my list then."],"p2":["I think they reflect what audiences want right now.","Not necessarily, but I do enjoy a good one occasionally.","One I watched with my [family] last month.","Definitely, I've told several friends about it.","You won't regret it, I promise."]},
-{"id":9,"level":"B1","p1":["Do you think schools should offer more [hobby]-related classes?","Would you personally take a class like that?","What benefits do you think it would bring?","That's a compelling argument.","Maybe we should propose it to the school."],"p2":["Yes, I believe creative outlets are underrated in education.","Absolutely, I'd sign up immediately.","It could reduce stress and boost creativity.","Thanks, I feel strongly about it.","I'd love to work on that together."]},
-{"id":10,"level":"B1","p1":["Do you prefer studying alone or in a group?","What's the main reason for that?","Have you ever tried group study sessions?","That makes sense, everyone learns differently.","Good thing you know your own style."],"p2":["I usually prefer studying alone, to be honest.","I focus better without distractions around.","A few times, but they didn't work as well for me.","Exactly, it's about finding what suits you.","Yes, it's taken some trial and error though."]},
-{"id":11,"level":"B1","p1":["What's the most useful skill you've learned outside of school?","How did you improve at it over time?","Has it made a noticeable difference?","I might try a planner myself.","Thanks for the tip!"],"p2":["Probably time management, from balancing [hobby] and homework.","I started using a planner to organize my week.","Definitely, I feel much less overwhelmed now.","I'd really recommend it, it's simple but effective.","Anytime, happy to help."]},
-{"id":12,"level":"B1","p1":["Do you think part-time jobs are a good idea for students?","What are the main benefits, in your opinion?","Wouldn't it affect your studies negatively?","That's a fair way to look at it.","Have you considered getting one yourself?"],"p2":["I think they can be, if managed carefully.","Learning responsibility and earning your own money.","It depends on how many hours you commit to.","Exactly, balance is really the key factor.","Actually, yes, I've been thinking about it lately."]},
-{"id":13,"level":"B1","p1":["What do you think about the amount of homework we get?","Do you think it's necessary for learning?","Would you prefer more class-based practice instead?","That seems like a reasonable compromise.","Maybe teachers should consider that."],"p2":["Honestly, I think it's a bit excessive sometimes.","Some of it, yes, but not all of it feels useful.","Definitely, I learn better through discussion.","I think so too, it would help many students.","I hope so, it could really improve things."]},
-{"id":14,"level":"B1","p1":["Do you think it's better to travel alone or with friends?","What are the advantages of traveling alone?","Don't you ever feel lonely doing that?","That's an interesting way to see it.","Maybe I'll try it myself sometime."],"p2":["I actually think traveling alone has its own charm.","You get to make all your own decisions freely.","Sometimes, but it also builds confidence.","Thanks, it took me a while to appreciate it.","You should, it's a really valuable experience."]},
-{"id":15,"level":"B1","p1":["What's your opinion on students using [subject] apps to study?","Do you think they're more effective than textbooks?","Are there any downsides you've noticed?","That's worth keeping in mind.","I might download one myself."],"p2":["I think they can be really helpful, honestly.","In some ways, yes, especially for practice exercises.","Sometimes they can be distracting with notifications.","Exactly, it's important to use them wisely.","You should, they've helped me a lot."]},
-{"id":16,"level":"B1","p1":["Do you think competitive sports build character in students?","What kind of qualities do you think it teaches?","Doesn't the pressure to win cause stress though?","That's a balanced way of thinking about it.","I've never really considered it that way."],"p2":["Yes, I think it teaches a lot of valuable lessons.","Discipline, teamwork, and handling both success and failure.","It can, but that depends a lot on the coach's approach.","Thanks, I've played [sport] for years, so I've seen both sides.","It's definitely worth thinking about more."]},
-{"id":17,"level":"B1","p1":["Do you think it's healthy to compare yourself to classmates?","What effect does that comparison usually have?","How do you personally avoid falling into that habit?","That sounds like a really mature approach.","I'll try to keep that mindset too."],"p2":["Honestly, I don't think it's very healthy at all.","It often leads to unnecessary stress and self-doubt.","I try to focus on my own progress instead.","Thanks, it took me a long time to learn that.","I think it'll really help, over time."]},
-{"id":18,"level":"B1","p1":["What do you think about the idea of school uniforms?","Do you think they help reduce social pressure?","Wouldn't students lose their individuality though?","That's a fair concern to raise.","I can see both sides of the argument now."],"p2":["I actually think they can be quite useful.","Yes, they remove some of the pressure around fashion.","There are still other ways to express yourself, though.","Thanks, I've thought about this quite a bit.","It's definitely a complicated topic."]},
-{"id":19,"level":"B1","p1":["Do you think it's important to try new [hobby]s regularly?","What have you tried recently?","Was it difficult to get started?","That sounds like a rewarding experience.","Maybe I'll try something new too."],"p2":["Yes, I think it keeps life interesting and fun.","I actually just started [hobby] a few weeks ago.","A little at first, but I got used to it quickly.","It really is, I've enjoyed every bit of it.","You definitely should, it's worth trying."]},
-{"id":20,"level":"B1","p1":["What's your take on students having part-time online businesses?","What kind of businesses have you seen classmates start?","Do you think it takes away from their studies?","That's an interesting balance to strike.","I might look into starting something myself."],"p2":["I think it can be a great learning experience.","Mostly selling handmade items or offering [subject] tutoring.","It depends entirely on how they manage their time.","Exactly, it teaches valuable real-world skills.","You should, it could teach you a lot."]},
-{"id":21,"level":"B1","p1":["Do you think it's better to plan your future carefully or stay flexible?","What are the risks of planning too rigidly?","How do you personally approach your own plans?","That sounds like a sensible strategy.","I think I'll try to be more flexible too."],"p2":["Honestly, I lean towards staying flexible myself.","You might miss unexpected but valuable opportunities.","I set general goals, but I stay open to change.","Thanks, it's worked well for me so far.","It really does reduce a lot of unnecessary stress."]},
-{"id":22,"level":"B1","p1":["Do you think it's fair that some students get more attention from teachers?","Why do you think that happens?","Have you experienced this yourself?","That sounds like a frustrating situation.","I hope teachers become more mindful of that."],"p2":["Honestly, I don't think it's fair at all.","Sometimes louder or more confident students get noticed more.","Yes, a little, especially in larger classes.","It really can be, especially when you need extra help.","I hope so too, it would help everyone equally."]},
-{"id":23,"level":"B1","p1":["Do you think it's worth joining school clubs even if you're busy?","What benefits have you personally gained from joining one?","Doesn't it add too much pressure to your schedule?","That's a really encouraging perspective.","I might reconsider joining one myself."],"p2":["Yes, I genuinely think it's worth the time.","I've made great friends and learned new skills.","Sometimes, but the benefits usually outweigh the stress.","Thanks, it's been a really positive experience for me.","You should, it might surprise you."]},
-{"id":24,"level":"B1","p1":["Do you think it's important to keep a journal or diary?","What benefits have you noticed from doing it?","Isn't it hard to stay consistent with it?","That's a good point about consistency.","Maybe I'll start one myself."],"p2":["Yes, I think it really helps with self-reflection.","It's helped me process my thoughts and emotions better.","At first, yes, but it becomes a habit over time.","Exactly, the first few weeks are the hardest part.","You should, it's a simple but powerful habit."]},
-{"id":25,"level":"B1","p1":["Do you think teenagers should have more say in school decisions?","What kind of decisions do you mean specifically?","Do you think teachers would actually listen?","That's a reasonable expectation to have.","I hope schools start doing this more often."],"p2":["Yes, especially decisions that directly affect us.","Things like class schedules and extracurricular options.","Some would, though others might be more resistant.","Thanks, I think it would improve things for everyone.","Me too, it would make school feel more collaborative."]},
-{"id":26,"level":"B1","p1":["Do you think it's healthy to take a break from social media sometimes?","How long of a break would you recommend?","Did you ever try it yourself?","What did you notice during that time?","That sounds like a really valuable experience."],"p2":["Yes, definitely, even a short break can help.","Maybe a week or two, just to reset.","Yes, actually, over the summer holidays.","I felt calmer and more focused on other things.","It really was, I'd recommend it to anyone."]},
-{"id":27,"level":"B1","p1":["Do you think students should be taught financial literacy in school?","What topics do you think should be included?","Why do you think this isn't taught more already?","That's a really valid observation.","I hope this changes in the future."],"p2":["Absolutely, I think it's a crucial life skill.","Things like budgeting, saving, and understanding credit.","I think curriculums haven't quite caught up with modern needs.","Thanks, it's something I feel strongly about.","Me too, it would help so many young people."]},
-{"id":28,"level":"B1","p1":["Do you think it's important to have a mentor while growing up?","What qualities make a good mentor, in your opinion?","Have you ever had someone like that in your life?","That sounds like a meaningful relationship.","I hope I find someone like that too."],"p2":["Yes, I think it can shape your entire perspective.","Patience, honesty, and genuine encouragement.","Yes, my [subject] teacher has been like that for me.","It really has been, I'm very grateful for it.","I'm sure you will, keep an open mind."]},
-{"id":29,"level":"B1","p1":["Do you think schools focus too much on grades rather than learning?","What would you suggest instead?","Wouldn't that make it harder to measure progress?","That's a thoughtful way to address that concern.","I hope more schools consider that approach."],"p2":["Yes, honestly, I think grades can overshadow real understanding.","More project-based assessments that show actual skills.","Not necessarily, projects can still be evaluated fairly.","Thanks, I've thought about this a lot recently.","Me too, it would benefit students in the long run."]},
-{"id":30,"level":"B1","p1":["Do you think it's important to disconnect during holidays?","What do you usually do to relax?","Doesn't it feel strange at first, being offline?","That sounds like a healthy adjustment period.","Maybe I'll try that during the next break."],"p2":["Yes, I think it's essential for mental health.","I usually read, hike, or spend time with my [family].","A little at first, but it gets easier quickly.","It really is, though it's worth pushing through.","You should, it makes a noticeable difference."]},
-{"id":31,"level":"B1","p1":["Do you think it's worth learning to cook at a young age?","What have you learned to make so far?","Wasn't it difficult to learn on your own?","That sounds like a valuable skill to have early.","I should probably learn more myself."],"p2":["Yes, definitely, it builds independence early on.","Just a few simple dishes, like [food].","A little, but my [family] helped me a lot.","It really is, I use it almost every day now.","You should, it's easier than it looks."]},
-{"id":32,"level":"B1","p1":["Do you think it's important to volunteer during school years?","What kind of impact has it had on you?","Doesn't it take time away from studying though?","That's a really balanced perspective to have.","I might look for opportunities to volunteer too."],"p2":["Yes, I think it teaches empathy and responsibility.","It's helped me understand my community much better.","A little, but I think the experience is worth it.","Thanks, I've thought carefully about the trade-offs.","You should, it's a genuinely rewarding experience."]},
-{"id":33,"level":"B1","p1":["Do you think it's better to specialize early or explore many subjects?","What are the benefits of exploring broadly?","Doesn't specializing early give you an advantage though?","That's a fair point worth considering.","I think I'll try to explore more subjects myself."],"p2":["Honestly, I lean towards exploring many subjects first.","You discover what you're genuinely passionate about.","Sometimes, but only if you're already certain of your interest.","Thanks, I've seen both approaches work for different people.","It might help you make a more informed decision later."]},
-{"id":34,"level":"B1","p1":["Do you think it's important to learn from failure rather than avoid it?","Can you share an example from your own experience?","How did you personally overcome that setback?","That sounds like a really mature response.","I'll try to view failure differently from now on."],"p2":["Yes, honestly, I think failure teaches more than success does.","I failed a [subject] test badly last year, actually.","I identified my mistakes and adjusted my study habits.","Thanks, it wasn't easy, but it helped me grow a lot.","It really does change how you handle setbacks."]},
-{"id":35,"level":"B1","p1":["Do you think students should learn coding regardless of their career path?","What benefits do you think it provides beyond programming?","Isn't it difficult for people who dislike technology?","That's a reasonable point to raise.","I might try learning some basic coding myself."],"p2":["Yes, I think it teaches valuable problem-solving skills.","It improves logical thinking and patience with complex problems.","It can be, but starting with simple basics helps a lot.","Thanks, I think anyone can learn it with the right approach.","You should, there are plenty of beginner resources online."]},
-{"id":36,"level":"B1","p1":["Do you think it's important to have hobbies outside academics?","What hobby has helped you the most personally?","Doesn't it take valuable time away from studying?","That's a healthy way of thinking about balance.","I should probably make more time for a hobby too."],"p2":["Absolutely, I think it keeps you mentally balanced.","[hobby] has genuinely helped me manage stress.","A little, but it actually makes me more productive overall.","Thanks, I've noticed a real difference since I started.","You should, even a small amount of time helps a lot."]},
-{"id":37,"level":"B1","p1":["Do you think students today face more pressure than previous generations?","What do you think causes most of that pressure?","Do you think social media makes it worse?","That's a really insightful observation.","I hope things improve for future students."],"p2":["Yes, honestly, I think the pressure has increased significantly.","Constant comparison and higher academic expectations, mainly.","Definitely, it amplifies comparison in ways that didn't exist before.","Thanks, it's something I think about often.","Me too, awareness is definitely the first step."]},
-{"id":38,"level":"B1","p1":["Do you think it's important to travel before starting university?","What would you personally hope to gain from it?","Wouldn't it delay your academic progress though?","That's a fair concern to consider.","I might plan a trip like that myself someday."],"p2":["Yes, I think it offers valuable life experience.","A broader perspective and more independence, mainly.","A little, but I think the experience is worth the delay.","Thanks, I've thought carefully about the timing.","You should, it could be really transformative for you."]},
-{"id":39,"level":"B1","p1":["Do you think it's healthy to have a strict daily routine?","What does your ideal routine look like?","Doesn't that get boring after a while?","That's an interesting way to keep it flexible.","I might try building a routine like that."],"p2":["Yes, I think structure genuinely improves productivity.","Mostly consistent study, exercise, and rest times.","Sometimes, but I adjust small things to keep it fresh.","Thanks, that flexibility has really helped me stay consistent.","You should, even a loose routine can help a lot."]},
-{"id":40,"level":"B1","p1":["Do you think students should be allowed to choose their own electives freely?","What electives would you personally choose if given the choice?","Wouldn't that make it harder to plan the school schedule?","That's a practical concern worth addressing.","I hope schools consider offering more flexibility."],"p2":["Yes, I think it would make learning feel more meaningful.","Probably more [hobby] and [subject]-related electives.","Possibly, but with proper planning it could still work.","Thanks, I think it's a solvable logistical challenge.","Me too, it would benefit students significantly."]},
-{"id":41,"level":"B1","p1":["Do you think it's important to ask for help when you're struggling?","Why do you think some students hesitate to ask?","Have you personally struggled with that hesitation?","That's a really honest thing to admit.","I hope more students feel comfortable asking for help."],"p2":["Yes, definitely, I think it shows strength, not weakness.","Fear of judgment or seeming less capable, mostly.","Yes, especially in [subject] class, if I'm honest.","Thanks, it took me a while to get past that feeling.","Me too, it would make things easier for everyone."]},
-{"id":42,"level":"B1","p1":["Do you think it's important to learn public speaking skills early?","What benefits have you noticed from practicing it?","Wasn't it intimidating at first?","That's a really encouraging way to look at it.","I might try practicing public speaking myself."],"p2":["Yes, I think confidence in speaking helps in every area of life.","It's improved how I present ideas in [subject] class.","Extremely, my hands used to shake the first few times.","Thanks, it gets significantly easier with practice.","You should, it's a skill that pays off quickly."]},
-{"id":43,"level":"B1","p1":["Do you think it's healthy to take gap years before university?","What would you personally do during a gap year?","Wouldn't you lose academic momentum though?","That's a thoughtful way to plan for it.","I might actually consider a gap year myself."],"p2":["Yes, I think it can offer valuable clarity and growth.","Probably travel and gain some work experience.","Possibly, but I'd plan some light studying to stay sharp.","Thanks, I've researched this quite a bit already.","You should, it might give you a clearer direction."]},
-{"id":44,"level":"B1","p1":["Do you think it's important to build strong friendships during school years?","What makes a friendship meaningful to you?","Doesn't it get harder to maintain friendships after school?","That's a mature way to think about the future.","I hope my own friendships last that long too."],"p2":["Yes, I think those friendships often shape who you become.","Honesty, support, and genuinely enjoying each other's company.","It can, but I think effort keeps them alive over time.","Thanks, I try to stay in touch, even when it's difficult.","Me too, good friendships are definitely worth the effort."]},
-{"id":45,"level":"B1","p1":["Do you think it's important to develop patience as a skill?","What situations have taught you the most patience?","Isn't it frustrating to practice patience under pressure?","That's a really grounded perspective to have.","I should probably work on my own patience too."],"p2":["Yes, honestly, I think it affects almost every part of life.","Group projects for [subject] class, definitely.","Extremely, especially when things don't go as planned.","Thanks, it's something I've had to work on gradually.","You should, it makes a real difference over time."]},
-{"id":46,"level":"B1","p1":["Do you think students should be encouraged to start small businesses?","What kind of business ideas have you seen work well?","Doesn't it distract from academic responsibilities though?","That's a reasonable way to balance both.","I might think about starting something small myself."],"p2":["Yes, I think it teaches practical, real-world skills.","Things like selling crafts or offering [subject] tutoring.","It can, but only if time isn't managed carefully.","Thanks, I think balance is definitely achievable with planning.","You should, even a small project teaches a lot."]},
-{"id":47,"level":"B1","p1":["Do you think it's important to reflect regularly on your goals?","How often do you personally reflect on yours?","Doesn't that ever feel repetitive or unnecessary?","That's a healthy way to stay consistent.","I might start reflecting more often myself."],"p2":["Yes, I think it keeps you aligned with what truly matters.","About once a month, usually at the start.","Occasionally, but it always reveals something useful.","Thanks, it's become a habit I genuinely value now.","You should, even a short reflection can be surprisingly clarifying."]},
-{"id":48,"level":"B1","p1":["Do you think it's important to understand different cultures growing up?","What has helped you learn about other cultures the most?","Wasn't it difficult without much travel experience?","That's a resourceful way to gain that understanding.","I should probably explore that more myself."],"p2":["Yes, I think it builds empathy and broadens your worldview.","Mostly through books, films, and talking with different people.","A little, but there are so many resources available now.","Thanks, I've genuinely enjoyed learning this way.","You should, it's more accessible than people often think."]},
-{"id":49,"level":"B1","p1":["Do you think it's healthy to compete with yourself instead of others?","How do you personally measure your own progress?","Doesn't it get difficult to stay motivated that way?","That's a genuinely thoughtful approach to growth.","I'll try adopting that mindset myself."],"p2":["Yes, honestly, I think it removes a lot of unnecessary pressure.","I compare my current work to what I did a few months ago.","Sometimes, but celebrating small improvements really helps.","Thanks, it's taken time, but it's worked well for me.","It really does make progress feel more sustainable."]},
-{"id":50,"level":"B1","p1":["Do you think it's important to set boundaries with schoolwork and rest?","What boundaries have worked best for you personally?","Isn't it hard to stick to them during busy weeks?","That's a really practical way to manage it.","I should probably set clearer boundaries myself."],"p2":["Yes, definitely, otherwise burnout becomes almost inevitable.","No studying after a certain hour at night, mainly.","Yes, especially during exam periods, but I try my best.","Thanks, it's honestly made a huge difference for me.","You should, even small boundaries can protect your energy."]}
+  {
+    "id": 1,
+    "level": "B1",
+    "p1": [
+      "Have you thought about what you want to study after school?",
+      "What's making you hesitate?",
+      "Have you talked to a career counselor about it?",
+      "It might help you make a clearer decision.",
+      "Let me know how it goes."
+    ],
+    "p2": [
+      "I've been considering [subject], but I'm not fully sure yet.",
+      "I'm worried about the job opportunities afterward.",
+      "Not yet, but I probably should soon.",
+      "You're right, I'll book an appointment this week.",
+      "I definitely will, thanks for the advice."
+    ]
+  },
+  {
+    "id": 2,
+    "level": "B1",
+    "p1": [
+      "Do you think social media has a positive or negative effect on teenagers?",
+      "What do you mean by that?",
+      "Do you limit your own screen time?",
+      "That's a smart habit to have.",
+      "Maybe I should try that too."
+    ],
+    "p2": [
+      "Honestly, I think it depends a lot on how it's used.",
+      "Well, it can help people stay connected, but it can also cause stress.",
+      "I try to, especially before bed.",
+      "Thanks, it's made a real difference in how I sleep.",
+      "I'd definitely recommend it."
+    ]
+  },
+  {
+    "id": 3,
+    "level": "B1",
+    "p1": [
+      "What do you think is the biggest challenge facing [city] right now?",
+      "Do you think public transport could help solve that?",
+      "Would you give up your own transportation for it?",
+      "That's a fair point to consider.",
+      "I hope the city improves it soon."
+    ],
+    "p2": [
+      "I'd say it's probably traffic and pollution.",
+      "Yes, if more people actually used it regularly.",
+      "I think I would, if it were more reliable.",
+      "It really depends on convenience for most people.",
+      "Me too, it would benefit everyone."
+    ]
+  },
+  {
+    "id": 4,
+    "level": "B1",
+    "p1": [
+      "If you could change one thing about our school, what would it be?",
+      "What kind of variety are you thinking of?",
+      "Do you think students would engage more that way?",
+      "You should suggest that to the student council.",
+      "Let me know if you need support."
+    ],
+    "p2": [
+      "I'd probably add more variety to the [subject] curriculum.",
+      "More practical projects instead of just theory.",
+      "Definitely, it would make lessons feel more relevant.",
+      "That's actually a great idea, I might do that.",
+      "I will, thanks for the encouragement."
+    ]
+  },
+  {
+    "id": 5,
+    "level": "B1",
+    "p1": [
+      "Would you rather live in a big city or a small town?",
+      "What draws you to that lifestyle?",
+      "Wouldn't you miss the opportunities in a city though?",
+      "That's a valid perspective to have.",
+      "It sounds like you've made up your mind."
+    ],
+    "p2": [
+      "I think I'd prefer a small town, honestly.",
+      "It feels calmer and everyone knows each other.",
+      "Maybe, but I value peace and quiet more.",
+      "Thanks, I've thought about it a lot.",
+      "Pretty much, yes."
+    ]
+  },
+  {
+    "id": 6,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to learn a second language?",
+      "Which language would you choose if you could pick any?",
+      "What's motivating you to learn it?",
+      "That sounds like an exciting goal.",
+      "Good luck with it!"
+    ],
+    "p2": [
+      "Absolutely, it opens up so many opportunities.",
+      "Probably Spanish, since it's related to travel.",
+      "I'd love to travel through South America someday.",
+      "It really is, I've already started practicing.",
+      "Thank you, I appreciate that."
+    ]
+  },
+  {
+    "id": 7,
+    "level": "B1",
+    "p1": [
+      "How do you usually deal with stress before exams?",
+      "Does that actually help you feel calmer?",
+      "Do you take any breaks while studying?",
+      "That sounds like a healthy balance.",
+      "I should try that method too."
+    ],
+    "p2": [
+      "I try to organize my [subject] notes early.",
+      "Yes, having a plan reduces my anxiety a lot.",
+      "Definitely, I take short breaks every hour.",
+      "I think so, it keeps me from burning out.",
+      "You should, it's worked really well for me."
+    ]
+  },
+  {
+    "id": 8,
+    "level": "B1",
+    "p1": [
+      "What's your opinion on [movie_genre] movies becoming so popular lately?",
+      "Do you prefer them over other genres?",
+      "Which one impressed you the most recently?",
+      "Was it worth recommending to others?",
+      "I'll add it to my list then."
+    ],
+    "p2": [
+      "I think they reflect what audiences want right now.",
+      "Not necessarily, but I do enjoy a good one occasionally.",
+      "One I watched with my [family] last month.",
+      "Definitely, I've told several friends about it.",
+      "You won't regret it, I promise."
+    ]
+  },
+  {
+    "id": 9,
+    "level": "B1",
+    "p1": [
+      "Do you think schools should offer more [hobby]-related classes?",
+      "Would you personally take a class like that?",
+      "What benefits do you think it would bring?",
+      "That's a compelling argument.",
+      "Maybe we should propose it to the school."
+    ],
+    "p2": [
+      "Yes, I believe creative outlets are underrated in education.",
+      "Absolutely, I'd sign up immediately.",
+      "It could reduce stress and boost creativity.",
+      "Thanks, I feel strongly about it.",
+      "I'd love to work on that together."
+    ]
+  },
+  {
+    "id": 10,
+    "level": "B1",
+    "p1": [
+      "Do you prefer studying alone or in a group?",
+      "What's the main reason for that?",
+      "Have you ever tried group study sessions?",
+      "That makes sense, everyone learns differently.",
+      "Good thing you know your own style."
+    ],
+    "p2": [
+      "I usually prefer studying alone, to be honest.",
+      "I focus better without distractions around.",
+      "A few times, but they didn't work as well for me.",
+      "Exactly, it's about finding what suits you.",
+      "Yes, it's taken some trial and error though."
+    ]
+  },
+  {
+    "id": 11,
+    "level": "B1",
+    "p1": [
+      "What's the most useful skill you've learned outside of school?",
+      "How did you improve at it over time?",
+      "Has it made a noticeable difference?",
+      "I might try a planner myself.",
+      "Thanks for the tip!"
+    ],
+    "p2": [
+      "Probably time management, from balancing [hobby] and homework.",
+      "I started using a planner to organize my week.",
+      "Definitely, I feel much less overwhelmed now.",
+      "I'd really recommend it, it's simple but effective.",
+      "Anytime, happy to help."
+    ]
+  },
+  {
+    "id": 12,
+    "level": "B1",
+    "p1": [
+      "Do you think part-time jobs are a good idea for students?",
+      "What are the main benefits, in your opinion?",
+      "Wouldn't it affect your studies negatively?",
+      "That's a fair way to look at it.",
+      "Have you considered getting one yourself?"
+    ],
+    "p2": [
+      "I think they can be, if managed carefully.",
+      "Learning responsibility and earning your own money.",
+      "It depends on how many hours you commit to.",
+      "Exactly, balance is really the key factor.",
+      "Actually, yes, I've been thinking about it lately."
+    ]
+  },
+  {
+    "id": 13,
+    "level": "B1",
+    "p1": [
+      "What do you think about the amount of homework we get?",
+      "Do you think it's necessary for learning?",
+      "Would you prefer more class-based practice instead?",
+      "That seems like a reasonable compromise.",
+      "Maybe teachers should consider that."
+    ],
+    "p2": [
+      "Honestly, I think it's a bit excessive sometimes.",
+      "Some of it, yes, but not all of it feels useful.",
+      "Definitely, I learn better through discussion.",
+      "I think so too, it would help many students.",
+      "I hope so, it could really improve things."
+    ]
+  },
+  {
+    "id": 14,
+    "level": "B1",
+    "p1": [
+      "Do you think it's better to travel alone or with friends?",
+      "What are the advantages of traveling alone?",
+      "Don't you ever feel lonely doing that?",
+      "That's an interesting way to see it.",
+      "Maybe I'll try it myself sometime."
+    ],
+    "p2": [
+      "I actually think traveling alone has its own charm.",
+      "You get to make all your own decisions freely.",
+      "Sometimes, but it also builds confidence.",
+      "Thanks, it took me a while to appreciate it.",
+      "You should, it's a really valuable experience."
+    ]
+  },
+  {
+    "id": 15,
+    "level": "B1",
+    "p1": [
+      "What's your opinion on students using [subject] apps to study?",
+      "Do you think they're more effective than textbooks?",
+      "Are there any downsides you've noticed?",
+      "That's worth keeping in mind.",
+      "I might download one myself."
+    ],
+    "p2": [
+      "I think they can be really helpful, honestly.",
+      "In some ways, yes, especially for practice exercises.",
+      "Sometimes they can be distracting with notifications.",
+      "Exactly, it's important to use them wisely.",
+      "You should, they've helped me a lot."
+    ]
+  },
+  {
+    "id": 16,
+    "level": "B1",
+    "p1": [
+      "Do you think competitive sports build character in students?",
+      "What kind of qualities do you think it teaches?",
+      "Doesn't the pressure to win cause stress though?",
+      "That's a balanced way of thinking about it.",
+      "I've never really considered it that way."
+    ],
+    "p2": [
+      "Yes, I think it teaches a lot of valuable lessons.",
+      "Discipline, teamwork, and handling both success and failure.",
+      "It can, but that depends a lot on the coach's approach.",
+      "Thanks, I've played [sport] for years, so I've seen both sides.",
+      "It's definitely worth thinking about more."
+    ]
+  },
+  {
+    "id": 17,
+    "level": "B1",
+    "p1": [
+      "Do you think it's healthy to compare yourself to classmates?",
+      "What effect does that comparison usually have?",
+      "How do you personally avoid falling into that habit?",
+      "That sounds like a really mature approach.",
+      "I'll try to keep that mindset too."
+    ],
+    "p2": [
+      "Honestly, I don't think it's very healthy at all.",
+      "It often leads to unnecessary stress and self-doubt.",
+      "I try to focus on my own progress instead.",
+      "Thanks, it took me a long time to learn that.",
+      "I think it'll really help, over time."
+    ]
+  },
+  {
+    "id": 18,
+    "level": "B1",
+    "p1": [
+      "What do you think about the idea of school uniforms?",
+      "Do you think they help reduce social pressure?",
+      "Wouldn't students lose their individuality though?",
+      "That's a fair concern to raise.",
+      "I can see both sides of the argument now."
+    ],
+    "p2": [
+      "I actually think they can be quite useful.",
+      "Yes, they remove some of the pressure around fashion.",
+      "There are still other ways to express yourself, though.",
+      "Thanks, I've thought about this quite a bit.",
+      "It's definitely a complicated topic."
+    ]
+  },
+  {
+    "id": 19,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to try new [hobby]s regularly?",
+      "What have you tried recently?",
+      "Was it difficult to get started?",
+      "That sounds like a rewarding experience.",
+      "Maybe I'll try something new too."
+    ],
+    "p2": [
+      "Yes, I think it keeps life interesting and fun.",
+      "I actually just started [hobby] a few weeks ago.",
+      "A little at first, but I got used to it quickly.",
+      "It really is, I've enjoyed every bit of it.",
+      "You definitely should, it's worth trying."
+    ]
+  },
+  {
+    "id": 20,
+    "level": "B1",
+    "p1": [
+      "What's your take on students having part-time online businesses?",
+      "What kind of businesses have you seen classmates start?",
+      "Do you think it takes away from their studies?",
+      "That's an interesting balance to strike.",
+      "I might look into starting something myself."
+    ],
+    "p2": [
+      "I think it can be a great learning experience.",
+      "Mostly selling handmade items or offering [subject] tutoring.",
+      "It depends entirely on how they manage their time.",
+      "Exactly, it teaches valuable real-world skills.",
+      "You should, it could teach you a lot."
+    ]
+  },
+  {
+    "id": 21,
+    "level": "B1",
+    "p1": [
+      "Do you think it's better to plan your future carefully or stay flexible?",
+      "What are the risks of planning too rigidly?",
+      "How do you personally approach your own plans?",
+      "That sounds like a sensible strategy.",
+      "I think I'll try to be more flexible too."
+    ],
+    "p2": [
+      "Honestly, I lean towards staying flexible myself.",
+      "You might miss unexpected but valuable opportunities.",
+      "I set general goals, but I stay open to change.",
+      "Thanks, it's worked well for me so far.",
+      "It really does reduce a lot of unnecessary stress."
+    ]
+  },
+  {
+    "id": 22,
+    "level": "B1",
+    "p1": [
+      "Do you think it's fair that some students get more attention from teachers?",
+      "Why do you think that happens?",
+      "Have you experienced this yourself?",
+      "That sounds like a frustrating situation.",
+      "I hope teachers become more mindful of that."
+    ],
+    "p2": [
+      "Honestly, I don't think it's fair at all.",
+      "Sometimes louder or more confident students get noticed more.",
+      "Yes, a little, especially in larger classes.",
+      "It really can be, especially when you need extra help.",
+      "I hope so too, it would help everyone equally."
+    ]
+  },
+  {
+    "id": 23,
+    "level": "B1",
+    "p1": [
+      "Do you think it's worth joining school clubs even if you're busy?",
+      "What benefits have you personally gained from joining one?",
+      "Doesn't it add too much pressure to your schedule?",
+      "That's a really encouraging perspective.",
+      "I might reconsider joining one myself."
+    ],
+    "p2": [
+      "Yes, I genuinely think it's worth the time.",
+      "I've made great friends and learned new skills.",
+      "Sometimes, but the benefits usually outweigh the stress.",
+      "Thanks, it's been a really positive experience for me.",
+      "You should, it might surprise you."
+    ]
+  },
+  {
+    "id": 24,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to keep a journal or diary?",
+      "What benefits have you noticed from doing it?",
+      "Isn't it hard to stay consistent with it?",
+      "That's a good point about consistency.",
+      "Maybe I'll start one myself."
+    ],
+    "p2": [
+      "Yes, I think it really helps with self-reflection.",
+      "It's helped me process my thoughts and emotions better.",
+      "At first, yes, but it becomes a habit over time.",
+      "Exactly, the first few weeks are the hardest part.",
+      "You should, it's a simple but powerful habit."
+    ]
+  },
+  {
+    "id": 25,
+    "level": "B1",
+    "p1": [
+      "Do you think teenagers should have more say in school decisions?",
+      "What kind of decisions do you mean specifically?",
+      "Do you think teachers would actually listen?",
+      "That's a reasonable expectation to have.",
+      "I hope schools start doing this more often."
+    ],
+    "p2": [
+      "Yes, especially decisions that directly affect us.",
+      "Things like class schedules and extracurricular options.",
+      "Some would, though others might be more resistant.",
+      "Thanks, I think it would improve things for everyone.",
+      "Me too, it would make school feel more collaborative."
+    ]
+  },
+  {
+    "id": 26,
+    "level": "B1",
+    "p1": [
+      "Do you think it's healthy to take a break from social media sometimes?",
+      "How long of a break would you recommend?",
+      "Did you ever try it yourself?",
+      "What did you notice during that time?",
+      "That sounds like a really valuable experience."
+    ],
+    "p2": [
+      "Yes, definitely, even a short break can help.",
+      "Maybe a week or two, just to reset.",
+      "Yes, actually, over the summer holidays.",
+      "I felt calmer and more focused on other things.",
+      "It really was, I'd recommend it to anyone."
+    ]
+  },
+  {
+    "id": 27,
+    "level": "B1",
+    "p1": [
+      "Do you think students should be taught financial literacy in school?",
+      "What topics do you think should be included?",
+      "Why do you think this isn't taught more already?",
+      "That's a really valid observation.",
+      "I hope this changes in the future."
+    ],
+    "p2": [
+      "Absolutely, I think it's a crucial life skill.",
+      "Things like budgeting, saving, and understanding credit.",
+      "I think curriculums haven't quite caught up with modern needs.",
+      "Thanks, it's something I feel strongly about.",
+      "Me too, it would help so many young people."
+    ]
+  },
+  {
+    "id": 28,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to have a mentor while growing up?",
+      "What qualities make a good mentor, in your opinion?",
+      "Have you ever had someone like that in your life?",
+      "That sounds like a meaningful relationship.",
+      "I hope I find someone like that too."
+    ],
+    "p2": [
+      "Yes, I think it can shape your entire perspective.",
+      "Patience, honesty, and genuine encouragement.",
+      "Yes, my [subject] teacher has been like that for me.",
+      "It really has been, I'm very grateful for it.",
+      "I'm sure you will, keep an open mind."
+    ]
+  },
+  {
+    "id": 29,
+    "level": "B1",
+    "p1": [
+      "Do you think schools focus too much on grades rather than learning?",
+      "What would you suggest instead?",
+      "Wouldn't that make it harder to measure progress?",
+      "That's a thoughtful way to address that concern.",
+      "I hope more schools consider that approach."
+    ],
+    "p2": [
+      "Yes, honestly, I think grades can overshadow real understanding.",
+      "More project-based assessments that show actual skills.",
+      "Not necessarily, projects can still be evaluated fairly.",
+      "Thanks, I've thought about this a lot recently.",
+      "Me too, it would benefit students in the long run."
+    ]
+  },
+  {
+    "id": 30,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to disconnect during holidays?",
+      "What do you usually do to relax?",
+      "Doesn't it feel strange at first, being offline?",
+      "That sounds like a healthy adjustment period.",
+      "Maybe I'll try that during the next break."
+    ],
+    "p2": [
+      "Yes, I think it's essential for mental health.",
+      "I usually read, hike, or spend time with my [family].",
+      "A little at first, but it gets easier quickly.",
+      "It really is, though it's worth pushing through.",
+      "You should, it makes a noticeable difference."
+    ]
+  },
+  {
+    "id": 31,
+    "level": "B1",
+    "p1": [
+      "Do you think it's worth learning to cook at a young age?",
+      "What have you learned to make so far?",
+      "Wasn't it difficult to learn on your own?",
+      "That sounds like a valuable skill to have early.",
+      "I should probably learn more myself."
+    ],
+    "p2": [
+      "Yes, definitely, it builds independence early on.",
+      "Just a few simple dishes, like [food].",
+      "A little, but my [family] helped me a lot.",
+      "It really is, I use it almost every day now.",
+      "You should, it's easier than it looks."
+    ]
+  },
+  {
+    "id": 32,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to volunteer during school years?",
+      "What kind of impact has it had on you?",
+      "Doesn't it take time away from studying though?",
+      "That's a really balanced perspective to have.",
+      "I might look for opportunities to volunteer too."
+    ],
+    "p2": [
+      "Yes, I think it teaches empathy and responsibility.",
+      "It's helped me understand my community much better.",
+      "A little, but I think the experience is worth it.",
+      "Thanks, I've thought carefully about the trade-offs.",
+      "You should, it's a genuinely rewarding experience."
+    ]
+  },
+  {
+    "id": 33,
+    "level": "B1",
+    "p1": [
+      "Do you think it's better to specialize early or explore many subjects?",
+      "What are the benefits of exploring broadly?",
+      "Doesn't specializing early give you an advantage though?",
+      "That's a fair point worth considering.",
+      "I think I'll try to explore more subjects myself."
+    ],
+    "p2": [
+      "Honestly, I lean towards exploring many subjects first.",
+      "You discover what you're genuinely passionate about.",
+      "Sometimes, but only if you're already certain of your interest.",
+      "Thanks, I've seen both approaches work for different people.",
+      "It might help you make a more informed decision later."
+    ]
+  },
+  {
+    "id": 34,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to learn from failure rather than avoid it?",
+      "Can you share an example from your own experience?",
+      "How did you personally overcome that setback?",
+      "That sounds like a really mature response.",
+      "I'll try to view failure differently from now on."
+    ],
+    "p2": [
+      "Yes, honestly, I think failure teaches more than success does.",
+      "I failed a [subject] test badly last year, actually.",
+      "I identified my mistakes and adjusted my study habits.",
+      "Thanks, it wasn't easy, but it helped me grow a lot.",
+      "It really does change how you handle setbacks."
+    ]
+  },
+  {
+    "id": 35,
+    "level": "B1",
+    "p1": [
+      "Do you think students should learn coding regardless of their career path?",
+      "What benefits do you think it provides beyond programming?",
+      "Isn't it difficult for people who dislike technology?",
+      "That's a reasonable point to raise.",
+      "I might try learning some basic coding myself."
+    ],
+    "p2": [
+      "Yes, I think it teaches valuable problem-solving skills.",
+      "It improves logical thinking and patience with complex problems.",
+      "It can be, but starting with simple basics helps a lot.",
+      "Thanks, I think anyone can learn it with the right approach.",
+      "You should, there are plenty of beginner resources online."
+    ]
+  },
+  {
+    "id": 36,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to have hobbies outside academics?",
+      "What hobby has helped you the most personally?",
+      "Doesn't it take valuable time away from studying?",
+      "That's a healthy way of thinking about balance.",
+      "I should probably make more time for a hobby too."
+    ],
+    "p2": [
+      "Absolutely, I think it keeps you mentally balanced.",
+      "[hobby] has genuinely helped me manage stress.",
+      "A little, but it actually makes me more productive overall.",
+      "Thanks, I've noticed a real difference since I started.",
+      "You should, even a small amount of time helps a lot."
+    ]
+  },
+  {
+    "id": 37,
+    "level": "B1",
+    "p1": [
+      "Do you think students today face more pressure than previous generations?",
+      "What do you think causes most of that pressure?",
+      "Do you think social media makes it worse?",
+      "That's a really insightful observation.",
+      "I hope things improve for future students."
+    ],
+    "p2": [
+      "Yes, honestly, I think the pressure has increased significantly.",
+      "Constant comparison and higher academic expectations, mainly.",
+      "Definitely, it amplifies comparison in ways that didn't exist before.",
+      "Thanks, it's something I think about often.",
+      "Me too, awareness is definitely the first step."
+    ]
+  },
+  {
+    "id": 38,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to travel before starting university?",
+      "What would you personally hope to gain from it?",
+      "Wouldn't it delay your academic progress though?",
+      "That's a fair concern to consider.",
+      "I might plan a trip like that myself someday."
+    ],
+    "p2": [
+      "Yes, I think it offers valuable life experience.",
+      "A broader perspective and more independence, mainly.",
+      "A little, but I think the experience is worth the delay.",
+      "Thanks, I've thought carefully about the timing.",
+      "You should, it could be really transformative for you."
+    ]
+  },
+  {
+    "id": 39,
+    "level": "B1",
+    "p1": [
+      "Do you think it's healthy to have a strict daily routine?",
+      "What does your ideal routine look like?",
+      "Doesn't that get boring after a while?",
+      "That's an interesting way to keep it flexible.",
+      "I might try building a routine like that."
+    ],
+    "p2": [
+      "Yes, I think structure genuinely improves productivity.",
+      "Mostly consistent study, exercise, and rest times.",
+      "Sometimes, but I adjust small things to keep it fresh.",
+      "Thanks, that flexibility has really helped me stay consistent.",
+      "You should, even a loose routine can help a lot."
+    ]
+  },
+  {
+    "id": 40,
+    "level": "B1",
+    "p1": [
+      "Do you think students should be allowed to choose their own electives freely?",
+      "What electives would you personally choose if given the choice?",
+      "Wouldn't that make it harder to plan the school schedule?",
+      "That's a practical concern worth addressing.",
+      "I hope schools consider offering more flexibility."
+    ],
+    "p2": [
+      "Yes, I think it would make learning feel more meaningful.",
+      "Probably more [hobby] and [subject]-related electives.",
+      "Possibly, but with proper planning it could still work.",
+      "Thanks, I think it's a solvable logistical challenge.",
+      "Me too, it would benefit students significantly."
+    ]
+  },
+  {
+    "id": 41,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to ask for help when you're struggling?",
+      "Why do you think some students hesitate to ask?",
+      "Have you personally struggled with that hesitation?",
+      "That's a really honest thing to admit.",
+      "I hope more students feel comfortable asking for help."
+    ],
+    "p2": [
+      "Yes, definitely, I think it shows strength, not weakness.",
+      "Fear of judgment or seeming less capable, mostly.",
+      "Yes, especially in [subject] class, if I'm honest.",
+      "Thanks, it took me a while to get past that feeling.",
+      "Me too, it would make things easier for everyone."
+    ]
+  },
+  {
+    "id": 42,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to learn public speaking skills early?",
+      "What benefits have you noticed from practicing it?",
+      "Wasn't it intimidating at first?",
+      "That's a really encouraging way to look at it.",
+      "I might try practicing public speaking myself."
+    ],
+    "p2": [
+      "Yes, I think confidence in speaking helps in every area of life.",
+      "It's improved how I present ideas in [subject] class.",
+      "Extremely, my hands used to shake the first few times.",
+      "Thanks, it gets significantly easier with practice.",
+      "You should, it's a skill that pays off quickly."
+    ]
+  },
+  {
+    "id": 43,
+    "level": "B1",
+    "p1": [
+      "Do you think it's healthy to take gap years before university?",
+      "What would you personally do during a gap year?",
+      "Wouldn't you lose academic momentum though?",
+      "That's a thoughtful way to plan for it.",
+      "I might actually consider a gap year myself."
+    ],
+    "p2": [
+      "Yes, I think it can offer valuable clarity and growth.",
+      "Probably travel and gain some work experience.",
+      "Possibly, but I'd plan some light studying to stay sharp.",
+      "Thanks, I've researched this quite a bit already.",
+      "You should, it might give you a clearer direction."
+    ]
+  },
+  {
+    "id": 44,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to build strong friendships during school years?",
+      "What makes a friendship meaningful to you?",
+      "Doesn't it get harder to maintain friendships after school?",
+      "That's a mature way to think about the future.",
+      "I hope my own friendships last that long too."
+    ],
+    "p2": [
+      "Yes, I think those friendships often shape who you become.",
+      "Honesty, support, and genuinely enjoying each other's company.",
+      "It can, but I think effort keeps them alive over time.",
+      "Thanks, I try to stay in touch, even when it's difficult.",
+      "Me too, good friendships are definitely worth the effort."
+    ]
+  },
+  {
+    "id": 45,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to develop patience as a skill?",
+      "What situations have taught you the most patience?",
+      "Isn't it frustrating to practice patience under pressure?",
+      "That's a really grounded perspective to have.",
+      "I should probably work on my own patience too."
+    ],
+    "p2": [
+      "Yes, honestly, I think it affects almost every part of life.",
+      "Group projects for [subject] class, definitely.",
+      "Extremely, especially when things don't go as planned.",
+      "Thanks, it's something I've had to work on gradually.",
+      "You should, it makes a real difference over time."
+    ]
+  },
+  {
+    "id": 46,
+    "level": "B1",
+    "p1": [
+      "Do you think students should be encouraged to start small businesses?",
+      "What kind of business ideas have you seen work well?",
+      "Doesn't it distract from academic responsibilities though?",
+      "That's a reasonable way to balance both.",
+      "I might think about starting something small myself."
+    ],
+    "p2": [
+      "Yes, I think it teaches practical, real-world skills.",
+      "Things like selling crafts or offering [subject] tutoring.",
+      "It can, but only if time isn't managed carefully.",
+      "Thanks, I think balance is definitely achievable with planning.",
+      "You should, even a small project teaches a lot."
+    ]
+  },
+  {
+    "id": 47,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to reflect regularly on your goals?",
+      "How often do you personally reflect on yours?",
+      "Doesn't that ever feel repetitive or unnecessary?",
+      "That's a healthy way to stay consistent.",
+      "I might start reflecting more often myself."
+    ],
+    "p2": [
+      "Yes, I think it keeps you aligned with what truly matters.",
+      "About once a month, usually at the start.",
+      "Occasionally, but it always reveals something useful.",
+      "Thanks, it's become a habit I genuinely value now.",
+      "You should, even a short reflection can be surprisingly clarifying."
+    ]
+  },
+  {
+    "id": 48,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to understand different cultures growing up?",
+      "What has helped you learn about other cultures the most?",
+      "Wasn't it difficult without much travel experience?",
+      "That's a resourceful way to gain that understanding.",
+      "I should probably explore that more myself."
+    ],
+    "p2": [
+      "Yes, I think it builds empathy and broadens your worldview.",
+      "Mostly through books, films, and talking with different people.",
+      "A little, but there are so many resources available now.",
+      "Thanks, I've genuinely enjoyed learning this way.",
+      "You should, it's more accessible than people often think."
+    ]
+  },
+  {
+    "id": 49,
+    "level": "B1",
+    "p1": [
+      "Do you think it's healthy to compete with yourself instead of others?",
+      "How do you personally measure your own progress?",
+      "Doesn't it get difficult to stay motivated that way?",
+      "That's a genuinely thoughtful approach to growth.",
+      "I'll try adopting that mindset myself."
+    ],
+    "p2": [
+      "Yes, honestly, I think it removes a lot of unnecessary pressure.",
+      "I compare my current work to what I did a few months ago.",
+      "Sometimes, but celebrating small improvements really helps.",
+      "Thanks, it's taken time, but it's worked well for me.",
+      "It really does make progress feel more sustainable."
+    ]
+  },
+  {
+    "id": 50,
+    "level": "B1",
+    "p1": [
+      "Do you think it's important to set boundaries with schoolwork and rest?",
+      "What boundaries have worked best for you personally?",
+      "Isn't it hard to stick to them during busy weeks?",
+      "That's a really practical way to manage it.",
+      "I should probably set clearer boundaries myself."
+    ],
+    "p2": [
+      "Yes, definitely, otherwise burnout becomes almost inevitable.",
+      "No studying after a certain hour at night, mainly.",
+      "Yes, especially during exam periods, but I try my best.",
+      "Thanks, it's honestly made a huge difference for me.",
+      "You should, even small boundaries can protect your energy."
+    ]
+  }
 ];
 
 if (typeof module !== 'undefined' && module.exports) module.exports = CONVOS_LONG_B1;
