@@ -265,14 +265,35 @@ header.hero { text-align: center; margin-bottom: 26px; }
 .spotlight.open { display: flex; animation: fadeUp .25s ease; }
 .spot-card {
     max-width: 900px; width: 100%; text-align: center;
+    max-height: 90vh; overflow-y: auto;
     background: var(--panel); border: 1px solid var(--border);
-    border-radius: 22px; padding: clamp(30px, 6vw, 60px); box-shadow: var(--shadow);
+    border-radius: 22px; padding: clamp(28px, 5vw, 52px); box-shadow: var(--shadow);
     position: relative;
 }
-.spot-card .badges { justify-content: center; margin-bottom: 20px; }
+.spot-card .badges { justify-content: center; margin-bottom: 18px; }
 .spot-text {
     font-family: 'Fraunces', serif; font-weight: 800;
-    font-size: clamp(1.5rem, 3.6vw, 2.5rem); line-height: 1.3;
+    font-size: clamp(1.35rem, 3.2vw, 2.2rem); line-height: 1.3;
+}
+.linker-title {
+    text-align: center; font-weight: 800; font-size: .78rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+    margin: 26px 0 4px; padding-top: 22px; border-top: 1px solid var(--border);
+}
+.linker-title b { color: var(--accent); }
+.linker-groups {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px 22px; text-align: left; margin-top: 16px;
+}
+.lgroup h5 {
+    font-size: .74rem; font-weight: 800; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+}
+.lgroup .lchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lchip {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 11px; font-size: .93rem; font-weight: 600;
+    color: var(--text);
 }
 .spot-actions { display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
 .spot-close {
@@ -339,6 +360,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, .prompt-card:focus-v
         <button class="spot-close" onclick="closeSpotlight()" aria-label="Close">✕</button>
         <div class="badges" id="spotBadges"></div>
         <div class="spot-text" id="spotText"></div>
+        <div id="spotLinkers"></div>
         <div class="spot-actions">
             <button class="nav-btn primary" onclick="randomPrompt()">🎲 Another one</button>
             <button class="nav-btn" onclick="closeSpotlight()">Close</button>
@@ -793,6 +815,41 @@ const PROMPTS = [
     { level: 'B2', cat: 'If / Imagine', text: 'If you could study a subject that is not taught at your school, what would you choose and why? Give specific reasons.' }
 ];
 
+/* ================= LINKING WORDS BY LEVEL ================= */
+const LINKERS = {
+    A2: [
+        { type: 'Giving your opinion', items: ['I think…', 'In my opinion,', 'For me,'] },
+        { type: 'Adding ideas', items: ['and', 'also', 'too'] },
+        { type: 'Giving a reason', items: ['because'] },
+        { type: 'Contrast', items: ['but'] },
+        { type: 'Giving an example', items: ['for example'] },
+        { type: 'Ordering ideas', items: ['First,', 'Then,', 'Finally,'] },
+        { type: 'Showing a result', items: ['so'] }
+    ],
+    B1: [
+        { type: 'Giving your opinion', items: ['In my opinion,', 'I believe (that)…', 'I think that…'] },
+        { type: 'Adding ideas', items: ['In addition,', 'Also,', 'Moreover,'] },
+        { type: 'Giving reasons', items: ['because', 'since', 'as'] },
+        { type: 'Showing results', items: ['so', 'therefore', 'as a result'] },
+        { type: 'Contrast', items: ['however', 'on the other hand', 'although'] },
+        { type: 'Giving examples', items: ['for example', 'for instance', 'such as'] },
+        { type: 'Sequencing', items: ['First,', 'Second,', 'Next,', 'Finally,'] },
+        { type: 'Condition', items: ['if', 'unless'] },
+        { type: 'Concluding', items: ['In conclusion,', 'To sum up,'] }
+    ],
+    B2: [
+        { type: 'Stating a position', items: ['In my view,', 'I would argue that…', 'It seems to me that…'] },
+        { type: 'Adding / building', items: ['Furthermore,', 'Moreover,', 'What is more,', 'In addition,'] },
+        { type: 'Cause / reason', items: ['because', 'since', 'due to', 'owing to'] },
+        { type: 'Result / consequence', items: ['therefore', 'consequently', 'as a result', 'thus'] },
+        { type: 'Contrast', items: ['however', 'nevertheless', 'in contrast', 'whereas', 'on the other hand'] },
+        { type: 'Concession', items: ['admittedly', 'it is true that…', 'even though', 'despite (this)'] },
+        { type: 'Condition', items: ['provided that', 'as long as', 'unless', 'if'] },
+        { type: 'Exemplifying', items: ['for instance', 'to illustrate', 'namely', 'such as'] },
+        { type: 'Concluding', items: ['In conclusion,', 'To conclude,', 'Ultimately,'] }
+    ]
+};
+
 /* ================= LEARN STATE ================= */
 const LEVELS = ['A2', 'B1', 'B2'];
 let curLevel = 'B1';
@@ -943,6 +1000,16 @@ function openSpotlight(i) {
     document.getElementById('spotBadges').innerHTML =
         `<span class="badge lvl">${p.level}</span><span class="badge cat">${p.cat}</span>`;
     document.getElementById('spotText').textContent = p.text;
+    const groups = LINKERS[p.level] || [];
+    document.getElementById('spotLinkers').innerHTML =
+        `<div class="linker-title">Linking words to use — <b>${p.level}</b></div>
+         <div class="linker-groups">` +
+        groups.map(g =>
+            `<div class="lgroup"><h5>${g.type}</h5><div class="lchips">` +
+            g.items.map(w => `<span class="lchip">${w}</span>`).join('') +
+            `</div></div>`
+        ).join('') +
+        `</div>`;
     document.getElementById('spotlight').classList.add('open');
 }
 function closeSpotlight() {
