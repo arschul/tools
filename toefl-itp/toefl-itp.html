@@ -238,6 +238,14 @@ header.hero { text-align: center; margin-bottom: 24px; }
 .part-note { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
 
 /* Listening controls */
+.voice-sel {
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: .88rem;
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 7px 12px; cursor: pointer; max-width: 210px;
+}
+.voice-sel:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .audio-bar {
     display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
     background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
@@ -389,11 +397,19 @@ footer { text-align: center; color: var(--muted); font-size: .85rem; margin-top:
 
     <div id="listening-practice" hidden>
         <div class="audio-bar">
-            <span class="lab">🔊 Audio speed:</span>
+            <span class="lab">🔊 Speed:</span>
             <button class="chip speed-chip" data-rate="0.85" onclick="setRate(0.85)">Slower</button>
             <button class="chip speed-chip active" data-rate="1" onclick="setRate(1)">Normal</button>
             <button class="chip speed-chip" data-rate="1.15" onclick="setRate(1.15)">Faster</button>
-            <span class="lab" id="voiceInfo"></span>
+        </div>
+        <div class="audio-bar">
+            <span class="lab">👨 Man:</span>
+            <select class="voice-sel" id="selM" onchange="setVoice('M', this.value)"></select>
+            <span class="lab">👩 Woman:</span>
+            <select class="voice-sel" id="selW" onchange="setVoice('W', this.value)"></select>
+            <span class="lab">🎙️ Narrator:</span>
+            <select class="voice-sel" id="selN" onchange="setVoice('N', this.value)"></select>
+            <button class="ghost-btn" onclick="testVoices(this)">▶ Test voices</button>
         </div>
         <div class="part-head"><h3 style="color:var(--listen)">Part A</h3><span>Short conversations — play once, answer, reveal</span></div>
         <p class="part-note">Exam rule: audio plays <b>once</b>. Use Replay only when teaching.</p>
@@ -588,19 +604,48 @@ function setRate(r) {
     ttsRate = r;
     document.querySelectorAll('.speed-chip').forEach(c => c.classList.toggle('active', parseFloat(c.dataset.rate) === r));
 }
+let enVoices = [];
 function pickVoices() {
     const all = speechSynthesis.getVoices();
-    const en = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
-    if (!en.length) return;
-    const us = en.filter(v => v.lang.toLowerCase().includes('us'));
-    const pool = us.length ? us : en;
+    enVoices = all.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+    if (!enVoices.length) return;
+    const us = enVoices.filter(v => v.lang.toLowerCase().includes('us'));
+    const pool = us.length ? us : enVoices;
     const female = pool.find(v => /female|samantha|victoria|zira|jenny|aria|susan|karen|moira|tessa/i.test(v.name));
     const male = pool.find(v => /male|daniel|david|alex|guy|fred|tom|james|mark/i.test(v.name) && v !== female);
-    voiceW = female || pool[0];
-    voiceM = male || pool.find(v => v !== voiceW) || pool[0];
-    voiceN = pool.find(v => v !== voiceW && v !== voiceM) || voiceM;
-    const info = document.getElementById('voiceInfo');
-    if (info) info.textContent = (voiceM === voiceW) ? '(one voice available — using pitch to separate speakers)' : '';
+    // auto-picked defaults, overridden by any saved choice that still exists
+    voiceW = byName(localStorage.getItem('itpVoiceW')) || female || pool[0];
+    voiceM = byName(localStorage.getItem('itpVoiceM')) || male || pool.find(v => v !== voiceW) || pool[0];
+    voiceN = byName(localStorage.getItem('itpVoiceN')) || pool.find(v => v !== voiceW && v !== voiceM) || voiceM;
+    fillSelects();
+}
+function byName(name) {
+    return name ? enVoices.find(v => v.name === name) : null;
+}
+function fillSelects() {
+    [['selM', voiceM], ['selW', voiceW], ['selN', voiceN]].forEach(([id, cur]) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = enVoices.map(v =>
+            '<option value="' + v.name.replace(/"/g, '&quot;') + '"' + (cur && v.name === cur.name ? ' selected' : '') + '>' +
+            v.name + ' (' + v.lang + ')</option>'
+        ).join('');
+    });
+}
+function setVoice(sp, name) {
+    const v = byName(name);
+    if (!v) return;
+    if (sp === 'M') voiceM = v;
+    else if (sp === 'W') voiceW = v;
+    else voiceN = v;
+    localStorage.setItem('itpVoice' + sp, name);
+}
+function testVoices(btn) {
+    speakLines([
+        ["M", "Hello, I'm the man's voice."],
+        ["W", "And I'm the woman's voice."],
+        ["N", "Number one. What does the man mean?"]
+    ], btn);
 }
 if ('speechSynthesis' in window) {
     speechSynthesis.onvoiceschanged = pickVoices;
