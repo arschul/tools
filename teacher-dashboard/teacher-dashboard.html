@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --sidebar:#1c2436;
@@ -45,6 +46,8 @@
   }
   h1,h2,h3{font-family:'Sora',sans-serif;margin:0;}
   a{color:var(--accent);cursor:pointer;}
+
+  .app-hidden{display:none !important;}
 
   /* Sidebar */
   .sidebar{
@@ -326,7 +329,7 @@
     .sidebar{width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;overflow-x:auto;}
     .sidebar .brand{margin-bottom:0;margin-right:8px;flex-shrink:0;}
     .nav-item{flex-shrink:0;margin-bottom:0;white-space:nowrap;}
-    #backup-status, .sidebar-divider{display:none;}
+    .sidebar-divider{display:none;}
     .main{padding:18px;}
     .stat-row{grid-template-columns:repeat(2,1fr);}
     .dash-grid{grid-template-columns:1fr !important;}
@@ -347,7 +350,18 @@
 </head>
 <body>
 
-<div class="sidebar">
+<div id="login-overlay" style="position:fixed;inset:0;background:#1c2436;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',sans-serif;">
+  <div style="background:#fff;border-radius:14px;padding:36px 32px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:20px;color:#1c2436;margin-bottom:4px;">EFL Dashboard</div>
+    <div style="font-size:13px;color:#7d869c;margin-bottom:20px;">Sign in to continue</div>
+    <input id="login-email" type="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
+    <input id="login-password" type="password" placeholder="Password" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') doLogin();">
+    <button onclick="doLogin()" style="width:100%;padding:11px;background:#4f6df5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
+    <div id="login-error" style="color:#d1453d;font-size:12px;margin-top:10px;min-height:14px;"></div>
+  </div>
+</div>
+
+<div class="sidebar app-hidden" id="app-sidebar">
   <div class="brand"><span class="dot"></span>EFL Dashboard</div>
   <a href="../" style="display:flex;align-items:center;gap:6px;color:#7d869c;font-size:12px;text-decoration:none;margin:-16px 0 20px 2px;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7d869c'">← Tool Hub</a>
   <div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
@@ -376,19 +390,13 @@
     <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
   </div>
   <div class="sidebar-divider"></div>
-  <div id="backup-status" style="font-size:11px;color:#7d869c;padding:2px 12px 8px;"></div>
-  <div class="nav-item" onclick="exportData()">
-    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div>
-    Backup data
+  <div class="nav-item" onclick="doLogout()">
+    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
+    Log out
   </div>
-  <label class="nav-item" style="margin-bottom:0;">
-    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg></div>
-    Restore backup
-    <input type="file" accept="application/json" style="display:none;" onchange="importData(this.files[0]); this.value='';">
-  </label>
 </div>
 
-<div class="main">
+<div class="main app-hidden" id="app-main">
   <div id="view-dashboard" class="view"></div>
   <div id="view-classes" class="view"></div>
   <div id="view-rollcall" class="view"></div>
@@ -569,12 +577,52 @@ const T = {
   }
 };
 
-/* ---------- storage ---------- */
-const STORAGE_PREFIX = 'efl-dashboard:';
+/* ---------- supabase / auth ---------- */
+const SUPABASE_URL = 'https://efqwucymzymmrucczthd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcXd1Y3ltenltbXJ1Y2N6dGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NTAwNDAsImV4cCI6MjA5OTEyNjA0MH0.jCJmcE18VGZMXlwo-Sw-38xaG7Iq3FpS9LM-FjEF9iU';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'Enter email and password.'; return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ errEl.textContent = error.message; return; }
+  currentUser = data.user;
+  await enterApp();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('app-sidebar').classList.add('app-hidden');
+  document.getElementById('app-main').classList.add('app-hidden');
+  document.getElementById('login-overlay').classList.remove('app-hidden');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+async function enterApp(){
+  document.getElementById('login-overlay').classList.add('app-hidden');
+  document.getElementById('app-sidebar').classList.remove('app-hidden');
+  document.getElementById('app-main').classList.remove('app-hidden');
+  await init();
+}
+
+/* ---------- storage (Supabase-backed) ---------- */
 async function loadKey(key, fallback){
   try{
-    const raw = localStorage.getItem(STORAGE_PREFIX+key);
-    return raw !== null ? JSON.parse(raw) : fallback;
+    const { data, error } = await sb
+      .from('dashboard_data')
+      .select('value')
+      .eq('user_id', currentUser.id)
+      .eq('key', key)
+      .maybeSingle();
+    if(error){ console.error('Load failed for', key, error); return fallback; }
+    return data ? data.value : fallback;
   }catch(e){
     console.error('Load failed for', key, e);
     return fallback;
@@ -582,7 +630,10 @@ async function loadKey(key, fallback){
 }
 async function saveKey(key, value){
   try{
-    localStorage.setItem(STORAGE_PREFIX+key, JSON.stringify(value));
+    const { error } = await sb
+      .from('dashboard_data')
+      .upsert({ user_id: currentUser.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
+    if(error) console.error('Save failed for', key, error);
   }catch(e){
     console.error('Save failed for', key, e);
   }
@@ -2055,105 +2106,6 @@ function removeHoliday(dateStr){
   openDayModal(dateStr);
 }
 
-/* ================= BACKUP / RESTORE ================= */
-function exportData(){
-  const data = {
-    app: 'efl-teacher-dashboard',
-    exportedAt: new Date().toISOString(),
-    classes: state.classes,
-    students: state.students,
-    sessions: state.sessions,
-    events: state.events,
-    holidays: state.holidays,
-    sessionMeta: state.sessionMeta,
-    lessonNotes: state.lessonNotes,
-    privateStudents: state.privateStudents,
-    privateLessons: state.privateLessons,
-    payments: state.payments,
-    checkpoints: state.checkpoints,
-    learningPoints: state.learningPoints,
-    privateSettings: state.privateSettings
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `efl-dashboard-backup-${todayStr()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  try{ localStorage.setItem(STORAGE_PREFIX+'lastBackup', todayStr()); }catch(e){}
-  updateBackupStatus();
-}
-function updateBackupStatus(){
-  const el = document.getElementById('backup-status');
-  if(!el) return;
-  let last = null;
-  try{ last = localStorage.getItem(STORAGE_PREFIX+'lastBackup'); }catch(e){}
-  if(!last){
-    el.innerHTML = `<span style="color:#e0a94a;">● Never backed up</span>`;
-    return;
-  }
-  const days = Math.floor((new Date(todayStr()) - new Date(last)) / 86400000);
-  if(days>=14){
-    el.innerHTML = `<span style="color:#e0a94a;">● Backup recommended (${days}d ago)</span>`;
-  }else{
-    el.innerHTML = `Last backup: ${formatDateShort(last)}`;
-  }
-}
-function importData(file){
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (e)=>{
-    let data;
-    try{
-      data = JSON.parse(e.target.result);
-    }catch(err){
-      alert("Could not read this file — make sure it's a backup JSON exported from this dashboard.");
-      return;
-    }
-    if(!data || !Array.isArray(data.classes)){
-      alert("This file doesn't look like a valid dashboard backup.");
-      return;
-    }
-    if(!confirm('This will replace ALL current classes, students, roll call records, calendar events, and holidays with the contents of this backup. Continue?')) return;
-    state.classes = data.classes || [];
-    state.students = data.students || [];
-    state.sessions = data.sessions || {};
-    state.events = data.events || [];
-    state.holidays = data.holidays || [];
-    state.sessionMeta = data.sessionMeta || {};
-    state.lessonNotes = data.lessonNotes || {};
-    state.privateStudents = data.privateStudents || [];
-    state.privateLessons = data.privateLessons || [];
-    state.payments = data.payments || [];
-    state.checkpoints = data.checkpoints || [];
-    state.learningPoints = data.learningPoints || [];
-    state.privateSettings = data.privateSettings || { overdueThresholdDays: 14 };
-    saveKey('classes', state.classes);
-    saveKey('students', state.students);
-    saveKey('sessions', state.sessions);
-    saveKey('events', state.events);
-    saveKey('holidays', state.holidays);
-    saveKey('sessionMeta', state.sessionMeta);
-    saveKey('lessonNotes', state.lessonNotes);
-    saveKey('privateStudents', state.privateStudents);
-    saveKey('privateLessons', state.privateLessons);
-    saveKey('payments', state.payments);
-    saveKey('checkpoints', state.checkpoints);
-    saveKey('learningPoints', state.learningPoints);
-    saveKey('privateSettings', state.privateSettings);
-    state.expandedClassId = null;
-    state.openDrawer = null;
-    state.reportsSelection = {classId:'', studentId:''};
-    navigate('dashboard');
-    alert('Backup restored.');
-  };
-  reader.readAsText(file);
-}
-
-
 /* =========================================================
    PRIVATE LESSONS MODULE
    ========================================================= */
@@ -3270,10 +3222,17 @@ async function init(){
   state.privateSettings = await loadKey('privateSettings', { overdueThresholdDays: 14 });
   // refresh recurring placeholders for active students on load
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
-  updateBackupStatus();
   navigate('dashboard');
 }
-init();
+
+/* ---------- session bootstrap ---------- */
+(async function bootstrap(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    await enterApp();
+  }
+})();
 </script>
 </body>
 </html>
