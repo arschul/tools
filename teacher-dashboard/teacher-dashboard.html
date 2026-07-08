@@ -271,6 +271,10 @@
   .legend-item{display:flex;align-items:center;gap:6px;}
   .cal-cell.holiday{background:repeating-linear-gradient(45deg, #ffffff 0 8px, #eef0f6 8px 16px);}
   .cal-tag.holiday-tag{background:var(--purple-soft);color:var(--purple);}
+  .cal-tag.priv-tag{background:#fff;color:#0ea5b8;border:1px dashed #0ea5b8;font-weight:600;}
+  .tab{padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);}
+  .tab.active{background:var(--accent-grad);color:#fff;border-color:transparent;}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;}
 
   /* charts */
   .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
@@ -365,6 +369,11 @@
     <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/></svg></div>
     Reports
   </div>
+  <div class="nav-item" data-view="private" onclick="navigate('private')">
+    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+    Private Lessons
+    <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
+  </div>
   <div class="sidebar-divider"></div>
   <div id="backup-status" style="font-size:11px;color:#7d869c;padding:2px 12px 8px;"></div>
   <div class="nav-item" onclick="exportData()">
@@ -386,6 +395,8 @@
   <div id="view-student" class="view"></div>
   <div id="view-reports" class="view"></div>
   <div id="view-group-report" class="view"></div>
+  <div id="view-private" class="view"></div>
+  <div id="view-priv-student" class="view"></div>
 </div>
 
 <div id="modal-root"></div>
@@ -407,6 +418,18 @@ let state = {
   lessonNotes: {},
   showArchived: false,
   showDashEC: false,
+  // Private lessons
+  privateStudents: [],
+  privateLessons: [],
+  payments: [],
+  checkpoints: [],
+  learningPoints: [],
+  privateSettings: { overdueThresholdDays: 14 },
+  privView: 'overview',
+  privStudentFilter: 'active',
+  privStudentSearch: '',
+  privOpenStudentId: null,
+  privCal: { year: new Date().getFullYear(), month: new Date().getMonth() },
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
@@ -682,7 +705,7 @@ function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
 function navigate(view, params={}){
   Object.assign(state, params);
   state.view = view;
-  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports'};
+  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', private:'private', 'priv-student':'private'};
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===navMap[view]));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
   if(view==='dashboard') renderDashboard();
@@ -692,6 +715,9 @@ function navigate(view, params={}){
   if(view==='student') renderStudentProfile();
   if(view==='reports') renderReports();
   if(view==='group-report') renderGroupReport();
+  if(view==='private') renderPrivate();
+  if(view==='priv-student') renderPrivStudent();
+  updatePrivAlertDot();
 }
 function goToRollCall(classId, date){
   state.rollcall.classId = classId;
@@ -789,22 +815,25 @@ function _renderDashboard(el){
     : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`;
 
   // — Contact Parents —
-  const cpStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; });
+  const cpStudents = [
+    ...state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; }).map(s=>({...s, _priv:false})),
+    ...state.privateStudents.filter(s=>s.contactParents?.reason).map(s=>({...s, _priv:true}))
+  ];
   window._dashCpIds = cpStudents.map(s=>s.id);
   const cpHtml = cpStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
       <h3>📞 Contact Parents</h3>
-      ${cpStudents.map((s,i)=>{ const c=classById(s.classId); return `
+      ${cpStudents.map((s,i)=>{ const c=s._priv?null:classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
-            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
+            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:(s._priv?`<span class="color-dot" style="background:#0ea5b8"></span>`:'')}
             <div>
-              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span></div>
+              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span>${s._priv?' <span class="badge hw">Private</span>':''}</div>
               <div class="dash-row-sub">${esc(s.contactParents.reason)}</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <button class="btn-ghost small" onclick="${s._priv?`navigate('priv-student',{privOpenStudentId:window._dashCpIds[${i}]})`:`navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})`}">Report →</button>
             <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>          </div>
         </div>`; }).join('')}
     </div>` : '';
@@ -1076,8 +1105,9 @@ function addStudent(classId){
   scheduleSave('students', state.students);
   renderClasses();
 }
+function anyStudent(id){ return state.students.find(x=>x.id===id) || state.privateStudents.find(x=>x.id===id); }
 function openContactParentsModal(studentId){
-  const s = state.students.find(st=>st.id===studentId);
+  const s = anyStudent(studentId);
   if(!s) return;
   const cp = s.contactParents || {};
   showModal(`
@@ -1100,18 +1130,20 @@ function openContactParentsModal(studentId){
   `);
 }
 function saveContactParents(studentId){
-  const s = state.students.find(st=>st.id===studentId);
+  const s = anyStudent(studentId);
   if(!s) return;
   const cat = document.getElementById('cp-cat').value;
   const reason = document.getElementById('cp-reason').value.trim();
   if(!reason){ alert('Please enter a reason.'); return; }
   s.contactParents = {category: cat, reason};
-  scheduleSave('students', state.students);
+  const isPriv = !!privStudent(studentId);
+  if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
   closeModal();
-  renderClasses();
+  if(isPriv){ if(state.view==='priv-student') renderPrivStudent(); else renderPrivate(); }
+  else renderClasses();
 }
 function clearContactParents(studentId){
-  const s = state.students.find(st=>st.id===studentId);
+  const s = anyStudent(studentId);
   if(!s || !s.contactParents?.reason) return;
   showModal(`
     <h3>📞 Log Call — ${esc(s.name)}</h3>
@@ -1127,7 +1159,7 @@ function clearContactParents(studentId){
   `);
 }
 function confirmCallDone(studentId){
-  const s = state.students.find(st=>st.id===studentId);
+  const s = anyStudent(studentId);
   if(!s) return;
   const summary = document.getElementById('cp-summary').value.trim();
   const callDate = document.getElementById('cp-call-date').value;
@@ -1140,10 +1172,13 @@ function confirmCallDone(studentId){
     summary
   });
   s.contactParents = null;
-  scheduleSave('students', state.students);
+  const isPriv = !!privStudent(studentId);
+  if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
   closeModal();
   if(state.view==='dashboard') renderDashboard();
   if(state.view==='classes') renderClasses();
+  if(state.view==='priv-student') renderPrivStudent();
+  if(state.view==='private') renderPrivate();
 }
 
 function toggleEnglishClub(studentId){
@@ -1854,6 +1889,8 @@ function renderCalendar(){
       return true;
     });
     const eventsToday = state.events.filter(e=>e.date===dateStr);
+    const privToday = state.privateLessons.filter(l=>l.date===dateStr && l.status!=='cancelled')
+      .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
     cells += `
@@ -1863,6 +1900,10 @@ function renderCalendar(){
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
           ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
+          ${privToday.map(l=>{
+            const st = privStudent(l.studentId);
+            return `<div class="cal-tag priv-tag">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
+          }).join('')}
         </div>
       </div>`;
   }
@@ -1888,6 +1929,7 @@ function renderCalendar(){
       <div class="legend-item"><span class="badge project">Project</span> Project</div>
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
       <div class="legend-item">🎉 Holiday</div>
+      <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
     </div>
   `;
 }
@@ -1908,6 +1950,9 @@ function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
   const classesToday = activeClasses().filter(c=>getClassDays(c).includes(dow));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
+  const privToday = state.privateLessons.filter(l=>l.date===dateStr)
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  window._dayPrivIds = privToday.map(l=>l.id);
   const holiday = getHoliday(dateStr);
   showModal(`
     <h3>${formatDateLong(dateStr)}</h3>
@@ -1936,6 +1981,18 @@ function openDayModal(dateStr){
         `).join('')}
       </div>
     ` : ''}
+    <div class="modal-section">
+      <div class="modal-section-label">Private lessons</div>
+      ${privToday.length ? privToday.map((l,i)=>{
+        const st = privStudent(l.studentId);
+        return `<div class="modal-row">
+          <span>👤 <b>${st?esc(st.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
+            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
+          <button class="btn-ghost small" onclick="closeModal();openLessonModal(window._dayPrivIds[${i}])">Edit</button>
+        </div>`;
+      }).join('') : `<div class="empty">No private lessons.</div>`}
+      <div style="margin-top:8px;"><button class="btn-ghost small" onclick="closeModal();openLessonModal(null,null,'${dateStr}')">+ Add private lesson</button></div>
+    </div>
     <div class="modal-section">
       <div class="modal-section-label">Events</div>
       ${eventsToday.length ? eventsToday.map(e=>`
@@ -2008,7 +2065,13 @@ function exportData(){
     events: state.events,
     holidays: state.holidays,
     sessionMeta: state.sessionMeta,
-    lessonNotes: state.lessonNotes
+    lessonNotes: state.lessonNotes,
+    privateStudents: state.privateStudents,
+    privateLessons: state.privateLessons,
+    payments: state.payments,
+    checkpoints: state.checkpoints,
+    learningPoints: state.learningPoints,
+    privateSettings: state.privateSettings
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -2061,6 +2124,12 @@ function importData(file){
     state.holidays = data.holidays || [];
     state.sessionMeta = data.sessionMeta || {};
     state.lessonNotes = data.lessonNotes || {};
+    state.privateStudents = data.privateStudents || [];
+    state.privateLessons = data.privateLessons || [];
+    state.payments = data.payments || [];
+    state.checkpoints = data.checkpoints || [];
+    state.learningPoints = data.learningPoints || [];
+    state.privateSettings = data.privateSettings || { overdueThresholdDays: 14 };
     saveKey('classes', state.classes);
     saveKey('students', state.students);
     saveKey('sessions', state.sessions);
@@ -2068,6 +2137,12 @@ function importData(file){
     saveKey('holidays', state.holidays);
     saveKey('sessionMeta', state.sessionMeta);
     saveKey('lessonNotes', state.lessonNotes);
+    saveKey('privateStudents', state.privateStudents);
+    saveKey('privateLessons', state.privateLessons);
+    saveKey('payments', state.payments);
+    saveKey('checkpoints', state.checkpoints);
+    saveKey('learningPoints', state.learningPoints);
+    saveKey('privateSettings', state.privateSettings);
     state.expandedClassId = null;
     state.openDrawer = null;
     state.reportsSelection = {classId:'', studentId:''};
@@ -2075,6 +2150,950 @@ function importData(file){
     alert('Backup restored.');
   };
   reader.readAsText(file);
+}
+
+
+/* =========================================================
+   PRIVATE LESSONS MODULE
+   ========================================================= */
+const PRIV_STATUSES = ['scheduled','completed','no-show','cancelled'];
+const RECUR_HORIZON_WEEKS = 8;
+const SKILLS = [
+  { key:'speaking', label:'Speaking', abbr:'Spk' },
+  { key:'reading', label:'Reading', abbr:'Rea' },
+  { key:'writing', label:'Writing', abbr:'Wri' },
+  { key:'listening', label:'Listening', abbr:'Lis' },
+  { key:'vocabulary', label:'Vocabulary', abbr:'Voc' },
+  { key:'pronunciation', label:'Pronunciation', abbr:'Pron' },
+  { key:'grammar', label:'Grammar', abbr:'Gram' }
+];
+const GRADE_LETTERS = ['A','B','C','D','F'];
+function gradeTier(letter){
+  if(letter==='A'||letter==='B') return 'good';
+  if(letter==='C') return 'mid';
+  if(letter==='D'||letter==='F') return 'low';
+  return 'none';
+}
+const PT_SK_PREFIX = 'efl-dashboard:placement:';
+const PT_QB = {"Starter":[{"tests":"be statements, subject pronouns","outcome":"Introduce yourself"},{"tests":"Countries and nationalities vocabulary","outcome":"Talk about your nationality and language"},{"tests":"Family vocabulary","outcome":"Share information about your family"},{"tests":"be information questions","outcome":"Introduce your partner"},{"tests":"a/an, singular and plural nouns","outcome":"Talk about classroom objects"},{"tests":"There is / There are, prepositions of place 1","outcome":"Talk about where things are in a room"},{"tests":"Simple present statements","outcome":"Share information about people in your class"},{"tests":"Yes/no questions with simple present","outcome":"Ask and answer questions"},{"tests":"Adverbs of frequency","outcome":"Talk about how often you do things"},{"tests":"Simple present information questions","outcome":"Ask and answer questions about a tour"},{"tests":"Imperatives, prepositions of place 2","outcome":"Ask for and give directions"},{"tests":"this / that / these / those, clothes vocabulary","outcome":"Talk about your clothes"},{"tests":"can / can't","outcome":"Talk about what you can/can't do"},{"tests":"Possessive 's, school subjects","outcome":"Talk about objects in a classroom"},{"tests":"Present progressive, types of weather","outcome":"Discuss the weather in different places"},{"tests":"have (description), face and body vocabulary","outcome":"Describe people's appearance"},{"tests":"some and any, food vocabulary","outcome":"Talk about food and meals"},{"tests":"Review — all Starter grammar","outcome":"Ask and answer a quiz"}],"Basic 1":[{"tests":"be statements and yes/no questions, forms vocabulary","outcome":"Describe who you are on an online profile"},{"tests":"Information questions with be, greetings and introductions","outcome":"Greet and introduce people in various settings"},{"tests":"Ordinal numbers","outcome":"Complete registration information with numbers"},{"tests":"Articles a, an, and no article","outcome":"Talk about various jobs"},{"tests":"Possessive adjectives and 's/s'","outcome":"Talk about members of your family"},{"tests":"Work life, family, jobs vocabulary","outcome":"Discuss your family members and their jobs"},{"tests":"Simple present statements and yes/no questions","outcome":"Express likes and dislikes"},{"tests":"The imperative","outcome":"Plan and talk about an event"},{"tests":"Free-time activities, special events","outcome":"Talk about free-time activities"},{"tests":"Simple present information questions, daily activities","outcome":"Talk about daily activities"},{"tests":"Frequency adverbs, frequency and time expressions","outcome":"Talk about how often you do activities"},{"tests":"Routine activities, frequency and time expressions","outcome":"Describe your day off"},{"tests":"There is / There are, adjectives, places in a neighborhood","outcome":"Talk about where you live"},{"tests":"Directions vocabulary","outcome":"Give directions"},{"tests":"Adjectives, places in a neighborhood","outcome":"Describe your neighborhood"},{"tests":"Present progressive","outcome":"Talk about social media use"},{"tests":"Present progressive vs. simple present","outcome":"Talk about computer equipment and vlogging"},{"tests":"Technology phrases, online activity vocabulary","outcome":"Talk about buying and selling online"}],"Basic 2":[{"tests":"can/can't (ability), parts of the body","outcome":"Talk about parts of the body and abilities"},{"tests":"Adverbs of manner, ball game action words","outcome":"Talk about sports and athletes"},{"tests":"Exercise words, ability vocabulary","outcome":"Describe skills and abilities"},{"tests":"Countable and uncountable nouns, food and tastes","outcome":"Talk about food and tastes"},{"tests":"this / that / these / those, food groups, cooking vocabulary","outcome":"Talk about types of food and ingredients"},{"tests":"Food and tastes, food groups, cooking vocabulary","outcome":"Follow and write a recipe"},{"tests":"Verb + infinitive or gerund, travel vocabulary","outcome":"Talk about travel"},{"tests":"Should/could for advice and possibility","outcome":"Give advice and suggestions"},{"tests":"Tourism collocations, clothes vocabulary","outcome":"Talk about clothes to wear on a trip"},{"tests":"Simple past (affirmative), social life collocations","outcome":"Talk about life events"},{"tests":"Simple past (negative and questions)","outcome":"Talk about your social life"},{"tests":"Simple past forms, collocations with get/have/make","outcome":"Describe a personal experience"},{"tests":"Going to","outcome":"Talk about plans and intentions"},{"tests":"Direct and indirect objects, money vocabulary","outcome":"Give and receive advice for saving money"},{"tests":"Career plans collocations","outcome":"Talk about career goals"},{"tests":"Comparative adjectives, weather vocabulary","outcome":"Discuss climate and weather"},{"tests":"Natural features vocabulary, review of tenses","outcome":"Talk about natural features in geography"},{"tests":"Natural features, adjectives, review of tenses","outcome":"Describe outdoor activities"}],"Basic 3":[{"tests":"Past progressive","outcome":"Write and talk about an anecdote"},{"tests":"Past progressive vs. simple past","outcome":"Discuss possible role models"},{"tests":"Role models, reactions, family situations vocabulary","outcome":"Describe a memorable event"},{"tests":"Quantifiers (a lot of, much, many, few)","outcome":"Talk about an idea for a holiday"},{"tests":"Enough / not enough, money vocabulary","outcome":"Talk about money and spending habits"},{"tests":"Unique holidays, money, food and drink vocabulary","outcome":"Write about a celebration"},{"tests":"Indefinite pronouns (everyone, someone, nobody)","outcome":"Talk about street entertainers in your area"},{"tests":"Used to","outcome":"Discuss activities of the past"},{"tests":"TV viewing, music industry vocabulary","outcome":"Write and talk about viewing habits"},{"tests":"(not) as...as","outcome":"Talk about personality types"},{"tests":"Superlative adjectives","outcome":"Describe people with superlatives"},{"tests":"Personality types, characteristics vocabulary","outcome":"Talk about who you are like"},{"tests":"Modals of intention, offer, prediction (will/going to/shall)","outcome":"Make predictions and express intentions"},{"tests":"Modals of request and permission (can/could/may)","outcome":"Make requests and ask permission"},{"tests":"Making suggestions, social event vocabulary","outcome":"Talk about a social event"},{"tests":"Present perfect with for / since","outcome":"Discuss changes in your life"},{"tests":"Present perfect with ever / never","outcome":"Discuss life experiences"},{"tests":"Status quo, life experiences, changing cities vocabulary","outcome":"Discuss positive and negative effects of changes"}],"Basic 4":[{"tests":"Present perfect with already / yet / just","outcome":"Talk about being career-ready"},{"tests":"Present perfect and simple past, success vocabulary","outcome":"Talk about a successful person"},{"tests":"Career readiness, employability skills vocabulary","outcome":"Talk about skills and qualifications"},{"tests":"Gerund phrases as subject and object","outcome":"Talk about activities adults and kids enjoy"},{"tests":"Verb + gerund or infinitive","outcome":"Make plans and talk about preferences"},{"tests":"Leisure activities, adjectives of feeling","outcome":"Express your opinion"},{"tests":"Future forms (will/going to/present continuous for future)","outcome":"Talk about types of housing"},{"tests":"Future possibility and certainty (might, could, will definitely)","outcome":"Talk about future changes in the home"},{"tests":"Housing solutions, living together vocabulary","outcome":"Discuss living preferences"},{"tests":"Zero and first conditional","outcome":"Talk about study habits"},{"tests":"Second conditional","outcome":"Talk about hypothetical conditions"},{"tests":"Accidents and illnesses vocabulary, collocations with get","outcome":"Write about small life changes"},{"tests":"Simple present passive","outcome":"Talk about what things are made of"},{"tests":"Simple past passive, product lifecycles","outcome":"Talk about inventions and gifts"},{"tests":"Product lifecycles, clothing materials, materials collocations","outcome":"Discuss uses of plastic"},{"tests":"Reflexive pronouns","outcome":"Talk about social groups"},{"tests":"Review of tenses","outcome":"Discuss networking"},{"tests":"Types of community, networking, appearance vocabulary","outcome":"Talk about belonging to youth tribes"}],"Intermediate 1":[{"tests":"Stative and dynamic verbs (know, think, see vs. look, think about)","outcome":"Discuss possible devices to help disabled people"},{"tests":"Expressing ability (can/could/be able to/manage to)","outcome":"Ask and answer questions about your achievements"},{"tests":"Character adjectives (resourceful, resilient, determined)","outcome":"Describe survival situations"},{"tests":"Tag questions","outcome":"Talk about which animals are most intelligent"},{"tests":"Articles (the, a/an, no article — advanced use)","outcome":"Discuss possible jobs with animals"},{"tests":"Animal intelligence vocabulary, careers with animals","outcome":"Make arguments for and against owning exotic pets"},{"tests":"Future time clauses (after, as soon as, until, before, when)","outcome":"Ask and answer questions about confirmation bias"},{"tests":"Present perfect progressive (have/has been doing)","outcome":"Discuss the importance of expert systems"},{"tests":"Word formation, phrasal verbs (come up with, work out, set up)","outcome":"Compare different creative uses for things"},{"tests":"Infinitives with to","outcome":"Present a subject you know"},{"tests":"Separable and non-separable phrasal verbs","outcome":"Decide on the best means of communication"},{"tests":"Ways to communicate, emojis, communication vocabulary","outcome":"Assess someone's body language"},{"tests":"Review of conditionals (0, 1st, 2nd)","outcome":"Discuss global warming problems"},{"tests":"Present and future hopes and wishes (I wish / If only / I hope)","outcome":"Talk about solutions"},{"tests":"Climate change, materials and products vocabulary","outcome":"Brainstorm products"},{"tests":"Past perfect","outcome":"Compare generational use of technology"},{"tests":"Defining relative clauses (who, which, that, where)","outcome":"Share your opinions about inventions"},{"tests":"-ed/-ing adjectives (fascinated/fascinating), adjective suffixes (-ful, -less, -ous)","outcome":"Brainstorm quiz questions about people in history"}],"Intermediate 2":[{"tests":"Should / shouldn't have + past participle","outcome":"Talk about things a business should have done differently"},{"tests":"Past perfect for wishes and regrets (I wish I had/hadn't)","outcome":"Discuss things you should not have bought"},{"tests":"Phrasal verbs, spend/lose/waste collocations","outcome":"Recall events you regret"},{"tests":"Third conditional (If + had done... would have done)","outcome":"Talk about hypothetical events in history"},{"tests":"Indirect questions (Could you tell me...? I'd like to know if...)","outcome":"Role-play an interview with an astronaut"},{"tests":"Extinction of dinosaurs, space program, space vocabulary","outcome":"Discuss your opinions of space exploration"},{"tests":"So / such / too / enough","outcome":"Give your opinions on fake news"},{"tests":"Modals of deduction (must, might, could, can't + be/do)","outcome":"Compare real and fake news stories"},{"tests":"News vocabulary, news careers, news stories","outcome":"Role-play a job interview for a news career"},{"tests":"Reported speech statements (She said that...)","outcome":"Talk about your talents and abilities"},{"tests":"Reported speech questions (She asked me if/what/whether)","outcome":"Ask and answer questions for a talent show audition"},{"tests":"Idioms and sayings connected to success, talents/abilities","outcome":"Share advice on how to succeed in the music industry"},{"tests":"Causatives with have / get / make","outcome":"Discuss what you would employ if you were a millionaire"},{"tests":"Verbs with gerund, infinitive, or both (enjoy doing, avoid doing, begin to do)","outcome":"Share ideas about what to do with a fortune"},{"tests":"Money verbs and nouns, paying for things vocabulary","outcome":"Compare your budget with that of a partner"},{"tests":"Passive voice: other tenses (present/past/future perfect passive)","outcome":"Discuss the advertising of energy drinks"},{"tests":"Comparative and superlative adverbs (more cleverly, most effectively)","outcome":"Talk about ads that you like and dislike"},{"tests":"Discourse markers, advertising vocabulary","outcome":"Debate the effects of advertising"}],"Intermediate 3":[{"tests":"Present and past tenses, adjective order (opinion-size-age-shape-colour-origin)","outcome":"Talk about animal mysteries"},{"tests":"Adjective order","outcome":"Describe a natural phenomenon"},{"tests":"Verb collocations, natural world vocabulary","outcome":"Ask and answer about ancient mysteries"},{"tests":"Quantifiers: all, both, neither, either, none, each, every","outcome":"Share your ideas about family businesses"},{"tests":"Obligation, permission, prohibition (must/mustn't/should/be allowed to/can)","outcome":"Compare management styles"},{"tests":"Phrasal verbs in business (take on, turn down, set up, bring about)","outcome":"Discuss different work environments"},{"tests":"Verbs + gerund/infinitive with change in meaning (stop, remember, try, forget)","outcome":"Examine cultural habits and customs"},{"tests":"Be / get used to + gerund","outcome":"Share ideas on culture shock"},{"tests":"Prefixes un-/in-/im-, dependent prepositions, feelings vocabulary","outcome":"Analyze cultural diversity in different environments"},{"tests":"Past perfect vs. past perfect progressive (had done vs. had been doing)","outcome":"Talk about the characteristics of a good educator"},{"tests":"Prefer / would prefer / would rather","outcome":"Compare and contrast learning situations and styles"},{"tests":"Topic word formation, phrasal verbs for learning, skills vocabulary","outcome":"Discuss the benefits of using time during and after college"},{"tests":"Creating emphasis (It's...that/who, What I love is..., cleft sentences)","outcome":"Talk about trends in movies"},{"tests":"Reported speech (statements and questions with backshift)","outcome":"Evaluate the pros and cons of fame"},{"tests":"Movies, noun suffixes (-ness, -tion, -ity, -ment), social media vocabulary","outcome":"Share ideas on careers in social media"},{"tests":"Conditionals review (0, 1st, 2nd, 3rd, mixed)","outcome":"Share ideas on the factors that lead to success"},{"tests":"Conditional conjunctions and phrases (unless, provided that, as long as, even if)","outcome":"Consider the ethics in science"},{"tests":"Science word formation, adverb + adjective collocations","outcome":"Identify, interpret and simplify information"}],"Intermediate 4":[{"tests":"Past modals of deduction (must have, might have, can't have + past participle)","outcome":"Share stories about traveling"},{"tests":"Verb + object + infinitive (want/expect/encourage someone to do)","outcome":"Discuss tourist development"},{"tests":"Travel expressions, compound adjectives, marketing vocabulary","outcome":"Talk about marketing vacation destinations"},{"tests":"Relative clauses (defining and non-defining, who/which/where/whose)","outcome":"Share ideas on the positive and negative impacts of engineering"},{"tests":"Noun clauses as subjects and objects (The fact that..., What concerns me is...)","outcome":"Ask and answer about future changes to the workplace"},{"tests":"Phrasal-prepositional verbs (look forward to, give up on, put up with), suffixes forming verbs (-ise, -en, -ify)","outcome":"Consider the impact of a technological product"},{"tests":"The gerund as object of preposition (interested in wearing, good at choosing, tired of following)","outcome":"Talk about clothes and fashion"},{"tests":"Future passive and passive review (will be done, is being done, has been done)","outcome":"Do an oral product review"},{"tests":"Fashion collocations, noun modifiers, language trends vocabulary","outcome":"Analyze trends in language"},{"tests":"Phrasal verbs (put off, end up, get around to, fall behind, carry on)","outcome":"Share feelings toward procrastination"},{"tests":"Verb phrases, prefixes (over-, under-, re-, self-)","outcome":"Discuss ways to have and plan for big dreams"},{"tests":"Phrasal verbs, prefixes in context, selling and persuasion vocabulary","outcome":"Talk about the psychology of selling"}]};
+const PT_URL = 'https://arschul.github.io/tools/placement-test.html';
+
+/* ---------- private helpers ---------- */
+function privStudent(id){ return state.privateStudents.find(s=>s.id===id); }
+function round2(n){ return Math.round(n*100)/100; }
+function daysBetween(a,b){
+  const d1=new Date(a+'T00:00:00'), d2=new Date(b+'T00:00:00');
+  return Math.round((d1-d2)/86400000);
+}
+function money(n){ return 'R$ ' + (Number(n)||0).toFixed(2); }
+function persistPrivate(){
+  scheduleSave('privateStudents', state.privateStudents);
+  scheduleSave('privateLessons', state.privateLessons);
+  scheduleSave('payments', state.payments);
+  scheduleSave('checkpoints', state.checkpoints);
+  scheduleSave('learningPoints', state.learningPoints);
+  scheduleSave('privateSettings', state.privateSettings);
+}
+function lessonCost(s){
+  if(!s) return 0;
+  if(s.pricingType==='package'){
+    const size=Number(s.packageSize)||0, price=Number(s.packagePrice)||0;
+    return size>0 ? round2(price/size) : 0;
+  }
+  if(s.pricingType==='hourly'){
+    const dur = (s.recurring && s.recurring[0]?.duration) || 60;
+    return round2((Number(s.rate)||0) * dur/60);
+  }
+  return Number(s.rate)||0; // perLesson
+}
+function computeLedger(studentId){
+  const s = privStudent(studentId);
+  const billable = state.privateLessons
+    .filter(l=>l.studentId===studentId && (l.status==='completed'||l.status==='no-show'))
+    .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date));
+  const cost = lessonCost(s);
+  const totalBilled = round2(billable.length * cost);
+  const totalPaid = round2(state.payments.filter(p=>p.studentId===studentId).reduce((sum,p)=>sum+(Number(p.amount)||0),0));
+  const balance = round2(totalBilled - totalPaid);
+  let remaining = totalPaid, oldestUnpaidDate = null;
+  for(const l of billable){
+    if(cost<=0) continue;
+    if(remaining >= cost - 0.005){ remaining -= cost; }
+    else { oldestUnpaidDate = l.date; break; }
+  }
+  const threshold = Number(state.privateSettings.overdueThresholdDays)||14;
+  let overdue = false;
+  if(oldestUnpaidDate && balance > 0.005){
+    overdue = daysBetween(todayStr(), oldestUnpaidDate) >= threshold;
+  }
+  return { totalBilled, totalPaid, balance, oldestUnpaidDate, overdue, lessonsBilled: billable.length, cost };
+}
+function ledgerStamp(ledger){
+  if(ledger.balance > 0.5) return ledger.overdue
+    ? '<span class="badge red">Due</span>'
+    : '<span class="badge amber">Owes</span>';
+  return '<span class="badge green">Even</span>';
+}
+function nextPrivLesson(studentId){
+  const today = todayStr();
+  return state.privateLessons
+    .filter(l=>l.studentId===studentId && l.status==='scheduled' && l.date>=today)
+    .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))[0] || null;
+}
+function updatePrivAlertDot(){
+  const dot = document.getElementById('priv-alert-dot');
+  if(!dot) return;
+  const any = state.privateStudents.some(s=>s.status==='active' && computeLedger(s.id).overdue);
+  dot.style.display = any ? 'block' : 'none';
+}
+
+/* ---------- recurring generation ---------- */
+function regenerateRecurring(s){
+  // remove future auto-generated placeholders for this student
+  const today = todayStr();
+  state.privateLessons = state.privateLessons.filter(l =>
+    !(l.studentId===s.id && l.isRecurring && l.status==='scheduled' && l.date >= today)
+  );
+  if(!s.recurring || !s.recurring.length || s.status!=='active') return;
+  const start = new Date(today+'T00:00:00');
+  for(let w=0; w<RECUR_HORIZON_WEEKS; w++){
+    for(const slot of s.recurring){
+      const d = new Date(start);
+      const delta = (slot.weekday - d.getDay() + 7) % 7;
+      d.setDate(d.getDate() + delta + w*7);
+      const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+      if(dateStr < today) continue;
+      // don't duplicate an existing lesson at same date+time
+      const dup = state.privateLessons.some(l=>l.studentId===s.id && l.date===dateStr && (l.time||'')===(slot.time||''));
+      if(dup) continue;
+      state.privateLessons.push({
+        id: uid(), studentId: s.id, date: dateStr, time: slot.time||'',
+        duration: Number(slot.duration)||60, status:'scheduled', notes:'', isRecurring:true
+      });
+    }
+  }
+}
+
+/* ---------- placement bridge ---------- */
+function getPlacementHistory(studentId){
+  try{
+    const raw = localStorage.getItem(PT_SK_PREFIX + studentId);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(Array.isArray(data.history) && data.history.length) return data.history;
+    if(data.placement !== undefined || data.name !== undefined) return [data];
+    return null;
+  }catch{ return null; }
+}
+function latestPlacement(studentId){
+  const h = getPlacementHistory(studentId);
+  if(!h) return null;
+  return h.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+}
+function studyPointsForLevel(level){
+  return PT_QB[level] || null;
+}
+
+/* ---------- private: shell ---------- */
+function renderPrivate(){
+  const el = document.getElementById('view-private');
+  const tabs = [['overview','Overview'],['students','Students'],['schedule','Schedule'],['payments','Payments']];
+  let body = '';
+  try{
+    if(state.privView==='overview') body = privOverviewHtml();
+    else if(state.privView==='students') body = privStudentsHtml();
+    else if(state.privView==='schedule') body = privScheduleHtml();
+    else if(state.privView==='payments') body = privPaymentsHtml();
+  }catch(e){
+    body = `<div class="card empty-card" style="color:var(--red);"><b>Error:</b><br><code style="font-size:12px;">${esc(e.stack||e.message)}</code></div>`;
+  }
+  el.innerHTML = `
+    <div class="topbar">
+      <div><h1>Private Lessons</h1><div class="meta">${state.privateStudents.filter(s=>s.status==='active').length} active students</div></div>
+      <button class="btn-accent" onclick="openPrivStudentModal()">+ Add private student</button>
+    </div>
+    <div class="tabs" style="margin-bottom:16px;">
+      ${tabs.map(([k,label])=>`<div class="tab ${state.privView===k?'active':''}" onclick="setPrivView('${k}')">${label}</div>`).join('')}
+    </div>
+    ${body}
+  `;
+  updatePrivAlertDot();
+}
+function setPrivView(v){ state.privView = v; renderPrivate(); }
+
+/* ---------- private: overview ---------- */
+function privOverviewHtml(){
+  const active = state.privateStudents.filter(s=>s.status==='active');
+  const rows = active.map(s=>({s, ledger:computeLedger(s.id), next:nextPrivLesson(s.id)}));
+  const owing = rows.filter(x=>x.ledger.balance>0.5)
+    .sort((a,b)=>(b.ledger.overdue-a.ledger.overdue)||(b.ledger.balance-a.ledger.balance));
+  const totalOwed = round2(rows.reduce((sum,x)=>sum+Math.max(0,x.ledger.balance),0));
+  const today = todayStr();
+  const upcoming = state.privateLessons
+    .filter(l=>l.status==='scheduled' && l.date>=today)
+    .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))
+    .slice(0,8);
+  window._privOwingIds = owing.map(x=>x.s.id);
+  return `
+    <div class="stat-row">
+      <div class="card stat"><div class="stat-num">${active.length}</div><div class="stat-label">Active students</div></div>
+      <div class="card stat"><div class="stat-num">${owing.length}</div><div class="stat-label">Students owing</div></div>
+      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(totalOwed)}</div><div class="stat-label">Total outstanding</div></div>
+      <div class="card stat"><div class="stat-num">${upcoming.length}</div><div class="stat-label">Upcoming lessons</div></div>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="card section">
+        <h3>Outstanding balances</h3>
+        ${owing.length ? owing.map((x,i)=>`
+          <div class="dash-row">
+            <div class="dash-row-left">
+              <div>
+                <div class="dash-row-title">${esc(x.s.name)} ${ledgerStamp(x.ledger)}</div>
+                <div class="dash-row-sub">${money(x.ledger.balance)}${x.ledger.oldestUnpaidDate?` · oldest unpaid ${formatDateShort(x.ledger.oldestUnpaidDate)}`:''}</div>
+              </div>
+            </div>
+            <button class="btn-ghost small" onclick="openPaymentModal(null, window._privOwingIds[${i}])">+ Payment</button>
+          </div>`).join('') : `<div class="empty">Everyone is paid up. 🎉</div>`}
+      </div>
+      <div class="card section">
+        <h3>Upcoming lessons</h3>
+        ${upcoming.length ? upcoming.map(l=>{
+          const s = privStudent(l.studentId);
+          return `<div class="dash-row">
+            <div class="dash-row-left"><div>
+              <div class="dash-row-title">${s?esc(s.name):'—'}</div>
+              <div class="dash-row-sub">${formatDateShort(l.date)}${l.time?' · '+l.time:''} · ${l.duration} min${l.isRecurring?' · recurring':''}</div>
+            </div></div>
+            <button class="btn-ghost small" onclick="openLessonModal('${l.id}')">Edit</button>
+          </div>`;
+        }).join('') : `<div class="empty">No upcoming lessons scheduled.</div>`}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- private: students ---------- */
+function privStudentsHtml(){
+  const q = (state.privStudentSearch||'').toLowerCase();
+  const filtered = state.privateStudents.filter(s=>{
+    if(state.privStudentFilter!=='all' && s.status!==state.privStudentFilter) return false;
+    if(q && !s.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  window._privListIds = filtered.map(s=>s.id);
+  const filters = [['active','Active'],['paused','Paused'],['inactive','Inactive'],['all','All']];
+  return `
+    <div class="card section" style="margin-bottom:16px;">
+      <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
+        ${filters.map(([k,l])=>`<button class="btn-ghost small ${state.privStudentFilter===k?'active-filter':''}" style="${state.privStudentFilter===k?'background:var(--accent-soft);color:var(--accent);border-color:var(--accent);':''}" onclick="state.privStudentFilter='${k}';renderPrivate();">${l}</button>`).join('')}
+        <input type="text" placeholder="Search name…" value="${esc(state.privStudentSearch)}" oninput="state.privStudentSearch=this.value;renderPrivate();" style="flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;">
+      </div>
+    </div>
+    ${filtered.length ? `<div class="card table-wrap"><table>
+      <thead><tr><th>Student</th><th>Status</th><th>Schedule</th><th>Rate</th><th>Balance</th><th>Next lesson</th><th></th></tr></thead>
+      <tbody>
+      ${filtered.map((s,i)=>{
+        const led = computeLedger(s.id);
+        const nx = nextPrivLesson(s.id);
+        const sched = (s.recurring&&s.recurring.length)
+          ? s.recurring.map(r=>`${DAY_ABBR[r.weekday]} ${r.time||''}`).join(', ')
+          : '—';
+        return `<tr>
+          <td style="font-weight:600;cursor:pointer;" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">${esc(s.name)}${s.isMinor?' <span class="badge other">minor</span>':''}${s.contactParents?.reason?' <span class="badge red">📞</span>':''}</td>
+          <td><span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}">${s.status}</span></td>
+          <td>${esc(sched)}</td>
+          <td>${money(lessonCost(s))}/lesson</td>
+          <td>${money(led.balance)} ${ledgerStamp(led)}</td>
+          <td>${nx?formatDateShort(nx.date)+(nx.time?' '+nx.time:''):'—'}</td>
+          <td><button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">Open →</button></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>`
+    : `<div class="card empty-card">No students match this filter.<br><button class="btn-accent" style="margin-top:12px;" onclick="openPrivStudentModal()">+ Add private student</button></div>`}
+  `;
+}
+
+/* ---------- private: schedule ---------- */
+function privScheduleHtml(){
+  const {year, month} = state.privCal;
+  const first = new Date(year, month, 1);
+  const startWd = first.getDay();
+  const days = new Date(year, month+1, 0).getDate();
+  const monthName = first.toLocaleString('en-US',{month:'long'});
+  let cells='';
+  for(let i=0;i<startWd;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const ds = dateToStr(year, month, d);
+    const todays = state.privateLessons.filter(l=>l.date===ds)
+      .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    const isToday = ds===todayStr();
+    cells += `<div class="cal-cell ${isToday?'today':''}" onclick="openPrivDayModal('${ds}')">
+      <div class="cal-date">${d}</div>
+      <div class="cal-items">
+        ${todays.map(l=>{
+          const s = privStudent(l.studentId);
+          const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='cancelled'?'var(--gray)':'var(--accent)';
+          return `<div class="cal-tag" style="background:${col}22;color:${col};border-color:${col}55;">👤 ${s?esc(s.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  return `
+    <div class="topbar" style="margin-bottom:12px;">
+      <div></div>
+      <div class="cal-nav">
+        <button class="btn-ghost" onclick="privChangeMonth(-1)">←</button>
+        <div class="cal-month-label">${monthName} ${year}</div>
+        <button class="btn-ghost" onclick="privChangeMonth(1)">→</button>
+        <button class="btn-ghost" onclick="privGoToday()">Today</button>
+        <button class="btn-accent" onclick="openLessonModal()">+ Lesson</button>
+      </div>
+    </div>
+    <div class="card cal-grid-wrap">
+      <div class="cal-weekdays">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>
+      <div class="cal-grid">${cells}</div>
+    </div>
+    <div class="cal-legend">
+      <div class="legend-item"><span class="color-dot" style="background:var(--accent)"></span>Scheduled</div>
+      <div class="legend-item"><span class="color-dot" style="background:var(--green)"></span>Completed</div>
+      <div class="legend-item"><span class="color-dot" style="background:var(--red)"></span>No-show</div>
+      <div class="legend-item"><span class="color-dot" style="background:var(--gray)"></span>Cancelled</div>
+    </div>
+  `;
+}
+function privChangeMonth(delta){
+  let {year,month} = state.privCal;
+  month += delta;
+  if(month<0){month=11;year--;}
+  if(month>11){month=0;year++;}
+  state.privCal={year,month};
+  renderPrivate();
+}
+function privGoToday(){
+  const n=new Date();
+  state.privCal={year:n.getFullYear(),month:n.getMonth()};
+  renderPrivate();
+}
+
+/* ---------- private: payments ---------- */
+function privPaymentsHtml(){
+  const pays = state.payments.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  window._privPayIds = pays.map(p=>p.id);
+  const total = round2(pays.reduce((s,p)=>s+(Number(p.amount)||0),0));
+  const thisMonth = pays.filter(p=>p.date.slice(0,7)===todayStr().slice(0,7));
+  const monthTotal = round2(thisMonth.reduce((s,p)=>s+(Number(p.amount)||0),0));
+  return `
+    <div class="stat-row">
+      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(monthTotal)}</div><div class="stat-label">Received this month</div></div>
+      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(total)}</div><div class="stat-label">Received all-time</div></div>
+      <div class="card stat"><div class="stat-num">${pays.length}</div><div class="stat-label">Payments logged</div></div>
+    </div>
+    <div class="rollcall-actions" style="margin-bottom:10px;">
+      <button class="btn-accent" onclick="openPaymentModal()">+ Log payment</button>
+      <button class="btn-ghost small" onclick="openPrivSettingsModal()">⚙ Overdue threshold (${state.privateSettings.overdueThresholdDays}d)</button>
+    </div>
+    ${pays.length ? `<div class="card table-wrap"><table>
+      <thead><tr><th>Date</th><th>Student</th><th>Amount</th><th>Method</th><th>Notes</th><th></th></tr></thead>
+      <tbody>${pays.map((p,i)=>{
+        const s = privStudent(p.studentId);
+        return `<tr>
+          <td>${formatDateShort(p.date)}</td>
+          <td style="font-weight:600;">${s?esc(s.name):'—'}</td>
+          <td>${money(p.amount)}</td>
+          <td>${esc(p.method||'—')}</td>
+          <td>${esc(p.notes||'—')}</td>
+          <td style="white-space:nowrap;">
+            <button class="icon-btn" onclick="openPaymentModal(window._privPayIds[${i}])">Edit</button>
+            <button class="icon-btn danger" onclick="deletePayment(window._privPayIds[${i}])">×</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`
+    : `<div class="card empty-card">No payments logged yet.</div>`}
+  `;
+}
+
+/* ---------- private: student modal ---------- */
+function openPrivStudentModal(id){
+  const s = id ? privStudent(id) : null;
+  const slots = (s && s.recurring) ? s.recurring : [];
+  showModal(`
+    <h3>${s?'Edit private student':'Add private student'}</h3>
+    <div class="field"><label>Name</label><input id="ps-name" type="text" value="${s?esc(s.name):''}" placeholder="Full name"></div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Phone</label><input id="ps-phone" type="text" value="${esc(s?.contactPhone||'')}"></div>
+      <div class="field" style="flex:1;"><label>CEFR level</label>
+        <select id="ps-cefr">
+          ${['','A1','A2','B1','B2','C1','C2'].map(l=>`<option value="${l}" ${s?.cefr===l?'selected':''}>${l||'—'}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="ps-minor" ${s?.isMinor?'checked':''} onchange="document.getElementById('ps-guardian-box').style.display=this.checked?'block':'none'"> Student is a minor
+      </label>
+    </div>
+    <div id="ps-guardian-box" style="display:${s?.isMinor?'block':'none'};">
+      <div class="field-row">
+        <div class="field" style="flex:1;"><label>Guardian name</label><input id="ps-gname" type="text" value="${esc(s?.guardianName||'')}"></div>
+        <div class="field" style="flex:1;"><label>Guardian phone</label><input id="ps-gphone" type="text" value="${esc(s?.guardianPhone||'')}"></div>
+      </div>
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="ps-status">
+        ${['active','paused','inactive'].map(v=>`<option value="${v}" ${(s?.status||'active')===v?'selected':''}>${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Pricing</label>
+      <select id="ps-ptype" onchange="privPricingToggle()">
+        <option value="perLesson" ${(s?.pricingType||'perLesson')==='perLesson'?'selected':''}>Per lesson (flat)</option>
+        <option value="hourly" ${s?.pricingType==='hourly'?'selected':''}>Hourly rate</option>
+        <option value="package" ${s?.pricingType==='package'?'selected':''}>Package</option>
+      </select>
+    </div>
+    <div class="field-row" id="ps-rate-box">
+      <div class="field" style="flex:1;"><label>Rate (R$)</label><input id="ps-rate" type="number" min="0" step="0.01" value="${s?.rate??''}"></div>
+    </div>
+    <div class="field-row" id="ps-pkg-box" style="display:none;">
+      <div class="field" style="flex:1;"><label>Package size (lessons)</label><input id="ps-pkgsize" type="number" min="1" value="${s?.packageSize??''}"></div>
+      <div class="field" style="flex:1;"><label>Package price (R$)</label><input id="ps-pkgprice" type="number" min="0" step="0.01" value="${s?.packagePrice??''}"></div>
+    </div>
+    <div class="field"><label>Weekly schedule</label>
+      <div id="ps-slots">
+        ${slots.length ? slots.map((sl,i)=>privSlotRow(i, sl)).join('') : privSlotRow(0, null)}
+      </div>
+      <button class="btn-ghost small" style="margin-top:6px;" onclick="privAddSlot()">+ Add day</button>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="ps-notes" rows="2">${esc(s?.notes||'')}</textarea></div>
+    <div class="modal-actions" style="${s?'justify-content:space-between;':''}">
+      ${s?`<button class="icon-btn danger" onclick="deletePrivStudent('${s.id}')">Delete student</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="savePrivStudent(${s?`'${s.id}'`:'null'})">${s?'Save changes':'Add student'}</button>
+      </div>
+    </div>
+  `);
+  privPricingToggle();
+}
+function privSlotRow(i, sl){
+  return `<div class="field-row priv-slot" style="margin-bottom:6px;align-items:center;">
+    <select class="slot-day" style="flex:1;">
+      ${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${sl&&sl.weekday===d?'selected':''}>${DAY_FULL[d]}</option>`).join('')}
+    </select>
+    <input class="slot-time" type="time" value="${sl?.time||''}" style="flex:1;">
+    <input class="slot-dur" type="number" min="15" step="15" value="${sl?.duration||60}" title="minutes" style="width:80px;">
+    <button class="icon-btn danger" onclick="this.closest('.priv-slot').remove()">×</button>
+  </div>`;
+}
+function privAddSlot(){
+  document.getElementById('ps-slots').insertAdjacentHTML('beforeend', privSlotRow(999, null));
+}
+function privPricingToggle(){
+  const t = document.getElementById('ps-ptype')?.value;
+  if(!t) return;
+  document.getElementById('ps-rate-box').style.display = t==='package' ? 'none' : 'flex';
+  document.getElementById('ps-pkg-box').style.display = t==='package' ? 'flex' : 'none';
+  const lbl = document.querySelector('#ps-rate-box label');
+  if(lbl) lbl.textContent = t==='hourly' ? 'Hourly rate (R$)' : 'Price per lesson (R$)';
+}
+function savePrivStudent(id){
+  const name = document.getElementById('ps-name').value.trim();
+  if(!name){ alert('Name is required.'); return; }
+  let s = id ? privStudent(id) : null;
+  const isNew = !s;
+  if(isNew){ s = { id: uid(), startDate: todayStr(), pinnedSkills: [], studyPoints: [] }; state.privateStudents.push(s); }
+  s.name = name;
+  s.contactPhone = document.getElementById('ps-phone').value.trim();
+  s.cefr = document.getElementById('ps-cefr').value;
+  s.isMinor = document.getElementById('ps-minor').checked;
+  s.guardianName = document.getElementById('ps-gname')?.value.trim()||'';
+  s.guardianPhone = document.getElementById('ps-gphone')?.value.trim()||'';
+  s.status = document.getElementById('ps-status').value;
+  s.pricingType = document.getElementById('ps-ptype').value;
+  s.rate = document.getElementById('ps-rate').value ? Number(document.getElementById('ps-rate').value) : '';
+  s.packageSize = document.getElementById('ps-pkgsize').value ? Number(document.getElementById('ps-pkgsize').value) : '';
+  s.packagePrice = document.getElementById('ps-pkgprice').value ? Number(document.getElementById('ps-pkgprice').value) : '';
+  s.notes = document.getElementById('ps-notes').value;
+  const slots = [...document.querySelectorAll('#ps-slots .priv-slot')].map(row=>({
+    weekday: Number(row.querySelector('.slot-day').value),
+    time: row.querySelector('.slot-time').value,
+    duration: Number(row.querySelector('.slot-dur').value)||60
+  })).filter(sl=>sl.time);
+  s.recurring = slots.length ? slots : null;
+  regenerateRecurring(s);
+  persistPrivate();
+  closeModal();
+  renderPrivate();
+}
+function deletePrivStudent(id){
+  const s = privStudent(id);
+  if(!s) return;
+  if(!confirm(`Delete "${s.name}" and ALL their lessons, payments, checkpoints and learning points? This cannot be undone.`)) return;
+  state.privateStudents = state.privateStudents.filter(x=>x.id!==id);
+  state.privateLessons = state.privateLessons.filter(l=>l.studentId!==id);
+  state.payments = state.payments.filter(p=>p.studentId!==id);
+  state.checkpoints = state.checkpoints.filter(c=>c.studentId!==id);
+  state.learningPoints = state.learningPoints.filter(p=>p.studentId!==id);
+  try{ localStorage.removeItem(PT_SK_PREFIX + id); }catch(e){}
+  persistPrivate();
+  closeModal();
+  navigate('private');
+}
+
+/* ---------- private: lesson modal ---------- */
+function openLessonModal(id, presetStudentId, presetDate){
+  const l = id ? state.privateLessons.find(x=>x.id===id) : null;
+  const opts = state.privateStudents.filter(s=>s.status!=='inactive'||l?.studentId===s.id);
+  showModal(`
+    <h3>${l?'Edit lesson':'Add lesson'}</h3>
+    <div class="field"><label>Student</label>
+      <select id="pl-student">
+        <option value="">— pick —</option>
+        ${opts.map(s=>`<option value="${s.id}" ${(l?.studentId||presetStudentId)===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Date</label><input id="pl-date" type="date" value="${l?.date||presetDate||todayStr()}"></div>
+      <div class="field" style="flex:1;"><label>Time</label><input id="pl-time" type="time" value="${l?.time||''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Duration (min)</label><input id="pl-dur" type="number" min="15" step="15" value="${l?.duration||60}"></div>
+      <div class="field" style="flex:1;"><label>Status</label>
+        <select id="pl-status">${PRIV_STATUSES.map(v=>`<option value="${v}" ${(l?.status||'scheduled')===v?'selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="pl-notes" rows="2">${esc(l?.notes||'')}</textarea></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:-4px;">Completed and no-show lessons are billed.</div>
+    <div class="modal-actions" style="${l?'justify-content:space-between;':''}">
+      ${l?`<button class="icon-btn danger" onclick="deleteLesson('${l.id}')">Delete</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveLesson(${l?`'${l.id}'`:'null'})">${l?'Save':'Add'}</button>
+      </div>
+    </div>
+  `);
+}
+function saveLesson(id){
+  const studentId = document.getElementById('pl-student').value;
+  if(!studentId){ alert('Pick a student.'); return; }
+  let l = id ? state.privateLessons.find(x=>x.id===id) : null;
+  const isNew = !l;
+  const oldDate = l?.date;
+  if(isNew){ l = { id: uid(), isRecurring:false }; state.privateLessons.push(l); }
+  l.studentId = studentId;
+  l.date = document.getElementById('pl-date').value;
+  l.time = document.getElementById('pl-time').value;
+  l.duration = Number(document.getElementById('pl-dur').value)||60;
+  l.status = document.getElementById('pl-status').value;
+  l.notes = document.getElementById('pl-notes').value;
+  if(!isNew && l.date!==oldDate) l.isRecurring = false;  // detach manually moved lessons
+  persistPrivate();
+  closeModal();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+}
+function deleteLesson(id){
+  if(!confirm('Delete this lesson?')) return;
+  state.privateLessons = state.privateLessons.filter(l=>l.id!==id);
+  persistPrivate();
+  closeModal();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+}
+function setLessonStatus(id, status){
+  const l = state.privateLessons.find(x=>x.id===id);
+  if(!l) return;
+  l.status = status;
+  persistPrivate();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+}
+
+/* ---------- private: payment modal ---------- */
+function openPaymentModal(id, presetStudentId){
+  const p = id ? state.payments.find(x=>x.id===id) : null;
+  const sid = p?.studentId || presetStudentId || '';
+  const led = sid ? computeLedger(sid) : null;
+  showModal(`
+    <h3>${p?'Edit payment':'Log payment'}</h3>
+    <div class="field"><label>Student</label>
+      <select id="pay-student" onchange="privPayBalanceHint()">
+        <option value="">— pick —</option>
+        ${state.privateStudents.map(s=>`<option value="${s.id}" ${sid===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
+      </select>
+      <div id="pay-hint" style="font-size:12px;color:var(--muted);margin-top:6px;">${led?`Current balance: <b>${money(led.balance)}</b>`:''}</div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Date</label><input id="pay-date" type="date" value="${p?.date||todayStr()}"></div>
+      <div class="field" style="flex:1;"><label>Amount (R$)</label><input id="pay-amount" type="number" min="0" step="0.01" value="${p?.amount??(led&&led.balance>0?led.balance:'')}"></div>
+    </div>
+    <div class="field"><label>Method</label>
+      <select id="pay-method">${['Pix','Cash','Transfer','Card','Other'].map(m=>`<option value="${m}" ${p?.method===m?'selected':''}>${m}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Notes</label><input id="pay-notes" type="text" value="${esc(p?.notes||'')}"></div>
+    <div class="modal-actions" style="${p?'justify-content:space-between;':''}">
+      ${p?`<button class="icon-btn danger" onclick="deletePayment('${p.id}')">Delete</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="savePayment(${p?`'${p.id}'`:'null'})">${p?'Save':'Log payment'}</button>
+      </div>
+    </div>
+  `);
+}
+function privPayBalanceHint(){
+  const sid = document.getElementById('pay-student').value;
+  const hint = document.getElementById('pay-hint');
+  const amt = document.getElementById('pay-amount');
+  if(!sid){ hint.innerHTML=''; return; }
+  const led = computeLedger(sid);
+  hint.innerHTML = `Current balance: <b>${money(led.balance)}</b>`;
+  if(!amt.value && led.balance>0) amt.value = led.balance;
+}
+function savePayment(id){
+  const studentId = document.getElementById('pay-student').value;
+  if(!studentId){ alert('Pick a student.'); return; }
+  let p = id ? state.payments.find(x=>x.id===id) : null;
+  if(!p){ p = { id: uid() }; state.payments.push(p); }
+  p.studentId = studentId;
+  p.date = document.getElementById('pay-date').value;
+  p.amount = Number(document.getElementById('pay-amount').value)||0;
+  p.method = document.getElementById('pay-method').value;
+  p.notes = document.getElementById('pay-notes').value;
+  persistPrivate();
+  closeModal();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+}
+function deletePayment(id){
+  if(!confirm('Delete this payment?')) return;
+  state.payments = state.payments.filter(p=>p.id!==id);
+  persistPrivate();
+  closeModal();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+}
+function openPrivSettingsModal(){
+  showModal(`
+    <h3>Private lesson settings</h3>
+    <div class="field"><label>Mark as overdue after (days unpaid)</label>
+      <input id="pset-days" type="number" min="1" value="${state.privateSettings.overdueThresholdDays}">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="savePrivSettings()">Save</button>
+    </div>
+  `);
+}
+function savePrivSettings(){
+  state.privateSettings.overdueThresholdDays = Number(document.getElementById('pset-days').value)||14;
+  persistPrivate();
+  closeModal();
+  renderPrivate();
+}
+
+/* ---------- private: day modal (schedule tab) ---------- */
+function openPrivDayModal(dateStr){
+  const lessons = state.privateLessons.filter(l=>l.date===dateStr)
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  window._privDayIds = lessons.map(l=>l.id);
+  showModal(`
+    <h3>${formatDateLong(dateStr)}</h3>
+    <div class="modal-section">
+      <div class="modal-section-label">Private lessons</div>
+      ${lessons.length ? lessons.map((l,i)=>{
+        const s = privStudent(l.studentId);
+        return `<div class="modal-row">
+          <span>👤 <b>${s?esc(s.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
+            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
+          <button class="btn-ghost small" onclick="closeModal();openLessonModal(window._privDayIds[${i}])">Edit</button>
+        </div>`;
+      }).join('') : `<div class="empty">No lessons.</div>`}
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn-accent" onclick="closeModal();openLessonModal(null,null,'${dateStr}')">+ Add lesson</button>
+    </div>
+  `);
+}
+
+/* ---------- private: student detail + printable report ---------- */
+function renderPrivStudent(){
+  const el = document.getElementById('view-priv-student');
+  const s = privStudent(state.privOpenStudentId);
+  if(!s){
+    el.innerHTML = `<div class="topbar"><div><button class="btn-ghost back-btn" onclick="navigate('private')">← Back</button></div></div>
+      <div class="card empty-card">Student not found.</div>`;
+    return;
+  }
+  const led = computeLedger(s.id);
+  const lessons = state.privateLessons.filter(l=>l.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const pays = state.payments.filter(p=>p.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const cps = state.checkpoints.filter(c=>c.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const lps = state.learningPoints.filter(p=>p.studentId===s.id);
+  const nx = nextPrivLesson(s.id);
+  const place = latestPlacement(s.id);
+  const completed = lessons.filter(l=>l.status==='completed').length;
+  const noshow = lessons.filter(l=>l.status==='no-show').length;
+  const cancelled = lessons.filter(l=>l.status==='cancelled').length;
+  window._privLessonIds = lessons.map(l=>l.id);
+  window._privPayIds2 = pays.map(p=>p.id);
+  window._privCpIds = cps.map(c=>c.id);
+  window._privLpIds = lps.map(p=>p.id);
+
+  const sched = (s.recurring&&s.recurring.length)
+    ? s.recurring.map(r=>`${DAY_FULL[r.weekday]} ${r.time||''} (${r.duration}min)`).join(' · ')
+    : 'No recurring schedule';
+
+  const lpDone = lps.filter(p=>p.complete).length;
+
+  el.innerHTML = `
+    <div class="topbar">
+      <div>
+        <button class="btn-ghost back-btn no-print" onclick="navigate('private')">← Back to Private Lessons</button>
+        <h1>${esc(s.name)}
+          <span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}" style="font-size:13px;vertical-align:middle;">${s.status}</span>
+          ${s.cefr?`<span class="badge hw" style="font-size:13px;vertical-align:middle;">${s.cefr}</span>`:''}
+          ${s.contactParents?.reason?`<span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(s.contactParents.category)}</span>`:''}
+        </h1>
+        <div class="meta">${sched}</div>
+        <div class="meta">${s.contactPhone?'📱 '+esc(s.contactPhone):''}${s.isMinor?` · Guardian: ${esc(s.guardianName||'—')} ${esc(s.guardianPhone||'')}`:''}</div>
+      </div>
+      <div style="display:flex;gap:10px;" class="no-print">
+        <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="Contact parents">📞${s.contactParents?.reason?' ●':''}</button>
+        <button class="btn-ghost" onclick="openPrivStudentModal('${s.id}')">Edit</button>
+        <button class="btn-accent" onclick="window.print()">🖨️ Print Report</button>
+      </div>
+    </div>
+    <div class="print-only" style="margin-bottom:14px;font-size:12px;color:var(--muted);">Generated ${formatDateLong(todayStr())}</div>
+
+    <div class="stat-row">
+      <div class="card stat"><div class="stat-num">${completed}</div><div class="stat-label">Completed</div></div>
+      <div class="card stat"><div class="stat-num">${noshow}</div><div class="stat-label">No-shows</div></div>
+      <div class="card stat"><div class="stat-num">${cancelled}</div><div class="stat-label">Cancelled</div></div>
+      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(led.balance)}</div><div class="stat-label">Balance</div></div>
+      <div class="card stat"><div class="stat-num">${lps.length?lpDone+'/'+lps.length:'—'}</div><div class="stat-label">Learning points</div></div>
+    </div>
+
+    <div class="card section" style="border-left:4px solid ${led.balance>0.5?(led.overdue?'var(--red)':'var(--amber)'):'var(--green)'};margin-bottom:16px;">
+      <h3>💰 Ledger ${ledgerStamp(led)}</h3>
+      <div class="lost-summary">
+        ${led.lessonsBilled} billable lesson${led.lessonsBilled===1?'':'s'} × ${money(led.cost)} = <b>${money(led.totalBilled)}</b> billed ·
+        <b>${money(led.totalPaid)}</b> paid · balance <b>${money(led.balance)}</b>
+        ${led.oldestUnpaidDate?`<br>Oldest unpaid lesson: ${formatDateShort(led.oldestUnpaidDate)}${led.overdue?` <span class="badge red">overdue</span>`:''}`:''}
+        ${nx?`<br>Next lesson: <b>${formatDateShort(nx.date)}${nx.time?' at '+nx.time:''}</b>`:''}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;" class="no-print">
+        <button class="btn-accent" onclick="openPaymentModal(null,'${s.id}')">+ Log payment</button>
+        <button class="btn-ghost small" onclick="openLessonModal(null,'${s.id}')">+ Add lesson</button>
+      </div>
+    </div>
+
+    ${place ? `
+    <div class="card section" style="margin-bottom:16px;">
+      <h3>🎓 Placement</h3>
+      <div class="lost-summary">Level: <b>${esc(place.placement||place.level||'—')}</b>${place.date?` · tested ${formatDateShort(place.date)}`:''}</div>
+      ${(()=>{
+        const lvl = place.placement||place.level;
+        const sp = studyPointsForLevel(lvl);
+        if(!sp) return '';
+        return `<div style="margin-top:10px;font-size:12px;color:var(--muted);">Next study points for ${esc(lvl)}:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+            ${sp.slice(0,6).map(p=>`<span class="badge hw" title="${esc(p.outcome)}">${esc(p.tests.split(',')[0].trim())}</span>`).join('')}
+          </div>`;
+      })()}
+      <div class="no-print" style="margin-top:10px;"><a href="${PT_URL}?student=${encodeURIComponent(s.id)}" target="_blank" class="btn-ghost small" style="text-decoration:none;display:inline-block;">Open placement test →</a></div>
+    </div>` : `<div class="card section no-print" style="margin-bottom:16px;">
+      <h3>🎓 Placement</h3>
+      <div class="empty">No placement test on record. <a href="${PT_URL}?student=${encodeURIComponent(s.id)}" target="_blank">Run the placement test →</a></div>
+    </div>`}
+
+    <div class="card section" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>📊 Skill checkpoints</h3>
+        <button class="btn-ghost small no-print" onclick="openCheckpointModal(null,'${s.id}')">+ Checkpoint</button>
+      </div>
+      ${cps.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Date</th>${SKILLS.map(sk=>`<th>${sk.abbr}</th>`).join('')}<th>Notes</th><th class="no-print"></th></tr></thead>
+        <tbody>${cps.map((c,i)=>`<tr>
+          <td>${formatDateShort(c.date)}</td>
+          ${SKILLS.map(sk=>{
+            const g = c.grades?.[sk.key];
+            const tier = gradeTier(g);
+            const cl = tier==='good'?'green':tier==='mid'?'amber':tier==='low'?'red':'other';
+            return `<td>${g?`<span class="badge ${cl}">${g}</span>`:'—'}</td>`;
+          }).join('')}
+          <td>${esc(c.notes||'—')}</td>
+          <td class="no-print"><button class="icon-btn" onclick="openCheckpointModal(window._privCpIds[${i}],'${s.id}')">Edit</button></td>
+        </tr>`).join('')}</tbody></table></div>` : `<div class="empty">No checkpoints recorded.</div>`}
+    </div>
+
+    <div class="card section" style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>📚 Learning points ${lps.length?`<span style="font-weight:400;font-size:13px;color:var(--muted);">(${lpDone}/${lps.length} complete)</span>`:''}</h3>
+        <button class="btn-ghost small no-print" onclick="openLearningPointModal(null,'${s.id}')">+ Learning point</button>
+      </div>
+      ${lps.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Topic</th><th>Skill</th><th>Grade</th><th>Introduced</th><th>Status</th><th>Notes</th><th class="no-print"></th></tr></thead>
+        <tbody>${lps.map((p,i)=>{
+          const tier = gradeTier(p.grade);
+          const cl = tier==='good'?'green':tier==='mid'?'amber':tier==='low'?'red':'other';
+          return `<tr>
+            <td style="font-weight:600;">${esc(p.topic)}</td>
+            <td>${esc(SKILLS.find(k=>k.key===p.skill)?.label||p.skill||'—')}</td>
+            <td>${p.grade?`<span class="badge ${cl}">${p.grade}</span>`:'—'}</td>
+            <td>${p.dateIntroduced?formatDateShort(p.dateIntroduced):'—'}</td>
+            <td>${p.complete?`<span class="badge green">Done ${p.dateCompleted?formatDateShort(p.dateCompleted):''}</span>`:`<span class="badge amber">In progress</span>`}</td>
+            <td>${esc(p.notes||'—')}</td>
+            <td class="no-print"><button class="icon-btn" onclick="openLearningPointModal(window._privLpIds[${i}],'${s.id}')">Edit</button></td>
+          </tr>`;
+        }).join('')}</tbody></table></div>` : `<div class="empty">No learning points yet.</div>`}
+    </div>
+
+    <div class="card section" style="margin-bottom:16px;">
+      <h3>📅 Lesson history</h3>
+      ${lessons.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Status</th><th>Notes</th><th class="no-print">Quick</th></tr></thead>
+        <tbody>${lessons.map((l,i)=>`<tr>
+          <td>${formatDateShort(l.date)}</td>
+          <td>${l.time||'—'}</td>
+          <td>${l.duration} min</td>
+          <td><span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></td>
+          <td>${esc(l.notes||'—')}</td>
+          <td class="no-print" style="white-space:nowrap;">
+            ${l.status==='scheduled'?`
+              <button class="icon-btn" onclick="setLessonStatus(window._privLessonIds[${i}],'completed')" title="Mark completed">✓</button>
+              <button class="icon-btn danger" onclick="setLessonStatus(window._privLessonIds[${i}],'no-show')" title="No-show">✗</button>`:''}
+            <button class="icon-btn" onclick="openLessonModal(window._privLessonIds[${i}])">Edit</button>
+          </td>
+        </tr>`).join('')}</tbody></table></div>` : `<div class="empty">No lessons yet.</div>`}
+    </div>
+
+    <div class="card section">
+      <h3>💵 Payment history</h3>
+      ${pays.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Notes</th><th class="no-print"></th></tr></thead>
+        <tbody>${pays.map((p,i)=>`<tr>
+          <td>${formatDateShort(p.date)}</td>
+          <td style="font-weight:600;">${money(p.amount)}</td>
+          <td>${esc(p.method||'—')}</td>
+          <td>${esc(p.notes||'—')}</td>
+          <td class="no-print"><button class="icon-btn" onclick="openPaymentModal(window._privPayIds2[${i}])">Edit</button></td>
+        </tr>`).join('')}</tbody></table></div>` : `<div class="empty">No payments logged.</div>`}
+    </div>
+
+    ${(s.contactParents?.reason || s.contactParentsHistory?.length) ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
+      <h3>📞 Contact Parents</h3>
+      ${s.contactParents?.reason ? `
+        <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+            <span class="badge red">Pending</span><span class="badge other">${esc(s.contactParents.category)}</span>
+          </div>
+          <div style="font-size:13px;">${esc(s.contactParents.reason)}</div>
+        </div>`:''}
+      ${(s.contactParentsHistory||[]).map(h=>`
+        <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+            <span style="font-size:12px;color:var(--muted);">${formatDateShort(h.date)}</span>
+            <span class="badge other">${esc(h.category)}</span><span class="badge green">Done</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;">${esc(h.reason)}</div>
+          ${h.summary?`<div style="font-size:13px;color:var(--muted);font-style:italic;">${esc(h.summary)}</div>`:''}
+        </div>`).join('')}
+    </div>`:''}
+    ${s.notes?`<div class="card section" style="margin-top:16px;"><h3>📝 Notes</h3><div class="lost-summary">${esc(s.notes)}</div></div>`:''}
+  `;
+}
+
+/* ---------- checkpoint modal ---------- */
+function openCheckpointModal(id, studentId){
+  const c = id ? state.checkpoints.find(x=>x.id===id) : null;
+  showModal(`
+    <h3>${c?'Edit checkpoint':'New checkpoint'}</h3>
+    <div class="field"><label>Date</label><input id="cp-date" type="date" value="${c?.date||todayStr()}"></div>
+    ${SKILLS.map(sk=>`
+      <div class="field"><label>${sk.label}</label>
+        <select id="cp-${sk.key}">
+          <option value="">—</option>
+          ${GRADE_LETTERS.map(g=>`<option value="${g}" ${c?.grades?.[sk.key]===g?'selected':''}>${g}</option>`).join('')}
+        </select>
+      </div>`).join('')}
+    <div class="field"><label>Notes</label><textarea id="cp-notes" rows="2">${esc(c?.notes||'')}</textarea></div>
+    <div class="modal-actions" style="${c?'justify-content:space-between;':''}">
+      ${c?`<button class="icon-btn danger" onclick="deleteCheckpoint('${c.id}')">Delete</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveCheckpoint(${c?`'${c.id}'`:'null'},'${studentId}')">Save</button>
+      </div>
+    </div>
+  `);
+}
+function saveCheckpoint(id, studentId){
+  let c = id ? state.checkpoints.find(x=>x.id===id) : null;
+  if(!c){ c = { id: uid(), studentId }; state.checkpoints.push(c); }
+  c.date = document.getElementById('cp-date').value;
+  c.notes = document.getElementById('cp-notes').value;
+  c.grades = {};
+  SKILLS.forEach(sk=>{
+    const v = document.getElementById('cp-'+sk.key).value;
+    if(v) c.grades[sk.key] = v;
+  });
+  persistPrivate(); closeModal(); renderPrivStudent();
+}
+function deleteCheckpoint(id){
+  if(!confirm('Delete this checkpoint?')) return;
+  state.checkpoints = state.checkpoints.filter(c=>c.id!==id);
+  persistPrivate(); closeModal(); renderPrivStudent();
+}
+
+/* ---------- learning point modal ---------- */
+function openLearningPointModal(id, studentId){
+  const p = id ? state.learningPoints.find(x=>x.id===id) : null;
+  showModal(`
+    <h3>${p?'Edit learning point':'New learning point'}</h3>
+    <div class="field"><label>Topic</label><input id="lp-topic" type="text" value="${esc(p?.topic||'')}" placeholder="e.g. Present perfect with for/since"></div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Skill</label>
+        <select id="lp-skill">
+          <option value="">—</option>
+          ${SKILLS.map(sk=>`<option value="${sk.key}" ${p?.skill===sk.key?'selected':''}>${sk.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="flex:1;"><label>Grade</label>
+        <select id="lp-grade">
+          <option value="">—</option>
+          ${GRADE_LETTERS.map(g=>`<option value="${g}" ${p?.grade===g?'selected':''}>${g}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Date introduced</label><input id="lp-date" type="date" value="${p?.dateIntroduced||todayStr()}"></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+      <input type="checkbox" id="lp-complete" ${p?.complete?'checked':''}> Mastered / complete
+    </label></div>
+    <div class="field"><label>Notes</label><textarea id="lp-notes" rows="2">${esc(p?.notes||'')}</textarea></div>
+    <div class="modal-actions" style="${p?'justify-content:space-between;':''}">
+      ${p?`<button class="icon-btn danger" onclick="deleteLearningPoint('${p.id}')">Delete</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveLearningPoint(${p?`'${p.id}'`:'null'},'${studentId}')">Save</button>
+      </div>
+    </div>
+  `);
+}
+function saveLearningPoint(id, studentId){
+  const topic = document.getElementById('lp-topic').value.trim();
+  if(!topic){ alert('Topic is required.'); return; }
+  let p = id ? state.learningPoints.find(x=>x.id===id) : null;
+  if(!p){ p = { id: uid(), studentId }; state.learningPoints.push(p); }
+  p.topic = topic;
+  p.skill = document.getElementById('lp-skill').value;
+  p.grade = document.getElementById('lp-grade').value;
+  p.dateIntroduced = document.getElementById('lp-date').value;
+  p.notes = document.getElementById('lp-notes').value;
+  const wasComplete = p.complete;
+  p.complete = document.getElementById('lp-complete').checked;
+  if(p.complete && !wasComplete && !p.dateCompleted) p.dateCompleted = todayStr();
+  if(!p.complete) p.dateCompleted = '';
+  persistPrivate(); closeModal(); renderPrivStudent();
+}
+function deleteLearningPoint(id){
+  if(!confirm('Delete this learning point?')) return;
+  state.learningPoints = state.learningPoints.filter(p=>p.id!==id);
+  persistPrivate(); closeModal(); renderPrivStudent();
 }
 
 /* ================= INIT ================= */
@@ -2086,6 +3105,14 @@ async function init(){
   state.holidays = await loadKey('holidays', []);
   state.sessionMeta = await loadKey('sessionMeta', {});
   state.lessonNotes = await loadKey('lessonNotes', {});
+  state.privateStudents = await loadKey('privateStudents', []);
+  state.privateLessons = await loadKey('privateLessons', []);
+  state.payments = await loadKey('payments', []);
+  state.checkpoints = await loadKey('checkpoints', []);
+  state.learningPoints = await loadKey('learningPoints', []);
+  state.privateSettings = await loadKey('privateSettings', { overdueThresholdDays: 14 });
+  // refresh recurring placeholders for active students on load
+  state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
   updateBackupStatus();
   navigate('dashboard');
 }
