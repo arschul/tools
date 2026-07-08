@@ -231,6 +231,13 @@
   .stepper{display:flex;align-items:center;gap:10px;}
   .stepper button{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:15px;cursor:pointer;font-family:inherit;}
   .stepper .val{font-weight:600;min-width:50px;text-align:center;font-size:13px;}
+  .quick-num{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .num-input{width:64px;height:38px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:14px;font-weight:600;text-align:center;}
+  .qbtn{min-width:44px;height:38px;border-radius:8px;border:1px solid var(--border);background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--accent);}
+  .qbtn:hover{background:var(--accent-soft);}
+  .qbtn.zero{color:var(--muted);}
+  .ro-val{font-size:14px;font-weight:600;padding:7px 0;color:var(--text);}
+  .locked-session .seg button[disabled]{opacity:.55;cursor:not-allowed;}
   .pill-group{display:flex;gap:6px;flex-wrap:wrap;}
   .pill{border:1px solid var(--border);background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);}
   .pill.on.green{background:var(--green-soft);color:var(--green);border-color:var(--green);}
@@ -314,11 +321,22 @@
     .sidebar{width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;overflow-x:auto;}
     .sidebar .brand{margin-bottom:0;margin-right:8px;flex-shrink:0;}
     .nav-item{flex-shrink:0;margin-bottom:0;white-space:nowrap;}
+    #backup-status, .sidebar-divider{display:none;}
     .main{padding:18px;}
     .stat-row{grid-template-columns:repeat(2,1fr);}
-    .dash-grid{grid-template-columns:1fr;}
+    .dash-grid{grid-template-columns:1fr !important;}
     .drawer{grid-template-columns:1fr;}
     .cal-cell{min-height:60px;}
+    .dash-grid{grid-template-columns:1fr;}
+  }
+  @media(max-width:520px){
+    .roster-row{flex-wrap:wrap;gap:10px;}
+    .roster-row .student-name{flex-basis:100%;}
+    .seg button{padding:10px 18px;font-size:14px;}
+    .detail-btn{padding:10px 14px;}
+    .num-input{height:44px;width:70px;}
+    .qbtn{height:44px;min-width:48px;}
+    .pill{padding:9px 14px;}
   }
 </style>
 </head>
@@ -348,6 +366,7 @@
     Reports
   </div>
   <div class="sidebar-divider"></div>
+  <div id="backup-status" style="font-size:11px;color:#7d869c;padding:2px 12px 8px;"></div>
   <div class="nav-item" onclick="exportData()">
     <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div>
     Backup data
@@ -385,6 +404,9 @@ let state = {
   events: [],
   holidays: [],
   sessionMeta: {},
+  lessonNotes: {},
+  showArchived: false,
+  showDashEC: false,
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
@@ -445,13 +467,20 @@ const T = {
     englishClubBadge: '⭐ English Club',
     langToggle: 'PT',
     attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
-    englishLabels: {excellent:'Excellent', improve:'Room for improvement', unacceptable:'Unacceptable'},
+    englishLabels: {excellent:'Excellent', improve:'Needs some reminders', unacceptable:'Needs consistent reminders'},
     missedHwFlag: '⚠ Missed HW',
     lateHwSection: 'Previous session HW (was absent)',
     lateHwLate: 'Brought late',
     lateHwNo: 'Did not bring',
     lateHwCol: 'Late HW',
     lateHwLabels: {late:'Brought late', no_hw:'Did not bring'},
+    participation: 'Participation',
+    participationLabels: {great:'Great', good:'Good', low:'Low'},
+    missedLabel: 'Missed',
+    timeLost: 'Total time lost',
+    equivClasses: 'classes',
+    of: 'of',
+    expectedShort: 'expected',
   },
   pt: {
     reportTitle: 'Relatório do Aluno',
@@ -499,13 +528,20 @@ const T = {
     englishClubBadge: '⭐ English Club',
     langToggle: 'EN',
     attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
-    englishLabels: {excellent:'Excelente', improve:'Pode melhorar', unacceptable:'Inaceitável'},
+    englishLabels: {excellent:'Excelente', improve:'Precisa de alguns lembretes', unacceptable:'Precisa de lembretes constantes'},
     missedHwFlag: '⚠ Dever pendente',
     lateHwSection: 'Dever da aula anterior (estava ausente)',
     lateHwLate: 'Trouxe atrasado',
     lateHwNo: 'Não trouxe',
     lateHwCol: 'Dever atrasado',
     lateHwLabels: {late:'Trouxe atrasado', no_hw:'Não trouxe'},
+    participation: 'Participação',
+    participationLabels: {great:'Ótima', good:'Boa', low:'Baixa'},
+    missedLabel: 'Perdeu',
+    timeLost: 'Tempo total perdido',
+    equivClasses: 'aulas',
+    of: 'de',
+    expectedShort: 'esperadas',
   }
 };
 
@@ -563,6 +599,8 @@ function scheduleLabel(cls){
   return days.length ? days.map(d=>DAY_ABBR[d]).join(' / ') : 'No days set';
 }
 function classById(id){ return state.classes.find(c=>c.id===id); }
+function activeClasses(){ return state.classes.filter(c=>!c.archived); }
+function archivedClasses(){ return state.classes.filter(c=>c.archived); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function getPreviousClassDate(cls, fromDateStr){
   const days = getClassDays(cls);
@@ -581,10 +619,10 @@ function esc(str){
 function eventTypeLabel(type){ return {hw:'Homework',test:'Test',project:'Project',other:'Other'}[type] || type; }
 function attendanceLabel(a){ return {present:'Present',late:'Late',absent:'Absent'}[a] || '—'; }
 function attendanceBadgeClass(a){ return {present:'green',late:'amber',absent:'red'}[a] || ''; }
-function englishLabel(e){ return {excellent:'Excellent',improve:'Room for improvement',unacceptable:'Unacceptable'}[e] || '—'; }
+function englishLabel(e){ return {excellent:'Excellent',improve:'Needs some reminders',unacceptable:'Needs consistent reminders'}[e] || '—'; }
 function englishBadgeClass(e){ return {excellent:'green',improve:'amber',unacceptable:'red'}[e] || ''; }
 function splitSessionKey(key){ const i=key.indexOf('_'); return [key.slice(0,i), key.slice(i+1)]; }
-function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', notes:''}; }
+function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', participation:'good', notes:''}; }
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
@@ -674,7 +712,7 @@ function renderDashboard(){
   }
 }
 function _renderDashboard(el){
-  if(!state.classes.length){
+  if(!activeClasses().length){
     el.innerHTML = `
       <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(todayStr())}</div></div></div>
       <div class="card empty-card">
@@ -686,7 +724,7 @@ function _renderDashboard(el){
   const today = todayStr();
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
-  const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>{
+  const todaysClasses = todayHoliday ? [] : activeClasses().filter(c=>{
     if(!getClassDays(c).includes(dow)) return false;
     if(c.startDate && today < c.startDate) return false;
     if(c.endDate && today > c.endDate) return false;
@@ -696,7 +734,7 @@ function _renderDashboard(el){
 
   // — Pending session completions (today + recent past days with data but not marked complete) —
   const pendingCompletions = [];
-  state.classes.forEach(c=>{
+  activeClasses().forEach(c=>{
     const days = getClassDays(c);
     for(let i=0; i<8; i++){
       const d = new Date(today+'T00:00:00');
@@ -751,7 +789,7 @@ function _renderDashboard(el){
     : `<div class="empty">No upcoming items. <a onclick="navigate('calendar')">Add one in Calendar</a></div>`;
 
   // — Contact Parents —
-  const cpStudents = state.students.filter(s=>s.contactParents?.reason);
+  const cpStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; });
   window._dashCpIds = cpStudents.map(s=>s.id);
   const cpHtml = cpStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
@@ -772,12 +810,15 @@ function _renderDashboard(el){
     </div>` : '';
 
   // — English Club —
-  const ecStudents = state.students.filter(s=>s.englishClub);
+  const ecStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; });
   window._dashEcIds = ecStudents.map(s=>s.id);
   const ecHtml = ecStudents.length ? `
     <div class="card section" style="margin-top:16px;">
-      <h3>⭐ English Club</h3>
-      ${ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
+      <div class="dash-row-left" style="cursor:pointer;" onclick="state.showDashEC=!state.showDashEC;renderDashboard();">
+        <span class="chevron">${state.showDashEC?'▾':'▸'}</span>
+        <h3 style="margin:0;">⭐ English Club (${ecStudents.length})</h3>
+      </div>
+      ${state.showDashEC ? ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
             ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
@@ -787,7 +828,7 @@ function _renderDashboard(el){
             </div>
           </div>
           <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashEcIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-        </div>`; }).join('')}
+        </div>`; }).join('') : ''}
     </div>` : '';
 
   // — Pending completions —
@@ -816,8 +857,8 @@ function _renderDashboard(el){
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
     <div class="stat-row">
-      <div class="card stat"><div class="stat-num">${state.classes.length}</div><div class="stat-label">Classes</div></div>
-      <div class="card stat"><div class="stat-num">${state.students.length}</div><div class="stat-label">Students</div></div>
+      <div class="card stat"><div class="stat-num">${activeClasses().length}</div><div class="stat-label">Classes</div></div>
+      <div class="card stat"><div class="stat-num">${state.students.filter(s=>{const c=classById(s.classId);return c&&!c.archived;}).length}</div><div class="stat-label">Students</div></div>
       <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
     </div>
     ${pendingHtml}
@@ -832,35 +873,49 @@ function _renderDashboard(el){
 
 /* ================= CLASSES & STUDENTS ================= */
 function renderClasses(){
+  const active = activeClasses();
+  const archived = archivedClasses();
+  const activeStudentCount = state.students.filter(s=>{ const c=classById(s.classId); return c && !c.archived; }).length;
   document.getElementById('view-classes').innerHTML = `
     <div class="topbar">
-      <div><h1>Classes &amp; Students</h1><div class="meta">${state.classes.length} classes · ${state.students.length} students</div></div>
+      <div><h1>Classes &amp; Students</h1><div class="meta">${active.length} classes · ${activeStudentCount} students</div></div>
       <button class="btn-accent" onclick="openClassModal()">+ Add class</button>
     </div>
-    ${state.classes.length ? state.classes.map(renderClassCard).join('') : `
+    ${active.length ? active.map(c=>renderClassCard(c,false)).join('') : `
       <div class="card empty-card">
-        <p>No classes yet.</p>
+        <p>No active classes.</p>
         <button class="btn-accent" onclick="openClassModal()">+ Add your first class</button>
       </div>`}
+    ${archived.length ? `
+      <div style="margin-top:24px;">
+        <div class="dash-row-left" style="cursor:pointer;margin-bottom:8px;" onclick="state.showArchived=!state.showArchived;renderClasses();">
+          <span class="chevron">${state.showArchived?'▾':'▸'}</span>
+          <h3 style="font-size:15px;color:var(--muted);">Archived classes (${archived.length})</h3>
+        </div>
+        ${state.showArchived ? archived.map(c=>renderClassCard(c,true)).join('') : ''}
+      </div>` : ''}
   `;
 }
-function renderClassCard(c){
+function renderClassCard(c, isArchived){
   const students = studentsInClass(c.id);
   const expanded = state.expandedClassId === c.id;
   return `
-    <div class="card class-card">
+    <div class="card class-card" ${isArchived?'style="opacity:.75;"':''}>
       <div class="class-card-head">
         <div class="dash-row-left" onclick="toggleClassExpand('${c.id}')">
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
-            <div class="dash-row-title">${esc(c.name)}</div>
+            <div class="dash-row-title">${esc(c.name)}${isArchived?` <span class="badge other" style="margin-left:6px;">Archived</span>`:''}</div>
             <div class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students</div>
           </div>
           <span class="chevron" style="margin-left:8px;">${expanded?'▾':'▸'}</span>
         </div>
         <div class="class-card-actions">
-          <button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
-          <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>
+          ${isArchived
+            ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">↩ Unarchive</button>
+               <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
+            : `<button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
+               <button class="icon-btn" onclick="archiveClass('${c.id}')">📦 Archive</button>`}
         </div>
       </div>
       ${expanded ? `
@@ -931,9 +986,12 @@ function openClassModal(classId){
       </div>
       <input type="hidden" id="cm-color" value="${c?.color||PALETTE[0]}">
     </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn-accent" onclick="saveClass(${c?`'${c.id}'`:'null'})">${c?'Save changes':'Add class'}</button>
+    <div class="modal-actions" style="${c?'justify-content:space-between;':''}">
+      ${c?`<button class="icon-btn danger" onclick="closeModal();deleteClass('${c.id}')">Delete class</button>`:''}
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveClass(${c?`'${c.id}'`:'null'})">${c?'Save changes':'Add class'}</button>
+      </div>
     </div>
   `);
 }
@@ -981,6 +1039,33 @@ function deleteClass(classId){
   scheduleSave('students', state.students);
   scheduleSave('sessions', state.sessions);
   scheduleSave('events', state.events);
+  renderClasses();
+}
+function archiveClass(classId){
+  const c = classById(classId);
+  if(!c) return;
+  // Contact Parents must be resolved before archiving (per spec Q1)
+  const pending = state.students.filter(s=>s.classId===classId && s.contactParents?.reason);
+  if(pending.length){
+    alert(`Cannot archive: ${pending.length} student(s) still have an unresolved Contact Parents flag (${pending.map(s=>s.name).join(', ')}). Mark those as done first.`);
+    return;
+  }
+  if(!confirm(`Archive "${c.name}"? It will be removed from Roll Call, Calendar and the Dashboard, but all its data and reports are kept. You can unarchive anytime.`)) return;
+  c.archived = true;
+  c.archivedAt = todayStr();
+  // Clear English Club flags for this class's students (per spec Q1)
+  state.students.forEach(s=>{ if(s.classId===classId && s.englishClub) s.englishClub=false; });
+  if(state.expandedClassId===classId) state.expandedClassId=null;
+  scheduleSave('classes', state.classes);
+  scheduleSave('students', state.students);
+  renderClasses();
+}
+function unarchiveClass(classId){
+  const c = classById(classId);
+  if(!c) return;
+  c.archived = false;
+  delete c.archivedAt;
+  scheduleSave('classes', state.classes);
   renderClasses();
 }
 function addStudent(classId){
@@ -1077,13 +1162,14 @@ function deleteStudent(studentId){
 
 /* ================= ROLL CALL ================= */
 function renderRollCall(){
-  if(!state.classes.length){
+  const active = activeClasses();
+  if(!active.length){
     document.getElementById('view-rollcall').innerHTML = `
       <div class="topbar"><div><h1>Roll Call</h1></div></div>
       <div class="card empty-card">Add a class first in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>`;
     return;
   }
-  if(!classById(state.rollcall.classId)) state.rollcall.classId = state.classes[0].id;
+  if(!classById(state.rollcall.classId) || classById(state.rollcall.classId).archived) state.rollcall.classId = active[0].id;
   const cls = classById(state.rollcall.classId);
   const date = state.rollcall.date;
   const students = studentsInClass(cls.id);
@@ -1111,12 +1197,15 @@ function renderRollCall(){
     students.filter(s=>prevSession[s.id]?.attendance==='absent').map(s=>s.id)
   );
 
+  // Only explicitly-completed sessions are read-only (per spec Q5 = option a)
+  const locked = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
+
   document.getElementById('view-rollcall').innerHTML = `
     <div class="topbar">
       <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
       <div class="rollcall-controls">
         <select onchange="setRollcallClass(this.value)">
-          ${state.classes.map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+          ${activeClasses().map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}</option>`).join('')}
         </select>
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
       </div>
@@ -1127,22 +1216,35 @@ function renderRollCall(){
       ${(()=>{
         const isFuture = date > todayStr();
         const isToday = date === todayStr();
-        const completed = isSessionCompleted(cls.id, date);
+        const explicitlyCompleted = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
         if(isFuture) return `<div class="warn-banner">📅 This class is in the future — it won't be counted in reports until it takes place.</div>`;
-        if(completed) return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ This session is marked as completed and counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">Reopen</button></div>`;
+        if(explicitlyCompleted) return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">🔒 Completed session — read-only, counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">Reopen to edit</button></div>`;
         if(isToday) return `<div class="warn-banner">⏳ Today's class isn't counted in reports yet. Mark it completed when the class is over. <button class="btn-accent" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">✓ Complete session</button></div>`;
-        // past date, not yet marked — auto-counts but offer explicit complete
-        return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports.</div>`;
+        return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">🔒 Lock (complete)</button></div>`;
       })()}
+      <div class="field" style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;">Today's lesson content ${locked?'':'<span style="font-weight:400;">(what was covered — shown on absent reports)</span>'}</label>
+        <input type="text" value="${esc(getLessonNote(cls.id, date))}" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43 assigned" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;${locked?'background:var(--gray-soft);':''}" oninput="setLessonNote('${cls.id}','${date}', this.value)">
+      </div>
       <div class="rollcall-actions">
-        <button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>
+        ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>`}
         <span class="save-indicator" id="save-indicator"></span>
       </div>
-      <div class="card roster-list">
-        ${students.map(s=>renderRosterRow(s, session[s.id], absentPrevSession.has(s.id))).join('')}
+      <div class="card roster-list ${locked?'locked-session':''}">
+        ${students.map(s=>renderRosterRow(s, session[s.id], absentPrevSession.has(s.id), locked)).join('')}
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>` : ''}
   `;
+}
+function getLessonNote(classId, date){
+  return (state.lessonNotes && state.lessonNotes[classId+'_'+date]) || '';
+}
+function setLessonNote(classId, date, val){
+  if(!state.lessonNotes) state.lessonNotes = {};
+  const key = classId+'_'+date;
+  if(val && val.trim()) state.lessonNotes[key] = val;
+  else delete state.lessonNotes[key];
+  scheduleSave('lessonNotes', state.lessonNotes);
 }
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
@@ -1158,7 +1260,7 @@ function toggleSessionCompleted(classId, date){
   scheduleSave('sessionMeta', state.sessionMeta);
   renderRollCall();
 }
-function renderRosterRow(s, rec, missedHw=false){
+function renderRosterRow(s, rec, missedHw=false, locked=false){
   const open = state.openDrawer === s.id;
   const hwOutcome = rec?.lateHwOutcome || null;
   const showFlag = missedHw && !hwOutcome;
@@ -1171,16 +1273,28 @@ function renderRosterRow(s, rec, missedHw=false){
         ${missedHw && hwOutcome==='no_hw' ? `<span class="badge red" style="margin-left:8px;font-size:11px;">✗ No HW</span>` : ''}
       </div>
       <div class="seg" onclick="event.stopPropagation()">
-        <button class="present ${rec?.attendance!=='absent'?'on':''}" onclick="setAttendance('${s.id}','present')">Present</button>
-        <button class="absent ${rec?.attendance==='absent'?'on':''}" onclick="setAttendance('${s.id}','absent')">Absent</button>
+        <button class="present ${rec?.attendance!=='absent'?'on':''}" ${locked?'disabled':''} onclick="setAttendance('${s.id}','present')">Present</button>
+        <button class="absent ${rec?.attendance==='absent'?'on':''}" ${locked?'disabled':''} onclick="setAttendance('${s.id}','absent')">Absent</button>
       </div>
       <div class="detail-btn">Details ${open?'▾':'▸'}</div>
     </div>
-    <div class="drawer">${open?renderDrawer(s, rec, missedHw):''}</div>
+    <div class="drawer">${open?renderDrawer(s, rec, missedHw, locked):''}</div>
   `;
 }
-function renderDrawer(s, rec, missedHw=false){
+function renderDrawer(s, rec, missedHw=false, locked=false){
   const hwOutcome = rec?.lateHwOutcome || null;
+  if(locked){
+    // Read-only summary view
+    return `
+      <div class="field"><label>Late (minutes)</label><div class="ro-val">${rec.lateMin||0} min</div></div>
+      <div class="field"><label>Left early (minutes)</label><div class="ro-val">${rec.leftEarlyMin||0} min</div></div>
+      <div class="field"><label>Phone used (times)</label><div class="ro-val">${rec.phone||0}</div></div>
+      <div class="field"><label>Homework (%)</label><div class="ro-val">${rec.hw??100}%</div></div>
+      <div class="field"><label>English only</label><div class="ro-val">${englishLabel(rec.english)}</div></div>
+      <div class="field"><label>Participation</label><div class="ro-val">${rec.participation?({great:'Great',good:'Good',low:'Low'}[rec.participation]):'—'}</div></div>
+      <div class="field full"><label>Behavior notes</label><div class="ro-val">${rec.notes?esc(rec.notes):'—'}</div></div>
+    `;
+  }
   return `
     ${missedHw ? `
     <div class="field full" style="grid-column:1/-1;background:var(--amber-soft);border-radius:10px;padding:12px 14px;">
@@ -1192,38 +1306,50 @@ function renderDrawer(s, rec, missedHw=false){
       </div>
     </div>` : ''}
     <div class="field"><label>Late (minutes)</label>
-      <div class="stepper">
-        <button onclick="adjustField('${s.id}','lateMin',-1)">−</button>
-        <span class="val">${rec.lateMin} min</span>
-        <button onclick="adjustField('${s.id}','lateMin',1)">+</button>
+      <div class="quick-num">
+        <input type="number" min="0" class="num-input" value="${rec.lateMin||0}" onchange="setNumField('${s.id}','lateMin',this.value)">
+        <button class="qbtn" onclick="bumpField('${s.id}','lateMin',5)">+5</button>
+        <button class="qbtn" onclick="bumpField('${s.id}','lateMin',10)">+10</button>
+        <button class="qbtn" onclick="bumpField('${s.id}','lateMin',15)">+15</button>
+        <button class="qbtn zero" onclick="setNumField('${s.id}','lateMin',0)">0</button>
       </div>
     </div>
     <div class="field"><label>Left early (minutes)</label>
-      <div class="stepper">
-        <button onclick="adjustField('${s.id}','leftEarlyMin',-1)">−</button>
-        <span class="val">${rec.leftEarlyMin} min</span>
-        <button onclick="adjustField('${s.id}','leftEarlyMin',1)">+</button>
+      <div class="quick-num">
+        <input type="number" min="0" class="num-input" value="${rec.leftEarlyMin||0}" onchange="setNumField('${s.id}','leftEarlyMin',this.value)">
+        <button class="qbtn" onclick="bumpField('${s.id}','leftEarlyMin',5)">+5</button>
+        <button class="qbtn" onclick="bumpField('${s.id}','leftEarlyMin',10)">+10</button>
+        <button class="qbtn" onclick="bumpField('${s.id}','leftEarlyMin',15)">+15</button>
+        <button class="qbtn zero" onclick="setNumField('${s.id}','leftEarlyMin',0)">0</button>
       </div>
     </div>
     <div class="field"><label>Phone used (times)</label>
-      <div class="stepper">
-        <button onclick="adjustField('${s.id}','phone',-1)">−</button>
-        <span class="val">${rec.phone}</span>
-        <button onclick="adjustField('${s.id}','phone',1)">+</button>
+      <div class="quick-num">
+        <input type="number" min="0" class="num-input" value="${rec.phone||0}" onchange="setNumField('${s.id}','phone',this.value)">
+        <button class="qbtn" onclick="bumpField('${s.id}','phone',1)">+1</button>
+        <button class="qbtn zero" onclick="setNumField('${s.id}','phone',0)">0</button>
       </div>
     </div>
     <div class="field"><label>Homework (%)</label>
-      <div class="stepper">
-        <button onclick="adjustField('${s.id}','hw',-10)">−</button>
-        <span class="val">${rec.hw??100}%</span>
-        <button onclick="adjustField('${s.id}','hw',10)">+</button>
+      <div class="quick-num">
+        <input type="number" min="0" max="100" step="10" class="num-input" value="${rec.hw??100}" onchange="setNumField('${s.id}','hw',this.value,0,100)">
+        <button class="qbtn" onclick="setNumField('${s.id}','hw',0,0,100)">0</button>
+        <button class="qbtn" onclick="setNumField('${s.id}','hw',50,0,100)">50</button>
+        <button class="qbtn" onclick="setNumField('${s.id}','hw',100,0,100)">100</button>
       </div>
     </div>
     <div class="field full"><label>English only</label>
       <div class="pill-group">
         <div class="pill green ${rec.english==='excellent'?'on':''}" onclick="setField('${s.id}','english','excellent')">Excellent</div>
-        <div class="pill amber ${rec.english==='improve'?'on':''}" onclick="setField('${s.id}','english','improve')">Room for improvement</div>
-        <div class="pill red ${rec.english==='unacceptable'?'on':''}" onclick="setField('${s.id}','english','unacceptable')">Unacceptable</div>
+        <div class="pill amber ${rec.english==='improve'?'on':''}" onclick="setField('${s.id}','english','improve')">Needs some reminders</div>
+        <div class="pill red ${rec.english==='unacceptable'?'on':''}" onclick="setField('${s.id}','english','unacceptable')">Needs consistent reminders</div>
+      </div>
+    </div>
+    <div class="field full"><label>Participation</label>
+      <div class="pill-group">
+        <div class="pill green ${rec.participation==='great'?'on':''}" onclick="setField('${s.id}','participation','great')">Great</div>
+        <div class="pill amber ${rec.participation==='good'?'on':''}" onclick="setField('${s.id}','participation','good')">Good</div>
+        <div class="pill red ${rec.participation==='low'?'on':''}" onclick="setField('${s.id}','participation','low')">Low</div>
       </div>
     </div>
     <div class="field full"><label>Behavior notes</label>
@@ -1250,6 +1376,20 @@ function adjustField(studentId, field, delta){
   } else {
     rec[field] = Math.max(0, rec[field] + delta);
   }
+  persistSessions();
+  renderRollCall();
+}
+function setNumField(studentId, field, value, min=0, max=Infinity){
+  const rec = getCurrentRecord(studentId);
+  let n = parseInt(value);
+  if(isNaN(n)) n = min;
+  rec[field] = Math.min(max, Math.max(min, n));
+  persistSessions();
+  renderRollCall();
+}
+function bumpField(studentId, field, delta){
+  const rec = getCurrentRecord(studentId);
+  rec[field] = Math.max(0, (rec[field]||0) + delta);
   persistSessions();
   renderRollCall();
 }
@@ -1342,6 +1482,17 @@ function renderStudentProfile(){
   const absentMin = absent * duration;
   const inClassMin = Math.max(0, totalPossibleMin - lostLateMin - lostEarlyMin - absentMin);
 
+  // Participation summary
+  const partRecords = attended.filter(r=>r.participation);
+  const partGreat = partRecords.filter(r=>r.participation==='great').length;
+  const partGood = partRecords.filter(r=>r.participation==='good').length;
+  const partLow = partRecords.filter(r=>r.participation==='low').length;
+  const partScore = partRecords.length ? Math.round(100*(partGreat*1 + partGood*0.5)/partRecords.length) : null;
+
+  // Time lost equivalent (late + left early + absences), in equivalent classes
+  const totalLostMin = lostLateMin + lostEarlyMin + absentMin;
+  const lostEquivClasses = (totalLostMin/duration).toFixed(1);
+
   const classesLostHtml = expected!=null
     ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
     : t.classesAbsent(classesLost, null) + ` <a class="no-print" onclick="navigate('classes');setTimeout(()=>openClassModal('${cls?.id}'),0)">${t.setDates}</a><span class="print-only">${t.setDates}</span>${t.setDatesRest}`;
@@ -1351,7 +1502,8 @@ function renderStudentProfile(){
       <div>
         <button class="btn-ghost back-btn no-print" onclick="navigate('${returnView}')">${returnLabel}</button>
         <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">${t.englishClubBadge}</span>`:''}${student.contactParents?.reason?` <span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(student.contactParents.category)}</span>`:''}</h1>
-        <div class="meta">${cls?esc(cls.name):'No class'}${cls?.startDate&&cls?.endDate?` · ${formatDateShort(cls.startDate)} – ${formatDateShort(cls.endDate)}`:''}</div>
+        <div class="meta">${cls?esc(cls.name):'No class'}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:6px;">${t.reportPeriod}: ${fromVal?formatDateShort(fromVal):t.allTime}${fromVal||toVal?` – ${toVal?formatDateShort(toVal):t.present2}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
@@ -1369,9 +1521,6 @@ function renderStudentProfile(){
         <button class="btn-ghost small" onclick="navigate('${returnView}')" style="margin-left:auto;">← Change</button>
       </div>
     </div>
-    <div class="print-only" style="margin-bottom:10px;font-size:12px;color:var(--muted);">
-      ${t.period}: ${fromVal?formatDateShort(fromVal):t.start} – ${toVal?formatDateShort(toVal):t.present2}
-    </div>
     <div class="stat-row">
       <div class="card stat"><div class="stat-num">${total}</div><div class="stat-label">${t.sessionsLogged}</div></div>
       <div class="card stat"><div class="stat-num">${present}</div><div class="stat-label">${t.present}</div></div>
@@ -1379,6 +1528,7 @@ function renderStudentProfile(){
       <div class="card stat"><div class="stat-num">${absent}</div><div class="stat-label">${t.absent}</div></div>
       <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">${t.phoneUses}</div></div>
       <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
+      <div class="card stat"><div class="stat-num">${partScore!=null?partScore+'%':'—'}</div><div class="stat-label">${t.participation}</div></div>
     </div>
     <div class="charts-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
       <div class="card chart-card">
@@ -1412,10 +1562,21 @@ function renderStudentProfile(){
           ], avg+'%', state.reportLang==='pt'?'média':'average');
         })()}
       </div>` : ''}
+      ${partRecords.length ? `
+      <div class="card chart-card">
+        <h3>${t.participation}</h3>
+        <div class="chart-note">${t.basedOn(partRecords.length)}</div>
+        ${renderDonut([
+          {label:t.participationLabels.great, value:partGreat, color:'var(--green)'},
+          {label:t.participationLabels.good, value:partGood, color:'var(--amber)'},
+          {label:t.participationLabels.low, value:partLow, color:'var(--red)'}
+        ], partScore!=null?partScore+'%':'—', t.participation)}
+      </div>` : ''}
     </div>
     <div class="card section">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
+      ${total ? `<div class="lost-summary" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${t.timeLost}: <b>${totalLostMin} min ≈ ${lostEquivClasses} ${t.equivClasses}</b>${expected?` (${t.of} ${expected} ${t.expectedShort})`:''}.</div>` : ''}
     </div>
     ${(student.contactParents?.reason || student.contactParentsHistory?.length) ? `
     <div class="card section" style="border-left:4px solid var(--red);">
@@ -1439,9 +1600,11 @@ function renderStudentProfile(){
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
       <table>
-        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.lateHwCol}</th><th>${t.englishOnly}</th><th>${t.notes}</th></tr></thead>
+        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.lateHwCol}</th><th>${t.englishOnly}</th><th>${t.participation}</th><th>${t.notes}</th></tr></thead>
         <tbody>
           ${(()=>{
+            const partLabel = p => p?({great:t.participationLabels.great,good:t.participationLabels.good,low:t.participationLabels.low}[p]):null;
+            const partBadge = p => p==='great'?'green':p==='good'?'amber':'red';
             // Merge records and holiday rows, sort by date descending
             const allRows = [
               ...records.map(r=>({...r, _type:'record'})),
@@ -1451,8 +1614,14 @@ function renderStudentProfile(){
               if(r._type==='holiday') return `
                 <tr style="background:var(--purple-soft);">
                   <td>${formatDateShort(r.date)}</td>
-                  <td colspan="7" style="color:var(--purple);font-weight:600;">🎉 ${esc(r._label)}</td>
+                  <td colspan="9" style="color:var(--purple);font-weight:600;">🎉 ${esc(r._label)}</td>
                 </tr>`;
+              const lessonNote = getLessonNote(student.classId, r.date);
+              const missedRow = (r.attendance==='absent' && lessonNote) ? `
+                <tr style="background:var(--red-soft);">
+                  <td></td>
+                  <td colspan="9" style="font-size:12px;color:var(--red);font-style:italic;">${t.missedLabel}: ${esc(lessonNote)}</td>
+                </tr>` : '';
               return `
                 <tr>
                   <td>${formatDateShort(r.date)}</td>
@@ -1463,8 +1632,9 @@ function renderStudentProfile(){
                   <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
                   <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>` : '—'}</td>
                   <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
+                  <td>${r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:'—'}</td>
                   <td>${r.notes?esc(r.notes):'—'}</td>
-                </tr>`;
+                </tr>${missedRow}`;
             }).join('');
           })()}
         </tbody>
@@ -1492,6 +1662,8 @@ function renderReports(){
   const selClassId = state.reportsSelection.classId;
   const fromVal = state.reportRange.from;
   const toVal   = state.reportRange.to;
+  const active = activeClasses();
+  const archived = archivedClasses();
 
   document.getElementById('view-reports').innerHTML = `
     <div class="topbar"><div><h1>Reports</h1><div class="meta">Printable attendance &amp; observation reports per student</div></div></div>
@@ -1499,7 +1671,8 @@ function renderReports(){
       <div class="card section" style="margin-bottom:16px;">
         <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
           <select onchange="setReportsClass(this.value)">
-            ${state.classes.map(c=>`<option value="${c.id}" ${c.id===selClassId?'selected':''}>${esc(c.name)}</option>`).join('')}
+            ${active.length?`<optgroup label="Active">${active.map(c=>`<option value="${c.id}" ${c.id===selClassId?'selected':''}>${esc(c.name)}</option>`).join('')}</optgroup>`:''}
+            ${archived.length?`<optgroup label="Archived">${archived.map(c=>`<option value="${c.id}" ${c.id===selClassId?'selected':''}>${esc(c.name)} (archived)</option>`).join('')}</optgroup>`:''}
           </select>
           <label style="font-size:13px;font-weight:600;color:var(--muted);">Period:</label>
           <input type="date" value="${fromVal}" onchange="setReportRangeFromReports('from',this.value)" placeholder="From">
@@ -1512,7 +1685,7 @@ function renderReports(){
     ` : ''}
     ${state.classes.length ? state.classes.filter(c=>!selClassId||c.id===selClassId).map(c=>`
       <div class="card section" style="margin-bottom:12px;">
-        <h3 style="display:flex;align-items:center;gap:8px;"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</h3>
+        <h3 style="display:flex;align-items:center;gap:8px;"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${c.archived?` <span class="badge other">Archived</span>`:''}</h3>
         ${studentsInClass(c.id).length ? studentsInClass(c.id).map(s=>`
           <div class="dash-row">
             <div class="dash-row-title">${esc(s.name)}${s.englishClub?` <span class="badge amber">⭐ English Club</span>`:''}</div>
@@ -1572,15 +1745,18 @@ function renderGroupReport(){
     const hwRecs    = filtered.filter(r=>r.hw!=null);
     const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>{ const v=typeof r.hw==='number'?r.hw:(r.hw==='done'?100:0); return s+v; },0)/hwRecs.length) : null;
     const phone     = filtered.reduce((s,r)=>s+(r.phone||0),0);
+    const partRecs  = filtered.filter(r=>r.attendance!=='absent'&&r.participation);
+    const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>r.participation==='great').length + partRecs.filter(r=>r.participation==='good').length*0.5)/partRecs.length) : null;
     const expected  = expectedSessionsForClass(cls, fromVal||null, toVal||null);
     const absRate   = expected ? Math.round(100*absent/expected) : null;
-    return {s, total, present, late, absent, attRate, absRate, inClass, totalPoss, hwAvg, phone};
+    return {s, total, present, late, absent, attRate, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
   });
 
   // group averages
   const avg = (arr, key) => { const v=arr.filter(r=>r[key]!=null); return v.length?Math.round(v.reduce((s,r)=>s+r[key],0)/v.length):null; };
   const attAvg = avg(rows,'attRate');
   const hwAvg  = avg(rows,'hwAvg');
+  const partGroupAvg = avg(rows,'partAvg');
   const phoneTotal = rows.reduce((s,r)=>s+r.phone,0);
 
   const badgeForPct = (pct, invert=false) => {
@@ -1607,6 +1783,7 @@ function renderGroupReport(){
       <div class="card stat"><div class="stat-num">${students.length}</div><div class="stat-label">${state.reportLang==='pt'?'Alunos':'Students'}</div></div>
       <div class="card stat"><div class="stat-num">${attAvg!=null?attAvg+'%':'—'}</div><div class="stat-label">${t.attendance} (${state.reportLang==='pt'?'média':'avg'})</div></div>
       <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone} (${state.reportLang==='pt'?'média':'avg'})</div></div>
+      <div class="card stat"><div class="stat-num">${partGroupAvg!=null?partGroupAvg+'%':'—'}</div><div class="stat-label">${t.participation} (${state.reportLang==='pt'?'média':'avg'})</div></div>
       <div class="card stat"><div class="stat-num">${phoneTotal}</div><div class="stat-label">${t.phoneUses}</div></div>
     </div>
     <div class="card table-wrap">
@@ -1622,12 +1799,13 @@ function renderGroupReport(){
             <th>${state.reportLang==='pt'?'% Ausência':'Abs. rate'}</th>
             <th>${state.reportLang==='pt'?'Tempo em aula':'In class'}</th>
             <th>${t.hw} (${state.reportLang==='pt'?'média':'avg'})</th>
+            <th>${t.participation}</th>
             <th>${t.phone}</th>
             <th>English Club</th>
           </tr>
         </thead>
         <tbody>
-          ${rows.map(({s,total,present,late,absent,attRate,absRate,inClass,totalPoss,hwAvg,phone})=>`
+          ${rows.map(({s,total,present,late,absent,attRate,absRate,inClass,totalPoss,hwAvg,phone,partAvg})=>`
             <tr>
               <td style="font-weight:600;cursor:pointer;" onclick="navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'reports'})">${esc(s.name)}</td>
               <td>${total}</td>
@@ -1638,6 +1816,7 @@ function renderGroupReport(){
               <td>${badgeForPct(absRate, true)}</td>
               <td>${total?Math.round(inClass/totalPoss*100)+'%':'—'}</td>
               <td>${hwAvg!=null?badgeForPct(hwAvg):'—'}</td>
+              <td>${partAvg!=null?badgeForPct(partAvg):'—'}</td>
               <td>${phone||'—'}</td>
               <td style="text-align:center;">${s.englishClub?'⭐':''}</td>
             </tr>
@@ -1668,7 +1847,7 @@ function renderCalendar(){
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
-    const classesToday = state.classes.filter(c=>{
+    const classesToday = activeClasses().filter(c=>{
       if(!getClassDays(c).includes(dow)) return false;
       if(c.startDate && dateStr < c.startDate) return false;
       if(c.endDate && dateStr > c.endDate) return false;
@@ -1703,7 +1882,7 @@ function renderCalendar(){
       <div class="cal-grid">${cells}</div>
     </div>
     <div class="cal-legend">
-      ${state.classes.map(c=>`<div class="legend-item"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`).join('')}
+      ${activeClasses().map(c=>`<div class="legend-item"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`).join('')}
       <div class="legend-item"><span class="badge hw">HW</span> Homework due</div>
       <div class="legend-item"><span class="badge test">Test</span> Test</div>
       <div class="legend-item"><span class="badge project">Project</span> Project</div>
@@ -1727,7 +1906,7 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>getClassDays(c).includes(dow));
+  const classesToday = activeClasses().filter(c=>getClassDays(c).includes(dow));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
   const holiday = getHoliday(dateStr);
   showModal(`
@@ -1778,7 +1957,7 @@ function openDayModal(dateStr){
         </select>
         <select id="ev-class">
           <option value="">No class</option>
-          ${state.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+          ${activeClasses().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
         </select>
       </div>
     </div>
@@ -1828,7 +2007,8 @@ function exportData(){
     sessions: state.sessions,
     events: state.events,
     holidays: state.holidays,
-    sessionMeta: state.sessionMeta
+    sessionMeta: state.sessionMeta,
+    lessonNotes: state.lessonNotes
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1839,6 +2019,24 @@ function exportData(){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  try{ localStorage.setItem(STORAGE_PREFIX+'lastBackup', todayStr()); }catch(e){}
+  updateBackupStatus();
+}
+function updateBackupStatus(){
+  const el = document.getElementById('backup-status');
+  if(!el) return;
+  let last = null;
+  try{ last = localStorage.getItem(STORAGE_PREFIX+'lastBackup'); }catch(e){}
+  if(!last){
+    el.innerHTML = `<span style="color:#e0a94a;">● Never backed up</span>`;
+    return;
+  }
+  const days = Math.floor((new Date(todayStr()) - new Date(last)) / 86400000);
+  if(days>=14){
+    el.innerHTML = `<span style="color:#e0a94a;">● Backup recommended (${days}d ago)</span>`;
+  }else{
+    el.innerHTML = `Last backup: ${formatDateShort(last)}`;
+  }
 }
 function importData(file){
   if(!file) return;
@@ -1862,12 +2060,14 @@ function importData(file){
     state.events = data.events || [];
     state.holidays = data.holidays || [];
     state.sessionMeta = data.sessionMeta || {};
+    state.lessonNotes = data.lessonNotes || {};
     saveKey('classes', state.classes);
     saveKey('students', state.students);
     saveKey('sessions', state.sessions);
     saveKey('events', state.events);
     saveKey('holidays', state.holidays);
     saveKey('sessionMeta', state.sessionMeta);
+    saveKey('lessonNotes', state.lessonNotes);
     state.expandedClassId = null;
     state.openDrawer = null;
     state.reportsSelection = {classId:'', studentId:''};
@@ -1885,6 +2085,8 @@ async function init(){
   state.events = await loadKey('events', []);
   state.holidays = await loadKey('holidays', []);
   state.sessionMeta = await loadKey('sessionMeta', {});
+  state.lessonNotes = await loadKey('lessonNotes', {});
+  updateBackupStatus();
   navigate('dashboard');
 }
 init();
