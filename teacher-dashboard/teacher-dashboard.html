@@ -384,6 +384,7 @@ let state = {
   sessions: {},
   events: [],
   holidays: [],
+  sessionMeta: {},
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
@@ -1076,6 +1077,16 @@ function renderRollCall(){
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
     ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls)}).</div>`:''}
     ${!holiday && students.length ? `
+      ${(()=>{
+        const isFuture = date > todayStr();
+        const isToday = date === todayStr();
+        const completed = isSessionCompleted(cls.id, date);
+        if(isFuture) return `<div class="warn-banner">📅 This class is in the future — it won't be counted in reports until it takes place.</div>`;
+        if(completed) return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ This session is marked as completed and counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">Reopen</button></div>`;
+        if(isToday) return `<div class="warn-banner">⏳ Today's class isn't counted in reports yet. Mark it completed when the class is over. <button class="btn-accent" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">✓ Complete session</button></div>`;
+        // past date, not yet marked — auto-counts but offer explicit complete
+        return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports.</div>`;
+      })()}
       <div class="rollcall-actions">
         <button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>
         <span class="save-indicator" id="save-indicator"></span>
@@ -1085,6 +1096,20 @@ function renderRollCall(){
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <a onclick="navigate('classes')">Classes &amp; Students</a>.</div>` : ''}
   `;
+}
+function isSessionCompleted(classId, date){
+  // Past sessions auto-count; today needs explicit completion; future never counts
+  if(date < todayStr()) return true;
+  if(date > todayStr()) return false;
+  return !!(state.sessionMeta && state.sessionMeta[classId+'_'+date]?.completed);
+}
+function toggleSessionCompleted(classId, date){
+  if(!state.sessionMeta) state.sessionMeta = {};
+  const key = classId+'_'+date;
+  if(!state.sessionMeta[key]) state.sessionMeta[key] = {};
+  state.sessionMeta[key].completed = !state.sessionMeta[key].completed;
+  scheduleSave('sessionMeta', state.sessionMeta);
+  renderRollCall();
 }
 function renderRosterRow(s, rec, missedHw=false){
   const open = state.openDrawer === s.id;
@@ -1245,7 +1270,7 @@ function renderStudentProfile(){
 
   // Separate holiday records from real records
   const holidayDates = allPeriodRecords.filter(r=>isHoliday(r.date)).map(r=>r.date);
-  const records = allPeriodRecords.filter(r=>!isHoliday(r.date));
+  const records = allPeriodRecords.filter(r=>!isHoliday(r.date) && isSessionCompleted(student.classId, r.date));
 
   const total = records.length;
   const absent = records.filter(r=>r.attendance==='absent').length;
@@ -1486,7 +1511,7 @@ function renderGroupReport(){
       if(cid===cls.id && state.sessions[key][s.id])
         recs.push({date, ...state.sessions[key][s.id]});
     });
-    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal)&&!isHoliday(r.date));
+    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal)&&!isHoliday(r.date)&&isSessionCompleted(cls.id, r.date));
     const total   = filtered.length;
     const absent  = filtered.filter(r=>r.attendance==='absent').length;
     const late    = filtered.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
@@ -1755,7 +1780,8 @@ function exportData(){
     students: state.students,
     sessions: state.sessions,
     events: state.events,
-    holidays: state.holidays
+    holidays: state.holidays,
+    sessionMeta: state.sessionMeta
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1788,11 +1814,13 @@ function importData(file){
     state.sessions = data.sessions || {};
     state.events = data.events || [];
     state.holidays = data.holidays || [];
+    state.sessionMeta = data.sessionMeta || {};
     saveKey('classes', state.classes);
     saveKey('students', state.students);
     saveKey('sessions', state.sessions);
     saveKey('events', state.events);
     saveKey('holidays', state.holidays);
+    saveKey('sessionMeta', state.sessionMeta);
     state.expandedClassId = null;
     state.openDrawer = null;
     state.reportsSelection = {classId:'', studentId:''};
@@ -1809,6 +1837,7 @@ async function init(){
   state.sessions = await loadKey('sessions', {});
   state.events = await loadKey('events', []);
   state.holidays = await loadKey('holidays', []);
+  state.sessionMeta = await loadKey('sessionMeta', {});
   navigate('dashboard');
 }
 init();
