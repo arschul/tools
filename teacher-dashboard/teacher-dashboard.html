@@ -694,9 +694,9 @@ function renderDonut(slices, centerLabel, centerSub){
 }
 
 /* ---------- modal ---------- */
-function showModal(html){
+function showModal(html, persistent){
   document.getElementById('modal-root').innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal-overlay" ${persistent?'':'onclick="if(event.target===this) closeModal()"'}>
       <div class="modal">${html}</div>
     </div>`;
 }
@@ -1023,7 +1023,7 @@ function openClassModal(classId){
         <button class="btn-accent" onclick="saveClass(${c?`'${c.id}'`:'null'})">${c?'Save changes':'Add class'}</button>
       </div>
     </div>
-  `);
+  `, true);
 }
 function updateDayLabel(d){
   const cb = document.getElementById('cm-day-'+d);
@@ -2187,6 +2187,17 @@ function daysBetween(a,b){
   return Math.round((d1-d2)/86400000);
 }
 function money(n){ return 'R$ ' + (Number(n)||0).toFixed(2); }
+// Balance is stored as amount OWED (positive = student owes).
+// Displayed from the student's perspective: owing shows negative & red, credit positive & green.
+function balanceColor(b){ return b > 0.005 ? 'var(--red)' : 'var(--green)'; }
+function balanceText(b){
+  if(b > 0.005) return '-' + money(b);
+  if(b < -0.005) return '+' + money(Math.abs(b));
+  return money(0);
+}
+function balanceDisplay(b){
+  return `<span style="color:${balanceColor(b)};font-weight:600;">${balanceText(b)}</span>`;
+}
 function persistPrivate(){
   scheduleSave('privateStudents', state.privateStudents);
   scheduleSave('privateLessons', state.privateLessons);
@@ -2350,7 +2361,7 @@ function privOverviewHtml(){
     <div class="stat-row">
       <div class="card stat"><div class="stat-num">${active.length}</div><div class="stat-label">Active students</div></div>
       <div class="card stat"><div class="stat-num">${owing.length}</div><div class="stat-label">Students owing</div></div>
-      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(totalOwed)}</div><div class="stat-label">Total outstanding</div></div>
+      <div class="card stat"><div class="stat-num" style="font-size:20px;${totalOwed>0.005?'background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:var(--red);color:var(--red);':''}">${totalOwed>0.005?'-'+money(totalOwed):money(0)}</div><div class="stat-label">Total outstanding</div></div>
       <div class="card stat"><div class="stat-num">${upcoming.length}</div><div class="stat-label">Upcoming lessons</div></div>
     </div>
     <div class="dash-grid" style="grid-template-columns:1fr 1fr;">
@@ -2361,7 +2372,7 @@ function privOverviewHtml(){
             <div class="dash-row-left">
               <div>
                 <div class="dash-row-title">${esc(x.s.name)} ${ledgerStamp(x.ledger)}</div>
-                <div class="dash-row-sub">${money(x.ledger.balance)}${x.ledger.oldestUnpaidDate?` · oldest unpaid ${formatDateShort(x.ledger.oldestUnpaidDate)}`:''}</div>
+                <div class="dash-row-sub">${balanceDisplay(x.ledger.balance)}${x.ledger.oldestUnpaidDate?` · oldest unpaid ${formatDateShort(x.ledger.oldestUnpaidDate)}`:''}</div>
               </div>
             </div>
             <button class="btn-ghost small" onclick="openPaymentModal(null, window._privOwingIds[${i}])">+ Payment</button>
@@ -2416,7 +2427,7 @@ function privStudentsHtml(){
           <td><span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}">${s.status}</span></td>
           <td>${esc(sched)}<div style="font-size:11px;color:var(--muted);">${range}</div></td>
           <td>${money(lessonCost(s))}/lesson</td>
-          <td>${money(led.balance)} ${ledgerStamp(led)}</td>
+          <td>${balanceDisplay(led.balance)} ${ledgerStamp(led)}</td>
           <td>${nx?formatDateShort(nx.date)+(nx.time?' '+nx.time:''):'—'}</td>
           <td><button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">Open →</button></td>
         </tr>`;
@@ -2613,7 +2624,7 @@ function openPrivStudentModal(id){
         <button class="btn-accent" onclick="savePrivStudent(${s?`'${s.id}'`:'null'})">${s?'Save changes':'Add student'}</button>
       </div>
     </div>
-  `);
+  `, true);
   privPricingToggle();
   privRenderCustomTimes(slots);
 }
@@ -2861,7 +2872,7 @@ function openPaymentModal(id, presetStudentId){
         <option value="">— pick —</option>
         ${state.privateStudents.map(s=>`<option value="${s.id}" ${sid===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
       </select>
-      <div id="pay-hint" style="font-size:12px;color:var(--muted);margin-top:6px;">${led?`Current balance: <b>${money(led.balance)}</b>`:''}</div>
+      <div id="pay-hint" style="font-size:12px;color:var(--muted);margin-top:6px;">${led?`Current balance: ${balanceDisplay(led.balance)}`:''}</div>
     </div>
     <div class="field-row">
       <div class="field" style="flex:1;"><label>Date</label><input id="pay-date" type="date" value="${p?.date||todayStr()}"></div>
@@ -2886,7 +2897,7 @@ function privPayBalanceHint(){
   const amt = document.getElementById('pay-amount');
   if(!sid){ hint.innerHTML=''; return; }
   const led = computeLedger(sid);
-  hint.innerHTML = `Current balance: <b>${money(led.balance)}</b>`;
+  hint.innerHTML = `Current balance: ${balanceDisplay(led.balance)}`;
   if(!amt.value && led.balance>0) amt.value = led.balance;
 }
 function savePayment(id){
@@ -3009,7 +3020,7 @@ function renderPrivStudent(){
       <div class="card stat"><div class="stat-num">${completed}</div><div class="stat-label">Completed</div></div>
       <div class="card stat"><div class="stat-num">${noshow}</div><div class="stat-label">No-shows</div></div>
       <div class="card stat"><div class="stat-num">${cancelled}</div><div class="stat-label">Cancelled</div></div>
-      <div class="card stat"><div class="stat-num" style="font-size:20px;">${money(led.balance)}</div><div class="stat-label">Balance</div></div>
+      <div class="card stat"><div class="stat-num" style="font-size:20px;background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:${balanceColor(led.balance)};color:${balanceColor(led.balance)};">${balanceText(led.balance)}</div><div class="stat-label">Balance</div></div>
       <div class="card stat"><div class="stat-num">${lps.length?lpDone+'/'+lps.length:'—'}</div><div class="stat-label">Learning points</div></div>
     </div>
 
@@ -3017,7 +3028,7 @@ function renderPrivStudent(){
       <h3>💰 Ledger ${ledgerStamp(led)}</h3>
       <div class="lost-summary">
         ${led.lessonsBilled} billable lesson${led.lessonsBilled===1?'':'s'} × ${money(led.cost)} = <b>${money(led.totalBilled)}</b> billed ·
-        <b>${money(led.totalPaid)}</b> paid · balance <b>${money(led.balance)}</b>
+        <b>${money(led.totalPaid)}</b> paid · balance ${balanceDisplay(led.balance)}
         ${led.oldestUnpaidDate?`<br>Oldest unpaid lesson: ${formatDateShort(led.oldestUnpaidDate)}${led.overdue?` <span class="badge red">overdue</span>`:''}`:''}
         ${nx?`<br>Next lesson: <b>${formatDateShort(nx.date)}${nx.time?' at '+nx.time:''}</b>`:''}
       </div>
