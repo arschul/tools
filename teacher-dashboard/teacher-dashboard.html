@@ -271,7 +271,8 @@
   .legend-item{display:flex;align-items:center;gap:6px;}
   .cal-cell.holiday{background:repeating-linear-gradient(45deg, #ffffff 0 8px, #eef0f6 8px 16px);}
   .cal-tag.holiday-tag{background:var(--purple-soft);color:var(--purple);}
-  .cal-tag.priv-tag{background:#fff;color:#0ea5b8;border:1px dashed #0ea5b8;font-weight:600;}
+  .cal-tag.priv-tag{background:#fff;color:#0ea5b8;border:1px dashed #0ea5b8;font-weight:600;cursor:pointer;}
+  .cal-tag.priv-tag:hover{background:#0ea5b811;}
   .tab{padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);cursor:pointer;color:var(--muted);}
   .tab.active{background:var(--accent-grad);color:#fff;border-color:transparent;}
   .tabs{display:flex;gap:8px;flex-wrap:wrap;}
@@ -1900,9 +1901,9 @@ function renderCalendar(){
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
           ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
-          ${privToday.map(l=>{
+          ${privToday.map((l,pi)=>{
             const st = privStudent(l.studentId);
-            return `<div class="cal-tag priv-tag">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
+            return `<div class="cal-tag priv-tag" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
           }).join('')}
         </div>
       </div>`;
@@ -1988,7 +1989,7 @@ function openDayModal(dateStr){
         return `<div class="modal-row">
           <span>👤 <b>${st?esc(st.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
             <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
-          <button class="btn-ghost small" onclick="closeModal();openLessonModal(window._dayPrivIds[${i}])">Edit</button>
+          <button class="btn-ghost small" onclick="closeModal();openRescheduleModal(window._dayPrivIds[${i}])">Reschedule</button>
         </div>`;
       }).join('') : `<div class="empty">No private lessons.</div>`}
       <div style="margin-top:8px;"><button class="btn-ghost small" onclick="closeModal();openLessonModal(null,null,'${dateStr}')">+ Add private lesson</button></div>
@@ -2249,28 +2250,39 @@ function updatePrivAlertDot(){
 
 /* ---------- recurring generation ---------- */
 function regenerateRecurring(s){
-  // remove future auto-generated placeholders for this student
   const today = todayStr();
+  // remove future auto-generated placeholders for this student
   state.privateLessons = state.privateLessons.filter(l =>
     !(l.studentId===s.id && l.isRecurring && l.status==='scheduled' && l.date >= today)
   );
   if(!s.recurring || !s.recurring.length || s.status!=='active') return;
-  const start = new Date(today+'T00:00:00');
-  for(let w=0; w<RECUR_HORIZON_WEEKS; w++){
+  // Window: from max(today, startDate) through endDate, or 8 weeks if open-ended
+  const startBound = (s.startDate && s.startDate > today) ? s.startDate : today;
+  let endBound;
+  if(s.endDate){
+    endBound = s.endDate;
+  } else {
+    const e = new Date(startBound+'T00:00:00');
+    e.setDate(e.getDate() + RECUR_HORIZON_WEEKS*7);
+    endBound = dateToStr(e.getFullYear(), e.getMonth(), e.getDate());
+  }
+  if(endBound < startBound) return;
+  const cur = new Date(startBound+'T00:00:00');
+  const end = new Date(endBound+'T00:00:00');
+  let guard = 0;
+  while(cur <= end && guard++ < 800){
+    const ds = dateToStr(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    const dow = cur.getDay();
     for(const slot of s.recurring){
-      const d = new Date(start);
-      const delta = (slot.weekday - d.getDay() + 7) % 7;
-      d.setDate(d.getDate() + delta + w*7);
-      const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
-      if(dateStr < today) continue;
-      // don't duplicate an existing lesson at same date+time
-      const dup = state.privateLessons.some(l=>l.studentId===s.id && l.date===dateStr && (l.time||'')===(slot.time||''));
+      if(slot.weekday !== dow) continue;
+      const dup = state.privateLessons.some(l=>l.studentId===s.id && l.date===ds && (l.time||'')===(slot.time||''));
       if(dup) continue;
       state.privateLessons.push({
-        id: uid(), studentId: s.id, date: dateStr, time: slot.time||'',
+        id: uid(), studentId: s.id, date: ds, time: slot.time||'',
         duration: Number(slot.duration)||60, status:'scheduled', notes:'', isRecurring:true
       });
     }
+    cur.setDate(cur.getDate()+1);
   }
 }
 
@@ -2364,7 +2376,7 @@ function privOverviewHtml(){
               <div class="dash-row-title">${s?esc(s.name):'—'}</div>
               <div class="dash-row-sub">${formatDateShort(l.date)}${l.time?' · '+l.time:''} · ${l.duration} min${l.isRecurring?' · recurring':''}</div>
             </div></div>
-            <button class="btn-ghost small" onclick="openLessonModal('${l.id}')">Edit</button>
+            <button class="btn-ghost small" onclick="openRescheduleModal('${l.id}')">Reschedule</button>
           </div>`;
         }).join('') : `<div class="empty">No upcoming lessons scheduled.</div>`}
       </div>
@@ -2398,10 +2410,11 @@ function privStudentsHtml(){
         const sched = (s.recurring&&s.recurring.length)
           ? s.recurring.map(r=>`${DAY_ABBR[r.weekday]} ${r.time||''}`).join(', ')
           : '—';
+        const range = s.startDate ? `${formatDateShort(s.startDate)} – ${s.endDate?formatDateShort(s.endDate):'ongoing'}` : '—';
         return `<tr>
           <td style="font-weight:600;cursor:pointer;" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">${esc(s.name)}${s.isMinor?' <span class="badge other">minor</span>':''}${s.contactParents?.reason?' <span class="badge red">📞</span>':''}</td>
           <td><span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}">${s.status}</span></td>
-          <td>${esc(sched)}</td>
+          <td>${esc(sched)}<div style="font-size:11px;color:var(--muted);">${range}</div></td>
           <td>${money(lessonCost(s))}/lesson</td>
           <td>${money(led.balance)} ${ledgerStamp(led)}</td>
           <td>${nx?formatDateShort(nx.date)+(nx.time?' '+nx.time:''):'—'}</td>
@@ -2433,7 +2446,7 @@ function privScheduleHtml(){
         ${todays.map(l=>{
           const s = privStudent(l.studentId);
           const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='cancelled'?'var(--gray)':'var(--accent)';
-          return `<div class="cal-tag" style="background:${col}22;color:${col};border-color:${col}55;">👤 ${s?esc(s.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
+          return `<div class="cal-tag" style="background:${col}22;color:${col};border-color:${col}55;cursor:pointer;" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${s?esc(s.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</div>`;
         }).join('')}
       </div>
     </div>`;
@@ -2516,6 +2529,12 @@ function privPaymentsHtml(){
 function openPrivStudentModal(id){
   const s = id ? privStudent(id) : null;
   const slots = (s && s.recurring) ? s.recurring : [];
+  const curDays = slots.map(sl=>sl.weekday);
+  const defTime = slots[0]?.time || '';
+  const defDur = slots[0]?.duration || 60;
+  // custom mode when slots have differing times/durations
+  const custom = slots.length>1 && slots.some(sl=>sl.time!==defTime || sl.duration!==defDur);
+  const dayOptions = [[1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[0,'Sun']];
   showModal(`
     <h3>${s?'Edit private student':'Add private student'}</h3>
     <div class="field"><label>Name</label><input id="ps-name" type="text" value="${s?esc(s.name):''}" placeholder="Full name"></div>
@@ -2543,6 +2562,35 @@ function openPrivStudentModal(id){
         ${['active','paused','inactive'].map(v=>`<option value="${v}" ${(s?.status||'active')===v?'selected':''}>${v}</option>`).join('')}
       </select>
     </div>
+
+    <div class="field"><label>Days</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${dayOptions.map(([d,label])=>`
+          <label id="ps-day-label-${d}" style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;cursor:pointer;
+            padding:6px 12px;border:1px solid ${curDays.includes(d)?'var(--accent)':'var(--border)'};border-radius:999px;
+            background:${curDays.includes(d)?'var(--accent-soft)':'#fff'};
+            color:${curDays.includes(d)?'var(--accent)':'var(--muted)'};">
+            <input type="checkbox" id="ps-day-${d}" value="${d}" ${curDays.includes(d)?'checked':''} style="display:none;" onchange="privUpdateDayLabel(${d});privRenderCustomTimes();">
+            ${label}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>Time</label><input id="ps-time" type="time" value="${defTime}"></div>
+      <div class="field" style="flex:1;"><label>Duration (minutes)</label><input id="ps-dur" type="number" min="15" step="15" value="${defDur}"></div>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:400;">
+        <input type="checkbox" id="ps-custom" ${custom?'checked':''} onchange="privRenderCustomTimes()"> Different time per day
+      </label>
+      <div id="ps-custom-box" style="display:${custom?'block':'none'};margin-top:8px;"></div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>First lesson date</label><input id="ps-start" type="date" value="${s?.startDate||todayStr()}"></div>
+      <div class="field" style="flex:1;"><label>Last lesson date</label><input id="ps-end" type="date" value="${s?.endDate||''}"></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">Leave "last lesson date" empty for an open-ended course (schedules 8 weeks ahead).</div>
+
     <div class="field"><label>Pricing</label>
       <select id="ps-ptype" onchange="privPricingToggle()">
         <option value="perLesson" ${(s?.pricingType||'perLesson')==='perLesson'?'selected':''}>Per lesson (flat)</option>
@@ -2557,12 +2605,6 @@ function openPrivStudentModal(id){
       <div class="field" style="flex:1;"><label>Package size (lessons)</label><input id="ps-pkgsize" type="number" min="1" value="${s?.packageSize??''}"></div>
       <div class="field" style="flex:1;"><label>Package price (R$)</label><input id="ps-pkgprice" type="number" min="0" step="0.01" value="${s?.packagePrice??''}"></div>
     </div>
-    <div class="field"><label>Weekly schedule</label>
-      <div id="ps-slots">
-        ${slots.length ? slots.map((sl,i)=>privSlotRow(i, sl)).join('') : privSlotRow(0, null)}
-      </div>
-      <button class="btn-ghost small" style="margin-top:6px;" onclick="privAddSlot()">+ Add day</button>
-    </div>
     <div class="field"><label>Notes</label><textarea id="ps-notes" rows="2">${esc(s?.notes||'')}</textarea></div>
     <div class="modal-actions" style="${s?'justify-content:space-between;':''}">
       ${s?`<button class="icon-btn danger" onclick="deletePrivStudent('${s.id}')">Delete student</button>`:''}
@@ -2573,19 +2615,42 @@ function openPrivStudentModal(id){
     </div>
   `);
   privPricingToggle();
+  privRenderCustomTimes(slots);
 }
-function privSlotRow(i, sl){
-  return `<div class="field-row priv-slot" style="margin-bottom:6px;align-items:center;">
-    <select class="slot-day" style="flex:1;">
-      ${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${sl&&sl.weekday===d?'selected':''}>${DAY_FULL[d]}</option>`).join('')}
-    </select>
-    <input class="slot-time" type="time" value="${sl?.time||''}" style="flex:1;">
-    <input class="slot-dur" type="number" min="15" step="15" value="${sl?.duration||60}" title="minutes" style="width:80px;">
-    <button class="icon-btn danger" onclick="this.closest('.priv-slot').remove()">×</button>
-  </div>`;
+function privUpdateDayLabel(d){
+  const cb = document.getElementById('ps-day-'+d);
+  const lbl = document.getElementById('ps-day-label-'+d);
+  if(!cb||!lbl) return;
+  lbl.style.background = cb.checked ? 'var(--accent-soft)' : '#fff';
+  lbl.style.color = cb.checked ? 'var(--accent)' : 'var(--muted)';
+  lbl.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
 }
-function privAddSlot(){
-  document.getElementById('ps-slots').insertAdjacentHTML('beforeend', privSlotRow(999, null));
+function privSelectedDays(){
+  return [1,2,3,4,5,6,0].filter(d=>document.getElementById('ps-day-'+d)?.checked);
+}
+function privRenderCustomTimes(existingSlots){
+  const box = document.getElementById('ps-custom-box');
+  const on = document.getElementById('ps-custom')?.checked;
+  if(!box) return;
+  box.style.display = on ? 'block' : 'none';
+  if(!on){ box.innerHTML=''; return; }
+  // preserve anything already typed in the box, then fall back to saved slots
+  const typed = {};
+  box.querySelectorAll('.ps-ctime').forEach(inp=>{
+    const d = inp.dataset.day;
+    typed[d] = { time: inp.value, duration: box.querySelector(`.ps-cdur[data-day="${d}"]`)?.value };
+  });
+  const days = privSelectedDays();
+  const defTime = document.getElementById('ps-time').value;
+  const defDur = document.getElementById('ps-dur').value || 60;
+  box.innerHTML = days.length ? days.map(d=>{
+    const prev = typed[d] || (existingSlots||[]).find(sl=>sl.weekday===d);
+    return `<div class="field-row" style="align-items:center;margin-bottom:6px;">
+      <div style="width:90px;font-size:13px;font-weight:600;color:var(--muted);">${DAY_FULL[d]}</div>
+      <input class="ps-ctime" data-day="${d}" type="time" value="${prev?.time||defTime}" style="flex:1;">
+      <input class="ps-cdur" data-day="${d}" type="number" min="15" step="15" value="${prev?.duration||defDur}" style="width:80px;" title="minutes">
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:4px 0;">Select at least one day above.</div>`;
 }
 function privPricingToggle(){
   const t = document.getElementById('ps-ptype')?.value;
@@ -2598,9 +2663,32 @@ function privPricingToggle(){
 function savePrivStudent(id){
   const name = document.getElementById('ps-name').value.trim();
   if(!name){ alert('Name is required.'); return; }
+  const days = privSelectedDays();
+  const defTime = document.getElementById('ps-time').value;
+  const defDur = Number(document.getElementById('ps-dur').value)||60;
+  const custom = document.getElementById('ps-custom').checked;
+  if(days.length && !custom && !defTime){ alert('Please set a lesson time (or clear the selected days).'); return; }
+
+  let slots = [];
+  if(days.length){
+    if(custom){
+      slots = days.map(d=>{
+        const t = document.querySelector(`.ps-ctime[data-day="${d}"]`)?.value || defTime;
+        const du = Number(document.querySelector(`.ps-cdur[data-day="${d}"]`)?.value)||defDur;
+        return { weekday: d, time: t, duration: du };
+      }).filter(sl=>sl.time);
+    } else {
+      slots = days.map(d=>({ weekday: d, time: defTime, duration: defDur }));
+    }
+  }
+
+  const startDate = document.getElementById('ps-start').value || todayStr();
+  const endDate = document.getElementById('ps-end').value || null;
+  if(endDate && endDate < startDate){ alert('Last lesson date cannot be before the first lesson date.'); return; }
+
   let s = id ? privStudent(id) : null;
   const isNew = !s;
-  if(isNew){ s = { id: uid(), startDate: todayStr(), pinnedSkills: [], studyPoints: [] }; state.privateStudents.push(s); }
+  if(isNew){ s = { id: uid(), pinnedSkills: [], studyPoints: [] }; state.privateStudents.push(s); }
   s.name = name;
   s.contactPhone = document.getElementById('ps-phone').value.trim();
   s.cefr = document.getElementById('ps-cefr').value;
@@ -2613,16 +2701,13 @@ function savePrivStudent(id){
   s.packageSize = document.getElementById('ps-pkgsize').value ? Number(document.getElementById('ps-pkgsize').value) : '';
   s.packagePrice = document.getElementById('ps-pkgprice').value ? Number(document.getElementById('ps-pkgprice').value) : '';
   s.notes = document.getElementById('ps-notes').value;
-  const slots = [...document.querySelectorAll('#ps-slots .priv-slot')].map(row=>({
-    weekday: Number(row.querySelector('.slot-day').value),
-    time: row.querySelector('.slot-time').value,
-    duration: Number(row.querySelector('.slot-dur').value)||60
-  })).filter(sl=>sl.time);
+  s.startDate = startDate;
+  s.endDate = endDate;
   s.recurring = slots.length ? slots : null;
   regenerateRecurring(s);
   persistPrivate();
   closeModal();
-  renderPrivate();
+  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
 }
 function deletePrivStudent(id){
   const s = privStudent(id);
@@ -2637,6 +2722,65 @@ function deletePrivStudent(id){
   persistPrivate();
   closeModal();
   navigate('private');
+}
+
+/* ---------- private: reschedule ---------- */
+function openRescheduleModal(lessonId){
+  const l = state.privateLessons.find(x=>x.id===lessonId);
+  if(!l) return;
+  const s = privStudent(l.studentId);
+  showModal(`
+    <h3>📅 ${s?esc(s.name):'Lesson'}</h3>
+    <div style="font-size:13px;color:var(--muted);margin:-6px 0 14px;">
+      Currently: <b>${formatDateLong(l.date)}</b>${l.time?` at <b>${l.time}</b>`:''} · ${l.duration} min
+      ${l.isRecurring?`<br><span class="badge hw">recurring</span> Moving this lesson detaches it from the weekly pattern.`:''}
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1;"><label>New date</label><input id="rs-date" type="date" value="${l.date}"></div>
+      <div class="field" style="flex:1;"><label>New time</label><input id="rs-time" type="time" value="${l.time||''}"></div>
+    </div>
+    <div class="field"><label>Duration (minutes)</label><input id="rs-dur" type="number" min="15" step="15" value="${l.duration}"></div>
+    <div class="field"><label>Reason / notes</label><input id="rs-notes" type="text" value="${esc(l.notes||'')}" placeholder="e.g. student asked to move to Friday"></div>
+    <div class="field"><label>Status</label>
+      <div class="pill-group">
+        ${PRIV_STATUSES.map(st=>{
+          const cl = st==='completed'?'green':st==='no-show'?'red':st==='cancelled'?'':'amber';
+          return `<div class="pill ${cl} ${l.status===st?'on':''}" onclick="rsSetStatus(this,'${st}')">${st}</div>`;
+        }).join('')}
+      </div>
+      <input type="hidden" id="rs-status" value="${l.status}">
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="icon-btn danger" onclick="deleteLesson('${l.id}')">Delete</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveReschedule('${l.id}')">Save</button>
+      </div>
+    </div>
+  `);
+}
+function rsSetStatus(el, st){
+  el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rs-status').value = st;
+}
+function saveReschedule(lessonId){
+  const l = state.privateLessons.find(x=>x.id===lessonId);
+  if(!l) return;
+  const newDate = document.getElementById('rs-date').value;
+  if(!newDate){ alert('Pick a date.'); return; }
+  const moved = newDate !== l.date;
+  l.date = newDate;
+  l.time = document.getElementById('rs-time').value;
+  l.duration = Number(document.getElementById('rs-dur').value)||60;
+  l.notes = document.getElementById('rs-notes').value;
+  l.status = document.getElementById('rs-status').value;
+  if(moved) l.isRecurring = false; // detach so regeneration never overwrites it
+  persistPrivate();
+  closeModal();
+  if(state.view==='priv-student') renderPrivStudent();
+  else if(state.view==='calendar') renderCalendar();
+  else renderPrivate();
 }
 
 /* ---------- private: lesson modal ---------- */
@@ -2799,7 +2943,7 @@ function openPrivDayModal(dateStr){
         return `<div class="modal-row">
           <span>👤 <b>${s?esc(s.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
             <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
-          <button class="btn-ghost small" onclick="closeModal();openLessonModal(window._privDayIds[${i}])">Edit</button>
+          <button class="btn-ghost small" onclick="closeModal();openRescheduleModal(window._privDayIds[${i}])">Reschedule</button>
         </div>`;
       }).join('') : `<div class="empty">No lessons.</div>`}
     </div>
@@ -2837,6 +2981,7 @@ function renderPrivStudent(){
   const sched = (s.recurring&&s.recurring.length)
     ? s.recurring.map(r=>`${DAY_FULL[r.weekday]} ${r.time||''} (${r.duration}min)`).join(' · ')
     : 'No recurring schedule';
+  const dateRange = s.startDate ? `${formatDateShort(s.startDate)} – ${s.endDate?formatDateShort(s.endDate):'ongoing'}` : '';
 
   const lpDone = lps.filter(p=>p.complete).length;
 
@@ -2849,7 +2994,7 @@ function renderPrivStudent(){
           ${s.cefr?`<span class="badge hw" style="font-size:13px;vertical-align:middle;">${s.cefr}</span>`:''}
           ${s.contactParents?.reason?`<span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(s.contactParents.category)}</span>`:''}
         </h1>
-        <div class="meta">${sched}</div>
+        <div class="meta">${sched}${dateRange?` · ${dateRange}`:''}</div>
         <div class="meta">${s.contactPhone?'📱 '+esc(s.contactPhone):''}${s.isMinor?` · Guardian: ${esc(s.guardianName||'—')} ${esc(s.guardianPhone||'')}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;" class="no-print">
@@ -2957,7 +3102,7 @@ function renderPrivStudent(){
             ${l.status==='scheduled'?`
               <button class="icon-btn" onclick="setLessonStatus(window._privLessonIds[${i}],'completed')" title="Mark completed">✓</button>
               <button class="icon-btn danger" onclick="setLessonStatus(window._privLessonIds[${i}],'no-show')" title="No-show">✗</button>`:''}
-            <button class="icon-btn" onclick="openLessonModal(window._privLessonIds[${i}])">Edit</button>
+            <button class="icon-btn" onclick="openRescheduleModal(window._privLessonIds[${i}])">Reschedule</button>
           </td>
         </tr>`).join('')}</tbody></table></div>` : `<div class="empty">No lessons yet.</div>`}
     </div>
@@ -3097,6 +3242,7 @@ function deleteLearningPoint(id){
 }
 
 /* ================= INIT ================= */
+window.state = state;
 async function init(){
   state.classes = await loadKey('classes', []);
   state.students = await loadKey('students', []);
