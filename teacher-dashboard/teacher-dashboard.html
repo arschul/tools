@@ -694,6 +694,29 @@ function _renderDashboard(el){
   });
   const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
 
+  // — Pending session completions (today + recent past days with data but not marked complete) —
+  const pendingCompletions = [];
+  state.classes.forEach(c=>{
+    const days = getClassDays(c);
+    for(let i=0; i<8; i++){
+      const d = new Date(today+'T00:00:00');
+      d.setDate(d.getDate()-i);
+      const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+      if(!days.includes(d.getDay())) continue;
+      if(isHoliday(dateStr)) continue;
+      if(c.startDate && dateStr < c.startDate) continue;
+      if(c.endDate && dateStr > c.endDate) continue;
+      const sessionKey = c.id+'_'+dateStr;
+      const hasData = !!state.sessions[sessionKey] && Object.keys(state.sessions[sessionKey]).length>0;
+      if(!hasData) continue;
+      const completed = isSessionCompleted(c.id, dateStr);
+      if(!completed){
+        pendingCompletions.push({cls:c, date:dateStr, isToday: dateStr===today});
+      }
+    }
+  });
+  pendingCompletions.sort((a,b)=>a.date.localeCompare(b.date));
+
   // — Today's classes —
   let todayHtml = '';
   if(todayHoliday){
@@ -767,6 +790,29 @@ function _renderDashboard(el){
         </div>`; }).join('')}
     </div>` : '';
 
+  // — Pending completions —
+  window._dashPendingClassIds = pendingCompletions.map(p=>p.cls.id);
+  window._dashPendingDates = pendingCompletions.map(p=>p.date);
+  const pendingHtml = pendingCompletions.length ? `
+    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
+      <h3>⏳ Sessions awaiting completion</h3>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">These have roll call data but aren't marked complete yet, so they're not counted in reports.</div>
+      ${pendingCompletions.map((p,i)=>`
+        <div class="dash-row">
+          <div class="dash-row-left">
+            <span class="color-dot" style="background:${p.cls.color}"></span>
+            <div>
+              <div class="dash-row-title">${esc(p.cls.name)}</div>
+              <div class="dash-row-sub">${formatDateShort(p.date)}${p.isToday?' · Today':''}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="goToRollCall(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}])">Open Roll Call →</button>
+            <button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="toggleSessionCompleted(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}]); renderDashboard();">✓ Complete</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
     <div class="stat-row">
@@ -774,6 +820,7 @@ function _renderDashboard(el){
       <div class="card stat"><div class="stat-num">${state.students.length}</div><div class="stat-label">Students</div></div>
       <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
     </div>
+    ${pendingHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
       <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
