@@ -890,7 +890,7 @@ const GRADE_POINTS = { A: 4, B: 3, C: 2, D: 1, F: 0 };
 /* ---------------- Voice loading ---------------- */
 let availableVoices = [];
 
-// Each entry requires the name plus its specific variant AND "online" to avoid duplicate/wrong-variant matches
+// Named voices get a shortened label; everything else shows its full name/lang
 const ALLOWED_VOICES = [
   { name: 'sonia', variant: 'online', label: 'Sonia', region: 'UK' },
   { name: 'ryan', variant: 'online', label: 'Ryan', region: 'UK' },
@@ -911,17 +911,7 @@ function shortVoiceLabel(v) {
 }
 
 function populateVoiceList() {
-  const allVoices = window.speechSynthesis.getVoices();
-  const seenLabels = new Set();
-  availableVoices = allVoices.filter(v => {
-    if (v.default) return true;
-    const match = matchAllowedVoice(v);
-    if (!match) return false;
-    const label = shortVoiceLabel(v);
-    if (seenLabels.has(label)) return false; // dedupe identical Name - Region entries
-    seenLabels.add(label);
-    return true;
-  });
+  availableVoices = window.speechSynthesis.getVoices();
 
   const selA = document.getElementById('voiceSelectA');
   const selB = document.getElementById('voiceSelectB');
