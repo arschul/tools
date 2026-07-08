@@ -550,12 +550,22 @@ function formatDateLong(dateStr){
 function formatDateShort(dateStr){
   return new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
-function scheduleLabel(s){ return s==='MW' ? 'Mon / Wed' : 'Tue / Thu'; }
+const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function getClassDays(cls){
+  if(Array.isArray(cls.days) && cls.days.length) return cls.days;
+  if(cls.schedule && SCHEDULE_DAYS[cls.schedule]) return SCHEDULE_DAYS[cls.schedule];
+  return [];
+}
+function scheduleLabel(cls){
+  const days = getClassDays(cls);
+  return days.length ? days.map(d=>DAY_ABBR[d]).join(' / ') : 'No days set';
+}
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 function getPreviousClassDate(cls, fromDateStr){
-  if(!cls.schedule || !SCHEDULE_DAYS[cls.schedule]) return null;
-  const days = SCHEDULE_DAYS[cls.schedule];
+  const days = getClassDays(cls);
+  if(!days.length) return null;
   let d = new Date(fromDateStr+'T00:00:00');
   for(let i=0; i<60; i++){
     d.setDate(d.getDate()-1);
@@ -577,7 +587,8 @@ function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
-  if(!cls.schedule || !SCHEDULE_DAYS[cls.schedule]) return null;
+  const days = getClassDays(cls);
+  if(!days.length) return null;
   const startStr = startOverride || cls.startDate;
   const endStr = endOverride || cls.endDate;
   if(!startStr || !endStr) return null;
@@ -589,7 +600,7 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
   while(d<=end){
     const dow = d.getDay();
     const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
-    if(cls.schedule && SCHEDULE_DAYS[cls.schedule] && SCHEDULE_DAYS[cls.schedule].includes(dow) && !isHoliday(dateStr)) count++;
+    if(days.includes(dow) && !isHoliday(dateStr)) count++;
     d.setDate(d.getDate()+1);
   }
   return count;
@@ -675,7 +686,7 @@ function _renderDashboard(el){
   const todayHoliday = getHoliday(today);
   const dow = new Date(today+'T00:00:00').getDay();
   const todaysClasses = todayHoliday ? [] : state.classes.filter(c=>{
-    if(!c.schedule || !SCHEDULE_DAYS[c.schedule] || !SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+    if(!getClassDays(c).includes(dow)) return false;
     if(c.startDate && today < c.startDate) return false;
     if(c.endDate && today > c.endDate) return false;
     return true;
@@ -795,7 +806,7 @@ function renderClassCard(c){
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
             <div class="dash-row-title">${esc(c.name)}</div>
-            <div class="dash-row-sub">${scheduleLabel(c.schedule)}${c.time?' · '+c.time:''} · ${students.length} students</div>
+            <div class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students</div>
           </div>
           <span class="chevron" style="margin-left:8px;">${expanded?'▾':'▸'}</span>
         </div>
@@ -839,14 +850,26 @@ function toggleClassExpand(classId){
 }
 function openClassModal(classId){
   const c = classId ? classById(classId) : null;
+  const currentDays = c ? getClassDays(c) : [1,3]; // default Mon/Wed
+  const dayOptions = [
+    [1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[0,'Sun']
+  ];
   showModal(`
     <h3>${c?'Edit class':'Add class'}</h3>
     <div class="field"><label>Class name</label><input id="cm-name" type="text" value="${c?esc(c.name):''}" placeholder="e.g. Turma B1"></div>
-    <div class="field"><label>Schedule</label>
-      <select id="cm-schedule">
-        <option value="MW" ${c?.schedule==='MW'?'selected':''}>Monday / Wednesday</option>
-        <option value="TT" ${c?.schedule==='TT'?'selected':''}>Tuesday / Thursday</option>
-      </select>
+    <div class="field"><label>Days</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${dayOptions.map(([d,label])=>`
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;cursor:pointer;
+            padding:6px 12px;border:1px solid var(--border);border-radius:999px;
+            background:${currentDays.includes(d)?'var(--accent-soft)':'#fff'};
+            color:${currentDays.includes(d)?'var(--accent)':'var(--muted)'};"
+            id="cm-day-label-${d}">
+            <input type="checkbox" id="cm-day-${d}" value="${d}" ${currentDays.includes(d)?'checked':''}
+              style="display:none;" onchange="updateDayLabel(${d})">
+            ${label}
+          </label>`).join('')}
+      </div>
     </div>
     <div class="field"><label>Time (optional)</label><input id="cm-time" type="time" value="${c?.time||''}"></div>
     <div class="field-row">
@@ -866,6 +889,14 @@ function openClassModal(classId){
     </div>
   `);
 }
+function updateDayLabel(d){
+  const cb = document.getElementById('cm-day-'+d);
+  const label = document.getElementById('cm-day-label-'+d);
+  if(!cb||!label) return;
+  label.style.background = cb.checked ? 'var(--accent-soft)' : '#fff';
+  label.style.color = cb.checked ? 'var(--accent)' : 'var(--muted)';
+  label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
+}
 function selectSwatch(el, color){
   el.parentElement.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));
   el.classList.add('on');
@@ -874,7 +905,8 @@ function selectSwatch(el, color){
 function saveClass(classId){
   const name = document.getElementById('cm-name').value.trim();
   if(!name) return;
-  const schedule = document.getElementById('cm-schedule').value;
+  const days = [1,2,3,4,5,6,0].filter(d=>document.getElementById('cm-day-'+d)?.checked);
+  if(!days.length){ alert('Please select at least one day.'); return; }
   const time = document.getElementById('cm-time').value;
   const color = document.getElementById('cm-color').value;
   const startDate = document.getElementById('cm-start').value || null;
@@ -882,9 +914,9 @@ function saveClass(classId){
   const duration = parseInt(document.getElementById('cm-duration').value) || 150;
   if(classId){
     const c = classById(classId);
-    c.name=name; c.schedule=schedule; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate; c.duration=duration;
+    c.name=name; c.days=days; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate; c.duration=duration;
   }else{
-    state.classes.push({id:uid(), name, schedule, time, color, startDate, endDate, duration});
+    state.classes.push({id:uid(), name, days, time, color, startDate, endDate, duration});
   }
   scheduleSave('classes', state.classes);
   closeModal();
@@ -1009,7 +1041,7 @@ function renderRollCall(){
   const students = studentsInClass(cls.id);
   const sessionKey = cls.id + '_' + date;
   const dow = new Date(date+'T00:00:00').getDay();
-  const offSchedule = !cls.schedule || !SCHEDULE_DAYS[cls.schedule] || !SCHEDULE_DAYS[cls.schedule].includes(dow);
+  const offSchedule = !getClassDays(cls).includes(dow);
   const holiday = getHoliday(date);
 
   // Don't create session records for holidays
@@ -1042,7 +1074,7 @@ function renderRollCall(){
       </div>
     </div>
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
-    ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls.schedule)}).</div>`:''}
+    ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls)}).</div>`:''}
     ${!holiday && students.length ? `
       <div class="rollcall-actions">
         <button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>
@@ -1565,7 +1597,7 @@ function renderCalendar(){
     const dateStr = dateToStr(year, month, d);
     const dow = new Date(year, month, d).getDay();
     const classesToday = state.classes.filter(c=>{
-      if(!c.schedule || !SCHEDULE_DAYS[c.schedule] || !SCHEDULE_DAYS[c.schedule].includes(dow)) return false;
+      if(!getClassDays(c).includes(dow)) return false;
       if(c.startDate && dateStr < c.startDate) return false;
       if(c.endDate && dateStr > c.endDate) return false;
       return true;
@@ -1623,7 +1655,7 @@ function goToCurrentMonth(){
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
-  const classesToday = state.classes.filter(c=>c.schedule && SCHEDULE_DAYS[c.schedule] && SCHEDULE_DAYS[c.schedule].includes(dow));
+  const classesToday = state.classes.filter(c=>getClassDays(c).includes(dow));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
   const holiday = getHoliday(dateStr);
   showModal(`
