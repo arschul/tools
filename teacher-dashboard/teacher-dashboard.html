@@ -801,7 +801,7 @@ function exportBackup(){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  markBackupDone().then(()=>{ if(state.view==='dashboard') renderDashboard(); });
+  markBackupDone().then(()=>{ refreshView(); });
 }
 
 function openBackupModal(){
@@ -1090,15 +1090,31 @@ function navigate(view, params={}){
     if(n.dataset.view){ on ? n.setAttribute('aria-current','page') : n.removeAttribute('aria-current'); }
   });
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
-  if(view==='dashboard') renderDashboard();
-  if(view==='classes') renderClasses();
-  if(view==='rollcall') renderRollCall();
-  if(view==='calendar') renderCalendar();
-  if(view==='student') renderStudentProfile();
-  if(view==='reports') renderReports();
-  if(view==='group-report') renderGroupReport();
-  if(view==='private') renderPrivate();
-  if(view==='priv-student') renderPrivStudent();
+  refreshView();
+}
+
+/* Re-render whatever view is currently open.
+   Mutators must call this instead of naming a view: an action reachable from
+   two places (e.g. deleting a private lesson from the calendar chip) would
+   otherwise repaint a hidden view and leave the visible one stale. */
+function refreshView(){
+  const v = state.view;
+  // A record can be deleted while its own detail view is open; fall back rather than render a ghost.
+  if(v==='student' && !state.students.some(s=>s.id===state.studentProfileId)){
+    return navigate(state.studentProfileReturn || 'reports');
+  }
+  if(v==='priv-student' && !privStudent(state.privOpenStudentId)){
+    return navigate('private');
+  }
+  if(v==='dashboard') renderDashboard();
+  else if(v==='classes') renderClasses();
+  else if(v==='rollcall') renderRollCall();
+  else if(v==='calendar') renderCalendar();
+  else if(v==='student') renderStudentProfile();
+  else if(v==='reports') renderReports();
+  else if(v==='group-report') renderGroupReport();
+  else if(v==='private') renderPrivate();
+  else if(v==='priv-student') renderPrivStudent();
   updatePrivAlertDot();
 }
 function goToRollCall(classId, date){
@@ -1227,7 +1243,7 @@ function _renderDashboard(el){
   window._dashEcIds = ecStudents.map(s=>s.id);
   const ecHtml = ecStudents.length ? `
     <div class="card section" style="margin-top:16px;">
-      <button type="button" class="dash-row-left" aria-expanded="${state.showDashEC}" onclick="state.showDashEC=!state.showDashEC;renderDashboard();">
+      <button type="button" class="dash-row-left" aria-expanded="${state.showDashEC}" onclick="state.showDashEC=!state.showDashEC;refreshView();">
         <span class="chevron" aria-hidden="true">${state.showDashEC?'▾':'▸'}</span>
         <span class="section-title" style="margin:0;">⭐ English Club (${ecStudents.length})</span>
       </button>
@@ -1262,7 +1278,7 @@ function _renderDashboard(el){
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-ghost small" onclick="goToRollCall(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}])">Open Roll Call →</button>
-            <button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="toggleSessionCompleted(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}]); renderDashboard();">✓ Complete</button>
+            <button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="toggleSessionCompleted(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}]); refreshView();">✓ Complete</button>
           </div>
         </div>`).join('')}
     </div>` : '';
@@ -1317,7 +1333,7 @@ function renderClasses(){
       </div>`}
     ${archived.length ? `
       <div style="margin-top:24px;">
-        <button type="button" class="dash-row-left" style="margin-bottom:8px;" aria-expanded="${state.showArchived}" onclick="state.showArchived=!state.showArchived;renderClasses();">
+        <button type="button" class="dash-row-left" style="margin-bottom:8px;" aria-expanded="${state.showArchived}" onclick="state.showArchived=!state.showArchived;refreshView();">
           <span class="chevron" aria-hidden="true">${state.showArchived?'▾':'▸'}</span>
           <span class="section-title" style="font-size:15px;color:var(--muted);margin:0;">Archived classes (${archived.length})</span>
         </button>
@@ -1379,7 +1395,7 @@ function renderClassCard(c, isArchived){
 }
 function toggleClassExpand(classId){
   state.expandedClassId = state.expandedClassId===classId ? null : classId;
-  renderClasses();
+  refreshView();
 }
 function openClassModal(classId){
   const c = classId ? classById(classId) : null;
@@ -1496,7 +1512,7 @@ function saveClass(classId){
   }
   scheduleSave('classes', state.classes);
   closeModal();
-  renderClasses();
+  refreshView();
 }
 function deleteClass(classId){
   if(!confirm('Delete this class, its students, and all roll call records for it? This cannot be undone.')) return;
@@ -1509,7 +1525,7 @@ function deleteClass(classId){
   scheduleSave('students', state.students);
   scheduleSave('sessions', state.sessions);
   scheduleSave('events', state.events);
-  renderClasses();
+  refreshView();
 }
 function archiveClass(classId){
   const c = classById(classId);
@@ -1528,7 +1544,7 @@ function archiveClass(classId){
   if(state.expandedClassId===classId) state.expandedClassId=null;
   scheduleSave('classes', state.classes);
   scheduleSave('students', state.students);
-  renderClasses();
+  refreshView();
 }
 function unarchiveClass(classId){
   const c = classById(classId);
@@ -1536,7 +1552,7 @@ function unarchiveClass(classId){
   c.archived = false;
   delete c.archivedAt;
   scheduleSave('classes', state.classes);
-  renderClasses();
+  refreshView();
 }
 function addStudent(classId){
   const input = document.getElementById('new-student-'+classId);
@@ -1544,7 +1560,7 @@ function addStudent(classId){
   if(!name) return;
   state.students.push({id:uid(), name, classId});
   scheduleSave('students', state.students);
-  renderClasses();
+  refreshView();
 }
 function anyStudent(id){ return state.students.find(x=>x.id===id) || state.privateStudents.find(x=>x.id===id); }
 function openContactParentsModal(studentId){
@@ -1580,8 +1596,7 @@ function saveContactParents(studentId){
   const isPriv = !!privStudent(studentId);
   if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
   closeModal();
-  if(isPriv){ if(state.view==='priv-student') renderPrivStudent(); else renderPrivate(); }
-  else renderClasses();
+  refreshView();
 }
 function clearContactParents(studentId){
   const s = anyStudent(studentId);
@@ -1616,10 +1631,7 @@ function confirmCallDone(studentId){
   const isPriv = !!privStudent(studentId);
   if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
   closeModal();
-  if(state.view==='dashboard') renderDashboard();
-  if(state.view==='classes') renderClasses();
-  if(state.view==='priv-student') renderPrivStudent();
-  if(state.view==='private') renderPrivate();
+  refreshView();
 }
 
 function toggleEnglishClub(studentId){
@@ -1627,7 +1639,7 @@ function toggleEnglishClub(studentId){
   if(!s) return;
   s.englishClub = !s.englishClub;
   scheduleSave('students', state.students);
-  renderClasses();
+  refreshView();
 }
 /* ---------- transfer student between classes ---------- */
 function openTransferModal(studentId){
@@ -1676,13 +1688,13 @@ function transferStudent(studentId){
   st.classId = newClassId;
   scheduleSave('students', state.students);
   closeModal();
-  renderClasses();
+  refreshView();
 }
 function deleteStudent(studentId){
   if(!confirm('Remove this student from the class?')) return;
   state.students = state.students.filter(s=>s.id!==studentId);
   scheduleSave('students', state.students);
-  renderClasses();
+  refreshView();
 }
 
 /* ================= ROLL CALL ================= */
@@ -1793,7 +1805,7 @@ function toggleSessionCompleted(classId, date){
   if(!state.sessionMeta[key]) state.sessionMeta[key] = {};
   state.sessionMeta[key].completed = !state.sessionMeta[key].completed;
   scheduleSave('sessionMeta', state.sessionMeta);
-  renderRollCall();
+  refreshView();
 }
 function renderRosterRow(s, rec, missedHw=false, locked=false){
   const open = state.openDrawer === s.id;
@@ -1902,7 +1914,7 @@ function persistSessions(){ scheduleSave('sessions', state.sessions); }
 function setAttendance(studentId, val){
   getCurrentRecord(studentId).attendance = val;
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function adjustField(studentId, field, delta){
   const rec = getCurrentRecord(studentId);
@@ -1912,7 +1924,7 @@ function adjustField(studentId, field, delta){
     rec[field] = Math.max(0, rec[field] + delta);
   }
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function setNumField(studentId, field, value, min=0, max=Infinity){
   const rec = getCurrentRecord(studentId);
@@ -1920,25 +1932,25 @@ function setNumField(studentId, field, value, min=0, max=Infinity){
   if(isNaN(n)) n = min;
   rec[field] = Math.min(max, Math.max(min, n));
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function bumpField(studentId, field, delta){
   const rec = getCurrentRecord(studentId);
   rec[field] = Math.max(0, (rec[field]||0) + delta);
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function setField(studentId, field, val){
   const rec = getCurrentRecord(studentId);
   rec[field] = rec[field]===val ? null : val;
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function setLateHwOutcome(studentId, val){
   const rec = getCurrentRecord(studentId);
   rec.lateHwOutcome = val;
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function setNote(studentId, val){
   getCurrentRecord(studentId).notes = val;
@@ -1946,22 +1958,22 @@ function setNote(studentId, val){
 }
 function toggleDrawer(studentId){
   state.openDrawer = state.openDrawer===studentId ? null : studentId;
-  renderRollCall();
+  refreshView();
 }
 function markAllPresent(){
   studentsInClass(state.rollcall.classId).forEach(s=>{ getCurrentRecord(s.id).attendance='present'; });
   persistSessions();
-  renderRollCall();
+  refreshView();
 }
 function setRollcallClass(classId){
   state.rollcall.classId = classId;
   state.openDrawer = null;
-  renderRollCall();
+  refreshView();
 }
 function setRollcallDate(date){
   state.rollcall.date = date;
   state.openDrawer = null;
-  renderRollCall();
+  refreshView();
 }
 
 /* ================= STUDENT PROFILE ================= */
@@ -2200,15 +2212,15 @@ function renderStudentProfile(){
 }
 function toggleReportLang(){
   state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
-  renderStudentProfile();
+  refreshView();
 }
 function setReportRange(which, val){
   state.reportRange[which] = val || '';
-  renderStudentProfile();
+  refreshView();
 }
 function resetReportRange(){
   state.reportRange = {from:'', to:''};
-  renderStudentProfile();
+  refreshView();
 }
 
 /* ================= REPORTS ================= */
@@ -2253,15 +2265,15 @@ function renderReports(){
 }
 function setReportsClass(classId){
   state.reportsSelection.classId = classId;
-  renderReports();
+  refreshView();
 }
 function setReportRangeFromReports(which, val){
   state.reportRange[which] = val || '';
-  renderReports();
+  refreshView();
 }
 function resetReportRangeFromReports(){
   state.reportRange = {from:'', to:''};
-  renderReports();
+  refreshView();
 }
 
 /* ================= GROUP REPORT ================= */
@@ -2387,7 +2399,7 @@ function renderGroupReport(){
 }
 function toggleGroupReportLang(){
   state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
-  renderGroupReport();
+  refreshView();
 }
 
 /* ================= CALENDAR ================= */
@@ -2463,12 +2475,12 @@ function changeMonth(delta){
   if(month<0){ month=11; year--; }
   if(month>11){ month=0; year++; }
   state.calendar = {year, month};
-  renderCalendar();
+  refreshView();
 }
 function goToCurrentMonth(){
   const now = new Date();
   state.calendar = {year: now.getFullYear(), month: now.getMonth()};
-  renderCalendar();
+  refreshView();
 }
 function openDayModal(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
@@ -2581,7 +2593,7 @@ function saveClassSession(classId, dateStr){
   setLessonNote(classId, dateStr, document.getElementById('cs-content').value);
   setHomework(classId, dateStr, document.getElementById('cs-hw').value);
   closeModal();
-  renderCalendar();
+  refreshView();
 }
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
@@ -2591,7 +2603,7 @@ function addEvent(dateStr){
   state.events.push({id:uid(), date:dateStr, title, type, classId});
   scheduleSave('events', state.events);
   closeModal();
-  renderCalendar();
+  refreshView();
 }
 function deleteEvent(eventId, dateStr){
   const ev = state.events.find(e=>e.id===eventId);
@@ -2599,14 +2611,14 @@ function deleteEvent(eventId, dateStr){
   if(!confirm(`Delete "${ev.title}" on ${formatDateShort(ev.date)}?\n\nThis cannot be undone.`)) return;
   state.events = state.events.filter(e=>e.id!==eventId);
   scheduleSave('events', state.events);
-  renderCalendar();
+  refreshView();
   openDayModal(dateStr);
 }
 function markHoliday(dateStr){
   const label = document.getElementById('holiday-label').value.trim() || 'Holiday';
   state.holidays.push({id:uid(), date:dateStr, label});
   scheduleSave('holidays', state.holidays);
-  renderCalendar();
+  refreshView();
   openDayModal(dateStr);
 }
 function removeHoliday(dateStr){
@@ -2615,7 +2627,7 @@ function removeHoliday(dateStr){
   if(!confirm(`Remove the holiday "${hol.label}" on ${formatDateShort(dateStr)}?\n\nClasses will be scheduled on this day again.`)) return;
   state.holidays = state.holidays.filter(h=>h.date!==dateStr);
   scheduleSave('holidays', state.holidays);
-  renderCalendar();
+  refreshView();
   openDayModal(dateStr);
 }
 
@@ -2831,7 +2843,7 @@ function renderPrivate(){
   `;
   updatePrivAlertDot();
 }
-function setPrivView(v){ state.privView = v; renderPrivate(); }
+function setPrivView(v){ state.privView = v; refreshView(); }
 
 /* ---------- private: overview ---------- */
 function privOverviewHtml(){
@@ -2897,8 +2909,8 @@ function privStudentsHtml(){
   return `
     <div class="card section" style="margin-bottom:16px;">
       <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
-        ${filters.map(([k,l])=>`<button class="btn-ghost small ${state.privStudentFilter===k?'active-filter':''}" style="${state.privStudentFilter===k?'background:var(--accent-soft);color:var(--accent);border-color:var(--accent);':''}" onclick="state.privStudentFilter='${k}';renderPrivate();">${l}</button>`).join('')}
-        <input type="text" placeholder="Search name…" value="${esc(state.privStudentSearch)}" oninput="state.privStudentSearch=this.value;renderPrivate();" style="flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;">
+        ${filters.map(([k,l])=>`<button class="btn-ghost small ${state.privStudentFilter===k?'active-filter':''}" style="${state.privStudentFilter===k?'background:var(--accent-soft);color:var(--accent);border-color:var(--accent);':''}" onclick="state.privStudentFilter='${k}';refreshView();">${l}</button>`).join('')}
+        <input type="text" placeholder="Search name…" value="${esc(state.privStudentSearch)}" oninput="state.privStudentSearch=this.value;refreshView();" style="flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;">
       </div>
     </div>
     ${filtered.length ? `<div class="card table-wrap"><table>
@@ -2980,12 +2992,12 @@ function privChangeMonth(delta){
   if(month<0){month=11;year--;}
   if(month>11){month=0;year++;}
   state.privCal={year,month};
-  renderPrivate();
+  refreshView();
 }
 function privGoToday(){
   const n=new Date();
   state.privCal={year:n.getFullYear(),month:n.getMonth()};
-  renderPrivate();
+  refreshView();
 }
 
 /* ---------- private: payments ---------- */
@@ -3207,7 +3219,7 @@ function savePrivStudent(id){
   regenerateRecurring(s);
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 function deletePrivStudent(id){
   const s = privStudent(id);
@@ -3285,9 +3297,7 @@ function saveReschedule(lessonId){
   }
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent();
-  else if(state.view==='calendar') renderCalendar();
-  else renderPrivate();
+  refreshView();
 }
 
 /* ---------- private: lesson modal ---------- */
@@ -3339,7 +3349,7 @@ function saveLesson(id){
   if(!isNew && l.date!==oldDate) l.isRecurring = false;  // detach manually moved lessons
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 function deleteLesson(id){
   const l = state.privateLessons.find(x=>x.id===id);
@@ -3350,14 +3360,14 @@ function deleteLesson(id){
   state.privateLessons = state.privateLessons.filter(x=>x.id!==id);
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 function setLessonStatus(id, status){
   const l = state.privateLessons.find(x=>x.id===id);
   if(!l) return;
   l.status = status;
   persistPrivate();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 
 /* ---------- private: payment modal ---------- */
@@ -3412,14 +3422,14 @@ function savePayment(id){
   p.notes = document.getElementById('pay-notes').value;
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 function deletePayment(id){
   if(!confirm('Delete this payment?')) return;
   state.payments = state.payments.filter(p=>p.id!==id);
   persistPrivate();
   closeModal();
-  if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
+  refreshView();
 }
 function openPrivSettingsModal(){
   showModal(`
@@ -3437,7 +3447,7 @@ function savePrivSettings(){
   state.privateSettings.overdueThresholdDays = Number(document.getElementById('pset-days').value)||14;
   persistPrivate();
   closeModal();
-  renderPrivate();
+  refreshView();
 }
 
 /* ---------- private: day modal (schedule tab) ---------- */
@@ -3688,12 +3698,12 @@ function saveCheckpoint(id, studentId){
     const v = document.getElementById('cp-'+sk.key).value;
     if(v) c.grades[sk.key] = v;
   });
-  persistPrivate(); closeModal(); renderPrivStudent();
+  persistPrivate(); closeModal(); refreshView();
 }
 function deleteCheckpoint(id){
   if(!confirm('Delete this checkpoint?')) return;
   state.checkpoints = state.checkpoints.filter(c=>c.id!==id);
-  persistPrivate(); closeModal(); renderPrivStudent();
+  persistPrivate(); closeModal(); refreshView();
 }
 
 /* ---------- learning point modal ---------- */
@@ -3744,12 +3754,12 @@ function saveLearningPoint(id, studentId){
   p.complete = document.getElementById('lp-complete').checked;
   if(p.complete && !wasComplete && !p.dateCompleted) p.dateCompleted = todayStr();
   if(!p.complete) p.dateCompleted = '';
-  persistPrivate(); closeModal(); renderPrivStudent();
+  persistPrivate(); closeModal(); refreshView();
 }
 function deleteLearningPoint(id){
   if(!confirm('Delete this learning point?')) return;
   state.learningPoints = state.learningPoints.filter(p=>p.id!==id);
-  persistPrivate(); closeModal(); renderPrivStudent();
+  persistPrivate(); closeModal(); refreshView();
 }
 
 /* ================= INIT ================= */
