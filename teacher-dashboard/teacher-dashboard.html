@@ -2487,6 +2487,9 @@ function addEvent(dateStr){
   renderCalendar();
 }
 function deleteEvent(eventId, dateStr){
+  const ev = state.events.find(e=>e.id===eventId);
+  if(!ev) return;
+  if(!confirm(`Delete "${ev.title}" on ${formatDateShort(ev.date)}?\n\nThis cannot be undone.`)) return;
   state.events = state.events.filter(e=>e.id!==eventId);
   scheduleSave('events', state.events);
   renderCalendar();
@@ -2500,6 +2503,9 @@ function markHoliday(dateStr){
   openDayModal(dateStr);
 }
 function removeHoliday(dateStr){
+  const hol = state.holidays.find(h=>h.date===dateStr);
+  if(!hol) return;
+  if(!confirm(`Remove the holiday "${hol.label}" on ${formatDateShort(dateStr)}?\n\nClasses will be scheduled on this day again.`)) return;
   state.holidays = state.holidays.filter(h=>h.date!==dateStr);
   scheduleSave('holidays', state.holidays);
   renderCalendar();
