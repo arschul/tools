@@ -697,7 +697,7 @@ function attendanceBadgeClass(a){ return {present:'green',late:'amber',absent:'r
 function englishLabel(e){ return {excellent:'Excellent',improve:'Needs some reminders',unacceptable:'Needs consistent reminders'}[e] || '—'; }
 function englishBadgeClass(e){ return {excellent:'green',improve:'amber',unacceptable:'red'}[e] || ''; }
 function splitSessionKey(key){ const i=key.indexOf('_'); return [key.slice(0,i), key.slice(i+1)]; }
-function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', participation:'good', notes:''}; }
+function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', participation:'great', notes:''}; }
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
 function expectedSessionsForClass(cls, startOverride, endOverride){
@@ -838,7 +838,8 @@ function _renderDashboard(el){
   if(todayHoliday){
     todayHtml = `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>`;
   } else if(todaysClasses.length){
-    todayHtml = todaysClasses.map(c=>`
+    const todaysPending = todaysClasses.filter(c=>!isSessionCompleted(c.id, today));
+    todayHtml = todaysPending.length ? todaysPending.map(c=>`
       <div class="dash-row">
         <div class="dash-row-left">
           <span class="color-dot" style="background:${c.color}"></span>
@@ -848,7 +849,8 @@ function _renderDashboard(el){
           </div>
         </div>
         <button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>
-      </div>`).join('');
+      </div>`).join('')
+      : `<div class="empty">✓ All of today's classes are done.</div>`;
   } else {
     todayHtml = `<div class="empty">No classes scheduled today.</div>`;
   }
