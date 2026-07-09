@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --sidebar:#1c2436;
@@ -46,8 +45,6 @@
   }
   h1,h2,h3{font-family:'Sora',sans-serif;margin:0;}
   a{color:var(--accent);cursor:pointer;}
-
-  .app-hidden{display:none !important;}
 
   /* Sidebar */
   .sidebar{
@@ -329,7 +326,7 @@
     .sidebar{width:100%;display:flex;align-items:center;gap:8px;padding:14px 16px;overflow-x:auto;}
     .sidebar .brand{margin-bottom:0;margin-right:8px;flex-shrink:0;}
     .nav-item{flex-shrink:0;margin-bottom:0;white-space:nowrap;}
-    .sidebar-divider{display:none;}
+    #backup-status, .sidebar-divider{display:none;}
     .main{padding:18px;}
     .stat-row{grid-template-columns:repeat(2,1fr);}
     .dash-grid{grid-template-columns:1fr !important;}
@@ -350,18 +347,7 @@
 </head>
 <body>
 
-<div id="login-overlay" style="position:fixed;inset:0;background:#1c2436;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',sans-serif;">
-  <div style="background:#fff;border-radius:14px;padding:36px 32px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-    <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:20px;color:#1c2436;margin-bottom:4px;">EFL Dashboard</div>
-    <div style="font-size:13px;color:#7d869c;margin-bottom:20px;">Sign in to continue</div>
-    <input id="login-email" type="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-    <input id="login-password" type="password" placeholder="Password" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') doLogin();">
-    <button onclick="doLogin()" style="width:100%;padding:11px;background:#4f6df5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
-    <div id="login-error" style="color:#d1453d;font-size:12px;margin-top:10px;min-height:14px;"></div>
-  </div>
-</div>
-
-<div class="sidebar app-hidden" id="app-sidebar">
+<div class="sidebar">
   <div class="brand"><span class="dot"></span>EFL Dashboard</div>
   <a href="../" style="display:flex;align-items:center;gap:6px;color:#7d869c;font-size:12px;text-decoration:none;margin:-16px 0 20px 2px;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7d869c'">← Tool Hub</a>
   <div class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
@@ -390,13 +376,19 @@
     <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
   </div>
   <div class="sidebar-divider"></div>
-  <div class="nav-item" onclick="doLogout()">
-    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
-    Log out
+  <div id="backup-status" style="font-size:11px;color:#7d869c;padding:2px 12px 8px;"></div>
+  <div class="nav-item" onclick="exportData()">
+    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div>
+    Backup data
   </div>
+  <label class="nav-item" style="margin-bottom:0;">
+    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg></div>
+    Restore backup
+    <input type="file" accept="application/json" style="display:none;" onchange="importData(this.files[0]); this.value='';">
+  </label>
 </div>
 
-<div class="main app-hidden" id="app-main">
+<div class="main">
   <div id="view-dashboard" class="view"></div>
   <div id="view-classes" class="view"></div>
   <div id="view-rollcall" class="view"></div>
@@ -425,7 +417,6 @@ let state = {
   holidays: [],
   sessionMeta: {},
   lessonNotes: {},
-  homework: {},
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -578,52 +569,12 @@ const T = {
   }
 };
 
-/* ---------- supabase / auth ---------- */
-const SUPABASE_URL = 'https://efqwucymzymmrucczthd.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcXd1Y3ltenltbXJ1Y2N6dGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NTAwNDAsImV4cCI6MjA5OTEyNjA0MH0.jCJmcE18VGZMXlwo-Sw-38xaG7Iq3FpS9LM-FjEF9iU';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let currentUser = null;
-
-async function doLogin(){
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  const errEl = document.getElementById('login-error');
-  errEl.textContent = '';
-  if(!email || !password){ errEl.textContent = 'Enter email and password.'; return; }
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){ errEl.textContent = error.message; return; }
-  currentUser = data.user;
-  await enterApp();
-}
-
-async function doLogout(){
-  await sb.auth.signOut();
-  currentUser = null;
-  document.getElementById('app-sidebar').classList.add('app-hidden');
-  document.getElementById('app-main').classList.add('app-hidden');
-  document.getElementById('login-overlay').classList.remove('app-hidden');
-  document.getElementById('login-email').value = '';
-  document.getElementById('login-password').value = '';
-}
-
-async function enterApp(){
-  document.getElementById('login-overlay').classList.add('app-hidden');
-  document.getElementById('app-sidebar').classList.remove('app-hidden');
-  document.getElementById('app-main').classList.remove('app-hidden');
-  await init();
-}
-
-/* ---------- storage (Supabase-backed) ---------- */
+/* ---------- storage ---------- */
+const STORAGE_PREFIX = 'efl-dashboard:';
 async function loadKey(key, fallback){
   try{
-    const { data, error } = await sb
-      .from('dashboard_data')
-      .select('value')
-      .eq('user_id', currentUser.id)
-      .eq('key', key)
-      .maybeSingle();
-    if(error){ console.error('Load failed for', key, error); return fallback; }
-    return data ? data.value : fallback;
+    const raw = localStorage.getItem(STORAGE_PREFIX+key);
+    return raw !== null ? JSON.parse(raw) : fallback;
   }catch(e){
     console.error('Load failed for', key, e);
     return fallback;
@@ -631,10 +582,7 @@ async function loadKey(key, fallback){
 }
 async function saveKey(key, value){
   try{
-    const { error } = await sb
-      .from('dashboard_data')
-      .upsert({ user_id: currentUser.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
-    if(error) console.error('Save failed for', key, error);
+    localStorage.setItem(STORAGE_PREFIX+key, JSON.stringify(value));
   }catch(e){
     console.error('Save failed for', key, e);
   }
@@ -698,9 +646,39 @@ function attendanceBadgeClass(a){ return {present:'green',late:'amber',absent:'r
 function englishLabel(e){ return {excellent:'Excellent',improve:'Needs some reminders',unacceptable:'Needs consistent reminders'}[e] || '—'; }
 function englishBadgeClass(e){ return {excellent:'green',improve:'amber',unacceptable:'red'}[e] || ''; }
 function splitSessionKey(key){ const i=key.indexOf('_'); return [key.slice(0,i), key.slice(i+1)]; }
-function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', participation:'great', notes:''}; }
+function defaultRecord(){ return {attendance:'present', lateMin:0, leftEarlyMin:0, phone:0, hw:100, english:'excellent', participation:'good', notes:''}; }
 function getHoliday(dateStr){ return state.holidays.find(h=>h.date===dateStr); }
 function isHoliday(dateStr){ return !!getHoliday(dateStr); }
+/* ---------- duration history ---------- */
+// A class's duration can change over time. durationHistory = [{from:'YYYY-MM-DD', duration:N}, ...]
+// Past sessions keep the duration that was in effect on their date.
+function durationHistoryOf(cls){
+  if(Array.isArray(cls.durationHistory) && cls.durationHistory.length){
+    return cls.durationHistory.slice().sort((a,b)=>a.from.localeCompare(b.from));
+  }
+  return [{ from: '1900-01-01', duration: Number(cls.duration)||150 }];
+}
+function durationForDate(cls, dateStr){
+  if(!cls) return 150;
+  const hist = durationHistoryOf(cls);
+  let d = hist[0].duration;
+  for(const e of hist){ if(e.from <= dateStr) d = e.duration; else break; }
+  return Number(d)||150;
+}
+function currentDuration(cls){ return durationForDate(cls, todayStr()); }
+
+/* ---------- enrollments (class transfers) ---------- */
+// student.enrollments = [{classId, from, to|null}] — 'to' is inclusive last day in that class.
+function enrollmentsOf(st){
+  if(Array.isArray(st.enrollments) && st.enrollments.length) return st.enrollments;
+  const c = classById(st.classId);
+  return [{ classId: st.classId, from: c?.startDate || '1900-01-01', to: null }];
+}
+function classForStudentOnDate(st, dateStr){
+  const en = enrollmentsOf(st).find(e => e.from <= dateStr && (!e.to || dateStr <= e.to));
+  return classById(en ? en.classId : st.classId);
+}
+
 function expectedSessionsForClass(cls, startOverride, endOverride){
   const days = getClassDays(cls);
   if(!days.length) return null;
@@ -839,8 +817,7 @@ function _renderDashboard(el){
   if(todayHoliday){
     todayHtml = `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>`;
   } else if(todaysClasses.length){
-    const todaysPending = todaysClasses.filter(c=>!isSessionCompleted(c.id, today));
-    todayHtml = todaysPending.length ? todaysPending.map(c=>`
+    todayHtml = todaysClasses.map(c=>`
       <div class="dash-row">
         <div class="dash-row-left">
           <span class="color-dot" style="background:${c.color}"></span>
@@ -850,8 +827,7 @@ function _renderDashboard(el){
           </div>
         </div>
         <button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>
-      </div>`).join('')
-      : `<div class="empty">✓ All of today's classes are done.</div>`;
+      </div>`).join('');
   } else {
     todayHtml = `<div class="empty">No classes scheduled today.</div>`;
   }
@@ -990,7 +966,7 @@ function renderClassCard(c, isArchived){
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
             <div class="dash-row-title">${esc(c.name)}${isArchived?` <span class="badge other" style="margin-left:6px;">Archived</span>`:''}</div>
-            <div class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students</div>
+            <div class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students · ${(()=>{const h=durationHistoryOf(c);return h.length>1?h.map(e=>e.duration).join('→')+' min':h[0].duration+' min';})()}</div>
           </div>
           <span class="chevron" style="margin-left:8px;">${expanded?'▾':'▸'}</span>
         </div>
@@ -1020,6 +996,7 @@ function renderClassCard(c, isArchived){
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
                     </button>
+                    <button class="icon-btn" onclick="openTransferModal('${s.id}')" title="Transfer to another class">⇄ Transfer</button>
                     <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
                   </div>
                 </div>
@@ -1063,7 +1040,13 @@ function openClassModal(classId){
       <div class="field" style="flex:1;"><label>First class date</label><input id="cm-start" type="date" value="${c?.startDate||''}"></div>
       <div class="field" style="flex:1;"><label>Last class date</label><input id="cm-end" type="date" value="${c?.endDate||''}"></div>
     </div>
-    <div class="field"><label>Class duration (minutes)</label><input id="cm-duration" type="number" min="1" step="5" value="${c?.duration||150}"></div>
+    <div class="field"><label>Class duration</label>
+      <div id="cm-dur-rows">
+        ${(c?durationHistoryOf(c):[{from:'', duration:150}]).map((e,i)=>cmDurRow(i, e, c)).join('')}
+      </div>
+      <button class="btn-ghost small" style="margin-top:6px;" onclick="cmAddDurRow()">+ Duration change</button>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">Add a row when the class length changes. Sessions before that date keep the earlier duration.</div>
+    </div>
     <div class="field"><label>Color</label>
       <div class="swatches">
         ${PALETTE.map(col=>`<div class="swatch ${ (c?c.color===col:col===PALETTE[0]) ?'on':''}" style="background:${col}" onclick="selectSwatch(this,'${col}')"></div>`).join('')}
@@ -1078,6 +1061,24 @@ function openClassModal(classId){
       </div>
     </div>
   `, true);
+}
+function cmDurRow(i, e, c){
+  const isFirst = i===0;
+  const fromVal = (e.from && e.from!=='1900-01-01') ? e.from : (isFirst ? (c?.startDate||'') : '');
+  return `<div class="field-row cm-dur-row" style="align-items:center;margin-bottom:6px;">
+    <div style="flex:1;">
+      <input class="cm-dur-from" type="date" value="${fromVal}" placeholder="From" style="width:100%;" ${isFirst?'title="From the start of the class"':''}>
+      ${isFirst?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">From the start (leave blank = always)</div>`:''}
+    </div>
+    <input class="cm-dur-min" type="number" min="1" step="5" value="${e.duration||150}" style="width:100px;" title="minutes">
+    <span style="font-size:12px;color:var(--muted);">min</span>
+    ${isFirst?'<span style="width:34px;"></span>':`<button class="icon-btn danger" onclick="this.closest('.cm-dur-row').remove()">×</button>`}
+  </div>`;
+}
+function cmAddDurRow(){
+  const rows = document.getElementById('cm-dur-rows');
+  const last = rows.querySelector('.cm-dur-row:last-child .cm-dur-min')?.value || 150;
+  rows.insertAdjacentHTML('beforeend', cmDurRow(rows.children.length, {from: todayStr(), duration: last}, null));
 }
 function updateDayLabel(d){
   const cb = document.getElementById('cm-day-'+d);
@@ -1101,12 +1102,27 @@ function saveClass(classId){
   const color = document.getElementById('cm-color').value;
   const startDate = document.getElementById('cm-start').value || null;
   const endDate = document.getElementById('cm-end').value || null;
-  const duration = parseInt(document.getElementById('cm-duration').value) || 150;
+
+  // Build duration history
+  const rows = [...document.querySelectorAll('.cm-dur-row')];
+  let durationHistory = rows.map((r,i)=>({
+    from: (i===0 ? (r.querySelector('.cm-dur-from').value || '1900-01-01') : r.querySelector('.cm-dur-from').value),
+    duration: parseInt(r.querySelector('.cm-dur-min').value) || 150
+  })).filter(e=>e.from);
+  if(!durationHistory.length) durationHistory = [{from:'1900-01-01', duration:150}];
+  durationHistory.sort((a,b)=>a.from.localeCompare(b.from));
+  // dedupe identical from-dates (last wins)
+  const seen = {};
+  durationHistory.forEach(e=>{ seen[e.from]=e; });
+  durationHistory = Object.values(seen).sort((a,b)=>a.from.localeCompare(b.from));
+  const duration = durationHistory[durationHistory.length-1].duration; // compat field = current/latest
+
   if(classId){
     const c = classById(classId);
-    c.name=name; c.days=days; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate; c.duration=duration;
+    c.name=name; c.days=days; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate;
+    c.duration=duration; c.durationHistory=durationHistory;
   }else{
-    state.classes.push({id:uid(), name, days, time, color, startDate, endDate, duration});
+    state.classes.push({id:uid(), name, days, time, color, startDate, endDate, duration, durationHistory});
   }
   scheduleSave('classes', state.classes);
   closeModal();
@@ -1243,6 +1259,55 @@ function toggleEnglishClub(studentId){
   scheduleSave('students', state.students);
   renderClasses();
 }
+/* ---------- transfer student between classes ---------- */
+function openTransferModal(studentId){
+  const st = state.students.find(x=>x.id===studentId);
+  if(!st) return;
+  const cur = classById(st.classId);
+  const targets = activeClasses().filter(c=>c.id!==st.classId);
+  if(!targets.length){ alert('There is no other active class to transfer to.'); return; }
+  showModal(`
+    <h3>⇄ Transfer ${esc(st.name)}</h3>
+    <div style="font-size:13px;color:var(--muted);margin:-6px 0 14px;">
+      Currently in <b>${cur?esc(cur.name):'—'}</b>. Past roll call records stay attached to the old class and still appear on this student's report.
+    </div>
+    <div class="field"><label>Transfer to</label>
+      <select id="tr-class">
+        ${targets.map(c=>`<option value="${c.id}">${esc(c.name)} · ${scheduleLabel(c)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Effective from</label><input id="tr-date" type="date" value="${todayStr()}"></div>
+    <div style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">Sessions on or after this date count toward the new class.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="transferStudent('${st.id}')">Transfer</button>
+    </div>
+  `);
+}
+function transferStudent(studentId){
+  const st = state.students.find(x=>x.id===studentId);
+  if(!st) return;
+  const newClassId = document.getElementById('tr-class').value;
+  const fromDate = document.getElementById('tr-date').value || todayStr();
+  if(newClassId===st.classId){ closeModal(); return; }
+  const newCls = classById(newClassId);
+  if(!confirm(`Transfer ${st.name} to "${newCls.name}" starting ${formatDateShort(fromDate)}?`)) return;
+
+  // close current enrollment the day before the transfer, open the new one
+  const en = enrollmentsOf(st).map(e=>({...e}));
+  const open = en.find(e=>!e.to);
+  const prevDay = new Date(fromDate+'T00:00:00');
+  prevDay.setDate(prevDay.getDate()-1);
+  const prevStr = dateToStr(prevDay.getFullYear(), prevDay.getMonth(), prevDay.getDate());
+  if(open) open.to = prevStr;
+  en.push({ classId: newClassId, from: fromDate, to: null });
+
+  st.enrollments = en;
+  st.classId = newClassId;
+  scheduleSave('students', state.students);
+  closeModal();
+  renderClasses();
+}
 function deleteStudent(studentId){
   if(!confirm('Remove this student from the class?')) return;
   state.students = state.students.filter(s=>s.id!==studentId);
@@ -1335,16 +1400,6 @@ function setLessonNote(classId, date, val){
   if(val && val.trim()) state.lessonNotes[key] = val;
   else delete state.lessonNotes[key];
   scheduleSave('lessonNotes', state.lessonNotes);
-}
-function getHomework(classId, date){
-  return (state.homework && state.homework[classId+'_'+date]) || '';
-}
-function setHomework(classId, date, val){
-  if(!state.homework) state.homework = {};
-  const key = classId+'_'+date;
-  if(val && val.trim()) state.homework[key] = val;
-  else delete state.homework[key];
-  scheduleSave('homework', state.homework);
 }
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
@@ -1545,8 +1600,9 @@ function renderStudentProfile(){
   const allRecords = [];
   Object.keys(state.sessions).forEach(key=>{
     const [classId, date] = splitSessionKey(key);
-    if(classId===student.classId && state.sessions[key][student.id]){
-      allRecords.push({date, ...state.sessions[key][student.id]});
+    // Collect records from EVERY class this student has records in (survives transfers)
+    if(state.sessions[key][student.id]){
+      allRecords.push({date, _classId: classId, ...state.sessions[key][student.id]});
     }
   });
   allRecords.sort((a,b)=>b.date.localeCompare(a.date));
@@ -1557,7 +1613,10 @@ function renderStudentProfile(){
 
   // Separate holiday records from real records
   const holidayDates = allPeriodRecords.filter(r=>isHoliday(r.date)).map(r=>r.date);
-  const records = allPeriodRecords.filter(r=>!isHoliday(r.date) && isSessionCompleted(student.classId, r.date));
+  const records = allPeriodRecords.filter(r=>!isHoliday(r.date) && isSessionCompleted(r._classId, r.date));
+
+  // Duration for a record = the duration in effect for *its own class* on *its own date*
+  const recDur = r => durationForDate(classById(r._classId) || cls, r.date);
 
   const total = records.length;
   const absent = records.filter(r=>r.attendance==='absent').length;
@@ -1570,17 +1629,33 @@ function renderStudentProfile(){
     return s+v;
   },0)/hwRecords.length) : null;
 
-  const duration = cls?.duration || 150;
-  const expected = cls ? expectedSessionsForClass(cls, fromVal||null, toVal||null) : null;
+  // Expected sessions: sum across every enrollment window overlapping the period
+  const expected = (()=>{
+    const wins = enrollmentsOf(student);
+    let sum = 0, any = false;
+    for(const w of wins){
+      const c = classById(w.classId);
+      if(!c) continue;
+      const wFrom = [w.from, fromVal].filter(Boolean).sort().pop();      // max
+      const candidates = [w.to, toVal, c.endDate].filter(Boolean);
+      const wTo = candidates.length ? candidates.sort()[0] : null;       // min
+      if(!wFrom || !wTo || wFrom > wTo) continue;
+      const n = expectedSessionsForClass(c, wFrom, wTo);
+      if(n!=null){ sum += n; any = true; }
+    }
+    return any ? sum : null;
+  })();
   const classesLost = absent;
   const attendanceRate = expected ? Math.round(100*(expected-classesLost)/expected) : null;
 
   const attended = records.filter(r=>r.attendance!=='absent');
-  const totalPossibleMin = total * duration;
+  const totalPossibleMin = records.reduce((s,r)=>s+recDur(r), 0);
   const lostLateMin = attended.reduce((s,r)=>s+(r.lateMin||0),0);
   const lostEarlyMin = attended.reduce((s,r)=>s+(r.leftEarlyMin||0),0);
-  const absentMin = absent * duration;
+  const absentMin = records.filter(r=>r.attendance==='absent').reduce((s,r)=>s+recDur(r), 0);
   const inClassMin = Math.max(0, totalPossibleMin - lostLateMin - lostEarlyMin - absentMin);
+  const avgDuration = total ? Math.round(totalPossibleMin/total) : (cls?currentDuration(cls):150);
+  const duration = avgDuration; // used for display only
 
   // Participation summary
   const partRecords = attended.filter(r=>r.participation);
@@ -1591,7 +1666,7 @@ function renderStudentProfile(){
 
   // Time lost equivalent (late + left early + absences), in equivalent classes
   const totalLostMin = lostLateMin + lostEarlyMin + absentMin;
-  const lostEquivClasses = (totalLostMin/duration).toFixed(1);
+  const lostEquivClasses = avgDuration ? (totalLostMin/avgDuration).toFixed(1) : '0.0';
 
   const classesLostHtml = expected!=null
     ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
@@ -1642,7 +1717,7 @@ function renderStudentProfile(){
       </div>
       <div class="card chart-card">
         <h3>${t.timeInClass}</h3>
-        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}</div>
+        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}${(()=>{const ds=[...new Set(records.map(recDur))];return ds.length>1?` <span style="color:var(--amber);">· duration varies (${ds.sort((a,b)=>a-b).join('/')} min)</span>`:'';})()}</div>
         ${renderDonut([
           {label:t.inClass, value:inClassMin, color:'var(--green)', unit:' min'},
           {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', unit:' min'},
@@ -1716,7 +1791,7 @@ function renderStudentProfile(){
                   <td>${formatDateShort(r.date)}</td>
                   <td colspan="9" style="color:var(--purple);font-weight:600;">🎉 ${esc(r._label)}</td>
                 </tr>`;
-              const lessonNote = getLessonNote(student.classId, r.date);
+              const lessonNote = getLessonNote(r._classId || student.classId, r.date);
               const missedRow = (r.attendance==='absent' && lessonNote) ? `
                 <tr style="background:var(--red-soft);">
                   <td></td>
@@ -1822,7 +1897,8 @@ function renderGroupReport(){
   const students = studentsInClass(cls.id);
   const fromVal = state.reportRange.from || cls.startDate || '';
   const toVal   = state.reportRange.to   || cls.endDate   || '';
-  const duration = cls.duration || 150;
+  const duration = currentDuration(cls);
+  const dur = d => durationForDate(cls, d);
 
   const rows = students.map(s=>{
     const recs = [];
@@ -1838,8 +1914,8 @@ function renderGroupReport(){
     const present = total - absent - late;
     const lostLate  = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.lateMin||0),0);
     const lostEarly = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.leftEarlyMin||0),0);
-    const absentMin = absent * duration;
-    const totalPoss = total * duration;
+    const absentMin = filtered.filter(r=>r.attendance==='absent').reduce((s,r)=>s+dur(r.date),0);
+    const totalPoss = filtered.reduce((s,r)=>s+dur(r.date),0);
     const inClass   = Math.max(0, totalPoss - lostLate - lostEarly - absentMin);
     const attRate   = total ? Math.round(100*(present+late)/total) : null;
     const hwRecs    = filtered.filter(r=>r.hw!=null);
@@ -1963,10 +2039,7 @@ function renderCalendar(){
         <div class="cal-date">${d}</div>
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?classesToday.map(c=>{
-            const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr));
-            return `<div class="cal-tag" title="Click to edit lesson content &amp; homework" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();openClassSessionModal('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</div>`;
-          }).join(''):''}
+          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
           ${privToday.map((l,pi)=>{
             const st = privStudent(l.studentId);
@@ -2092,41 +2165,6 @@ function openDayModal(dateStr){
     </div>
   `);
 }
-function openClassSessionModal(classId, dateStr){
-  const c = classById(classId);
-  if(!c) return;
-  const locked = !!(state.sessionMeta && state.sessionMeta[classId+'_'+dateStr]?.completed);
-  const dis = locked ? 'disabled' : '';
-  const lockedStyle = locked ? 'background:var(--gray-soft);' : '';
-  showModal(`
-    <h3><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${c.time?' · '+c.time:''}</h3>
-    <div class="meta" style="margin:-6px 0 14px;">${formatDateLong(dateStr)}</div>
-    ${locked?`<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">🔒 Completed session — read-only. Reopen it from Roll Call to edit.</div>`:''}
-    <div class="modal-section">
-      <div class="modal-section-label">Lesson content</div>
-      <div class="field">
-        <textarea id="cs-content" rows="3" ${dis} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getLessonNote(classId, dateStr))}</textarea>
-      </div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-section-label">Homework due</div>
-      <div class="field">
-        <textarea id="cs-hw" rows="2" ${dis} placeholder="e.g. Workbook p.44–45, write 150-word essay" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getHomework(classId, dateStr))}</textarea>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn-ghost" onclick="closeModal();goToRollCall('${classId}','${dateStr}')">Roll Call →</button>
-      ${locked?'':`<button class="btn-accent" onclick="saveClassSession('${classId}','${dateStr}')">Save</button>`}
-    </div>
-  `);
-}
-function saveClassSession(classId, dateStr){
-  setLessonNote(classId, dateStr, document.getElementById('cs-content').value);
-  setHomework(classId, dateStr, document.getElementById('cs-hw').value);
-  closeModal();
-  renderCalendar();
-}
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
   if(!title) return;
@@ -2156,6 +2194,105 @@ function removeHoliday(dateStr){
   renderCalendar();
   openDayModal(dateStr);
 }
+
+/* ================= BACKUP / RESTORE ================= */
+function exportData(){
+  const data = {
+    app: 'efl-teacher-dashboard',
+    exportedAt: new Date().toISOString(),
+    classes: state.classes,
+    students: state.students,
+    sessions: state.sessions,
+    events: state.events,
+    holidays: state.holidays,
+    sessionMeta: state.sessionMeta,
+    lessonNotes: state.lessonNotes,
+    privateStudents: state.privateStudents,
+    privateLessons: state.privateLessons,
+    payments: state.payments,
+    checkpoints: state.checkpoints,
+    learningPoints: state.learningPoints,
+    privateSettings: state.privateSettings
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `efl-dashboard-backup-${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  try{ localStorage.setItem(STORAGE_PREFIX+'lastBackup', todayStr()); }catch(e){}
+  updateBackupStatus();
+}
+function updateBackupStatus(){
+  const el = document.getElementById('backup-status');
+  if(!el) return;
+  let last = null;
+  try{ last = localStorage.getItem(STORAGE_PREFIX+'lastBackup'); }catch(e){}
+  if(!last){
+    el.innerHTML = `<span style="color:#e0a94a;">● Never backed up</span>`;
+    return;
+  }
+  const days = Math.floor((new Date(todayStr()) - new Date(last)) / 86400000);
+  if(days>=14){
+    el.innerHTML = `<span style="color:#e0a94a;">● Backup recommended (${days}d ago)</span>`;
+  }else{
+    el.innerHTML = `Last backup: ${formatDateShort(last)}`;
+  }
+}
+function importData(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    let data;
+    try{
+      data = JSON.parse(e.target.result);
+    }catch(err){
+      alert("Could not read this file — make sure it's a backup JSON exported from this dashboard.");
+      return;
+    }
+    if(!data || !Array.isArray(data.classes)){
+      alert("This file doesn't look like a valid dashboard backup.");
+      return;
+    }
+    if(!confirm('This will replace ALL current classes, students, roll call records, calendar events, and holidays with the contents of this backup. Continue?')) return;
+    state.classes = data.classes || [];
+    state.students = data.students || [];
+    state.sessions = data.sessions || {};
+    state.events = data.events || [];
+    state.holidays = data.holidays || [];
+    state.sessionMeta = data.sessionMeta || {};
+    state.lessonNotes = data.lessonNotes || {};
+    state.privateStudents = data.privateStudents || [];
+    state.privateLessons = data.privateLessons || [];
+    state.payments = data.payments || [];
+    state.checkpoints = data.checkpoints || [];
+    state.learningPoints = data.learningPoints || [];
+    state.privateSettings = data.privateSettings || { overdueThresholdDays: 14 };
+    saveKey('classes', state.classes);
+    saveKey('students', state.students);
+    saveKey('sessions', state.sessions);
+    saveKey('events', state.events);
+    saveKey('holidays', state.holidays);
+    saveKey('sessionMeta', state.sessionMeta);
+    saveKey('lessonNotes', state.lessonNotes);
+    saveKey('privateStudents', state.privateStudents);
+    saveKey('privateLessons', state.privateLessons);
+    saveKey('payments', state.payments);
+    saveKey('checkpoints', state.checkpoints);
+    saveKey('learningPoints', state.learningPoints);
+    saveKey('privateSettings', state.privateSettings);
+    state.expandedClassId = null;
+    state.openDrawer = null;
+    state.reportsSelection = {classId:'', studentId:''};
+    navigate('dashboard');
+    alert('Backup restored.');
+  };
+  reader.readAsText(file);
+}
+
 
 /* =========================================================
    PRIVATE LESSONS MODULE
@@ -3265,7 +3402,6 @@ async function init(){
   state.holidays = await loadKey('holidays', []);
   state.sessionMeta = await loadKey('sessionMeta', {});
   state.lessonNotes = await loadKey('lessonNotes', {});
-  state.homework = await loadKey('homework', {});
   state.privateStudents = await loadKey('privateStudents', []);
   state.privateLessons = await loadKey('privateLessons', []);
   state.payments = await loadKey('payments', []);
@@ -3274,17 +3410,10 @@ async function init(){
   state.privateSettings = await loadKey('privateSettings', { overdueThresholdDays: 14 });
   // refresh recurring placeholders for active students on load
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
+  updateBackupStatus();
   navigate('dashboard');
 }
-
-/* ---------- session bootstrap ---------- */
-(async function bootstrap(){
-  const { data: { session } } = await sb.auth.getSession();
-  if(session){
-    currentUser = session.user;
-    await enterApp();
-  }
-})();
+init();
 </script>
 </body>
 </html>
