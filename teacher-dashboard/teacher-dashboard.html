@@ -354,9 +354,9 @@
   <div style="background:#fff;border-radius:14px;padding:36px 32px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
     <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:20px;color:#1c2436;margin-bottom:4px;">EFL Dashboard</div>
     <div style="font-size:13px;color:#7d869c;margin-bottom:20px;">Sign in to continue</div>
-    <input id="login-email" type="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;">
-    <input id="login-password" type="password" placeholder="Password" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') doLogin();">
-    <button onclick="doLogin()" style="width:100%;padding:11px;background:#4f6df5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
+    <input id="login-email" type="email" autocomplete="username" autofocus placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:10px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') doLogin();">
+    <input id="login-password" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;padding:11px 12px;border:1px solid #dde2ec;border-radius:8px;font-size:14px;margin-bottom:14px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') doLogin();">
+    <button id="login-btn" onclick="doLogin()" style="width:100%;padding:11px;background:#4f6df5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
     <div id="login-error" style="color:#d1453d;font-size:12px;margin-top:10px;min-height:14px;"></div>
   </div>
 </div>
@@ -397,6 +397,7 @@
 </div>
 
 <div class="main app-hidden" id="app-main">
+  <div id="save-banner" class="no-print" style="display:none;background:var(--red-soft);color:var(--red);border:1px solid var(--red);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:13px;"></div>
   <div id="view-dashboard" class="view"></div>
   <div id="view-classes" class="view"></div>
   <div id="view-rollcall" class="view"></div>
@@ -584,21 +585,38 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 
+let loginBusy = false;
 async function doLogin(){
+  if(loginBusy) return;
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
   errEl.textContent = '';
   if(!email || !password){ errEl.textContent = 'Enter email and password.'; return; }
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){ errEl.textContent = error.message; return; }
-  currentUser = data.user;
-  await enterApp();
+  loginBusy = true;
+  if(btn){ btn.disabled = true; btn.textContent = 'Signing in…'; btn.style.opacity = '.65'; }
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){ errEl.textContent = error.message; return; }
+    currentUser = data.user;
+    await enterApp();
+  }catch(e){
+    errEl.textContent = 'Network error — check your connection and try again.';
+  }finally{
+    loginBusy = false;
+    if(btn){ btn.disabled = false; btn.textContent = 'Sign In'; btn.style.opacity = ''; }
+  }
 }
 
 async function doLogout(){
+  if(pendingSaves.size && !confirm(`${pendingSaves.size} change(s) have not reached the server yet. Log out anyway and lose them?`)) return;
   await sb.auth.signOut();
   currentUser = null;
+  dataReady = false;            // block writes until the next successful load
+  loadedBlobs = {};
+  pendingSaves.clear();
+  failedSaves.clear();
   document.getElementById('app-sidebar').classList.add('app-hidden');
   document.getElementById('app-main').classList.add('app-hidden');
   document.getElementById('login-overlay').classList.remove('app-hidden');
@@ -613,43 +631,112 @@ async function enterApp(){
   await init();
 }
 
-/* ---------- storage (Supabase-backed) ---------- */
-async function loadKey(key, fallback){
-  try{
-    const { data, error } = await sb
-      .from('dashboard_data')
-      .select('value')
-      .eq('user_id', currentUser.id)
-      .eq('key', key)
-      .maybeSingle();
-    if(error){ console.error('Load failed for', key, error); return fallback; }
-    return data ? data.value : fallback;
-  }catch(e){
-    console.error('Load failed for', key, e);
-    return fallback;
-  }
+/* ---------- storage (Supabase-backed) ----------
+   Safety rules:
+   1. Nothing is EVER written until a load has fully succeeded (dataReady).
+      A failed read must never turn into a write of empty state.
+   2. Saves report success/failure honestly. Failures retry with backoff
+      and surface a persistent banner; they are never swallowed.
+   3. The browser warns before closing with unsaved work.
+*/
+let dataReady = false;        // true only after a complete, successful load
+let loadedBlobs = {};         // key -> value, from the single batched read
+const pendingSaves = new Map();   // key -> latest value awaiting a successful write
+const failedSaves = new Set();
+
+async function loadAllKeys(){
+  // One round trip instead of 14. Throws on failure — caller must handle.
+  const { data, error } = await sb
+    .from('dashboard_data')
+    .select('key, value')
+    .eq('user_id', currentUser.id);
+  if(error) throw error;
+  const map = {};
+  (data||[]).forEach(row => { map[row.key] = row.value; });
+  return map;
 }
+// Reads from the already-fetched blob map. Absent key => fallback (a genuinely new user).
+function loadKey(key, fallback){
+  return Object.prototype.hasOwnProperty.call(loadedBlobs, key) ? loadedBlobs[key] : fallback;
+}
+
 async function saveKey(key, value){
+  if(!dataReady){
+    console.warn('Blocked save before data was loaded:', key);
+    return false;
+  }
   try{
     const { error } = await sb
       .from('dashboard_data')
       .upsert({ user_id: currentUser.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
-    if(error) console.error('Save failed for', key, error);
+    if(error) throw error;
+    pendingSaves.delete(key);
+    failedSaves.delete(key);
+    renderSaveState();
+    return true;
   }catch(e){
     console.error('Save failed for', key, e);
+    pendingSaves.set(key, value);
+    failedSaves.add(key);
+    renderSaveState();
+    scheduleRetry();
+    return false;
   }
 }
+
+let retryTimer = null, retryDelay = 2000;
+function scheduleRetry(){
+  if(retryTimer) return;
+  retryTimer = setTimeout(async ()=>{
+    retryTimer = null;
+    const entries = [...pendingSaves.entries()];
+    for(const [k,v] of entries) await saveKey(k, v);
+    if(pendingSaves.size){
+      retryDelay = Math.min(retryDelay*2, 30000);
+      scheduleRetry();
+    }else{
+      retryDelay = 2000;
+    }
+  }, retryDelay);
+}
+async function retryNow(){
+  retryDelay = 2000;
+  if(retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
+  const entries = [...pendingSaves.entries()];
+  for(const [k,v] of entries) await saveKey(k, v);
+}
+
+function renderSaveState(){
+  const banner = document.getElementById('save-banner');
+  const el = document.getElementById('save-indicator');
+  if(failedSaves.size){
+    if(el){ el.textContent = '⚠ Not saved'; el.style.color = 'var(--red)'; }
+    if(banner){
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠ <b>Changes not saved.</b> Your work is still on screen but has not reached the server (${failedSaves.size} pending). Keep this tab open. <a onclick="retryNow()" style="text-decoration:underline;">Retry now</a>`;
+    }
+  }else{
+    if(el){ el.textContent = pendingSaves.size ? 'Saving…' : 'Saved at ' + nowTime(); el.style.color = ''; }
+    if(banner) banner.style.display = 'none';
+  }
+}
+
 const saveTimers = {};
 function scheduleSave(key, value){
+  pendingSaves.set(key, value);
+  const el = document.getElementById('save-indicator');
+  if(el && !failedSaves.size){ el.textContent = 'Saving…'; el.style.color = ''; }
   if(saveTimers[key]) clearTimeout(saveTimers[key]);
-  saveTimers[key] = setTimeout(()=>{
-    saveKey(key, value);
-    if(key==='sessions'){
-      const el = document.getElementById('save-indicator');
-      if(el) el.textContent = 'Saved at ' + nowTime();
-    }
-  }, 450);
+  saveTimers[key] = setTimeout(()=>{ saveKey(key, value); }, 450);
 }
+
+window.addEventListener('beforeunload', (e)=>{
+  if(pendingSaves.size){
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
 
 /* ---------- helpers ---------- */
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -3397,21 +3484,43 @@ function deleteLearningPoint(id){
 
 /* ================= INIT ================= */
 window.state = state;
+function showLoadError(err){
+  dataReady = false;
+  document.getElementById('app-main').innerHTML = `
+    <div class="card empty-card" style="max-width:520px;margin:60px auto;text-align:center;">
+      <h3 style="color:var(--red);">Couldn't load your data</h3>
+      <p class="meta" style="margin:10px 0 4px;">The dashboard did not open, because showing an empty dashboard could overwrite your real records.</p>
+      <p class="meta" style="margin:0 0 16px;font-size:12px;">${esc(err?.message || String(err))}</p>
+      <button class="btn-accent" onclick="location.reload()">Try again</button>
+    </div>`;
+}
+
 async function init(){
-  state.classes = await loadKey('classes', []);
-  state.students = await loadKey('students', []);
-  state.sessions = await loadKey('sessions', {});
-  state.events = await loadKey('events', []);
-  state.holidays = await loadKey('holidays', []);
-  state.sessionMeta = await loadKey('sessionMeta', {});
-  state.lessonNotes = await loadKey('lessonNotes', {});
-  state.homework = await loadKey('homework', {});
-  state.privateStudents = await loadKey('privateStudents', []);
-  state.privateLessons = await loadKey('privateLessons', []);
-  state.payments = await loadKey('payments', []);
-  state.checkpoints = await loadKey('checkpoints', []);
-  state.learningPoints = await loadKey('learningPoints', []);
-  state.privateSettings = await loadKey('privateSettings', { overdueThresholdDays: 14 });
+  // Never proceed on a partial/failed read: an empty state would be written back over good data.
+  try{
+    loadedBlobs = await loadAllKeys();
+  }catch(err){
+    console.error('Initial load failed', err);
+    showLoadError(err);
+    return;
+  }
+  state.classes = loadKey('classes', []);
+  state.students = loadKey('students', []);
+  state.sessions = loadKey('sessions', {});
+  state.events = loadKey('events', []);
+  state.holidays = loadKey('holidays', []);
+  state.sessionMeta = loadKey('sessionMeta', {});
+  state.lessonNotes = loadKey('lessonNotes', {});
+  state.homework = loadKey('homework', {});
+  state.privateStudents = loadKey('privateStudents', []);
+  state.privateLessons = loadKey('privateLessons', []);
+  state.payments = loadKey('payments', []);
+  state.checkpoints = loadKey('checkpoints', []);
+  state.learningPoints = loadKey('learningPoints', []);
+  state.privateSettings = loadKey('privateSettings', { overdueThresholdDays: 14 });
+
+  dataReady = true;   // writes unlocked only now
+
   // refresh recurring placeholders for active students on load
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
   navigate('dashboard');
