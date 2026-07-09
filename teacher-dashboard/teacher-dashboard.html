@@ -425,6 +425,7 @@ let state = {
   holidays: [],
   sessionMeta: {},
   lessonNotes: {},
+  homework: {},
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -1335,6 +1336,16 @@ function setLessonNote(classId, date, val){
   else delete state.lessonNotes[key];
   scheduleSave('lessonNotes', state.lessonNotes);
 }
+function getHomework(classId, date){
+  return (state.homework && state.homework[classId+'_'+date]) || '';
+}
+function setHomework(classId, date, val){
+  if(!state.homework) state.homework = {};
+  const key = classId+'_'+date;
+  if(val && val.trim()) state.homework[key] = val;
+  else delete state.homework[key];
+  scheduleSave('homework', state.homework);
+}
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
   if(date < todayStr()) return true;
@@ -1952,7 +1963,10 @@ function renderCalendar(){
         <div class="cal-date">${d}</div>
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?classesToday.map(c=>`<div class="cal-tag" style="background:${c.color}22;color:${c.color};border-color:${c.color}55">${esc(c.name)}</div>`).join(''):''}
+          ${!holiday?classesToday.map(c=>{
+            const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr));
+            return `<div class="cal-tag" title="Click to edit lesson content &amp; homework" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();openClassSessionModal('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</div>`;
+          }).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
           ${privToday.map((l,pi)=>{
             const st = privStudent(l.studentId);
@@ -2077,6 +2091,41 @@ function openDayModal(dateStr){
       <button class="btn-accent" onclick="addEvent('${dateStr}')">Add event</button>
     </div>
   `);
+}
+function openClassSessionModal(classId, dateStr){
+  const c = classById(classId);
+  if(!c) return;
+  const locked = !!(state.sessionMeta && state.sessionMeta[classId+'_'+dateStr]?.completed);
+  const dis = locked ? 'disabled' : '';
+  const lockedStyle = locked ? 'background:var(--gray-soft);' : '';
+  showModal(`
+    <h3><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${c.time?' · '+c.time:''}</h3>
+    <div class="meta" style="margin:-6px 0 14px;">${formatDateLong(dateStr)}</div>
+    ${locked?`<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">🔒 Completed session — read-only. Reopen it from Roll Call to edit.</div>`:''}
+    <div class="modal-section">
+      <div class="modal-section-label">Lesson content</div>
+      <div class="field">
+        <textarea id="cs-content" rows="3" ${dis} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getLessonNote(classId, dateStr))}</textarea>
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Homework due</div>
+      <div class="field">
+        <textarea id="cs-hw" rows="2" ${dis} placeholder="e.g. Workbook p.44–45, write 150-word essay" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getHomework(classId, dateStr))}</textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn-ghost" onclick="closeModal();goToRollCall('${classId}','${dateStr}')">Roll Call →</button>
+      ${locked?'':`<button class="btn-accent" onclick="saveClassSession('${classId}','${dateStr}')">Save</button>`}
+    </div>
+  `);
+}
+function saveClassSession(classId, dateStr){
+  setLessonNote(classId, dateStr, document.getElementById('cs-content').value);
+  setHomework(classId, dateStr, document.getElementById('cs-hw').value);
+  closeModal();
+  renderCalendar();
 }
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
@@ -3216,6 +3265,7 @@ async function init(){
   state.holidays = await loadKey('holidays', []);
   state.sessionMeta = await loadKey('sessionMeta', {});
   state.lessonNotes = await loadKey('lessonNotes', {});
+  state.homework = await loadKey('homework', {});
   state.privateStudents = await loadKey('privateStudents', []);
   state.privateLessons = await loadKey('privateLessons', []);
   state.payments = await loadKey('payments', []);
