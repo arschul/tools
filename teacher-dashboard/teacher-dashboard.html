@@ -390,6 +390,10 @@
     <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
   </div>
   <div class="sidebar-divider"></div>
+  <div class="nav-item" onclick="openBackupModal()">
+    <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M5 21a2 2 0 0 1-2-2v-4"/></svg></div>
+    Backup
+  </div>
   <div class="nav-item" onclick="doLogout()">
     <div class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></div>
     Log out
@@ -436,6 +440,7 @@ let state = {
   checkpoints: [],
   learningPoints: [],
   privateSettings: { overdueThresholdDays: 14 },
+  backupMeta: { lastBackupAt: null },
   privView: 'overview',
   privStudentFilter: 'active',
   privStudentSearch: '',
@@ -737,6 +742,107 @@ window.addEventListener('beforeunload', (e)=>{
     return '';
   }
 });
+
+/* ---------- JSON backup: export / import ----------
+   Independent of Supabase — a local file the teacher controls.
+   The 14 state keys + backupMeta are the full source of truth.
+*/
+const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
+  'lessonNotes','homework','privateStudents','privateLessons','payments','checkpoints',
+  'learningPoints','privateSettings'];
+
+function daysSinceLastBackup(){
+  const last = state.backupMeta?.lastBackupAt;
+  if(!last) return Infinity;
+  return (Date.now() - new Date(last).getTime()) / 86400000;
+}
+
+async function markBackupDone(){
+  state.backupMeta = { lastBackupAt: new Date().toISOString() };
+  await saveKey('backupMeta', state.backupMeta);
+}
+
+function exportBackup(){
+  const payload = { exportedAt: new Date().toISOString(), version: 1, data: {} };
+  BACKUP_KEYS.forEach(k => { payload.data[k] = state[k]; });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = todayStr();
+  a.href = url;
+  a.download = `efl-dashboard-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  markBackupDone().then(()=>{ if(state.view==='dashboard') renderDashboard(); });
+}
+
+function openBackupModal(){
+  const last = state.backupMeta?.lastBackupAt;
+  const lastLabel = last ? formatDateLong(last.slice(0,10)) + ' at ' + new Date(last).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Never';
+  showModal(`
+    <h2>Backup &amp; Restore</h2>
+    <p class="meta" style="margin:6px 0 18px;">A local JSON file of everything in your dashboard, independent of Supabase. Keep a copy somewhere safe (Drive, email to yourself, etc).</p>
+    <div class="card section" style="margin-bottom:14px;">
+      <h3>Export</h3>
+      <p class="meta" style="margin:4px 0 12px;">Last backup: <b>${esc(lastLabel)}</b></p>
+      <button class="btn-accent" onclick="exportBackup()">⬇ Download backup (.json)</button>
+    </div>
+    <div class="card section" style="border-left:4px solid var(--red);">
+      <h3>Restore</h3>
+      <p class="meta" style="margin:4px 0 12px;">Replaces everything currently in the dashboard with the contents of the chosen file. This cannot be undone — export a current backup first if unsure.</p>
+      <input type="file" id="backup-file-input" accept="application/json,.json" style="display:none;" onchange="handleBackupFileChosen(event)">
+      <button class="btn-ghost" style="border-color:var(--red);color:var(--red);" onclick="document.getElementById('backup-file-input').click()">⬆ Choose backup file to restore…</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+  `);
+}
+
+function handleBackupFileChosen(evt){
+  const file = evt.target.files?.[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try{ parsed = JSON.parse(reader.result); }
+    catch(e){ alert('That file is not valid JSON.'); return; }
+    const data = parsed?.data && typeof parsed.data==='object' ? parsed.data : parsed;
+    if(!data || typeof data!=='object'){ alert("That file doesn't look like a dashboard backup."); return; }
+    const foundKeys = BACKUP_KEYS.filter(k => Object.prototype.hasOwnProperty.call(data,k));
+    if(foundKeys.length < 3){ alert("That file doesn't look like a dashboard backup — expected keys like 'classes' and 'students' weren't found."); return; }
+    const missing = BACKUP_KEYS.filter(k=>!foundKeys.includes(k));
+    const stamp = parsed?.exportedAt ? formatDateLong(parsed.exportedAt.slice(0,10)) : 'unknown date';
+    const warn = missing.length ? `\n\nNote: this file is missing ${missing.length} field(s) (${missing.join(', ')}) — those will be reset to empty on restore.` : '';
+    if(!confirm(`Restore backup from ${stamp}?\n\nThis will REPLACE all current data in the dashboard with the contents of this file.${warn}\n\nThis cannot be undone.`)) return;
+    restoreBackup(data);
+  };
+  reader.onerror = () => alert('Could not read that file.');
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+async function restoreBackup(data){
+  closeModal();
+  showModal(`<h2>Restoring…</h2><p class="meta">Please don't close this tab.</p>`, true);
+  try{
+    for(const key of BACKUP_KEYS){
+      const value = Object.prototype.hasOwnProperty.call(data,key) ? data[key] : (Array.isArray(state[key]) ? [] : {});
+      state[key] = value;
+      const ok = await saveKey(key, value);
+      if(!ok) throw new Error(`Failed to save "${key}" — restore stopped partway. Check your connection and try again; already-saved keys were written.`);
+    }
+    await markBackupDone();
+    closeModal();
+    navigate('dashboard');
+    alert('Backup restored successfully.');
+  }catch(e){
+    closeModal();
+    alert('Restore error: ' + (e?.message || String(e)));
+  }
+}
 
 /* ---------- helpers ---------- */
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1055,6 +1161,21 @@ function _renderDashboard(el){
         </div>`).join('')}
     </div>` : '';
 
+  // — Backup reminder —
+  const backupDays = daysSinceLastBackup();
+  const backupHtml = backupDays >= 7 ? `
+    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
+      <div class="dash-row" style="align-items:center;">
+        <div class="dash-row-left">
+          <div>
+            <div class="dash-row-title">🗂 ${backupDays===Infinity?"You've never made a local backup":"It's been "+Math.floor(backupDays)+" days since your last backup"}</div>
+            <div class="dash-row-sub">Supabase has no automatic point-in-time recovery on the free tier. Download a backup file just in case.</div>
+          </div>
+        </div>
+        <button class="btn-accent" onclick="openBackupModal()">Back up now →</button>
+      </div>
+    </div>` : '';
+
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
     <div class="stat-row">
@@ -1062,6 +1183,7 @@ function _renderDashboard(el){
       <div class="card stat"><div class="stat-num">${state.students.filter(s=>{const c=classById(s.classId);return c&&!c.archived;}).length}</div><div class="stat-label">Students</div></div>
       <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
     </div>
+    ${backupHtml}
     ${pendingHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
@@ -3518,6 +3640,7 @@ async function init(){
   state.checkpoints = loadKey('checkpoints', []);
   state.learningPoints = loadKey('learningPoints', []);
   state.privateSettings = loadKey('privateSettings', { overdueThresholdDays: 14 });
+  state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   dataReady = true;   // writes unlocked only now
 
