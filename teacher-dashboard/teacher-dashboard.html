@@ -2725,8 +2725,30 @@ function updatePrivAlertDot(){
 }
 
 /* ---------- recurring generation ---------- */
+/* Recurring occurrences are rebuilt from the student's weekly slots on every
+   load. Deleting or moving one leaves its slot empty, so without a record of
+   the teacher's intent regeneration would simply put it back. A "skip" is a
+   tombstone marking one slot as deliberately vacated.
+   Stored on the student, so it rides along with the existing privateStudents key. */
+function slotKey(date, time){ return date + '|' + (time || ''); }
+
+function addRecurringSkip(studentId, date, time){
+  const s = privStudent(studentId);
+  if(!s) return;
+  const key = slotKey(date, time);
+  s.skips = s.skips || [];
+  if(!s.skips.includes(key)) s.skips.push(key);
+}
+
+function pruneSkips(s, today){
+  // Regeneration only ever touches today onwards, so past skips are dead weight.
+  if(!s.skips || !s.skips.length) return;
+  s.skips = s.skips.filter(k => k.split('|')[0] >= today);
+}
+
 function regenerateRecurring(s){
   const today = todayStr();
+  pruneSkips(s, today);
   // remove future auto-generated placeholders for this student
   state.privateLessons = state.privateLessons.filter(l =>
     !(l.studentId===s.id && l.isRecurring && l.status==='scheduled' && l.date >= today)
@@ -2743,6 +2765,7 @@ function regenerateRecurring(s){
     endBound = dateToStr(e.getFullYear(), e.getMonth(), e.getDate());
   }
   if(endBound < startBound) return;
+  const skips = new Set(s.skips || []);
   const cur = new Date(startBound+'T00:00:00');
   const end = new Date(endBound+'T00:00:00');
   let guard = 0;
@@ -2751,6 +2774,7 @@ function regenerateRecurring(s){
     const dow = cur.getDay();
     for(const slot of s.recurring){
       if(slot.weekday !== dow) continue;
+      if(skips.has(slotKey(ds, slot.time))) continue;   // deliberately vacated
       const dup = state.privateLessons.some(l=>l.studentId===s.id && l.date===ds && (l.time||'')===(slot.time||''));
       if(dup) continue;
       state.privateLessons.push({
@@ -3246,13 +3270,19 @@ function saveReschedule(lessonId){
   if(!l) return;
   const newDate = document.getElementById('rs-date').value;
   if(!newDate){ alert('Pick a date.'); return; }
-  const moved = newDate !== l.date;
+  const newTime = document.getElementById('rs-time').value;
+  const origDate = l.date, origTime = l.time, wasRecurring = !!l.isRecurring;
+  // A time-only move vacates the old slot just as surely as a date move does.
+  const slotChanged = newDate !== origDate || (newTime||'') !== (origTime||'');
   l.date = newDate;
-  l.time = document.getElementById('rs-time').value;
+  l.time = newTime;
   l.duration = Number(document.getElementById('rs-dur').value)||60;
   l.notes = document.getElementById('rs-notes').value;
   l.status = document.getElementById('rs-status').value;
-  if(moved) l.isRecurring = false; // detach so regeneration never overwrites it
+  if(wasRecurring && slotChanged){
+    l.isRecurring = false;                                  // detach so regeneration never overwrites it
+    addRecurringSkip(l.studentId, origDate, origTime);      // and never refills the slot it left
+  }
   persistPrivate();
   closeModal();
   if(state.view==='priv-student') renderPrivStudent();
@@ -3312,8 +3342,12 @@ function saveLesson(id){
   if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
 }
 function deleteLesson(id){
+  const l = state.privateLessons.find(x=>x.id===id);
+  if(!l) return;
   if(!confirm('Delete this lesson?')) return;
-  state.privateLessons = state.privateLessons.filter(l=>l.id!==id);
+  // A recurring occurrence would be regenerated on next load unless we mark the slot.
+  if(l.isRecurring) addRecurringSkip(l.studentId, l.date, l.time);
+  state.privateLessons = state.privateLessons.filter(x=>x.id!==id);
   persistPrivate();
   closeModal();
   if(state.view==='priv-student') renderPrivStudent(); else renderPrivate();
