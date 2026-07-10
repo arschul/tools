@@ -1149,6 +1149,8 @@ function toggleFind(btn) {
     para.innerHTML = tokenizeBefore(d.before);
     F = { card, total: d.errorCount, found: 0, misses: 0, teams: false, scores: [0, 0], turn: 0 };
     para.onclick = handleFindClick;
+    para.onmousemove = handleFindHover;
+    para.onmouseleave = () => tooltip.classList.remove('show');
     btn.textContent = 'Exit Find Mode';
     btn.classList.add('on');
     bar.classList.add('on');
@@ -1157,6 +1159,8 @@ function toggleFind(btn) {
     beforeSec.classList.remove('find-active');
     para.innerHTML = parseBefore(d.before);
     para.onclick = null;
+    para.onmousemove = null;
+    para.onmouseleave = null;
     bindTooltips();
     errBtn.style.display = '';
     btn.textContent = 'Find Mode';
@@ -1180,6 +1184,7 @@ function handleFindClick(e) {
   }
   const w = e.target.closest('.w');
   if (w && !w.classList.contains('miss')) {
+    tooltip.classList.remove('show');
     w.classList.add('miss');
     setTimeout(() => w.classList.remove('miss'), 400);
     F.misses++;
@@ -1193,7 +1198,21 @@ function showTipAt(text, e) {
   tooltip.classList.add('show');
   positionTooltip(e);
   clearTimeout(tipTimer);
-  tipTimer = setTimeout(() => tooltip.classList.remove('show'), 4000);
+}
+
+// While in Find Mode, hovering a FOUND error keeps its explanation visible
+// (mirrors normal mode); moving off any found error hides it. Un-found errors
+// never reveal their tip on hover, so answers aren't given away.
+function handleFindHover(e) {
+  if (!F) return;
+  const found = e.target.closest('.err.found');
+  if (found) {
+    tooltip.textContent = found.dataset.tip;
+    tooltip.classList.add('show');
+    positionTooltip(e);
+  } else {
+    tooltip.classList.remove('show');
+  }
 }
 
 function renderFindBar() {
