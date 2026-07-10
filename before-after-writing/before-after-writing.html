@@ -195,6 +195,64 @@
     cursor: help;
   }
 
+  /* ── Find Mode ── */
+  .find-active .para-text .w { cursor: pointer; border-radius: 2px; padding: 0 1px; }
+  .find-active .para-text .w:hover { background: rgba(232,197,71,0.10); }
+  .find-active .err { cursor: pointer; }
+  .find-active .err.found {
+    background: rgba(90,173,126,0.18);
+    border-bottom: 2px solid var(--good);
+  }
+  .find-active .err.found.revealed {
+    background: rgba(217,107,90,0.14);
+    border-bottom-color: var(--bad);
+  }
+  .w.miss { animation: shake 0.3s; background: rgba(217,107,90,0.28) !important; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  .find-bar {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 10px 22px;
+    background: var(--surface);
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+  }
+  .find-bar.on { display: flex; }
+  .find-stat { color: var(--muted); }
+  .find-stat strong { color: var(--accent); font-weight: 500; }
+  .find-stat.done strong { color: var(--good); }
+  .team-chip {
+    padding: 5px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--muted);
+    background: var(--card);
+    font-size: 0.78rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .team-chip.active { border-color: var(--accent); color: var(--accent); background: #262218; }
+  .find-mini {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.74rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .find-mini:hover { border-color: var(--muted); color: var(--text); }
+
   /* ── Action bar ── */
   .action-bar {
     border-top: 1px solid var(--border);
@@ -228,6 +286,10 @@
   .btn-reveal:hover { background: rgba(232,197,71,0.12); }
   .btn-reveal.revealed { border-color: var(--muted); color: var(--muted); }
   .btn-reveal.revealed:hover { background: var(--border); color: var(--text); }
+
+  .btn-find { border-color: var(--good); color: var(--good); }
+  .btn-find:hover { background: rgba(90,173,126,0.12); }
+  .btn-find.on { background: rgba(90,173,126,0.15); }
 
   /* ── After section ── */
   .after-section {
@@ -969,6 +1031,15 @@ function parseBefore(str) {
     (_, tip, text) => `<span class="err" data-tip="${tip}">${text}</span>`);
 }
 
+// Find Mode: errors stay as .err spans; every other word becomes a clickable .w span
+function tokenizeBefore(str) {
+  return str.split(/(<err tip="[^"]*">[\s\S]*?<\/err>)/g).map(part => {
+    const m = part.match(/^<err tip="([^"]*)">([\s\S]*?)<\/err>$/);
+    if (m) return `<span class="err" data-tip="${m[1]}">${m[2]}</span>`;
+    return part.replace(/(\S+)/g, '<span class="w">$1</span>');
+  }).join('');
+}
+
 function parseAfter(str) {
   return str.replace(/<g>([\s\S]*?)<\/g>/g,
     (_, t) => `<strong style="color:var(--good)">${t}</strong>`);
@@ -983,7 +1054,7 @@ function buildCard(level, idx) {
     </div>`).join('');
 
   return `
-    <div class="para-card">
+    <div class="para-card" data-level="${level}" data-idx="${idx}">
       <div class="card-header">
         <span class="card-num">${d.num} / ${data[level].length}</span>
         <span class="card-topic-label">${d.topic}</span>
@@ -994,9 +1065,11 @@ function buildCard(level, idx) {
       </div>
       <div class="action-bar">
         <span class="error-count"><strong>${d.errorCount}</strong> errors to find</span>
+        <button class="action-btn btn-find" onclick="toggleFind(this)">Find Mode</button>
         <button class="action-btn btn-errors" onclick="toggleErrors(this)">Show Errors</button>
         <button class="action-btn btn-reveal" onclick="toggleAfter(this)">Show Polished Version ↓</button>
       </div>
+      <div class="find-bar"></div>
       <div class="after-section">
         <div class="section-label after-label">After</div>
         <p class="para-text">${parseAfter(d.after)}</p>
@@ -1012,10 +1085,12 @@ function buildCard(level, idx) {
 // INTERACTIONS
 // ─────────────────────────────────────────────────────────
 function switchLevel(level) {
+  F = null;
+  tooltip.classList.remove('show');
   document.querySelectorAll('.level-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('level-' + level).classList.add('active');
-  document.querySelector(`[data-level="${level}"]`).classList.add('active');
+  document.querySelector(`.level-btn[data-level="${level}"]`).classList.add('active');
   document.getElementById('card-' + level).innerHTML = '';
   document.querySelectorAll(`#picker-${level} .topic-item`).forEach(i => i.classList.remove('active'));
 }
@@ -1023,6 +1098,8 @@ function switchLevel(level) {
 function openTopic(level, idx, el) {
   const cardEl = document.getElementById('card-' + level);
   const pickerItems = document.querySelectorAll(`#picker-${level} .topic-item`);
+  F = null;
+  tooltip.classList.remove('show');
 
   if (el.classList.contains('active')) {
     el.classList.remove('active');
@@ -1045,6 +1122,110 @@ function toggleErrors(btn) {
   btn.textContent = isOn ? 'Show Errors' : 'Hide Errors';
   btn.classList.toggle('on', !isOn);
   if (isOn) tooltip.classList.remove('show');
+}
+
+// ─────────────────────────────────────────────────────────
+// FIND MODE
+// ─────────────────────────────────────────────────────────
+let F = null; // state for the currently open card's Find Mode
+let tipTimer = null;
+
+function toggleFind(btn) {
+  const card = btn.closest('.para-card');
+  const beforeSec = card.querySelector('.before-section');
+  const para = beforeSec.querySelector('.para-text');
+  const errBtn = card.querySelector('.btn-errors');
+  const bar = card.querySelector('.find-bar');
+  const d = data[card.dataset.level][card.dataset.idx];
+  const turningOn = !beforeSec.classList.contains('find-active');
+
+  tooltip.classList.remove('show');
+
+  if (turningOn) {
+    beforeSec.classList.remove('errors-visible');
+    errBtn.style.display = 'none';
+    errBtn.textContent = 'Show Errors'; errBtn.classList.remove('on');
+    beforeSec.classList.add('find-active');
+    para.innerHTML = tokenizeBefore(d.before);
+    F = { card, total: d.errorCount, found: 0, misses: 0, teams: false, scores: [0, 0], turn: 0 };
+    para.onclick = handleFindClick;
+    btn.textContent = 'Exit Find Mode';
+    btn.classList.add('on');
+    bar.classList.add('on');
+    renderFindBar();
+  } else {
+    beforeSec.classList.remove('find-active');
+    para.innerHTML = parseBefore(d.before);
+    para.onclick = null;
+    bindTooltips();
+    errBtn.style.display = '';
+    btn.textContent = 'Find Mode';
+    btn.classList.remove('on');
+    bar.classList.remove('on');
+    F = null;
+  }
+}
+
+function handleFindClick(e) {
+  if (!F) return;
+  const err = e.target.closest('.err');
+  if (err) {
+    if (err.classList.contains('found')) { showTipAt(err.dataset.tip, e); return; }
+    err.classList.add('found');
+    F.found++;
+    if (F.teams) F.scores[F.turn] += 10;
+    showTipAt(err.dataset.tip, e);
+    renderFindBar();
+    return;
+  }
+  const w = e.target.closest('.w');
+  if (w && !w.classList.contains('miss')) {
+    w.classList.add('miss');
+    setTimeout(() => w.classList.remove('miss'), 400);
+    F.misses++;
+    if (F.teams) F.scores[F.turn] -= 5;
+    renderFindBar();
+  }
+}
+
+function showTipAt(text, e) {
+  tooltip.textContent = text;
+  tooltip.classList.add('show');
+  positionTooltip(e);
+  clearTimeout(tipTimer);
+  tipTimer = setTimeout(() => tooltip.classList.remove('show'), 4000);
+}
+
+function renderFindBar() {
+  if (!F) return;
+  const bar = F.card.querySelector('.find-bar');
+  const done = F.found === F.total;
+  let html = `<span class="find-stat${done ? ' done' : ''}">Found <strong>${F.found} / ${F.total}</strong></span>
+    <span class="find-stat">Misses <strong>${F.misses}</strong></span>`;
+  if (F.teams) {
+    html += F.scores.map((s, i) =>
+      `<button class="team-chip${F.turn === i ? ' active' : ''}" onclick="setTurn(${i})">Team ${i === 0 ? 'A' : 'B'} · ${s}</button>`
+    ).join('');
+  }
+  html += `<button class="find-mini" onclick="toggleTeams()">${F.teams ? 'Teams: On' : 'Teams: Off'}</button>`;
+  if (!done) html += `<button class="find-mini" onclick="revealRemaining()">Reveal remaining</button>`;
+  else html += `<span class="find-stat done"><strong>All errors found! 🎉</strong></span>`;
+  bar.innerHTML = html;
+}
+
+function setTurn(i) { if (F) { F.turn = i; renderFindBar(); } }
+
+function toggleTeams() {
+  if (!F) return;
+  F.teams = !F.teams;
+  renderFindBar();
+}
+
+function revealRemaining() {
+  if (!F) return;
+  F.card.querySelectorAll('.before-section .err:not(.found)').forEach(el => el.classList.add('found', 'revealed'));
+  F.found = F.total;
+  renderFindBar();
 }
 
 function toggleAfter(btn) {
@@ -1080,7 +1261,7 @@ function positionTooltip(e) {
   const x = e.clientX + 14, y = e.clientY - 10;
   const tw = tooltip.offsetWidth;
   tooltip.style.left = (x + tw > window.innerWidth ? e.clientX - tw - 14 : x) + 'px';
-  tooltip.style.top = (y + window.scrollY) + 'px';
+  tooltip.style.top = Math.max(8, y) + 'px';
 }
 </script>
 </body>
