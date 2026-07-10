@@ -772,11 +772,11 @@ let _mid = 0;
 // COUNTRIES (ISO 3166 alpha-2)
 // ═══════════════════════════════════════════════
 const COUNTRIES = [
-  {c:'br',n:'Brazil'},{c:'ar',n:'Argentina'},{c:'us',n:'United States'},{c:'gb',n:'United Kingdom'},
+  {c:'br',n:'Brazil'},{c:'ar',n:'Argentina'},{c:'us',n:'United States'},{c:'gb-eng',n:'England'},
   {c:'de',n:'Germany'},{c:'fr',n:'France'},{c:'es',n:'Spain'},{c:'it',n:'Italy'},{c:'pt',n:'Portugal'},
   {c:'nl',n:'Netherlands'},{c:'be',n:'Belgium'},{c:'ca',n:'Canada'},{c:'mx',n:'Mexico'},{c:'jp',n:'Japan'},
   {c:'kr',n:'South Korea'},{c:'cn',n:'China'},{c:'au',n:'Australia'},{c:'nz',n:'New Zealand'},
-  {c:'ru',n:'Russia'},{c:'ua',n:'Ukraine'},{c:'pl',n:'Poland'},{c:'se',n:'Sweden'},{c:'no',n:'Norway'},
+  {c:'ru',n:'Russia'},{c:'ua',n:'Ukraine'},{c:'se',n:'Sweden'},{c:'no',n:'Norway'},
   {c:'dk',n:'Denmark'},{c:'fi',n:'Finland'},{c:'ie',n:'Ireland'},{c:'ch',n:'Switzerland'},{c:'at',n:'Austria'},
   {c:'gr',n:'Greece'},{c:'tr',n:'Turkey'},{c:'eg',n:'Egypt'},{c:'za',n:'South Africa'},{c:'ng',n:'Nigeria'},
   {c:'ma',n:'Morocco'},{c:'gh',n:'Ghana'},{c:'ke',n:'Kenya'},{c:'sa',n:'Saudi Arabia'},{c:'ae',n:'UAE'},
@@ -787,10 +787,14 @@ const COUNTRIES = [
   {c:'rs',n:'Serbia'},{c:'is',n:'Iceland'},{c:'il',n:'Israel'},{c:'qa',n:'Qatar'},{c:'sn',n:'Senegal'}
 ];
 // default flag rotation so no two slots start identical
-const DEFAULT_FLAGS = ['br','ar','de','fr','es','pt','it','nl','us','gb','jp','mx','be','hr','pl','ma','kr','ch','se','uy'];
+const DEFAULT_FLAGS = ['br','ar','de','fr','es','pt','it','nl','us','gb-eng','jp','mx','be','hr','co','ma','kr','ch','se','uy'];
 
 function countryName(code){ const f = COUNTRIES.find(x=>x.c===code); return f ? f.n : code.toUpperCase(); }
-function flagEmoji(code){ return code.toUpperCase().replace(/[A-Z]/g, c=>String.fromCodePoint(127397 + c.charCodeAt(0))); }
+const SUBDIV_EMOJI = { 'gb-eng':'🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'gb-sct':'🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'gb-wls':'🏴󠁧󠁢󠁷󠁬󠁳󠁿' };
+function flagEmoji(code){
+  if (SUBDIV_EMOJI[code]) return SUBDIV_EMOJI[code];
+  return code.toUpperCase().replace(/[A-Z]/g, c=>String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
 function flagHTML(code, size){
   if(!code) return '';
   const cls = size ? ('flag ' + size) : 'flag';
