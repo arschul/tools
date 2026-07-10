@@ -305,6 +305,97 @@
     line-height: 1.4;
   }
 
+  /* structure bands */
+  .band { margin-bottom: 18px; }
+  .band:last-child { margin-bottom: 0; }
+  .band-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .band-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+  }
+  .band-note { font-size: 0.68rem; color: var(--muted); line-height: 1.4; }
+
+  /* register badge */
+  .register-badge {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--chip-border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .register-badge.formal { color: var(--accent2); border-color: #2f4470; }
+  .register-badge.informal { color: #5fd39a; border-color: #2f6a4d; }
+
+  /* say-it button */
+  .say-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-family: inherit;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .say-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .say-btn[disabled] { opacity: 0.4; cursor: default; }
+
+  /* success criteria */
+  #checklist { grid-column: 1 / -1; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+  .check-item input { accent-color: var(--accent); margin-top: 3px; flex: none; width: 15px; height: 15px; }
+  .check-item label { text-transform: none; letter-spacing: normal; font-size: 0.82rem; color: var(--text); cursor: pointer; }
+  .check-item input:checked + label { color: var(--muted); text-decoration: line-through; }
+  .check-box-print { display: none; }
+
+  /* draft */
+  #draft { grid-column: 1 / -1; }
+  #draft-text {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    color: var(--text);
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+  #draft-text:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #draft-bar {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 10px; flex-wrap: wrap;
+  }
+  #word-count {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  #word-count.under { color: var(--accent3); }
+  #word-count.inrange { color: #5fd39a; }
+  #word-count.over { color: var(--accent); }
+  #draft-saved { font-size: 0.65rem; color: var(--muted); margin-left: auto; }
+
   #empty { text-align: center; padding: 90px 20px; color: var(--muted); max-width: 620px; }
   #empty h2 {
     font-family: 'Syne', sans-serif;
@@ -424,6 +515,19 @@
       font-family: 'Syne', sans-serif; font-size: 10pt;
     }
     #print-meta span { border-bottom: 1px solid #000; flex: 1; padding-bottom: 2px; }
+    .band-name { color: #000; font-size: 9pt; }
+    .band-note { color: #333; }
+    .register-badge { color: #000 !important; border: 1px solid #000 !important; }
+    .say-btn, #draft { display: none !important; }
+    #checklist { break-inside: avoid; margin-bottom: 16px; }
+    .check-item { padding: 3px 0; font-size: 9.5pt; }
+    .check-item input { display: none; }
+    .check-item label { color: #000; }
+    .check-item input:checked + label { color: #000; text-decoration: none; }
+    .check-box-print {
+      display: inline-block; width: 11px; height: 11px;
+      border: 1px solid #000; flex: none; margin-top: 3px;
+    }
     #print-lines { display: block; break-before: page; }
     #print-lines h3 {
       font-family: 'Syne', sans-serif; font-size: 12pt; margin-bottom: 4px;
@@ -493,7 +597,7 @@
   <div id="empty">
     <h2>Guided Writing Scaffold</h2>
     <p>Pick a level and a task type, then choose a prompt — or hit <strong>Random</strong>.<br>
-       Click a word to see its part of speech, definition, and an example. Click a connector to copy it.<br>
+       Click a word for its part of speech, definition, example, and pronunciation. Click a connector to drop it into your draft.<br>
        <strong>Print worksheet</strong> turns any prompt into a paper hand-out with writing lines.</p>
   </div>
 
@@ -505,7 +609,10 @@
         <div id="card-title"></div>
       </div>
       <div class="head-right">
-        <span class="cefr-badge" id="h-cefr"></span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="register-badge" id="h-register" hidden></span>
+          <span class="cefr-badge" id="h-cefr"></span>
+        </div>
         <span id="target"></span>
       </div>
     </div>
@@ -523,8 +630,25 @@
         <div class="chip-cloud" id="word-chips"></div>
       </div>
       <div id="conn-wrap">
-        <div class="section-label">Connectors &amp; phrases <span class="hint">click to copy</span></div>
+        <div class="section-label">Connectors &amp; phrases <span class="hint" id="conn-hint">click to add to your draft</span></div>
         <div id="conn-groups"></div>
+      </div>
+      <div id="checklist">
+        <div class="section-label">Before you hand it in</div>
+        <div id="check-items"></div>
+      </div>
+      <div id="draft">
+        <div class="section-label">
+          Your draft
+          <span class="hint">saved in this browser</span>
+          <button class="mini-btn" id="btn-copy-draft">Copy</button>
+          <button class="mini-btn" id="btn-clear-draft">Clear</button>
+        </div>
+        <textarea id="draft-text" spellcheck="true" placeholder="Start writing here. Click a connector to drop it in at the cursor."></textarea>
+        <div id="draft-bar">
+          <span id="word-count">0 words</span>
+          <span id="draft-saved"></span>
+        </div>
       </div>
     </div>
     <div id="print-lines"></div>
@@ -2293,7 +2417,7 @@ const PROMPTS = [
  ],
  connectors:["however","nevertheless","what is significant","by extension","in this sense","to hold it"]},
 
-{id:"write-an-email-to-your-teacher-asking", type:"Email", level:"A2", title:"Write an email to your teacher asking for help with homework.",
+{id:"write-an-email-to-your-teacher-asking", type:"Email", level:"A2", title:"Write an email to your teacher asking for help with homework.", register:"semi-formal",
  starters:["Dear…","I am writing because…","I have a problem with…","Could you please…","I would be very happy if…","Thank you for…"],
  words:[
   ["homework","I don't understand the <em>homework</em> from today's class."],
@@ -2309,7 +2433,7 @@ const PROMPTS = [
  ],
  connectors:["because","also","please","I would like","thank you","I hope"]},
 
-{id:"write-an-email-to-a-hotel-to", type:"Email", level:"A2", title:"Write an email to a hotel to book a room.",
+{id:"write-an-email-to-a-hotel-to", type:"Email", level:"A2", title:"Write an email to a hotel to book a room.", register:"formal",
  starters:["Dear Sir or Madam,","I would like to book…","We need a room for…","Could you please tell me…","We will arrive on…","I look forward to…"],
  words:[
   ["reservation","I would like to make a <em>reservation</em> for two nights."],
@@ -2325,7 +2449,7 @@ const PROMPTS = [
  ],
  connectors:["I would like","could you please","also","in addition","I look forward to","thank you"]},
 
-{id:"write-an-email-to-a-friend-inviting", type:"Email", level:"A2", title:"Write an email to a friend inviting them to your birthday party.",
+{id:"write-an-email-to-a-friend-inviting", type:"Email", level:"A2", title:"Write an email to a friend inviting them to your birthday party.", register:"informal",
  starters:["Hi…","I am writing to invite you to…","The party will be on…","It will start at…","Please let me know if…","I hope you can come because…"],
  words:[
   ["celebrate","I want to <em>celebrate</em> my birthday with all my friends."],
@@ -2341,7 +2465,7 @@ const PROMPTS = [
  ],
  connectors:["and","also","please","because","I hope","let me know"]},
 
-{id:"write-an-email-to-a-shop-complaining", type:"Email", level:"A2", title:"Write an email to a shop complaining about a product.",
+{id:"write-an-email-to-a-shop-complaining", type:"Email", level:"A2", title:"Write an email to a shop complaining about a product.", register:"formal",
  starters:["Dear…","I am writing about…","I bought…on…","The problem is…","I would like…","I hope you can help me because…"],
  words:[
   ["broken","The toy was <em>broken</em> when I opened the box."],
@@ -2357,7 +2481,7 @@ const PROMPTS = [
  ],
  connectors:["because","also","I would like","I hope","please","thank you"]},
 
-{id:"write-an-email-to-your-school-asking", type:"Email", level:"A2", title:"Write an email to your school asking for information about a course.",
+{id:"write-an-email-to-your-school-asking", type:"Email", level:"A2", title:"Write an email to your school asking for information about a course.", register:"formal",
  starters:["Dear…","I am interested in…","Could you please send me…","I would like to know…","I have a question about…","Thank you for…"],
  words:[
   ["enrol","I would like to <em>enrol</em> in the English course."],
@@ -2373,7 +2497,7 @@ const PROMPTS = [
  ],
  connectors:["I would like","could you please","also","in addition","thank you","I look forward to"]},
 
-{id:"write-an-email-to-apply-for-a", type:"Email", level:"A2", title:"Write an email to apply for a part-time job.",
+{id:"write-an-email-to-apply-for-a", type:"Email", level:"A2", title:"Write an email to apply for a part-time job.", register:"formal",
  starters:["Dear…","I am writing to apply for…","I am… years old and I…","I have experience in…","I am available…","I hope to hear from you soon."],
  words:[
   ["application","I am sending my <em>application</em> for the part-time position."],
@@ -2389,7 +2513,7 @@ const PROMPTS = [
  ],
  connectors:["I am","I have","also","in addition","I hope","thank you"]},
 
-{id:"write-a-formal-email-applying-for-a", type:"Email", level:"B1", title:"Write a formal email applying for a work experience placement.",
+{id:"write-a-formal-email-applying-for-a", type:"Email", level:"B1", title:"Write a formal email applying for a work experience placement.", register:"formal",
  starters:["Dear…","I am writing to express my interest in…","I am currently studying…and I believe that…","During my studies I have developed…","I would be particularly keen to…","I have attached my CV and I look forward to…"],
  words:[
   ["placement","I am applying for a work experience <em>placement</em> in your company."],
@@ -2405,7 +2529,7 @@ const PROMPTS = [
  ],
  connectors:["furthermore","in addition","as a result","I am particularly","I believe","I look forward to"]},
 
-{id:"write-a-formal-email-to-a-company", type:"Email", level:"B1", title:"Write a formal email to a company complaining about poor service.",
+{id:"write-a-formal-email-to-a-company", type:"Email", level:"B1", title:"Write a formal email to a company complaining about poor service.", register:"formal",
  starters:["Dear…","I am writing to express my dissatisfaction with…","On…I…","Despite…the situation was not resolved because…","I would therefore request…","I trust that you will…"],
  words:[
   ["unacceptable","The standard of service I received was completely <em>unacceptable</em>."],
@@ -2421,7 +2545,7 @@ const PROMPTS = [
  ],
  connectors:["despite this","furthermore","as a result","I would therefore","I trust that","in addition"]},
 
-{id:"write-a-formal-email-requesting-information-about", type:"Email", level:"B1", title:"Write a formal email requesting information about a conference.",
+{id:"write-a-formal-email-requesting-information-about", type:"Email", level:"B1", title:"Write a formal email requesting information about a conference.", register:"formal",
  starters:["Dear…","I am writing to enquire about…","I would be grateful if you could provide…","In particular, I am interested in…","Could you also confirm…","I look forward to receiving…"],
  words:[
   ["registration","I would like information about the <em>registration</em> process."],
@@ -2437,7 +2561,7 @@ const PROMPTS = [
  ],
  connectors:["furthermore","in addition","I would also like to","could you please","I look forward to","I am particularly"]},
 
-{id:"write-a-formal-email-to-a-university", type:"Email", level:"B1", title:"Write a formal email to a university requesting a deferral.",
+{id:"write-a-formal-email-to-a-university", type:"Email", level:"B1", title:"Write a formal email to a university requesting a deferral.", register:"formal",
  starters:["Dear Admissions Office,","I am writing regarding my offer to study…","Due to…I wish to request…","I have attached documentation which…","I assure you that…","I would be grateful if you would…"],
  words:[
   ["deferral","I am writing to request a one-year <em>deferral</em>."],
@@ -2453,7 +2577,7 @@ const PROMPTS = [
  ],
  connectors:["due to","therefore","furthermore","I assure you","in addition","I would be grateful"]},
 
-{id:"write-a-formal-email-recommending-a-change", type:"Email", level:"B1", title:"Write a formal email recommending a change of policy at your school.",
+{id:"write-a-formal-email-recommending-a-change", type:"Email", level:"B1", title:"Write a formal email recommending a change of policy at your school.", register:"formal",
  starters:["Dear…","I am writing on behalf of…","We would like to draw your attention to…","We believe that…","Evidence suggests that…","We therefore respectfully request…"],
  words:[
   ["proposal","We would like to present our <em>proposal</em> for your consideration."],
@@ -2469,7 +2593,7 @@ const PROMPTS = [
  ],
  connectors:["furthermore","in addition","we believe","as a result","we therefore","I look forward to"]},
 
-{id:"write-a-formal-email-asking-for-a", type:"Email", level:"B1", title:"Write a formal email asking for a reference letter.",
+{id:"write-a-formal-email-asking-for-a", type:"Email", level:"B1", title:"Write a formal email asking for a reference letter.", register:"formal",
  starters:["Dear…","I hope this email finds you well.","I am writing to ask whether you would be willing to…","The position / programme I am applying for…","I believe your reference would be valuable because…","I would of course provide any further information…"],
  words:[
   ["reference","Would you be willing to provide a <em>reference</em> for me?"],
@@ -2485,7 +2609,7 @@ const PROMPTS = [
  ],
  connectors:["I believe","furthermore","I would therefore","in addition","I would be grateful","I look forward to"]},
 
-{id:"write-a-formal-letter-to-a-newspaper", type:"Email", level:"B2", title:"Write a formal letter to a newspaper responding to an opinion piece.",
+{id:"write-a-formal-letter-to-a-newspaper", type:"Email", level:"B2", title:"Write a formal letter to a newspaper responding to an opinion piece.", register:"formal",
  starters:["Dear Editor,","I write in response to the article published on…","While I appreciate the author's perspective…","The central claim, however, warrants scrutiny…","A more nuanced reading of the evidence suggests…","I urge your readers to consider…"],
  words:[
   ["assertion","The author's central <em>assertion</em> is not supported by the evidence."],
@@ -2501,7 +2625,7 @@ const PROMPTS = [
  ],
  connectors:["however","furthermore","by contrast","it should be noted","nevertheless","I would urge"]},
 
-{id:"write-a-formal-proposal-email-to-a", type:"Email", level:"B2", title:"Write a formal proposal email to a potential sponsor.",
+{id:"write-a-formal-proposal-email-to-a", type:"Email", level:"B2", title:"Write a formal proposal email to a potential sponsor.", register:"formal",
  starters:["Dear…","I am writing on behalf of…to propose a partnership that…","Our organisation is committed to…","The benefits of this collaboration would include…","In terms of visibility…","I would welcome the opportunity to discuss…"],
  words:[
   ["proposition","I would like to present a commercial <em>proposition</em> for your consideration."],
@@ -2517,7 +2641,7 @@ const PROMPTS = [
  ],
  connectors:["furthermore","in addition","as a result","we believe","I would also like to","I look forward to"]},
 
-{id:"write-a-formal-complaint-letter-to-a", type:"Email", level:"B2", title:"Write a formal complaint letter to a regulatory body.",
+{id:"write-a-formal-complaint-letter-to-a", type:"Email", level:"B2", title:"Write a formal complaint letter to a regulatory body.", register:"formal",
  starters:["Dear…","I am writing to formally bring to your attention…","Despite repeated attempts to resolve this matter…","I attach evidence in support of…","I request that your office…","Should this matter remain unresolved…"],
  words:[
   ["regulatory","I am writing to your <em>regulatory</em> body as a last resort."],
@@ -2533,7 +2657,7 @@ const PROMPTS = [
  ],
  connectors:["despite","furthermore","in addition","I therefore","should this","I request that"]},
 
-{id:"write-a-formal-email-declining-a-job", type:"Email", level:"B2", title:"Write a formal email declining a job offer professionally.",
+{id:"write-a-formal-email-declining-a-job", type:"Email", level:"B2", title:"Write a formal email declining a job offer professionally.", register:"formal",
  starters:["Dear…","I am writing to thank you sincerely for offering me the position of…","After careful consideration…","While I was impressed by…","I have decided to…","I hope that we may have the opportunity to…"],
  words:[
   ["reconsider","After further thought, I will not be able to <em>reconsider</em>."],
@@ -2549,7 +2673,7 @@ const PROMPTS = [
  ],
  connectors:["however","nevertheless","while","I hope that","I remain","I look forward to"]},
 
-{id:"write-a-formal-email-to-a-government", type:"Email", level:"B2", title:"Write a formal email to a government official about a local issue.",
+{id:"write-a-formal-email-to-a-government", type:"Email", level:"B2", title:"Write a formal email to a government official about a local issue.", register:"formal",
  starters:["Dear…","I am writing as a resident of…to raise a concern regarding…","This issue has a direct impact on…","The relevant data indicate…","I respectfully urge your office to…","I would welcome a response outlining…"],
  words:[
   ["constituent","As a <em>constituent</em>, I am writing to raise a serious concern."],
@@ -2565,7 +2689,7 @@ const PROMPTS = [
  ],
  connectors:["furthermore","in addition","I therefore","it is clear that","I respectfully","I would welcome"]},
 
-{id:"write-a-formal-email-negotiating-a-contract", type:"Email", level:"B2", title:"Write a formal email negotiating a contract term.",
+{id:"write-a-formal-email-negotiating-a-contract", type:"Email", level:"B2", title:"Write a formal email negotiating a contract term.", register:"formal",
  starters:["Dear…","Following our recent conversation, I am writing to address…","Having reviewed the proposed terms…","I would like to suggest a revision to clause…","This adjustment would…","I trust that we can reach a mutually beneficial agreement…"],
  words:[
   ["clause","I would like to discuss <em>clause</em> 4.2 of the proposed contract."],
@@ -2879,6 +3003,98 @@ const TARGETS = {
   B2: { "Opinion":[180,220], "Narrative":[180,220], "Descriptive":[180,220], "Email":[150,180],  "For & Against":[200,240] }
 };
 
+/* ════════════════════════════════════════════════════
+   STRUCTURE — how the six starters group into paragraphs.
+   [band name, teaching note, first starter, last starter]
+   Keyed by type, then level; "*" applies to every level.
+   ════════════════════════════════════════════════════ */
+const STRUCTURE = {
+  "Opinion": {
+    A2: [["Introduction","Say what you think.",1,1],
+         ["Body 1","Give a reason, then an example.",2,3],
+         ["Body 2","Answer the other side, then add a second point.",4,5],
+         ["Conclusion","Sum up your view.",6,6]],
+    B1: [["Introduction","State your position.",1,1],
+         ["Body 1","Argue your side and support it with evidence.",2,3],
+         ["Body 2","Bring in the opposing view and answer it.",4,5],
+         ["Conclusion","Weigh both sides and restate your position.",6,6]],
+    B2: [["Introduction","Frame the question rather than answering it.",1,1],
+         ["Body 1","Set out the case for and the case against.",2,3],
+         ["Body 2","Test both against the evidence, then add a further consideration.",4,5],
+         ["Conclusion","Give your judgement.",6,6]]
+  },
+  "For & Against": {
+    A2: [["The case for","Give an argument in favour and an example.",1,2],
+         ["The case against","Give two arguments against.",3,4],
+         ["A balancing point","Concede something to the other side.",5,5],
+         ["Your opinion","Only now say what you think.",6,6]],
+    B1: [["Introduction","Introduce the debate without taking a side.",1,1],
+         ["The case for","Argue one side and support it.",2,3],
+         ["The case against","Argue the other side and add a further point.",4,5],
+         ["Conclusion","Weigh the two and conclude.",6,6]],
+    B2: [["Introduction","Frame what is really at stake.",1,1],
+         ["The case for","Present the strongest version of one side.",2,3],
+         ["The case against","Present the strongest version of the other.",4,5],
+         ["Conclusion","Reach a considered judgement.",6,6]]
+  },
+  "Narrative": {
+    "*": [["Setting","Who, where, when.",1,1],
+          ["The events","Build the story. Keep your past tenses consistent.",2,4],
+          ["Outcome and reflection","How it ended, and what it meant to you.",5,6]]
+  },
+  "Descriptive": {
+    "*": [["First impression","Open with the thing a reader would notice first.",1,1],
+          ["Build the picture","Use the senses and precise adjectives.",2,5],
+          ["Why it stays with you","Close on its meaning, not its appearance.",6,6]]
+  },
+  "Email": {
+    "*": [["Greeting","Match the greeting to your reader.",1,1],
+          ["Purpose","Say why you are writing, in one sentence.",2,2],
+          ["Details and request","Give what your reader needs, then ask clearly.",3,5],
+          ["Closing","Sign off in the same register you opened in.",6,6]]
+  }
+};
+const structureFor = p => STRUCTURE[p.type][p.level] || STRUCTURE[p.type]["*"];
+
+/* ════════════════════════════════════════════════════
+   SUCCESS CRITERIA — what "finished" looks like, by task type
+   ════════════════════════════════════════════════════ */
+const CRITERIA = {
+  "Opinion": [
+    "Your opinion is clear in the first sentence.",
+    "Every reason has an example or a piece of evidence.",
+    "You have said what someone who disagrees would argue.",
+    "Your conclusion restates your view without repeating it word for word."
+  ],
+  "For & Against": [
+    "The introduction does not reveal your opinion.",
+    "There are at least two arguments on each side.",
+    "Every change of side is signalled with a connector.",
+    "Your own opinion appears only in the conclusion."
+  ],
+  "Narrative": [
+    "The reader knows who, where, and when by the end of the first sentence.",
+    "Your past tenses are consistent throughout.",
+    "There is one clear moment of surprise, difficulty, or change.",
+    "You show how you felt rather than only naming the feeling.",
+    "The ending says what the experience meant to you."
+  ],
+  "Descriptive": [
+    "The opening gives one strong, specific impression.",
+    "At least three senses are used, not only sight.",
+    "The adjectives are precise, not general (vast, not big).",
+    "Sentence lengths vary.",
+    "The last line explains why this matters to you."
+  ],
+  "Email": [
+    "The greeting and the sign-off match each other.",
+    "The purpose is stated in the first line.",
+    "The reader has every detail they need in order to act.",
+    "The request is polite and unambiguous.",
+    "The register never slips into speech."
+  ]
+};
+
 /* order + teaching note for each connector family */
 const CONN_GROUPS = [
   ["opinion",    "Giving an opinion",   "Open a paragraph with your own position."],
@@ -2991,13 +3207,27 @@ function renderCard(p) {
   cefrEl.textContent = p.level;
   cefrEl.className = 'cefr-badge cefr-' + p.level;
 
+  const reg = document.getElementById('h-register');
+  if (p.register) {
+    reg.hidden = false;
+    reg.textContent = p.register;
+    reg.className = 'register-badge ' + (p.register === 'informal' ? 'informal' : 'formal');
+  } else { reg.hidden = true; }
+
   const [lo, hi] = TARGETS[p.level][p.type];
   document.getElementById('target').innerHTML = 'Write <strong>' + lo + '–' + hi + '</strong> words';
 
-  /* starters */
-  document.getElementById('starter-list').innerHTML = p.starters.map((s, i) =>
-    '<div class="starter-item"><span class="starter-num">' + (i + 1) + '.</span>' +
-    '<span class="starter-text">' + s + '</span></div>'
+  /* starters, grouped into paragraph bands */
+  document.getElementById('starter-list').innerHTML = structureFor(p).map(([name, note, from, to]) =>
+    '<div class="band"><div class="band-head">' +
+      '<span class="band-name">' + name + '</span>' +
+      '<span class="band-note">' + note + '</span>' +
+    '</div>' +
+    p.starters.slice(from - 1, to).map((s, j) =>
+      '<div class="starter-item"><span class="starter-num">' + (from + j) + '.</span>' +
+      '<span class="starter-text">' + s + '</span></div>'
+    ).join('') +
+    '</div>'
   ).join('');
 
   /* word bank */
@@ -3013,6 +3243,7 @@ function renderCard(p) {
           '<span class="pos">' + pos + '</span>' + def + '</div>' +
         '<div class="def-label">example</div>' +
         '<div class="ex-text">' + ex + '</div>' +
+        '<button type="button" class="say-btn" data-say="' + speakable(shown, ex) + '">Hear it</button>' +
       '</div></div>';
   }).join('');
   document.getElementById('btn-reveal').textContent = 'Reveal all';
@@ -3029,6 +3260,19 @@ function renderCard(p) {
         '<button type="button" class="chip connector" data-copy="' + c.replace(/"/g, '&quot;') + '">' + c + '</button>'
       ).join('') + '</div></div>'
     ).join('');
+
+  /* success criteria */
+  const items = CRITERIA[p.type].concat([
+    'You wrote between ' + lo + ' and ' + hi + ' words.',
+    'You used at least four words from the word bank.'
+  ]);
+  document.getElementById('check-items').innerHTML = items.map((c, i) =>
+    '<div class="check-item"><span class="check-box-print"></span>' +
+    '<input type="checkbox" id="ck-' + i + '"><label for="ck-' + i + '">' + c + '</label></div>'
+  ).join('');
+
+  /* draft */
+  loadDraft(p.id);
 
   /* worksheet lines — roughly nine words to a line, plus room to breathe */
   const rows = Math.ceil(hi / 9) + 3;
@@ -3073,20 +3317,139 @@ document.getElementById('btn-reveal').addEventListener('click', () => {
   btn.textContent = revealing ? 'Hide all' : 'Reveal all';
 });
 
-/* ── connectors: click to copy ─────────── */
+/* ── connectors: drop into the draft, or copy ── */
 document.getElementById('conn-groups').addEventListener('click', async e => {
   const chip = e.target.closest('.chip.connector');
   if (!chip) return;
   const text = chip.dataset.copy;
+
+  if (document.activeElement !== draftEl && draftEl.value.trim() === '' && !draftFocused) {
+    /* nothing being written yet — copying is the more useful default */
+    await copyText(text);
+    toast('Copied “' + text + '”');
+  } else {
+    insertIntoDraft(text);
+    toast('Added “' + text + '” to your draft');
+  }
+  chip.classList.add('copied');
+  setTimeout(() => chip.classList.remove('copied'), 900);
+});
+
+async function copyText(text) {
   try { await navigator.clipboard.writeText(text); }
   catch (err) {
     const ta = document.createElement('textarea');
     ta.value = text; document.body.appendChild(ta); ta.select();
     document.execCommand('copy'); ta.remove();
   }
-  chip.classList.add('copied');
-  setTimeout(() => chip.classList.remove('copied'), 900);
-  toast('Copied “' + text + '”');
+}
+
+/* ── word bank: hear it ────────────────── */
+function speakable(word, example) {
+  const plain = example.replace(/<[^>]+>/g, '');
+  return (word + '. ' + plain).replace(/"/g, '&quot;');
+}
+
+document.getElementById('word-chips').addEventListener('click', e => {
+  const btn = e.target.closest('.say-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  speak(btn.dataset.say);
+});
+
+function speak(text) {
+  if (!('speechSynthesis' in window)) { toast('This browser cannot read words aloud.'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const voices = speechSynthesis.getVoices();
+  const v = voices.find(x => x.lang === 'en-GB') || voices.find(x => x.lang.startsWith('en'));
+  if (v) u.voice = v;
+  u.lang = (v && v.lang) || 'en-GB';
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+/* ════════════════════════════════════════════════════
+   DRAFT — live word count, autosave, insert at cursor
+   ════════════════════════════════════════════════════ */
+const draftEl  = document.getElementById('draft-text');
+const countEl  = document.getElementById('word-count');
+const savedEl  = document.getElementById('draft-saved');
+let draftFocused = false;
+let saveTimer = null;
+
+draftEl.addEventListener('focus', () => { draftFocused = true; });
+draftEl.addEventListener('input', () => { updateCount(); queueSave(); });
+
+function wordsIn(text) {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+function updateCount() {
+  const n = wordsIn(draftEl.value);
+  countEl.className = '';
+  let note = '';
+  if (current) {
+    const [lo, hi] = TARGETS[current.level][current.type];
+    if (n === 0)      { note = ' · target ' + lo + '–' + hi; }
+    else if (n < lo)  { countEl.classList.add('under');   note = ' · ' + (lo - n) + ' to go'; }
+    else if (n <= hi) { countEl.classList.add('inrange'); note = ' · in range'; }
+    else              { countEl.classList.add('over');    note = ' · ' + (n - hi) + ' over'; }
+  }
+  countEl.textContent = n + (n === 1 ? ' word' : ' words') + note;
+}
+
+function draftKey(id) { return 'writing-scaffold:draft:' + id; }
+
+function queueSave() {
+  clearTimeout(saveTimer);
+  savedEl.textContent = '';
+  saveTimer = setTimeout(() => {
+    if (!current) return;
+    try {
+      localStorage.setItem(draftKey(current.id), draftEl.value);
+      savedEl.textContent = 'Saved';
+      setTimeout(() => { savedEl.textContent = ''; }, 1500);
+    } catch (e) { savedEl.textContent = 'Not saved — storage is full or blocked'; }
+  }, 600);
+}
+
+function loadDraft(id) {
+  let v = '';
+  try { v = localStorage.getItem(draftKey(id)) || ''; } catch (e) { /* ignore */ }
+  draftEl.value = v;
+  draftFocused = false;
+  savedEl.textContent = '';
+  updateCount();
+}
+
+function insertIntoDraft(text) {
+  const start = draftEl.selectionStart ?? draftEl.value.length;
+  const end   = draftEl.selectionEnd   ?? draftEl.value.length;
+  const before = draftEl.value.slice(0, start);
+  const after  = draftEl.value.slice(end);
+  const pad = before && !/\s$/.test(before) ? ' ' : '';
+  draftEl.value = before + pad + text + after;
+  const pos = (before + pad + text).length;
+  draftEl.focus();
+  draftEl.setSelectionRange(pos, pos);
+  updateCount();
+  queueSave();
+}
+
+document.getElementById('btn-copy-draft').addEventListener('click', async () => {
+  if (!draftEl.value.trim()) { toast('There is nothing in the draft yet.'); return; }
+  await copyText(draftEl.value);
+  toast('Draft copied.');
+});
+
+document.getElementById('btn-clear-draft').addEventListener('click', () => {
+  if (!draftEl.value.trim()) return;
+  if (!confirm('Clear this draft? It cannot be recovered.')) return;
+  draftEl.value = '';
+  updateCount();
+  queueSave();
 });
 
 document.getElementById('btn-display').addEventListener('click', loadPrompt);
