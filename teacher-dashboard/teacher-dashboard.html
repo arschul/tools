@@ -2288,122 +2288,192 @@ function setRollcallDate(date){
 
 /* ================= STUDENT PROFILE ================= */
 /* ---------- plain-text student report ----------
-   A copy-pasteable block for the school's report card. Reads the numbers
-   renderStudentProfile() already computed (via lastReportStats) so the two
-   can never disagree. The comment is a starting point — the teacher edits
-   it in the textarea before copying.
+   A copy-pasteable block for the school's report card.
+
+   Numbers come from lastReportStats — the figures renderStudentProfile()
+   already computed — so the text can never disagree with the on-screen report.
+
+   The prose comments come from the Report Card tool's comment bank
+   (tools/reportcards): five categories x five levels x eight phrasings, in
+   Brazilian Portuguese. Behaviour and homework levels are auto-selected from
+   measured participation/homework; vocab, grammar and Portuguese use are not
+   measured here, so they stay off unless the teacher sets them, rather than
+   putting an unsupported grade on an official document.
 */
 let lastReportStats = null;
+let rcState = null;   // { levels:{behavior,homework,vocab,grammar,port}, nonce }
+
+const RC_COMMENTS = {"vocab":{"1":["O vocabulário ainda é muito limitado, dificultando até situações básicas de comunicação. Uma boa estratégia é reservar 10 minutos por dia para revisar palavras novas usando aplicativos como Anki ou Quizlet.","A escassez de palavras está impedindo o progresso de forma significativa. Manter um caderno de vocabulário e anotar pelo menos cinco palavras novas por aula pode fazer uma grande diferença.","A dificuldade em encontrar as palavras certas compromete muito a comunicação em inglês. Criar listas temáticas de vocabulário e reviá-las semanalmente pode ajudar bastante.","O repertório de palavras ainda está muito restrito para o nível esperado nesta etapa. Ler textos simples em inglês toda semana é um ótimo começo para absorver palavras de forma natural.","Sem uma base vocabular mais sólida, fica difícil avançar para conteúdos mais complexos. O uso diário de flashcards é uma das formas mais eficazes de superar essa lacuna.","A falta de variedade de palavras limita muito a expressão em inglês. Assistir a vídeos curtos em inglês com legendas pode ajudar a expandir o repertório de forma envolvente.","O vocabulário atual torna a comunicação muito difícil e exige atenção imediata. Criar o hábito de anotar e revisar todas as palavras novas que aparecem nas aulas é fundamental nesse momento.","O repertório precisa ser ampliado com urgência para que o aprendizado avançe. Repetir palavras novas em voz alta e usá-las em frases próprias é uma excelente forma de fixação."],"2":["O vocabulário cobre situações básicas, mas precisa ser ampliado para comunicação mais fluente. Ler notícias ou histórias curtas em inglês toda semana pode expandir o repertório de forma natural.","A comunicação em inglês é possível, mas erros de vocabulário ainda afetam a precisão. Rever as palavras aprendidas em aula e criar exemplos próprios com elas ajuda muito na fixação.","A falta de variedade no vocabulário ainda limita a expressão. Tentar usar palavras novas em frases durante a semana acelera bastante a memorização.","Há potencial claro, mas o vocabulário ainda precisa crescer para acompanhar o nível do curso. Criar uma lista pessoal de palavras e reviá-la antes de cada aula é uma ótima prática.","Com mais dedicação ao vocabulário, o desempenho vai melhorar bastante. O uso de aplicativos de repetição espaçada, como Anki, é uma das estratégias mais eficazes para isso.","As mesmas palavras acabam sendo usadas repetidamente, o que empobrece a comunicação. Escolher três palavras novas por semana e tentá-las em conversas reais já é um grande avanço.","A evolução depende diretamente de quanto investimento houver em aprender palavras novas. A leitura em inglês — mesmo que curta — é uma das melhores formas de enriquecer o repertório.","O vocabulário precisa crescer para sustentar conversas mais longas e complexas. Assistir a séries ou vídeos curtos em inglês é uma forma divertida e eficaz de absorver novas palavras."],"3":["O vocabulário é adequado para a maioria das situações, mas ainda pode ser mais variado e preciso. Manter um diário pessoal em inglês é uma excelente forma de colocar palavras novas em prática.","A comunicação acontece bem, mas há dificuldades com expressões mais complexas ou específicas. Ler textos do nível seguinte pode ser um bom desafio para ampliar o repertório.","O desempenho é consistente, mas há espaço para crescimento no vocabulário. Criar conexões entre palavras novas e situações do dia a dia ajuda muito na memorização a longo prazo.","O vocabulário apresentado em aula é bem assimilado, mas há dependência de suporte para palavras novas. Expor-se ao inglês fora da sala — por filmes, podcasts ou leitura — pode fazer uma grande diferença.","O desempenho é sólido no básico, mas o vocabulário mais avançado ainda está em desenvolvimento. Separar 15 minutos por semana para revisar palavras do nível seguinte pode acelerar muito a evolução.","A comunicação funciona bem, mas a escolha de palavras poderia ser mais variada e precisa. Experimentar parafrasear frases conhecidas usando sinônimos é uma ótima forma de enriquecer o vocabulário.","O caminho está certo — continuar expandindo o vocabulário é o próximo passo natural. Ouvir podcasts em inglês para iniciantes é uma forma prática de ampliar o repertório sem esforço excessivo.","A compreensão do vocabulário em aula é boa, mas a produção ainda pode ser mais rica. Praticar escrita livre em inglês — mesmo que curta — ajuda a usar as palavras de forma mais ativa."],"4":["O vocabulário é amplo e usado com segurança na maioria das situações, mas ainda há espaço para crescer. Para alcançar o nível máximo, vale explorar expressões idiomáticas e collocations mais avançados.","Há ótimo domínio de palavras e expressões, com comunicação clara e precisa. Para ir além, incluir vocabulário formal e acadêmico nas produções pode enriquecer ainda mais a expressão.","Raramente há necessidade de buscar ajuda para encontrar a palavra certa — isso é muito positivo. Para dar o próximo passo, escrever textos mais longos ajuda a testar e expandir os limites do vocabulário.","O repertório é rico e reflete comprometimento genuino com o aprendizado, mas ainda tem espaço para crescer. Para aprimorar ainda mais, explorar palavras em contextos diferentes — como literatura ou notícias — pode fazer a diferença.","O vocabulário está claramente acima da média e contribui para uma comunicação fluente. O próximo desafio é usar palavras menos frequentes com a mesma naturalidade já demonstrada com as mais comuns.","A forma como as palavras são utilizadas demonstra maturidade linguística e esforço consistente. Para crescer ainda mais, vale prestar atenção em como falantes nativos combinam palavras em contextos reais.","O vocabulário é sólido e quase nunca compromete a comunicação, mas a excelência exige mais. O foco agora pode ser reduzir repetições e variar mais as escolhas lexicais.","Com esse nível de vocabulário, a fluência pode avançar rapidamente. Para consolidar e ir além, tentar usar palavras novas logo após aprender é a melhor forma de torná-las permanentes."],"5":["O vocabulário é rico, variado e sofisticado — a comunicação acontece com fluência e precisão impressionantes.","Há domínio excepcional das palavras, usadas de forma criativa e sempre no contexto certo — parabéns!","A precisão e a diversidade no uso do vocabulário são destaque no desempenho — resultado de muito esforço.","O conhecimento lexical é impressionante e reflete dedicação intensa ao aprendizado do idioma.","As palavras são usadas com desenvoltura que eleva toda a comunicação a um nível avançado — excelente!","A escolha de palavras é sempre precisa, rica e adequada ao contexto — um exemplo para toda a turma.","O controle avançado do vocabulário é uma das maiores forças no aprendizado — continue desenvolvendo essa habilidade.","O nível de vocabulário alcançado é resultado de muito esforço e dedicação — parabéns pelo resultado!"]},"grammar":{"1":["A compreensão das regras gramaticais ainda é muito limitada, dificultando a construção de frases coerentes. Rever os fundamentos com um material de apoio do nível básico é o passo mais importante agora.","Erros gramaticais graves e frequentes comprometem a clareza das mensagens. Praticar exercícios curtos de gramática todos os dias, começando pelas estruturas mais simples, pode gerar avanços rápidos.","Há grande dificuldade em aplicar até mesmo as regras básicas do idioma. Usar um caderno para anotar as regras e exemplos explicados em aula pode facilitar bastante a revisão em casa.","A estrutura das frases é constantemente incorreta, o que dificulta muito a comunicação. Praticar a construção de frases simples — sujeito, verbo, complemento — é um bom ponto de partida.","Sem avançar na gramática, será difícil progredir para os próximos conteúdos. Pedir exercícios extras de revisão ao professor pode ajudar a identificar e corrigir os erros mais recorrentes.","Os erros gramaticais são tão frequentes que afetam a compreensão do que é dito. Dedicar tempo de estudo extra à gramática básica — verbo to be, presente simples — é fundamental nesse momento.","As lacunas gramaticais identificadas precisam de atenção urgente e consistente. Praticar com vídeos curtos de gramática no YouTube, revisando uma regra por semana, é uma boa estratégia.","A aplicação das regras gramaticais ainda é um grande desafio. Revisar as anotações de aula em casa, tentando reformular as frases com erro, é um exercício muito eficaz."],"2":["A comunicação é possível, mas erros gramaticais comprometem a precisão com frequência. Identificar os erros mais repetidos e criar um guia pessoal de regras pode ajudar muito na correção.","A estrutura das frases ainda é inconsistente e precisa de prática contínua. Escrever pequenos parágrafos em inglês toda semana é uma forma eficiente de consolidar as regras na prática.","Há conhecimento básico, mas dificuldade em aplicar as regras de forma consistente. Fazer exercícios de completar frases com foco nas estruturas que mais geram dúvida pode acelerar o progresso.","Com foco nas regras fundamentais, o desempenho pode evoluir consideravelmente. Rever a gramática de forma sistemática — uma estrutura por semana — é uma abordagem que funciona muito bem.","Os mesmos erros se repetem com frequência — revisão e prática são fundamentais. Pedir ao professor que marque os erros nos textos escritos é uma excelente forma de identificar padrões problemáticos.","O progresso vai ser acelerado com exercícios específicos nos pontos que mais geram dificuldade. Usar apps de gramática interativos pode tornar a prática mais dinâmica e eficiente.","Ainda há confusão entre estruturas básicas que precisam ser consolidadas. Praticar a produção oral com atenção nas estruturas — mesmo que devagar — ajuda a criar automatismo gramatical.","A gramática ainda dificulta uma comunicação mais clara e natural. Ouvir e repetir frases em inglês em voz alta é uma técnica excelente para internalizar as estruturas corretas."],"3":["A gramática é adequada para a maioria das situações, mas erros ainda ocorrem em construções complexas. Prestar atenção especial a phrasal verbs e tempos compostos pode dar um salto significativo no nível.","Frases são construídas corretamente na maior parte do tempo, mas deslizes ocorrem ocasionalmente. Rever as estruturas que mais causam erros — como question tags e condicionais — pode ajudar a eliminá-los.","O desempenho é consistente, mas há espaço para aprimorar a precisão e a naturalidade das construções. Praticar a reformulação de textos — reescrever parágrafos com estruturas variadas — é um exercício muito útil.","As regras são entendidas, mas há hesitação na aplicação — mais prática oral vai ajudar bastante. Participar das atividades de fala em aula com mais frequência é uma ótima forma de criar automatismo.","A gramática permite comunicação eficiente, mas a fluência pode ser aprimorada com mais prática. Escrever pequenos textos em inglês e pedir feedback ao professor é uma forma concreta de identificar pontos a melhorar.","Com um pouco mais de atenção aos detalhes gramaticais, o nível pode dar um salto significativo. Manter um caderno de erros — anotando a forma correta ao lado de cada erro — é uma estratégia muito eficaz.","O desempenho é sólido, mas ainda há dependência de verificação para construções mais elaboradas. Tentar construir frases complexas sem apoio em aula é uma forma de testar e fortalecer a gramática.","A gramática está bem estabelecida para o nível atual, mas o próximo passo exige mais precisão. Ler textos um pouco acima do nível atual, prestando atenção nas estruturas usadas, pode acelerar muito o progresso."],"4":["A gramática é sólida e as frases são construídas de forma clara e correta na grande maioria das situações. Para alcançar a excelência, vale trabalhar a naturalidade em construções mais complexas, como voz passiva e discurso indireto.","Há ótimo domínio da estrutura da língua, com expressão clara e segura — mas ainda há espaço para refinar. Explorar o uso de conectores e organizadores textuais pode tornar a comunicação ainda mais sofisticada.","Erros gramaticais são raros e as regras são usadas com muita confiança. O próximo passo é praticar estruturas mais avançadas, como condicionais complexas e tempos verbais menos frequentes.","O conhecimento gramatical é excelente e reflete muito comprometimento com o aprendizado. Para chegar ao próximo nível, vale prestar atenção à gramática em textos autênticos — livros, artigos, filmes.","A base gramatical é muito forte e há condições de explorar estruturas mais avançadas. Praticar a escrita formal e acadêmica é uma excelente forma de aprofundar o domínio gramatical.","A precisão gramatical está claramente acima da média da turma, o que é muito positivo. Para crescer ainda mais, tentar usar estruturas novas com intenção — em vez de só as já dominadas — pode ampliar o repertório gramatical.","As estruturas do idioma são dominadas com muita desenvoltura — isso faz diferença real na comunicação. Rever esporadicamente as estruturas que menos aparecem na fala ajuda a mantê-las ativas.","A gramática é um dos pontos fortes e contribui muito para a fluência geral. Para refinar ainda mais, prestar atenção nos erros residuais — pequenos deslizes que ainda ocorrem — é o foco ideal agora."],"5":["A gramática é impecável, permitindo comunicação precisa, elegante e completamente natural — resultado de muito esforço.","Há domínio excepcional das regras e estruturas do idioma — digno de grande reconhecimento e admiração.","A precisão gramatical e a riqueza das construções são destaque no desempenho — parabéns pelo nível alcançado!","O conhecimento gramatical é impressionante e coloca o desempenho no topo da turma — continue assim!","A gramática é usada com uma fluidez que eleva toda a proficiência a um nível muito avançado — excelente!","Os textos e as falas demonstram gramática impecável mesmo em situações de comunicação espontânea — muito bem!","Há controle pleno das estruturas do idioma em todos os contextos — parabéns pelo esforço e pela dedicação!","A gramática exemplar é uma das maiores forças no desempenho e serve de referência para toda a turma."]},"behavior":{"1":["A postura em sala de aula precisa de atenção urgente, pois está prejudicando o aprendizado de todos. Estabelecer uma meta pessoal de manter o foco por pelo menos 10 minutos seguidos pode ser um bom começo.","O excesso de conversas paralelas e agitação compromete o ambiente de aprendizado. Combinar com o professor um sinal discreto para retomar o foco pode ajudar a criar consciência sobre os momentos de distracão.","A postura atual tem impactado negativamente a dinâmica da turma e precisa mudar. Sentar mais próximo do professor durante as aulas pode ajudar a manter o foco e reduzir as distrações.","Há dificuldade em seguir as regras da aula, o que prejudica a própria evolução. Conversar com o professor fora da aula sobre estratégias de foco pode abrir um caminho muito mais produtivo.","Conversas fora de hora e falta de atenção são hábitos que precisam ser corrigidos com urgência. Deixar o celular guardado durante a aula inteira é uma mudança simples que faz uma diferença enorme.","O comportamento atual dificulta o aproveitamento do conteúdo e afeta os colegas ao redor. Tentar uma postura mais ativa — respondendo às perguntas do professor — pode transformar o engajamento na aula.","A falta de respeito às regras da aula é um ponto que precisa ser trabalhado com seriedade. Refletir sobre o impacto do próprio comportamento nos colegas pode ser um exercício muito valioso.","A postura em sala está abaixo do esperado e exige uma mudança de atitude. Criar uma rotina de chegada — guardar o celular, abrir o caderno — pode ajudar a entrar no modo de estudo."],"2":["A participação em sala pode ser mais focada e consistente para aproveitar melhor as aulas. Tentar responder pelo menos uma pergunta por aula é uma boa forma de aumentar o engajamento gradualmente.","O conteúdo é acompanhado, mas as conversas com os colegas acabam dispersando a turma. Sentar próximo a quem mantém o foco pode ajudar a reduzir as distrações durante as explicações.","Há potencial claro, mas a distracão frequente impede que todo o conteúdo seja aproveitado. Anotar os pontos principais durante a aula é uma estratégia simples que ajuda a manter a atenção.","O comportamento é aceitável, mas ainda há muito espaço para evoluir em termos de postura. Estabelecer um desafio pessoal — como ficar uma aula inteira sem usar o celular — pode ser transformador.","Pequenas mudanças de comportamento fariam uma grande diferença no aprendizado. Chegar à aula com uma pergunta preparada pode aumentar o engajamento de forma natural.","Momentos importantes da aula são perdidos às vezes por falta de atenção. Desenvolver o hábito de fazer anotações durante as explicações é uma ótima forma de manter o foco.","Com mais foco e disciplina, o desempenho poderia melhorar consideravelmente. Tentar manter contato visual com o professor durante as explicações pode ajudar muito a manter a concentração.","O comportamento está melhorando, mas ainda há momentos de dispersão que valem ser trabalhados. Pedir ao professor para ser chamado durante as atividades pode aumentar o senso de responsabilidade."],"3":["A participação é geralmente boa, mas há momentos de distracão durante as atividades. Participar mais ativamente das dinâmicas em grupo pode ajudar a manter o engajamento elevado durante toda a aula.","A atenção é mantida na maior parte do tempo, mas há espaço para um envolvimento ainda mais ativo. Tentar iniciar respostas sem esperar a vez pode ser uma forma de aumentar a participação de forma natural.","A postura é adequada, mas há espaço para uma atitude ainda mais ativa e participativa. Fazer perguntas durante as aulas — mesmo que simples — demonstra engajamento e acelera o aprendizado.","O foco é mantido, mas a concentração pode aumentar nos momentos-chave da aula. Tentar rever as anotações logo após a aula, ainda com o conteúdo fresco, pode ajudar muito na fixação.","A postura é consistente, mas o engajamento com a aula poderia ser mais entusiasmado. Encarar a aula com uma atitude de curiosidade — tentando descobrir algo novo em cada encontro — pode transformar a experiência.","O ambiente de sala é respeitado, mas há momentos de desconexão com a dinâmica da aula. Contribuir com exemplos pessoais durante as explicações é uma forma eficaz de manter o engajamento.","Com uma atitude um pouco mais proativa, haveria muito mais aproveitamento das oportunidades de aprendizado. Tentar liderar ou iniciar discussões em atividades de grupo pode desenvolver tanto a participação quanto o idioma.","A postura é tranquila e respeitosa, mas poderia haver mais participação nas discussões. Responder às perguntas do professor — mesmo sem ter certeza — é uma excelente forma de praticar e crescer."],"4":["A postura em sala de aula é muito boa, com participação positiva e construtiva na maioria das aulas. Para chegar ao nível mais alto, vale tentar liderar mais momentos em grupo e incentivar os colegas também.","Há muito engajamento e responsabilidade nas atividades propostas — isso reflete maturidade real. Para crescer ainda mais, participar das partes da aula que são mais desafiadoras pode fazer muita diferença.","O comportamento contribui para um ambiente melhor para todos na turma. O próximo passo seria transformar esse engajamento em liderança — iniciando trocas e discussões de forma espontânea.","O foco é mantido com consistência e a postura favorece muito o próprio aprendizado. Para chegar ao nível de excelência, manter esse engajamento nos momentos de maior cansaço ou dificuldade é o grande desafio.","A presença em sala é sempre positiva e agrega tanto para o grupo quanto para o próprio aprendizado. Para ir além, assumir um papel mais ativo nas dinâmicas de grupo pode enriquecer ainda mais a experiência.","Há respeito consistente pelas regras e pelos colegas, o que é muito valioso. Para alcançar o nível de excelência, vale tentar manter esse mesmo engajamento mesmo quando o conteúdo é mais difícil.","A atitude em sala é muito elogiavel e contribui para um ambiente mais produtivo para todos. Tentar usar o inglês em momentos espontâneos — não só quando solicitado — é um bom próximo passo.","O comportamento demonstra comprometimento real com o aprendizado. Para atingir o nível mais alto, vale tentar engajar ainda mais durante as atividades de prática oral e interação."],"5":["O comportamento em sala é impecável — há respeito, foco e dedicação em cada momento da aula.","É um exemplo de disciplina e postura para toda a turma — a atitude eleva a energia de cada aula.","A participação é sempre ativa e construtiva, contribuindo enormemente para a dinâmica do grupo.","A maturidade e o respeito demonstrados em sala são dignos de muito reconhecimento e admiração.","O comprometimento e a seriedade com que o aprendizado é encarado inspiram os colegas ao redor.","A atitude positiva e engajada torna as aulas mais ricas e produtivas para toda a turma — muito bem!","O entusiasmo é combinado com respeito — uma combinação rara e muito valiosa em sala de aula.","O comportamento exemplar reflete o quanto o próprio desenvolvimento é valorizado — parabéns!"]},"port":{"1":["O uso excessivo do português em sala está comprometendo a imersão e dificultando o progresso. Tentar substituir palavras simples já conhecidas em inglês — como 'yes', 'okay', 'I don't know' — pode ser um bom começo.","É essencial fazer um esforço consciente para se comunicar em inglês durante as aulas. Uma boa estratégia é combinar com o professor uma 'penalidade' divertida para cada vez que o português escapar.","O hábito de recorrer ao português impede o desenvolvimento natural da fluência. Praticar as frases mais usadas no dia a dia em inglês — cumprimentos, pedidos de ajuda, perguntas — pode reduzir muito essa dependência.","A dependência do português limita a prática tanto própria quanto dos colegas. Tentar formular qualquer dúvida primeiro em inglês, mesmo que de forma imperfeita, já é um grande avanço.","Quanto menos o português for usado em aula, mais rápida será a evolução no idioma. Criar um pequeno glossário de frases úteis para usar na aula pode reduzir bastante a dependência do português.","O uso frequente do português é um hábito que precisa mudar para que o aprendizado avançe. Uma dica prática é tentar pensar em inglês antes de falar — mesmo que por um segundo — para criar o hábito.","A imersão em inglês é uma das ferramentas mais poderosas do curso, e ela começa em sala de aula. Escolher uma frase em inglês por aula para usar com os colegas pode ajudar a criar o hábito gradualmente.","Mesmo para perguntas simples, tentar usar o inglês faz uma diferença enorme no aprendizado. Pedir ao professor para ensinar as frases mais úteis em inglês e praticá-las toda aula é uma ótima estratégia."],"2":["O inglês é usado para comunicação básica, mas o português ainda aparece com frequência. Tentar expressar ideias em inglês — mesmo que imperfeitas — é muito mais produtivo do que recorrer ao português.","Há potencial para se comunicar em inglês, mas o uso do português ainda é um obstáculo. Combinar com um colega de sala para se ajudarem a manter o inglês durante as atividades pode ser muito eficaz.","O progresso pode ser acelerado com a redução do uso do português durante as aulas. Tentar usar sempre o inglês quando há outra pessoa por perto para ouvir — a confiança aumenta com a prática.","O uso frequente do português é um hábito que pode ser mudado com determinação. Cada vez que o português 'escapar', tentar repetir a mesma ideia em inglês logo em seguida é uma ótima forma de corrigir.","Cada momento em que o inglês é escolhido em vez do português é uma conquista importante. Desafiar-se a passar uma aula inteira sem usar o português pode ser muito motivador.","Com mais comprometimento com o inglês em sala, a fluência vai evoluir muito mais rápido. Ouvir músicas ou assistir a vídeos curtos em inglês em casa pode criar mais conforto com o idioma.","O uso do português ainda é uma limitação no desenvolvimento da fluência. Preparar com antecedência frases que costumam vir em português — como pedir para repetir — pode ajudar bastante.","O inglês ainda não é a primeira escolha na maioria das situações, mas isso pode mudar com prática. Tentar usar expressões do cotidiano em inglês fora da sala de aula é uma prática muito eficiente."],"3":["O inglês é usado na maior parte do tempo, mas há momentos de recaída para o português. Tentar formular qualquer dúvida em inglês antes de recorrer ao português — mesmo que com erros — é um ótimo desafio.","A tentativa de manter o inglês é notável, mas a disciplina pode ser aprimorada. Em situações de dúvida, tentar adivinhar a palavra em inglês antes de pedir ajuda em português é uma estratégia excelente.","O comportamento está evoluindo bem, mas o português ainda aparece ocasionalmente. Praticar as frases mais usadas em sala — como 'How do you say...?' ou 'Can you repeat that?' — elimina muito da necessidade de recorrer ao português.","Há boa disposição para usar o inglês, mas ainda há momentos de recaída. Cada aula que termina com menos uso do português do que a anterior já é uma vitória — manter esse progresso é o foco.","Mesmo em momentos de dúvida, tentar formular a pergunta em inglês é uma meta alcançável. Anotar as perguntas que costumam vir em português e tentar traduzí-las com antecedência é uma boa preparação.","Com uma pequena mudança de hábito, manter a imersão completa em inglês é totalmente possível. Pedir ao professor que corrija gentilmente cada vez que o português escapar pode ajudar a criar mais consciência.","Está progredindo bem nesse aspecto — um pouco mais de esforço constante pode fazer uma grande diferença. Tentar usar o inglês em pequenas interações do dia a dia — mesmo fora da escola — é um passo importante.","O esforço para manter o inglês é visível e merece reconhecimento. Para dar o próximo passo, o desafio é manter esse esforço também nos momentos mais difíceis ou quando o assunto é mais complexo."],"4":["O inglês é usado com frequência e segurança, contribuindo para um ótimo ambiente de imersão. Para atingir o nível de excelência, vale tentar manter o inglês também nos momentos de maior dificuldade ou frustração.","O esforço para evitar o português em sala é muito notável e impacta diretamente no aprendizado. O próximo passo seria usar o inglês de forma ainda mais espontânea, sem esperar pela atividade estruturada.","Já há muito conforto para se expressar em inglês — isso é um avanço enorme no curso. Para chegar ao nível mais alto, criar o hábito de pensar em inglês — e não apenas falar — pode transformar a fluência.","O comprometimento em falar inglês reflete a seriedade com que o curso é levado. Para ir além, tentar usar o inglês em conversas mais informais com colegas — antes e depois da aula — é um excelente exercício.","O português raramente aparece, o que demonstra muita maturidade e disciplina. Para atingir a imersão total, vale tentar usar o inglês mesmo em situações pequenas, como agradecer ou cumprimentar.","A imersão em sala é consistente e serve de exemplo positivo para os colegas. Para crescer ainda mais, buscar vocabulário em inglês para situações cotidianas — ao invés de traduzir mentalmente do português — pode acelerar muito o progresso.","A compreensão de que falar em inglês o tempo todo é a chave para a fluência já está bem estabelecida. O desafio agora é tornar isso um reflexo automático, sem necessidade de esforço consciente.","O desempenho é muito bom nesse aspecto e está próximo da excelência. Tentar se comunicar exclusivamente em inglês com o professor — inclusive fora das atividades formais — pode ser o passo final."],"5":["O inglês é usado exclusivamente em sala de aula — isso otimiza o aprendizado de forma impressionante.","A disciplina em manter o inglês o tempo todo é um exemplo notável de comprometimento com o aprendizado.","Alto nível de maturidade é demonstrado ao manter a imersão completa durante toda a aula — parabéns!","O uso consistente do inglês contribui imensamente para o desenvolvimento da fluência — continue assim!","A compreensão de que a imersão é a chave do sucesso é aplicada com excelência em cada aula.","Mesmo em situações difíceis, o inglês é mantido — isso faz toda a diferença na evolução do idioma.","A dedicação à imersão em sala é exemplar e inspira os colegas a fazerem o mesmo — muito bem!","É um modelo de como deve ser a postura de alguém comprometido com a fluência real no idioma."]},"homework":{"1":["A entrega das tarefas é muito inconsistente, o que prejudica a fixação do conteúdo. Estabelecer um horário fixo por semana dedicado às tarefas pode ajudar a criar consistência e responsabilidade.","É fundamental começar a realizar todas as tarefas de casa para consolidar o que é aprendido em aula. Separar um horário curto — mesmo que 20 minutos — logo após a aula, enquanto o conteúdo ainda está fresco, pode funcionar muito bem.","A qualidade das tarefas entregues está abaixo do esperado e exige muito mais dedicação. Fazer a tarefa em partes menores — ao invés de deixar para a última hora — pode transformar a qualidade das entregas.","A falta de comprometimento com as tarefas tem impactado negativamente o aprendizado. Pedir ao professor que marque os exercícios mais importantes pode ajudar a priorizar melhor o tempo de estudo em casa.","Sem a prática em casa, o conteúdo visto em aula não se consolida da forma necessária. Começar sempre pela atividade mais fácil das tarefas pode reduzir a resistência inicial e tornar o hábito mais sustentável.","As tarefas são uma extensão essencial do aprendizado da sala de aula — e estão sendo negligenciadas. Combinar com um colega para fazer as tarefas juntos online pode aumentar muito a motivação e a consistência.","A oportunidade de praticar e fixar o conteúdo em casa está sendo perdida com frequência. Usar lembretes no celular para as tarefas pode ajudar a criar o hábito de não deixa-las para depois.","Uma mudança de postura em relação às atividades de casa é necessária para progredir. Conversar com o professor sobre a carga das tarefas — caso seja muito alta — pode ajudar a encontrar um equilíbrio mais viável."],"2":["As tarefas são entregues, mas a qualidade precisa de muito mais cuidado e atenção. Reler a tarefa antes de entregar — pelo menos uma vez — pode reduzir bastante os erros e melhorar a qualidade.","O progresso pode ser acelerado com maior comprometimento nas atividades de casa. Fazer as tarefas em mais de uma sessão curta, revisando o que foi feito em cada uma, pode melhorar bastante a qualidade.","As atividades precisam ser completadas com mais atenção, cuidado e dedicação. Usar o caderno de aula como referência enquanto faz as tarefas pode ajudar a evitar os erros mais comuns.","A dedicação às tarefas está aquém do potencial e pode ser muito aprimorada. Escolher um lugar tranquilo e sem distrações para fazer as tarefas pode fazer uma grande diferença no resultado.","As tarefas entregues mostram que foram feitas com pressa — vale dedicar mais tempo a elas. Começar as tarefas com pelo menos um dia de antecedência permite uma revisão mais calma e cuidadosa.","A consistência nas entregas precisa de melhorias para sustentar o progresso no curso. Pedir ao professor dicas de estudo para cada tipo de atividade pode tornar o tempo de tarefa mais eficiente.","Com mais capricho e atenção nos detalhes, as tarefas vão refletir muito melhor o potencial real. Verificar as respostas usando os recursos de aula — como notas e materiais — antes de entregar é uma boa prática.","Uma entrega incompleta ou descuidada não ajuda na fixação do conteúdo — o esforço extra vale muito. Tentar explicar em voz alta o que foi feito na tarefa é uma forma poderosa de checar a compreensão."],"3":["As tarefas são entregues na maior parte do tempo, mas a qualidade pode variar bastante. Fazer uma releitura rápida antes de entregar — buscando erros de escrita e gramática — pode melhorar bastante a consistência.","A dedicação às atividades de casa é consistente, mas ainda pode ser aprimorada. Anotar as dúvidas que surgem ao fazer as tarefas e trazê-las para a aula seguinte transforma o dever de casa em aprendizado ativo.","O caminho está certo com as tarefas, mas a revisão do trabalho é fundamental para evitar erros desnecessários. Fazer as tarefas um dia antes do prazo garante tempo para reler com calma e corrigir pequenos deslizes.","A atenção aos detalhes nas tarefas de casa pode ser aprimorada. Verificar especificamente os pontos gramaticais trabalhados em cada aula durante a realização das tarefas pode ajudar muito na precisão.","As tarefas são entregues com regularidade, mas às vezes parecem não ter sido revisadas antes da entrega. Criar o hábito de reler o que foi escrito em voz alta ajuda a perceber erros que passam despercebidos na leitura silenciosa.","O desempenho é bom, mas pode se beneficiar de maior esforço e cuidado em cada atividade. Fazer as tarefas com o caderno de aula ao lado, conferindo as explicações, pode torná-las muito mais precisas.","A regularidade nas entregas é muito positiva — agora o foco pode ser melhorar a qualidade. Tentar fazer a tarefa sem consultar a tradução diretamente — usando o raciocínio em inglês primeiro — é um ótimo exercício.","O hábito de entregar as tarefas está bem estabelecido. Para crescer ainda mais, tentar ir além do mínimo pedido — fazendo exemplos extras ou escrevendo um pouco mais — pode acelerar bastante o aprendizado."],"4":["As tarefas são entregues com consistência e qualidade — um reflexo muito claro do comprometimento com o curso. Para alcançar a excelência, tentar ir além do que é pedido — com exemplos extras ou frases adicionais — pode fazer uma grande diferença.","A qualidade do trabalho é muito boa e demonstra real dedicação. Para chegar ao nível mais alto, vale revisar as tarefas com um olhar crítico — buscando pequenos erros que podem escapar na primeira leitura.","Há comprometimento sólido com as atividades de casa e isso tem impacto positivo claro na performance. Para crescer ainda mais, usar as tarefas como oportunidade de experimentar estruturas e vocabulário novos pode enriquecer muito as entregas.","As tarefas são sempre em dia, o que demonstra ótima organização e disciplina. Para ir além, antecipar a tarefa — começando antes do prazo — permite uma revisão mais cuidadosa e um resultado ainda melhor.","A qualidade e a regularidade das entregas estão claramente acima da média. Para atingir o nível de excelência, vale prestar atenção aos pequenos detalhes que ainda geram imprecisão — como pontuação e concórdia.","As tarefas são levadas a sério, e isso faz toda a diferença nos resultados alcançados. Para crescer ainda mais, buscar feedback específico do professor sobre as tarefas — perguntando o que poderia ter sido feito melhor — é uma prática muito valiosa.","A dedicação fora da sala de aula é um dos fatores que mais contribuem para o progresso. Para alcançar o mais alto nível, enriquecer as respostas com mais contexto e detalhes — em vez de apenas responder o mínimo — pode transformar a qualidade.","O comprometimento com as tarefas é muito sólido e próximo da excelência. Para dar o passo final, tentar reler cada tarefa do ponto de vista de quem vai lê-la ajuda a refinar a comunicação de forma significativa."],"5":["Todas as tarefas são entregues dentro do prazo e com qualidade excepcional — parabéns pelo comprometimento!","A dedicação às atividades de casa é um exemplo para toda a turma — o esforço é muito digno de reconhecimento.","A organização e o comprometimento com as tarefas são simplesmente impecáveis — continue assim!","Cada trabalho entregue reflete seriedade, cuidado e dedicação genuína — isso faz toda a diferença no aprendizado.","A performance com as tarefas está em um nível exemplar — o esforço é digno de muito reconhecimento e admiração.","Nunca há falhas nas entregas, e os trabalhos apresentam sempre altíssima qualidade — excelente!","A disciplina fora da sala de aula é um dos maiores diferenciais no aprendizado — um exemplo inspirador.","Cada tarefa entregue reflete cuidado, atenção e dedicação genuína — continue nesse ritmo excelente!"]}};
+const RC_LEVEL_LABELS_PT = {1:'Precisa melhorar muito',2:'Precisa melhorar',3:'Regular',4:'Muito Bom',5:'Excelente'};
+const RC_LEVEL_LABELS_EN = {1:'Needs much improvement',2:'Needs improvement',3:'Satisfactory',4:'Very good',5:'Excellent'};
+const RC_CAT_LABELS = {
+  behavior:{pt:'Comportamento',en:'Behaviour'},
+  homework:{pt:'Lição de casa',en:'Homework'},
+  vocab:{pt:'Vocabulário',en:'Vocabulary'},
+  grammar:{pt:'Gramática',en:'Grammar'},
+  port:{pt:'Uso do português',en:'Portuguese use'}
+};
 
 function fmtPct(v){ return v==null ? '—' : v+'%'; }
 
-function reportComment(s, lang){
-  const first = s.name.split(' ')[0];
-  const bits = [];
-  if(lang==='pt'){
-    // Genderless phrasings (noun-based) — gender isn't tracked.
-    if(s.attendanceRate!=null){
-      if(s.attendanceRate>=95) bits.push(`${first} manteve excelente frequência`);
-      else if(s.attendanceRate>=85) bits.push(`${first} apresentou boa frequência`);
-      else bits.push(`${first} teve frequência abaixo do esperado (${s.classesLost} ${s.classesLost===1?'falta':'faltas'})`);
-    } else {
-      bits.push(`${first} participou das aulas no período`);
-    }
-    const second = [];
-    if(s.hwAvg!=null){
-      if(s.hwAvg>=85) second.push('cumpriu as tarefas de casa com regularidade');
-      else if(s.hwAvg>=60) second.push('realizou a maior parte das tarefas de casa');
-      else second.push('precisa se dedicar mais às tarefas de casa');
-    }
-    if(s.partScore!=null){
-      if(s.partScore>=75) second.push('participou ativamente das aulas');
-      else if(s.partScore>=50) second.push('teve participação satisfatória');
-      else second.push('pode participar mais durante as aulas');
-    }
-    let out = bits.join('') + '.';
-    if(second.length) out += ' ' + capitalize(joinPt(second)) + '.';
-    if(s.totalPhone && s.total && s.totalPhone >= s.total) out += ' Observou-se uso frequente do celular em sala.';
-    if(s.contactPending) out += ` Há pendência de contato com os responsáveis (${s.contactPending.category}).`;
-    return out;
-  }
-  // English
-  if(s.attendanceRate!=null){
-    if(s.attendanceRate>=95) bits.push(`${first} maintained excellent attendance`);
-    else if(s.attendanceRate>=85) bits.push(`${first} showed good attendance`);
-    else bits.push(`${first}'s attendance was below expectations (${s.classesLost} ${s.classesLost===1?'absence':'absences'})`);
-  } else {
-    bits.push(`${first} attended classes during the period`);
-  }
-  const second = [];
-  if(s.hwAvg!=null){
-    if(s.hwAvg>=85) second.push('completed homework consistently');
-    else if(s.hwAvg>=60) second.push('completed most homework');
-    else second.push('needs to focus more on homework');
-  }
-  if(s.partScore!=null){
-    if(s.partScore>=75) second.push('participated actively in class');
-    else if(s.partScore>=50) second.push('participated satisfactorily');
-    else second.push('could participate more in class');
-  }
-  let out = bits.join('') + '.';
-  if(second.length) out += ' ' + capitalize(joinEn(second)) + '.';
-  if(s.totalPhone && s.total && s.totalPhone >= s.total) out += ' Frequent phone use in class was noted.';
-  if(s.contactPending) out += ` A parent contact is pending (${s.contactPending.category}).`;
-  return out;
+// Measured percentage -> 1..5 level. Null percentage -> null (no data, no grade).
+function partToLevel(p){ if(p==null) return null; if(p>=90) return 5; if(p>=72) return 4; if(p>=48) return 3; if(p>=28) return 2; return 1; }
+function hwToLevel(p){ if(p==null) return null; if(p>=90) return 5; if(p>=75) return 4; if(p>=55) return 3; if(p>=35) return 2; return 1; }
+
+// Deterministic phrase pick from a pool given the regenerate nonce.
+function rcPhrase(cat, level, nonce){
+  const pool = RC_COMMENTS[cat] && RC_COMMENTS[cat][level];
+  if(!pool || !pool.length) return '';
+  return pool[nonce % pool.length];
 }
 
-function capitalize(str){ return str.charAt(0).toUpperCase() + str.slice(1); }
-function joinPt(arr){ return arr.length<2 ? arr.join('') : arr.slice(0,-1).join(', ') + ' e ' + arr[arr.length-1]; }
-function joinEn(arr){ return arr.length<2 ? arr.join('') : arr.slice(0,-1).join(', ') + ' and ' + arr[arr.length-1]; }
+function initRcState(s){
+  rcState = {
+    levels: {
+      behavior: partToLevel(s.partScore),
+      homework: hwToLevel(s.hwAvg),
+      vocab: null, grammar: null, port: null
+    },
+    nonce: 0
+  };
+}
 
 function buildReportText(s, lang){
-  const L = lang==='pt' ? {
+  const isPt = lang==='pt';
+  const L = isPt ? {
     title:'RELATÓRIO DO ALUNO', clazz:'Turma', period:'Período', allTime:'Todo o período',
     present2:'presente', attendance:'Frequência', lost:'aulas perdidas',
     punctuality:'Pontualidade', late:'atrasos', hw:'Lição de casa', part:'Participação',
-    phone:'Uso do celular', times:'vezes', comment:'Comentário', na:'sem dados'
+    phone:'Uso do celular', na:'sem dados',
+    missedHead:'AULAS PERDIDAS', missedTopic:'conteúdo', noTopic:'(sem registro de conteúdo)',
+    contactHead:'CONTATO COM RESPONSÁVEIS', pending:'PENDENTE', reason:'Motivo', summary:'Resumo',
+    commentHead:'COMENTÁRIOS'
   } : {
     title:'STUDENT REPORT', clazz:'Class', period:'Period', allTime:'All time',
     present2:'present', attendance:'Attendance', lost:'classes missed',
     punctuality:'Punctuality', late:'late arrivals', hw:'Homework', part:'Participation',
-    phone:'Phone use', times:'times', comment:'Comment', na:'no data'
+    phone:'Phone use', na:'no data',
+    missedHead:'CLASSES MISSED', missedTopic:'topic', noTopic:'(no lesson topic recorded)',
+    contactHead:'PARENT CONTACT', pending:'PENDING', reason:'Reason', summary:'Summary',
+    commentHead:'COMMENTS'
   };
   const per = s.fromVal
     ? `${formatDateShort(s.fromVal)} – ${s.toVal?formatDateShort(s.toVal):L.present2}`
     : L.allTime;
 
-  const lines = [];
-  lines.push(`${L.title} — ${s.name}`);
+  const out = [];
+  out.push(`${L.title} — ${s.name}`);
   const head = [];
   if(s.className) head.push(`${L.clazz}: ${s.className}`);
   head.push(`${L.period}: ${per}`);
-  lines.push(head.join('  ·  '));
-  lines.push('');
-  lines.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
-  lines.push(`${L.punctuality}: ${s.late} ${L.late}`);
-  lines.push(`${L.hw}: ${fmtPct(s.hwAvg)}`);
-  lines.push(`${L.part}: ${fmtPct(s.partScore)}`);
+  out.push(head.join('  ·  '));
+  out.push('');
+
+  // --- metrics ---
+  out.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
+  out.push(`${L.punctuality}: ${s.late} ${L.late}`);
+  out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`);
+  out.push(`${L.part}: ${fmtPct(s.partScore)}`);
   if(s.totalPhone){
-    const timesLabel = lang==='pt' ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
-    lines.push(`${L.phone}: ${s.totalPhone} ${timesLabel}`);
+    const tl = isPt ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
+    out.push(`${L.phone}: ${s.totalPhone} ${tl}`);
   }
-  lines.push('');
-  lines.push(`${L.comment}:`);
-  lines.push(reportComment(s, lang));
-  return lines.join('\n');
+
+  // --- classes missed detail ---
+  if(s.missed && s.missed.length){
+    out.push('');
+    out.push(L.missedHead);
+    s.missed.forEach(m=>{
+      out.push(`- ${formatDateShort(m.date)}${m.topic?` — ${L.missedTopic}: ${m.topic}`:` ${L.noTopic}`}`);
+    });
+  }
+
+  // --- comments (from the report-card bank) ---
+  const catOrder = ['behavior','homework','vocab','grammar','port'];
+  const chosen = catOrder.filter(c=>rcState && rcState.levels[c]);
+  if(chosen.length){
+    out.push('');
+    out.push(L.commentHead);
+    chosen.forEach(cat=>{
+      const lvl = rcState.levels[cat];
+      const phrase = rcPhrase(cat, lvl, rcState.nonce);
+      if(phrase){
+        const label = RC_CAT_LABELS[cat][isPt?'pt':'en'];
+        out.push(`${label}: ${phrase}`);
+      }
+    });
+  }
+
+  // --- parent contact ---
+  const hasContact = s.contactPending || (s.contactHistory && s.contactHistory.length);
+  if(hasContact){
+    out.push('');
+    out.push(L.contactHead);
+    if(s.contactPending){
+      out.push(`- ${L.pending} — ${s.contactPending.category}: ${s.contactPending.reason}`);
+    }
+    (s.contactHistory||[]).forEach(h=>{
+      out.push(`- ${formatDateShort(h.date)} — ${h.category}`);
+      if(h.reason)  out.push(`    ${L.reason}: ${h.reason}`);
+      if(h.summary) out.push(`    ${L.summary}: ${h.summary}`);
+    });
+  }
+
+  return out.join('\n');
+}
+
+function rcLevelSelect(cat, lang){
+  const isPt = lang==='pt';
+  const labels = isPt ? RC_LEVEL_LABELS_PT : RC_LEVEL_LABELS_EN;
+  const cur = rcState.levels[cat];
+  const opts = [`<option value="">${isPt?'— não incluir':'— exclude'}</option>`]
+    .concat([1,2,3,4,5].map(n=>`<option value="${n}" ${cur===n?'selected':''}>${n} · ${labels[n]}</option>`))
+    .join('');
+  return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <span style="min-width:118px;color:var(--muted);">${RC_CAT_LABELS[cat][isPt?'pt':'en']}</span>
+      <select onchange="rcSetLevel('${cat}', this.value)" style="flex:1;">${opts}</select>
+    </label>`;
+}
+
+function rcSetLevel(cat, val){
+  rcState.levels[cat] = val ? Number(val) : null;
+  refreshReportTextArea();
+}
+function rcRegenerate(){
+  rcState.nonce = (rcState.nonce + 1) % 8;
+  refreshReportTextArea();
+}
+function refreshReportTextArea(){
+  const area = document.getElementById('report-text-area');
+  if(area) area.value = buildReportText(lastReportStats, state.reportLang);
 }
 
 function openReportTextModal(){
   if(!lastReportStats){ alert('Open a student report first.'); return; }
+  if(!rcState) initRcState(lastReportStats);
   const lang = state.reportLang;
-  const text = buildReportText(lastReportStats, lang);
   const isPt = lang==='pt';
+  const text = buildReportText(lastReportStats, lang);
+  const autoNote = isPt
+    ? 'Comportamento e lição de casa vêm dos dados. Vocabulário, gramática e português são opcionais — defina se quiser incluí-los.'
+    : 'Behaviour and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment text is in Portuguese (from the Report Card tool), for a Brazilian report card.';
+
   showModal(`
     <h2>${isPt?'Texto para o boletim':'Report card text'}</h2>
-    <p class="meta" style="margin:6px 0 12px;">${isPt
-      ? 'Edite como quiser e copie para o boletim da escola. O comentário é uma sugestão.'
-      : 'Edit as needed and copy into the school report card. The comment is a suggestion.'}</p>
-    <textarea id="report-text-area" style="width:100%;min-height:230px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
+    <p class="meta" style="margin:6px 0 14px;">${isPt
+      ? 'Edite como quiser e copie para o boletim. Alterar os níveis abaixo regenera o texto (perde edições manuais).'
+      : 'Edit as needed and copy into the report card. Changing the levels below regenerates the text (manual edits are lost).'}</p>
+
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">${isPt?'Comentários':'Comments'}</div>
+      <p class="meta" style="margin:0 0 12px;font-size:12px;">${autoNote}</p>
+      <div style="display:grid;gap:8px;">
+        ${['behavior','homework','vocab','grammar','port'].map(c=>rcLevelSelect(c, lang)).join('')}
+      </div>
+      <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
+    </div>
+
+    <textarea id="report-text-area" style="width:100%;min-height:260px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
       <button class="btn-ghost" onclick="closeModal()">${isPt?'Fechar':'Close'}</button>
       <button class="btn-accent" id="report-copy-btn" onclick="copyReportText()">${isPt?'Copiar':'Copy'}</button>
@@ -2512,8 +2582,16 @@ function renderStudentProfile(){
     total, present, late, absent, totalPhone,
     hwAvg, partScore, expected, classesLost, attendanceRate,
     totalLostMin, lostEquivClasses, avgDuration,
-    contactPending: student.contactParents?.reason ? student.contactParents : null
+    contactPending: student.contactParents?.reason ? student.contactParents : null,
+    contactHistory: (student.contactParentsHistory||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)),
+    missed: records.filter(r=>r.attendance==='absent')
+      .map(r=>({date:r.date, topic:getLessonNote(r._classId||student.classId, r.date)||null}))
+      .sort((a,b)=>b.date.localeCompare(a.date)),
+    lateDetail: attended.filter(r=>(r.lateMin||0)>0)
+      .map(r=>({date:r.date, min:r.lateMin}))
+      .sort((a,b)=>b.date.localeCompare(a.date))
   };
+  rcState = null;  // recomputed per student when the text modal opens
 
   const classesLostHtml = expected!=null
     ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
