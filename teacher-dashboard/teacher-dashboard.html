@@ -2512,11 +2512,24 @@ function renderStudentProfile(){
       allRecords.push({date, _classId: classId, ...state.sessions[key][student.id]});
     }
   });
-  allRecords.sort((a,b)=>b.date.localeCompare(a.date));
+
+  // A transfer can leave the student with a record under BOTH the old and new
+  // class for the same date, producing duplicate rows (and double-counted stats).
+  // Keep one record per date: prefer the class the student was enrolled in on that
+  // date, then a completed session. Dates with a single record are never dropped.
+  const byDate = new Map();
+  for(const r of allRecords){
+    const enrolledId = classForStudentOnDate(student, r.date)?.id;
+    const score = (r._classId===enrolledId ? 2 : 0) + (isSessionCompleted(r._classId, r.date) ? 1 : 0);
+    const prev = byDate.get(r.date);
+    if(!prev || score > prev._score){ byDate.set(r.date, Object.assign(r, {_score:score})); }
+  }
+  const dedupedRecords = [...byDate.values()];
+  dedupedRecords.sort((a,b)=>b.date.localeCompare(a.date));
 
   const fromVal = state.reportRange.from || cls?.startDate || '';
   const toVal = state.reportRange.to || cls?.endDate || '';
-  const allPeriodRecords = allRecords.filter(r => (!fromVal || r.date>=fromVal) && (!toVal || r.date<=toVal));
+  const allPeriodRecords = dedupedRecords.filter(r => (!fromVal || r.date>=fromVal) && (!toVal || r.date<=toVal));
 
   // Separate holiday records from real records
   const holidayDates = allPeriodRecords.filter(r=>isHoliday(r.date)).map(r=>r.date);
