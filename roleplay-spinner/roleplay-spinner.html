@@ -184,6 +184,7 @@
     inset: 0;
     opacity: 0;
     transition: opacity 0.3s;
+    pointer-events: none;
   }
 
   .slot-card.location::before { background: linear-gradient(135deg, rgba(245,200,66,0.07), transparent); }
@@ -736,7 +737,7 @@ const SCENES = [
 
   // ===== LIBRARY =====
   { place:"Library", cefr:"A2",
-    roles2:["Librarian","Visitor"], roles3:["Librarian","Visitor","Student"],
+    roles2:["Librarian","Visitor"], roles3:["Librarian","Assistant Librarian","Visitor"],
     prompt:"A visitor wants to borrow a book but has no library card.",
     words:["card","borrow","register","address","free"],
     missions:{ "Visitor":"You need the book urgently.", "Librarian":"The rules require a card." } },
@@ -746,10 +747,10 @@ const SCENES = [
     words:["damage","fine","replace","careful","responsible"],
     missions:{ "Visitor":"It wasn't you who tore it.", "Librarian":"The damage must be paid for." } },
   { place:"Library", cefr:"B1",
-    roles2:["Librarian","Noisy Student"], roles3:["Librarian","Noisy Student","Parent"],
+    roles2:["Librarian","Noisy Student"], roles3:["Librarian","Noisy Student","Annoyed Visitor"],
     prompt:"Someone is talking loudly on the phone and won't stop.",
     words:["quiet","phone","disturb","polite","warning"],
-    missions:{ "Noisy Student":"It's an important call.", "Librarian":"Keep the library quiet." } },
+    missions:{ "Noisy Student":"It's an important call.", "Librarian":"Keep the library quiet.", "Annoyed Visitor":"You're trying to study for an exam." } },
 
   // ===== CLOTHING SHOP =====
   { place:"Clothing Shop", cefr:"A1",
@@ -838,7 +839,7 @@ const SCENES = [
 
   // ===== POLICE STATION =====
   { place:"Police Station", cefr:"B1",
-    roles2:["Police Officer","Witness"], roles3:["Police Officer","Witness","Suspect"],
+    roles2:["Police Officer","Witness"], roles3:["Police Officer","Witness","Second Witness"],
     prompt:"A witness reports something they saw but can't remember the details.",
     words:["report","remember","describe","happened","statement"],
     missions:{ "Witness":"You're not totally sure what you saw.", "Police Officer":"Get clear, useful details." } },
