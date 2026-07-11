@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listening Cloze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5ef; --panel:#ffffff; --ink:#20232a; --muted:#5c6270; --line:#e4e0d6;
+  --accent:#3a4a7d; --accent-soft:#e2e6f4; --warm:#c9902b; --warm-soft:#f6ead1;
+  --good:#2f7d4f; --good-soft:#e0f0e6; --bad:#b0402f; --bad-soft:#f6e2dd;
+  --shadow:0 1px 2px rgba(20,25,40,.06),0 6px 18px rgba(20,25,40,.06);
+  --radius:14px;
+}
+[data-theme="dark"]{
+  --bg:#16171c; --panel:#22242c; --ink:#eceaf2; --muted:#9aa0ad; --line:#33353f;
+  --accent:#8fa0d8; --accent-soft:#242838; --warm:#e0ad4d; --warm-soft:#3a3120;
+  --good:#5cc785; --good-soft:#1f3527; --bad:#e0785f; --bad-soft:#3a241f;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif; line-height:1.55;
+  -webkit-font-smoothing:antialiased; padding-bottom:4rem;
+}
+header{
+  max-width:980px; margin:0 auto; padding:1.6rem 1.25rem .5rem;
+  display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+}
+h1{font-family:'Playfair Display',serif; font-weight:700; font-size:1.9rem; margin:0; letter-spacing:-.01em}
+h1 span{color:var(--muted); font-size:1rem; font-weight:500; display:block; font-family:'DM Sans',sans-serif; margin-top:.15rem}
+.header-tools{display:flex; gap:.5rem}
+.icon-btn{
+  background:var(--panel); border:1px solid var(--line); color:var(--ink);
+  width:40px; height:40px; border-radius:10px; cursor:pointer; font-size:1.1rem;
+  display:grid; place-items:center; transition:transform .12s ease;
+}
+.icon-btn:hover{transform:translateY(-1px)}
+.wrap{max-width:980px; margin:0 auto; padding:0 1.25rem}
+.controls{
+  display:flex; gap:.9rem; flex-wrap:wrap; align-items:flex-end;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:.75rem .9rem; box-shadow:var(--shadow); margin:.75rem 0 1rem;
+}
+.control-group{display:flex; flex-direction:column; gap:.25rem}
+.control-group label{font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:700}
+select{
+  font-family:inherit; font-size:.9rem; padding:.4rem .55rem; border-radius:8px;
+  border:1px solid var(--line); background:var(--bg); color:var(--ink); cursor:pointer; max-width:240px;
+}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--bg)}
+.seg button{
+  font-family:inherit; font-size:.85rem; font-weight:500; padding:.4rem .65rem;
+  background:transparent; border:0; color:var(--muted); cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--accent); color:#fff; font-weight:700}
+.spacer{flex:1 1 auto}
+
+.scoreboard{display:none; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem}
+.scoreboard.on{display:flex}
+.team-chip{
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:.45rem .8rem; font-size:.9rem; display:flex; gap:.5rem; align-items:center;
+}
+.team-chip b{font-size:1.05rem}
+.team-chip.active{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); font-weight:700}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:1.3rem 1.4rem; margin-bottom:1rem;
+}
+.meta{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.6rem}
+.badge{font-size:.72rem; font-weight:700; padding:.15rem .55rem; border-radius:20px; background:var(--accent-soft); color:var(--accent)}
+.badge.warm{background:var(--warm-soft); color:var(--warm)}
+.meta .topic{font-family:'Playfair Display',serif; font-size:1.25rem; margin-right:auto}
+.turn-label{font-size:.9rem; color:var(--muted)}
+
+.play-row{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.4rem 0 1rem}
+.btn{
+  font-family:inherit; font-weight:700; font-size:.95rem; padding:.55rem 1rem; border-radius:10px;
+  border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer;
+}
+.btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+.btn.small{font-size:.82rem; padding:.35rem .7rem; font-weight:500}
+.btn:disabled{opacity:.4; cursor:default}
+.sent-chips{display:flex; gap:.35rem; flex-wrap:wrap}
+.plays-left{font-size:.85rem; color:var(--muted); margin-left:auto}
+
+.passage-zone{position:relative}
+.passage{font-size:1.18rem; line-height:2.2}
+.passage .sent{padding:.1rem 0; border-radius:6px}
+.passage .sent.playing{background:var(--warm-soft)}
+.gap{
+  display:inline-block; width:7.5em; max-width:40vw;
+  font-family:inherit; font-size:1rem; font-weight:700; text-align:center;
+  border:0; border-bottom:2px solid var(--accent); background:var(--accent-soft);
+  border-radius:6px 6px 0 0; padding:.15rem .3rem; margin:0 .15rem; color:var(--ink);
+}
+.gap:focus{outline:2px solid var(--accent); outline-offset:1px}
+.gap.correct{border-bottom-color:var(--good); background:var(--good-soft)}
+.gap.wrong{border-bottom-color:var(--bad); background:var(--bad-soft)}
+.gap:disabled{opacity:.95}
+.gap-num{font-size:.7rem; color:var(--muted); vertical-align:super; margin-right:.05rem}
+
+.veil{
+  position:absolute; inset:0; background:var(--panel); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.8rem;
+  text-align:center; padding:1rem; z-index:2;
+}
+.veil p{color:var(--muted); max-width:34ch; margin:0}
+
+.result-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; margin-top:1.1rem; border-top:1px dashed var(--line); padding-top:.9rem}
+.score-line{font-size:1rem}
+.score-line b{font-size:1.2rem}
+.best{font-size:.85rem; color:var(--muted)}
+
+footer{max-width:980px; margin:2rem auto 0; padding:0 1.25rem; color:var(--muted); font-size:.8rem}
+
+.print-sheet{display:none}
+@media (max-width:560px){ h1{font-size:1.55rem} .passage{font-size:1.05rem} .gap{width:6em} }
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+@media print{
+  body{background:#fff; color:#000}
+  header .header-tools,.controls,.scoreboard,.play-row,.result-row,.veil,.card,.footer-note,footer{display:none!important}
+  .print-sheet{display:block; font-size:12pt; padding:1rem}
+  .print-sheet h2{font-family:'Playfair Display',serif}
+  .print-sheet .blankline{display:inline-block; min-width:8em; border-bottom:1px solid #000}
+  .print-sheet .key{page-break-before:always}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Listening Cloze<span>Hear the passage · fill the gaps</span></h1>
+  <div class="header-tools">
+    <button class="icon-btn" id="printBtn" title="Print worksheet" aria-label="Print">🖨</button>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <div class="control-group">
+      <label for="voiceSel">Voice</label>
+      <select id="voiceSel"></select>
+    </div>
+    <div class="control-group">
+      <label for="levelSel">Level</label>
+      <select id="levelSel">
+        <option value="all">All</option>
+        <option value="A1">A1</option><option value="A2">A2</option>
+        <option value="B1">B1</option><option value="B2">B2</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="passSel">Passage</label>
+      <select id="passSel" style="max-width:300px"></select>
+    </div>
+    <div class="spacer"></div>
+    <div class="control-group">
+      <label>Mode</label>
+      <div class="seg" id="modeSeg">
+        <button data-mode="cloze" aria-pressed="true">Cloze</button>
+        <button data-mode="listenfirst" aria-pressed="false">Listen first</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>Rate</label>
+      <div class="seg" id="rateSeg">
+        <button data-rate="0.7" aria-pressed="false">Slow</button>
+        <button data-rate="1" aria-pressed="true">Normal</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label for="capSel">Plays</label>
+      <select id="capSel">
+        <option value="0">∞</option>
+        <option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="5">5</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Teams</label>
+      <div class="seg" id="teamSeg">
+        <button data-teams="0" aria-pressed="true">Solo</button>
+        <button data-teams="2" aria-pressed="false">2</button>
+        <button data-teams="3" aria-pressed="false">3</button>
+        <button data-teams="4" aria-pressed="false">4</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="scoreboard" id="scoreboard"></div>
+
+  <div class="card">
+    <div class="meta">
+      <span class="topic" id="topicLabel"></span>
+      <span class="turn-label" id="turnLabel"></span>
+      <span class="badge" id="levelBadge"></span>
+      <span class="badge warm" id="gapBadge"></span>
+    </div>
+    <div class="play-row">
+      <button class="btn primary" id="playFull">🔊 Play passage</button>
+      <div class="sent-chips" id="sentChips"></div>
+      <span class="plays-left" id="playsLeft"></span>
+    </div>
+    <div class="passage-zone">
+      <div class="passage" id="passageBody"></div>
+      <div class="veil" id="veil" hidden>
+        <p>Listen to the whole passage once. The text appears after the first listen.</p>
+        <button class="btn primary" id="veilPlay">🔊 Listen</button>
+      </div>
+    </div>
+    <div class="result-row">
+      <button class="btn primary" id="checkBtn">Check</button>
+      <button class="btn" id="revealBtn">Reveal</button>
+      <span class="score-line" id="scoreLine"></span>
+      <span class="best" id="bestLine"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="nextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<div class="print-sheet" id="printSheet"></div>
+
+<footer>
+  Gaps target weak forms, endings and function words — the sounds Brazilian learners filter out.
+  Typos of one letter are forgiven on longer words; short grammar words must be exact.
+  Deep-link e.g. <code>?level=A2&amp;passage=a2-daily-routine&amp;mode=listenfirst</code>.
+</footer>
+
+<script>
+"use strict";
+
+/* ============ DATA ============ */
+// Gap syntax: {word}. alts: map gap word -> accepted alternatives.
+const PASSAGES = [
+ /* ---- A1 ---- */
+ {id:"a1-my-family",level:"A1",topic:"My family",sentences:[
+  {text:"This {is} my family."},
+  {text:"I {have} a mother, a father {and} a brother."},
+  {text:"My mother {is} a teacher."},
+  {text:"My father works {in} a bank."},
+  {text:"We live in {an} apartment."}]},
+ {id:"a1-daily-routine",level:"A1",topic:"A school day",sentences:[
+  {text:"I get up {at} seven o'clock."},
+  {text:"I {have} breakfast with my family."},
+  {text:"Then I {go} to school by bus."},
+  {text:"Classes start {at} eight."},
+  {text:"I come home {and} do my homework."}]},
+ {id:"a1-my-dog",level:"A1",topic:"My dog",sentences:[
+  {text:"I {have} a dog."},
+  {text:"His name {is} Rex."},
+  {text:"He {is} three years old."},
+  {text:"He likes {to} play in the park."},
+  {text:"Every morning we go {for} a walk."}]},
+ {id:"a1-weekend",level:"A1",topic:"The weekend",sentences:[
+  {text:"On Saturdays I {play} video games."},
+  {text:"My sister {watches} TV."},
+  {text:"In the afternoon we {go} to the mall."},
+  {text:"On Sundays we visit {our} grandmother."},
+  {text:"She makes {a} big lunch."}]},
+ {id:"a1-school",level:"A1",topic:"My school",sentences:[
+  {text:"My school {is} big."},
+  {text:"There {are} twenty students in my class."},
+  {text:"My favorite subject {is} English."},
+  {text:"I {don't} like math.",alts:{"don't":["do not"]}},
+  {text:"We have lunch {at} noon."}]},
+ {id:"a1-shopping",level:"A1",topic:"Shopping",sentences:[
+  {text:"My mother goes {to} the supermarket on Fridays."},
+  {text:"She buys bread, milk {and} fruit."},
+  {text:"I sometimes go {with} her."},
+  {text:"I always ask {for} chocolate."},
+  {text:"She usually says {no}."}]},
+ /* ---- A2 ---- */
+ {id:"a2-last-vacation",level:"A2",topic:"Last vacation",sentences:[
+  {text:"Last summer we {went} to the beach."},
+  {text:"We {stayed} in a small hotel."},
+  {text:"Every day I {swam} in the sea."},
+  {text:"One day it {rained}, so we {played} cards."},
+  {text:"It {was} the best vacation ever."}]},
+ {id:"a2-daily-routine",level:"A2",topic:"Her routine",sentences:[
+  {text:"She usually {gets} up at seven and {has} breakfast."},
+  {text:"After breakfast she {brushes} her teeth."},
+  {text:"She {doesn't} watch TV in the morning.",alts:{"doesn't":["does not"]}},
+  {text:"She takes the bus {because} the school is far."},
+  {text:"She never {arrives} late."}]},
+ {id:"a2-future-plans",level:"A2",topic:"Future plans",sentences:[
+  {text:"Next year I'm {going} to study English abroad."},
+  {text:"I want {to} visit London."},
+  {text:"My cousin lives {there}."},
+  {text:"I'll stay {with} her for a month."},
+  {text:"I hope it {won't} be too cold.",alts:{"won't":["will not"]}}]},
+ {id:"a2-the-party",level:"A2",topic:"The party",sentences:[
+  {text:"We're {having} a party on Saturday."},
+  {text:"I've invited {all} my friends."},
+  {text:"My mother is going to {make} a cake."},
+  {text:"We {can't} play loud music after ten.",alts:{"can't":["cannot","can not"]}},
+  {text:"I think it {will} be fun."}]},
+ {id:"a2-my-city",level:"A2",topic:"My city",sentences:[
+  {text:"I live in a city {that} has many parks."},
+  {text:"The weather {is} usually cool."},
+  {text:"There {are} lots of buses, but the traffic {is} terrible."},
+  {text:"People here drink {a} lot of coffee."},
+  {text:"I {wouldn't} live anywhere else.",alts:{"wouldn't":["would not"]}}]},
+ {id:"a2-hobbies",level:"A2",topic:"My friend's hobby",sentences:[
+  {text:"My best friend {plays} the guitar."},
+  {text:"He {has} lessons twice a week."},
+  {text:"He practices {for} an hour every day."},
+  {text:"Last month he {played} at a school concert."},
+  {text:"Everyone {was} impressed."}]},
+ /* ---- B1 ---- */
+ {id:"b1-technology",level:"B1",topic:"Phones and us",sentences:[
+  {text:"Most teenagers {spend} hours online every day."},
+  {text:"Some experts say social media {has} changed the way we talk to each other."},
+  {text:"Others believe it {doesn't} matter as much as we think.",alts:{"doesn't":["does not"]}},
+  {text:"In my opinion, phones {aren't} the real problem.",alts:{"aren't":["are not"]}},
+  {text:"The problem is that we {don't} know when to stop.",alts:{"don't":["do not"]}}]},
+ {id:"b1-strange-day",level:"B1",topic:"A strange day",sentences:[
+  {text:"When I {woke} up, the house was silent."},
+  {text:"My parents {had} already left for work."},
+  {text:"I made breakfast and noticed the door {was} open."},
+  {text:"The dog {had} disappeared."},
+  {text:"I looked everywhere until I {found} him sleeping in the garden."}]},
+ {id:"b1-environment",level:"B1",topic:"Recycling at school",sentences:[
+  {text:"Our school {has} started a recycling project."},
+  {text:"Students {are} encouraged to bring reusable bottles."},
+  {text:"Plastic {is} collected every Friday."},
+  {text:"If we all help, we {could} make a real difference."},
+  {text:"Small actions {can} lead to big changes."}]},
+ {id:"b1-work",level:"B1",topic:"My uncle's job",sentences:[
+  {text:"My uncle {has} worked at the same company for twenty years."},
+  {text:"He says the job {used} to be more relaxed."},
+  {text:"These days he {has} to answer emails at night."},
+  {text:"He {would} like to retire early."},
+  {text:"I think he {should} take more holidays."}]},
+ {id:"b1-learning-english",level:"B1",topic:"Learning English",sentences:[
+  {text:"Learning a language {takes} time and patience."},
+  {text:"You {shouldn't} be afraid of making mistakes.",alts:{"shouldn't":["should not"]}},
+  {text:"The more you practice, the faster you {will} improve."},
+  {text:"Watching series in English {has} helped me a lot."},
+  {text:"Now I {can} understand almost everything without subtitles."}]},
+ /* ---- B2 ---- */
+ {id:"b2-city-life",level:"B2",topic:"City life",sentences:[
+  {text:"Living in a big city {offers} both advantages and drawbacks."},
+  {text:"Although public transport {has} improved, rush hour remains stressful."},
+  {text:"Many young professionals {have} chosen to work from home."},
+  {text:"As a result, some offices {are} being converted into apartments."},
+  {text:"Whether this trend {will} continue is hard to say."}]},
+ {id:"b2-interview",level:"B2",topic:"The interview",sentences:[
+  {text:"I {had} been waiting for the call for weeks."},
+  {text:"When the manager finally rang, I {could} hardly speak."},
+  {text:"She asked me why I {wanted} the position."},
+  {text:"I explained that I {had} always admired the company."},
+  {text:"Two days later, I {was} offered the job."}]},
+ {id:"b2-media",level:"B2",topic:"Fast news",sentences:[
+  {text:"News {spreads} faster than ever before."},
+  {text:"Unfortunately, false stories {are} shared just as quickly as true ones."},
+  {text:"Readers {should} always check where information comes from."},
+  {text:"If a headline {seems} too shocking, it probably {is}."}]}
+];
+
+/* ============ STATE ============ */
+const LS="lc:";
+const state={
+  voiceURI:localStorage.getItem(LS+"voice")||"",
+  rate:parseFloat(localStorage.getItem(LS+"rate"))||1,
+  level:localStorage.getItem(LS+"level")||"all",
+  cap:parseInt(localStorage.getItem(LS+"cap")||"0",10),
+  theme:localStorage.getItem(LS+"theme")||"light",
+  mode:"cloze",
+  passageId:null,
+  playsUsed:0,
+  listened:false,     // listen-first: has the full passage been heard once
+  checked:false,
+  teams:0, teamList:[], currentTeam:0,
+  best:JSON.parse(localStorage.getItem(LS+"best")||"{}")
+};
+
+/* ============ SPEECH ============ */
+let voices=[];
+function loadVoices(){
+  voices=window.speechSynthesis?speechSynthesis.getVoices():[];
+  buildVoiceList();
+}
+if(window.speechSynthesis) speechSynthesis.onvoiceschanged=loadVoices;
+function buildVoiceList(){
+  const sel=document.getElementById("voiceSel");
+  const en=voices.filter(v=>/^en/i.test(v.lang));
+  const us=en.filter(v=>v.lang.toLowerCase().replace("_","-")==="en-us");
+  const uk=en.filter(v=>v.lang.toLowerCase().replace("_","-")==="en-gb");
+  const other=en.filter(v=>!us.includes(v)&&!uk.includes(v));
+  sel.innerHTML="";
+  const add=(list,label)=>{
+    if(!list.length)return;
+    const g=document.createElement("optgroup");g.label=label;
+    list.forEach(v=>{const o=document.createElement("option");o.value=v.voiceURI;o.textContent=`${v.name} (${v.lang})`;g.appendChild(o);});
+    sel.appendChild(g);
+  };
+  add(us,"US English");add(uk,"UK English");add(other,"Other English");
+  const all=[...us,...uk,...other];
+  let chosen=all.find(v=>v.voiceURI===state.voiceURI)||us[0]||all[0]||null;
+  if(chosen){state.voiceURI=chosen.voiceURI;sel.value=chosen.voiceURI;}
+}
+function pickVoice(){
+  return voices.find(v=>v.voiceURI===state.voiceURI)||voices.find(v=>/^en/i.test(v.lang))||null;
+}
+function speak(text,onend){
+  if(!window.speechSynthesis){if(onend)onend();return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  const v=pickVoice();if(v){u.voice=v;u.lang=v.lang;}else u.lang="en-US";
+  u.rate=state.rate;
+  if(onend)u.onend=onend;
+  speechSynthesis.speak(u);
+}
+
+/* ============ HELPERS ============ */
+function cleanText(s){return s.replace(/\{([^}]+)\}/g,"$1");}
+function currentPassage(){return PASSAGES.find(p=>p.id===state.passageId);}
+function filtered(){return PASSAGES.filter(p=>state.level==="all"||p.level===state.level);}
+function norm(s){
+  return (s||"").toLowerCase().trim()
+    .replace(/[\u2018\u2019]/g,"'")
+    .replace(/^[.,!?;:"]+|[.,!?;:"]+$/g,"").trim();
+}
+function lev1(a,b){ // true if edit distance <= 1
+  if(a===b)return true;
+  const la=a.length,lb=b.length;
+  if(Math.abs(la-lb)>1)return false;
+  let i=0,j=0,edits=0;
+  while(i<la&&j<lb){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++edits>1)return false;
+    if(la>lb)i++;else if(lb>la)j++;else{i++;j++;}
+  }
+  return edits+(la-i)+(lb-j)<=1;
+}
+function isCorrect(answer,alts,val){
+  const v=norm(val);
+  const accepted=[norm(answer),...(alts||[]).map(norm)];
+  if(accepted.includes(v))return true;
+  // edit-distance-1 forgiveness only on longer words
+  return accepted.some(a=>a.length>=5&&v.length>=4&&lev1(a,v));
+}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+/* ============ RENDER ============ */
+function buildPassSelect(){
+  const sel=document.getElementById("passSel");
+  const list=filtered();
+  sel.innerHTML="";
+  list.forEach(p=>{
+    const o=document.createElement("option");o.value=p.id;o.textContent=`${p.topic} [${p.level}]`;
+    sel.appendChild(o);
+  });
+  if(!list.find(p=>p.id===state.passageId)) state.passageId=list.length?list[0].id:null;
+  if(state.passageId)sel.value=state.passageId;
+}
+function loadPassage(id){
+  state.passageId=id;
+  state.playsUsed=0;state.listened=false;state.checked=false;
+  document.getElementById("passSel").value=id;
+  renderPassage();syncURL();
+}
+function renderPassage(){
+  const p=currentPassage();
+  const body=document.getElementById("passageBody");
+  const chips=document.getElementById("sentChips");
+  if(!p){body.innerHTML="<p>No passages for this level.</p>";chips.innerHTML="";return;}
+  document.getElementById("topicLabel").textContent=p.topic;
+  document.getElementById("levelBadge").textContent=p.level;
+  body.innerHTML="";chips.innerHTML="";
+  let gapNo=0;
+  p.sentences.forEach((s,si)=>{
+    const span=document.createElement("span");
+    span.className="sent";span.dataset.si=si;
+    let html="",last=0;
+    const re=/\{([^}]+)\}/g;let m;
+    while((m=re.exec(s.text))){
+      gapNo++;
+      html+=escapeHtml(s.text.slice(last,m.index));
+      html+=`<span class="gap-num">${gapNo}</span><input class="gap" data-answer="${escapeAttr(m[1])}" data-si="${si}" aria-label="Gap ${gapNo}" autocomplete="off" autocapitalize="off" spellcheck="false">`;
+      last=m.index+m[0].length;
+    }
+    html+=escapeHtml(s.text.slice(last))+" ";
+    span.innerHTML=html;
+    body.appendChild(span);
+    const chip=document.createElement("button");
+    chip.className="btn small";chip.textContent=`▶ ${si+1}`;
+    chip.title=`Play sentence ${si+1}`;
+    chip.onclick=()=>playSentence(si);
+    chips.appendChild(chip);
+  });
+  document.getElementById("gapBadge").textContent=`${gapNo} gaps`;
+  document.getElementById("scoreLine").textContent="";
+  updateBestLine();updatePlaysLeft();updateVeil();updateTurnLabel();
+  document.getElementById("checkBtn").disabled=false;
+}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function escapeAttr(s){return escapeHtml(s).replace(/"/g,"&quot;");}
+
+function updateVeil(){
+  const veil=document.getElementById("veil");
+  veil.hidden=!(state.mode==="listenfirst"&&!state.listened);
+}
+function updatePlaysLeft(){
+  const el=document.getElementById("playsLeft");
+  if(state.cap===0){el.textContent="";}
+  else el.textContent=`Plays left: ${Math.max(0,state.cap-state.playsUsed)}`;
+  const noneLeft=state.cap>0&&state.playsUsed>=state.cap;
+  document.getElementById("playFull").disabled=noneLeft;
+  document.querySelectorAll("#sentChips .btn").forEach(b=>b.disabled=noneLeft);
+}
+function usePlay(){
+  state.playsUsed++;updatePlaysLeft();
+}
+
+/* ============ PLAYBACK ============ */
+function highlightSent(si,on){
+  document.querySelectorAll(".sent").forEach(s=>s.classList.toggle("playing",on&&+s.dataset.si===si));
+}
+function playFull(){
+  const p=currentPassage();if(!p)return;
+  if(state.cap>0&&state.playsUsed>=state.cap)return;
+  usePlay();
+  const texts=p.sentences.map(s=>cleanText(s.text));
+  let i=0;
+  const step=()=>{
+    if(i>0)highlightSent(i-1,false);
+    if(i>=texts.length){
+      if(state.mode==="listenfirst"&&!state.listened){state.listened=true;updateVeil();}
+      return;
+    }
+    highlightSent(i,true);
+    speak(texts[i],()=>{i++;step();});
+  };
+  step();
+}
+function playSentence(si){
+  const p=currentPassage();if(!p)return;
+  if(state.cap>0&&state.playsUsed>=state.cap)return;
+  if(state.mode==="listenfirst"&&!state.listened)return; // must hear full passage first
+  usePlay();
+  highlightSent(si,true);
+  speak(cleanText(p.sentences[si].text),()=>highlightSent(si,false));
+}
+
+/* ============ CHECK / REVEAL / SCORE ============ */
+function check(){
+  const p=currentPassage();if(!p)return;
+  let right=0,total=0;
+  document.querySelectorAll(".gap").forEach(inp=>{
+    total++;
+    const si=+inp.dataset.si;
+    const alts=(p.sentences[si].alts||{})[inp.dataset.answer]||[];
+    const ok=isCorrect(inp.dataset.answer,alts,inp.value);
+    inp.classList.remove("correct","wrong");
+    inp.classList.add(ok?"correct":"wrong");
+    if(ok)right++;
+  });
+  state.checked=true;
+  document.getElementById("scoreLine").innerHTML=`Score: <b>${right}/${total}</b>`;
+  if(state.teams>0){
+    state.teamList[state.currentTeam].score+=right;
+    renderScoreboard();
+  }else{
+    const best=state.best[p.id]||0;
+    if(right>best){state.best[p.id]=right;localStorage.setItem(LS+"best",JSON.stringify(state.best));}
+    updateBestLine();
+  }
+}
+function reveal(){
+  document.querySelectorAll(".gap").forEach(inp=>{
+    if(!inp.classList.contains("correct")){
+      inp.value=inp.dataset.answer;
+      inp.classList.remove("wrong");inp.classList.add("correct");
+    }
+    inp.disabled=true;
+  });
+  document.getElementById("checkBtn").disabled=true;
+}
+function updateBestLine(){
+  const el=document.getElementById("bestLine");
+  const p=currentPassage();
+  if(!p||state.teams>0){el.textContent="";return;}
+  const b=state.best[p.id];
+  el.textContent=b?`Best: ${b}`:"";
+}
+
+/* ============ TEAMS ============ */
+function setTeams(n){
+  state.teams=n;
+  if(n>0){
+    const pool=filtered().map(p=>p.id);
+    state.teamList=Array.from({length:n},(_,i)=>({
+      name:`Team ${i+1}`,score:0,queue:shuffle(pool),idx:0
+    }));
+    state.currentTeam=0;
+    loadPassage(state.teamList[0].queue[0]);
+  }else{
+    state.teamList=[];state.currentTeam=0;
+    buildPassSelect();
+    if(state.passageId)loadPassage(state.passageId);
+  }
+  renderScoreboard();updateTurnLabel();
+}
+function renderScoreboard(){
+  const sb=document.getElementById("scoreboard");
+  sb.classList.toggle("on",state.teams>0);
+  sb.innerHTML="";
+  state.teamList.forEach((t,i)=>{
+    const chip=document.createElement("div");
+    chip.className="team-chip"+(i===state.currentTeam?" active":"");
+    chip.innerHTML=`${t.name} <b>${t.score}</b>`;
+    sb.appendChild(chip);
+  });
+}
+function updateTurnLabel(){
+  const el=document.getElementById("turnLabel");
+  el.textContent=state.teams>0?`${state.teamList[state.currentTeam].name}'s turn`:"";
+}
+function next(){
+  if(state.teams>0){
+    // advance current team's queue pointer, move to next team
+    const t=state.teamList[state.currentTeam];
+    t.idx=(t.idx+1)%t.queue.length;
+    state.currentTeam=(state.currentTeam+1)%state.teams;
+    const nt=state.teamList[state.currentTeam];
+    renderScoreboard();
+    loadPassage(nt.queue[nt.idx]);
+  }else{
+    const list=filtered();
+    const i=list.findIndex(p=>p.id===state.passageId);
+    loadPassage(list[(i+1)%list.length].id);
+  }
+}
+
+/* ============ PRINT ============ */
+function buildPrintSheet(){
+  const p=currentPassage();if(!p)return;
+  const sheet=document.getElementById("printSheet");
+  let n=0;const answers=[];
+  const paras=p.sentences.map(s=>s.text.replace(/\{([^}]+)\}/g,(m,w)=>{
+    n++;answers.push(w);
+    return `<span class="blankline"></span> (${n})`;
+  })).join(" ");
+  sheet.innerHTML=`
+    <h2>Listening Cloze — ${p.topic} [${p.level}]</h2>
+    <p>Name: ____________________  Score: ____ / ${n}</p>
+    <p style="line-height:2.4">${paras}</p>
+    <div class="key"><h2>Answer key — ${p.topic}</h2>
+      <ol>${answers.map(a=>`<li>${a}</li>`).join("")}</ol></div>`;
+}
+
+/* ============ URL ============ */
+function syncURL(){
+  const q=new URLSearchParams();
+  if(state.level!=="all")q.set("level",state.level);
+  if(state.passageId)q.set("passage",state.passageId);
+  if(state.mode!=="cloze")q.set("mode",state.mode);
+  history.replaceState(null,"","?"+q.toString());
+}
+function readURL(){
+  const q=new URLSearchParams(location.search);
+  if(q.get("level"))state.level=q.get("level");
+  if(q.get("mode")==="listenfirst")state.mode="listenfirst";
+  if(q.get("passage"))state.passageId=q.get("passage");
+}
+
+/* ============ WIRING ============ */
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme",state.theme==="dark"?"dark":"light");
+  document.getElementById("themeBtn").textContent=state.theme==="dark"?"☀":"🌙";
+}
+function init(){
+  readURL();applyTheme();loadVoices();
+
+  const levelSel=document.getElementById("levelSel");
+  levelSel.value=state.level;
+  levelSel.onchange=()=>{
+    state.level=levelSel.value;localStorage.setItem(LS+"level",state.level);
+    if(state.teams>0)setTeams(state.teams);
+    else{buildPassSelect();if(state.passageId)loadPassage(state.passageId);}
+  };
+
+  const capSel=document.getElementById("capSel");
+  capSel.value=String(state.cap);
+  capSel.onchange=()=>{
+    state.cap=parseInt(capSel.value,10);
+    localStorage.setItem(LS+"cap",state.cap);updatePlaysLeft();
+  };
+
+  document.getElementById("voiceSel").onchange=e=>{
+    state.voiceURI=e.target.value;localStorage.setItem(LS+"voice",state.voiceURI);
+  };
+  document.getElementById("passSel").onchange=e=>loadPassage(e.target.value);
+
+  document.querySelectorAll("#modeSeg button").forEach(b=>{
+    b.setAttribute("aria-pressed",b.dataset.mode===state.mode);
+    b.onclick=()=>{
+      state.mode=b.dataset.mode;
+      document.querySelectorAll("#modeSeg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.mode===state.mode));
+      state.listened=false;updateVeil();syncURL();
+    };
+  });
+  document.querySelectorAll("#rateSeg button").forEach(b=>{
+    b.setAttribute("aria-pressed",parseFloat(b.dataset.rate)===state.rate);
+    b.onclick=()=>{
+      state.rate=parseFloat(b.dataset.rate);localStorage.setItem(LS+"rate",state.rate);
+      document.querySelectorAll("#rateSeg button").forEach(x=>x.setAttribute("aria-pressed",parseFloat(x.dataset.rate)===state.rate));
+    };
+  });
+  document.querySelectorAll("#teamSeg button").forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll("#teamSeg button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+      setTeams(parseInt(b.dataset.teams,10));
+    };
+  });
+
+  document.getElementById("playFull").onclick=playFull;
+  document.getElementById("veilPlay").onclick=playFull;
+  document.getElementById("checkBtn").onclick=check;
+  document.getElementById("revealBtn").onclick=reveal;
+  document.getElementById("nextBtn").onclick=next;
+  document.getElementById("themeBtn").onclick=()=>{
+    state.theme=state.theme==="dark"?"light":"dark";
+    localStorage.setItem(LS+"theme",state.theme);applyTheme();
+  };
+  document.getElementById("printBtn").onclick=()=>{buildPrintSheet();window.print();};
+
+  buildPassSelect();
+  if(state.passageId)loadPassage(state.passageId);
+}
+init();
+</script>
+</body>
+</html>
