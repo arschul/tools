@@ -320,6 +320,7 @@
   .badge.red{background:var(--red-soft);color:var(--red);}
   .badge.hw, .cal-tag.hw{background:var(--accent-soft);color:var(--accent);}
   .badge.test, .cal-tag.test{background:var(--red-soft);color:var(--red);}
+  .badge.review, .cal-tag.review{background:var(--amber-soft);color:var(--amber);}
   .badge.project, .cal-tag.project{background:var(--purple-soft);color:var(--purple);}
   .badge.other, .cal-tag.other{background:var(--gray-soft);color:var(--gray);}
 
@@ -1207,6 +1208,25 @@ function classById(id){ return state.classes.find(c=>c.id===id); }
 function activeClasses(){ return state.classes.filter(c=>!c.archived); }
 function archivedClasses(){ return state.classes.filter(c=>c.archived); }
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
+
+function daysAgo(dateStr){ return (Date.now() - new Date(dateStr+'T00:00:00').getTime()) / 86400000; }
+
+// A student's completed, non-holiday attendance records, deduped by date
+// (prefer the enrolled class — same rule the report uses), newest first.
+function studentAttendanceRecords(student){
+  const map = new Map();
+  Object.keys(state.sessions).forEach(key=>{
+    const [classId, date] = splitSessionKey(key);
+    const rec = state.sessions[key][student.id];
+    if(!rec || isHoliday(date) || !isSessionCompleted(classId, date)) return;
+    const enrolledId = classForStudentOnDate(student, date)?.id;
+    const score = (classId===enrolledId ? 2 : 0) + 1;
+    const prev = map.get(date);
+    if(!prev || score > prev._score) map.set(date, {...rec, date, _classId:classId, _score:score});
+  });
+  return [...map.values()].sort((a,b)=>b.date.localeCompare(a.date));
+}
+
 function getPreviousClassDate(cls, fromDateStr){
   const days = getClassDays(cls);
   if(!days.length) return null;
@@ -1221,7 +1241,7 @@ function getPreviousClassDate(cls, fromDateStr){
 function esc(str){
   return String(str ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
-function eventTypeLabel(type){ return {hw:'Homework',test:'Test',project:'Project',other:'Other'}[type] || type; }
+function eventTypeLabel(type){ return {hw:'Homework',test:'Test',review:'Review',project:'Project',other:'Other'}[type] || type; }
 function attendanceLabel(a){ return {present:'Present',late:'Late',absent:'Absent'}[a] || '—'; }
 function attendanceBadgeClass(a){ return {present:'green',late:'amber',absent:'red'}[a] || ''; }
 function englishLabel(e){ return {excellent:'Excellent',improve:'Needs some reminders',unacceptable:'Needs consistent reminders'}[e] || '—'; }
@@ -1608,6 +1628,63 @@ function _renderDashboard(el){
       </div>
     </div>` : '';
 
+  // — Attendance alerts: contact parents —
+  // Two consecutive absences (current — their latest two class meetings), and
+  // absences on a test/review day. Both flag "contact parents".
+  const ALERT_HORIZON = 30, ASSESS_HORIZON = 45;
+  const assessmentByDate = {};
+  state.events.forEach(e=>{ if(e.type==='test' || e.type==='review'){ (assessmentByDate[e.date] = assessmentByDate[e.date] || []).push(e); } });
+
+  const twoInRow = [], missedAssess = [];
+  state.students.filter(s=>{ const c=classById(s.classId); return c && !c.archived; }).forEach(s=>{
+    const recs = studentAttendanceRecords(s);
+    if(recs.length>=2 && recs[0].attendance==='absent' && recs[1].attendance==='absent' && daysAgo(recs[0].date)<=ALERT_HORIZON){
+      twoInRow.push({id:s.id, name:s.name, classId:s.classId, d1:recs[1].date, d2:recs[0].date});
+    }
+    for(const r of recs){
+      if(daysAgo(r.date) > ASSESS_HORIZON) break;   // sorted newest-first
+      if(r.attendance!=='absent') continue;
+      const evs = assessmentByDate[r.date];
+      if(!evs) continue;
+      const m = evs.find(e=> !e.classId || e.classId===r._classId);
+      if(m){ missedAssess.push({id:s.id, name:s.name, classId:s.classId, date:r.date, title:m.title, type:m.type}); break; }
+    }
+  });
+  window._dashTwoRowIds = twoInRow.map(x=>x.id);
+  window._dashMissIds = missedAssess.map(x=>x.id);
+
+  const attnDot = classId => { const c=classById(classId); return c?`<span class="color-dot" style="background:${c.color}"></span>`:''; };
+  const attnAlertHtml = (twoInRow.length || missedAssess.length) ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
+      <h3>📞 Attendance — contact parents</h3>
+      ${twoInRow.length ? `
+        <div class="dash-row-sub" style="margin:2px 0 6px;font-weight:600;">Missed two classes in a row</div>
+        ${twoInRow.map((x,i)=>`
+          <div class="dash-row">
+            <div class="dash-row-left">
+              ${attnDot(x.classId)}
+              <div>
+                <div class="dash-row-title">${esc(x.name)}</div>
+                <div class="dash-row-sub">Absent ${formatDateShort(x.d1)} &amp; ${formatDateShort(x.d2)}</div>
+              </div>
+            </div>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashTwoRowIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+          </div>`).join('')}` : ''}
+      ${missedAssess.length ? `
+        <div class="dash-row-sub" style="margin:${twoInRow.length?'12px':'2px'} 0 6px;font-weight:600;">Missed a test or review</div>
+        ${missedAssess.map((x,i)=>`
+          <div class="dash-row">
+            <div class="dash-row-left">
+              ${attnDot(x.classId)}
+              <div>
+                <div class="dash-row-title">${esc(x.name)} <span class="badge ${x.type}" style="margin-left:6px;">${eventTypeLabel(x.type)}</span></div>
+                <div class="dash-row-sub">Absent ${formatDateShort(x.date)}${x.title?' · '+esc(x.title):''}</div>
+              </div>
+            </div>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashMissIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+          </div>`).join('')}` : ''}
+    </div>` : '';
+
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
     <div class="stat-row">
@@ -1621,6 +1698,7 @@ function _renderDashboard(el){
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
       <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
     </div>
+    ${attnAlertHtml}
     ${cpHtml}
     ${ecHtml}
   `;
@@ -3092,6 +3170,7 @@ function openDayModal(dateStr){
         <select id="ev-type">
           <option value="hw">Homework due</option>
           <option value="test">Test</option>
+          <option value="review">Review</option>
           <option value="project">Project</option>
           <option value="other">Other</option>
         </select>
