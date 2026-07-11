@@ -111,9 +111,10 @@ select{
 
 .veil{
   position:absolute; inset:0; background:var(--panel); border-radius:10px;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.8rem;
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:.8rem;
   text-align:center; padding:1rem; z-index:2;
 }
+.veil.show{display:flex}
 .veil p{color:var(--muted); max-width:34ch; margin:0}
 
 .result-row{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; margin-top:1.1rem; border-top:1px dashed var(--line); padding-top:.9rem}
@@ -213,9 +214,8 @@ footer{max-width:980px; margin:2rem auto 0; padding:0 1.25rem; color:var(--muted
     </div>
     <div class="passage-zone">
       <div class="passage" id="passageBody"></div>
-      <div class="veil" id="veil" hidden>
-        <p>Listen to the whole passage once. The text appears after the first listen.</p>
-        <button class="btn primary" id="veilPlay">🔊 Listen</button>
+      <div class="veil" id="veil">
+        <p>Listen to the whole passage once with <b>Play passage</b>. The text appears after the first listen.</p>
       </div>
     </div>
     <div class="result-row">
@@ -513,7 +513,7 @@ function escapeAttr(s){return escapeHtml(s).replace(/"/g,"&quot;");}
 
 function updateVeil(){
   const veil=document.getElementById("veil");
-  veil.hidden=!(state.mode==="listenfirst"&&!state.listened);
+  veil.classList.toggle("show", state.mode==="listenfirst"&&!state.listened);
 }
 function updatePlaysLeft(){
   const el=document.getElementById("playsLeft");
@@ -748,7 +748,6 @@ function init(){
   });
 
   document.getElementById("playFull").onclick=playFull;
-  document.getElementById("veilPlay").onclick=playFull;
   document.getElementById("checkBtn").onclick=check;
   document.getElementById("revealBtn").onclick=reveal;
   document.getElementById("nextBtn").onclick=next;
