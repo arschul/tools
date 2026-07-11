@@ -88,13 +88,15 @@ select{
 .btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
 .btn.small{font-size:.82rem; padding:.35rem .7rem; font-weight:500}
 .btn:disabled{opacity:.4; cursor:default}
-.sent-chips{display:flex; gap:.35rem; flex-wrap:wrap}
+.play-hint{font-size:.85rem; color:var(--muted)}
 .plays-left{font-size:.85rem; color:var(--muted); margin-left:auto}
 
 .passage-zone{position:relative}
 .passage{font-size:1.18rem; line-height:2.2}
-.passage .sent{padding:.1rem 0; border-radius:6px}
+.passage .sent{padding:.1rem .2rem; border-radius:6px; cursor:pointer; transition:background .1s ease}
+.passage .sent:hover{background:var(--accent-soft)}
 .passage .sent.playing{background:var(--warm-soft)}
+.passage .gap{cursor:text}
 .gap{
   display:inline-block; width:7.5em; max-width:40vw;
   font-family:inherit; font-size:1rem; font-weight:700; text-align:center;
@@ -206,7 +208,7 @@ footer{max-width:980px; margin:2rem auto 0; padding:0 1.25rem; color:var(--muted
     </div>
     <div class="play-row">
       <button class="btn primary" id="playFull">🔊 Play passage</button>
-      <div class="sent-chips" id="sentChips"></div>
+      <span class="play-hint" id="playHint">Click any sentence to replay it</span>
       <span class="plays-left" id="playsLeft"></span>
     </div>
     <div class="passage-zone">
@@ -476,11 +478,10 @@ function loadPassage(id){
 function renderPassage(){
   const p=currentPassage();
   const body=document.getElementById("passageBody");
-  const chips=document.getElementById("sentChips");
-  if(!p){body.innerHTML="<p>No passages for this level.</p>";chips.innerHTML="";return;}
+  if(!p){body.innerHTML="<p>No passages for this level.</p>";return;}
   document.getElementById("topicLabel").textContent=p.topic;
   document.getElementById("levelBadge").textContent=p.level;
-  body.innerHTML="";chips.innerHTML="";
+  body.innerHTML="";
   let gapNo=0;
   p.sentences.forEach((s,si)=>{
     const span=document.createElement("span");
@@ -495,12 +496,12 @@ function renderPassage(){
     }
     html+=escapeHtml(s.text.slice(last))+" ";
     span.innerHTML=html;
+    span.title="Click to replay this sentence";
+    span.addEventListener("click",(e)=>{
+      if(e.target.classList.contains("gap"))return; // don't replay when using a gap
+      playSentence(si);
+    });
     body.appendChild(span);
-    const chip=document.createElement("button");
-    chip.className="btn small";chip.textContent=`▶ ${si+1}`;
-    chip.title=`Play sentence ${si+1}`;
-    chip.onclick=()=>playSentence(si);
-    chips.appendChild(chip);
   });
   document.getElementById("gapBadge").textContent=`${gapNo} gaps`;
   document.getElementById("scoreLine").textContent="";
@@ -520,38 +521,56 @@ function updatePlaysLeft(){
   else el.textContent=`Plays left: ${Math.max(0,state.cap-state.playsUsed)}`;
   const noneLeft=state.cap>0&&state.playsUsed>=state.cap;
   document.getElementById("playFull").disabled=noneLeft;
-  document.querySelectorAll("#sentChips .btn").forEach(b=>b.disabled=noneLeft);
 }
 function usePlay(){
   state.playsUsed++;updatePlaysLeft();
 }
 
 /* ============ PLAYBACK ============ */
+let playToken=0;
+function clearHighlights(){
+  document.querySelectorAll(".sent.playing").forEach(s=>s.classList.remove("playing"));
+}
 function highlightSent(si,on){
   document.querySelectorAll(".sent").forEach(s=>s.classList.toggle("playing",on&&+s.dataset.si===si));
+}
+function estMs(texts){
+  const words=texts.join(" ").split(/\s+/).filter(Boolean).length;
+  return Math.ceil(words/(2.2*state.rate))*1000+3000; // generous; fallback only
+}
+function revealAfterListen(){
+  if(state.mode==="listenfirst"&&!state.listened){state.listened=true;updateVeil();}
 }
 function playFull(){
   const p=currentPassage();if(!p)return;
   if(state.cap>0&&state.playsUsed>=state.cap)return;
   usePlay();
+  const token=++playToken;
   const texts=p.sentences.map(s=>cleanText(s.text));
-  let i=0;
+  let i=0,done=false;
+  const finish=()=>{
+    if(done||token!==playToken)return;
+    done=true;clearHighlights();revealAfterListen();
+  };
   const step=()=>{
+    if(token!==playToken)return;         // superseded by a newer play
     if(i>0)highlightSent(i-1,false);
-    if(i>=texts.length){
-      if(state.mode==="listenfirst"&&!state.listened){state.listened=true;updateVeil();}
-      return;
-    }
+    if(i>=texts.length){finish();return;}
     highlightSent(i,true);
     speak(texts[i],()=>{i++;step();});
   };
   step();
+  // Safety net: Web Speech occasionally drops the final onend, which would leave
+  // the veil up forever. Reveal anyway once the estimated duration has passed.
+  setTimeout(()=>{ if(token===playToken) finish(); }, estMs(texts));
 }
 function playSentence(si){
   const p=currentPassage();if(!p)return;
-  if(state.cap>0&&state.playsUsed>=state.cap)return;
   if(state.mode==="listenfirst"&&!state.listened)return; // must hear full passage first
+  if(state.cap>0&&state.playsUsed>=state.cap)return;
+  ++playToken;                            // stop any running full-passage chain
   usePlay();
+  clearHighlights();
   highlightSent(si,true);
   speak(cleanText(p.sentences[si].text),()=>highlightSent(si,false));
 }
