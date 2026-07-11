@@ -730,6 +730,7 @@ const T = {
     backToClasses: '← Back to Classes & Students',
     englishClubBadge: '⭐ English Club',
     langToggle: 'PT',
+    copyTextBtn: 'Copy text',
     attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
     englishLabels: {excellent:'Excellent', improve:'Needs some reminders', unacceptable:'Needs consistent reminders'},
     missedHwFlag: '⚠ Missed HW',
@@ -791,6 +792,7 @@ const T = {
     backToClasses: '← Voltar a Turmas e Alunos',
     englishClubBadge: '⭐ English Club',
     langToggle: 'EN',
+    copyTextBtn: 'Copiar texto',
     attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
     englishLabels: {excellent:'Excelente', improve:'Precisa de alguns lembretes', unacceptable:'Precisa de lembretes constantes'},
     missedHwFlag: '⚠ Dever pendente',
@@ -2285,6 +2287,141 @@ function setRollcallDate(date){
 }
 
 /* ================= STUDENT PROFILE ================= */
+/* ---------- plain-text student report ----------
+   A copy-pasteable block for the school's report card. Reads the numbers
+   renderStudentProfile() already computed (via lastReportStats) so the two
+   can never disagree. The comment is a starting point — the teacher edits
+   it in the textarea before copying.
+*/
+let lastReportStats = null;
+
+function fmtPct(v){ return v==null ? '—' : v+'%'; }
+
+function reportComment(s, lang){
+  const first = s.name.split(' ')[0];
+  const bits = [];
+  if(lang==='pt'){
+    // Genderless phrasings (noun-based) — gender isn't tracked.
+    if(s.attendanceRate!=null){
+      if(s.attendanceRate>=95) bits.push(`${first} manteve excelente frequência`);
+      else if(s.attendanceRate>=85) bits.push(`${first} apresentou boa frequência`);
+      else bits.push(`${first} teve frequência abaixo do esperado (${s.classesLost} ${s.classesLost===1?'falta':'faltas'})`);
+    } else {
+      bits.push(`${first} participou das aulas no período`);
+    }
+    const second = [];
+    if(s.hwAvg!=null){
+      if(s.hwAvg>=85) second.push('cumpriu as tarefas de casa com regularidade');
+      else if(s.hwAvg>=60) second.push('realizou a maior parte das tarefas de casa');
+      else second.push('precisa se dedicar mais às tarefas de casa');
+    }
+    if(s.partScore!=null){
+      if(s.partScore>=75) second.push('participou ativamente das aulas');
+      else if(s.partScore>=50) second.push('teve participação satisfatória');
+      else second.push('pode participar mais durante as aulas');
+    }
+    let out = bits.join('') + '.';
+    if(second.length) out += ' ' + capitalize(joinPt(second)) + '.';
+    if(s.totalPhone && s.total && s.totalPhone >= s.total) out += ' Observou-se uso frequente do celular em sala.';
+    if(s.contactPending) out += ` Há pendência de contato com os responsáveis (${s.contactPending.category}).`;
+    return out;
+  }
+  // English
+  if(s.attendanceRate!=null){
+    if(s.attendanceRate>=95) bits.push(`${first} maintained excellent attendance`);
+    else if(s.attendanceRate>=85) bits.push(`${first} showed good attendance`);
+    else bits.push(`${first}'s attendance was below expectations (${s.classesLost} ${s.classesLost===1?'absence':'absences'})`);
+  } else {
+    bits.push(`${first} attended classes during the period`);
+  }
+  const second = [];
+  if(s.hwAvg!=null){
+    if(s.hwAvg>=85) second.push('completed homework consistently');
+    else if(s.hwAvg>=60) second.push('completed most homework');
+    else second.push('needs to focus more on homework');
+  }
+  if(s.partScore!=null){
+    if(s.partScore>=75) second.push('participated actively in class');
+    else if(s.partScore>=50) second.push('participated satisfactorily');
+    else second.push('could participate more in class');
+  }
+  let out = bits.join('') + '.';
+  if(second.length) out += ' ' + capitalize(joinEn(second)) + '.';
+  if(s.totalPhone && s.total && s.totalPhone >= s.total) out += ' Frequent phone use in class was noted.';
+  if(s.contactPending) out += ` A parent contact is pending (${s.contactPending.category}).`;
+  return out;
+}
+
+function capitalize(str){ return str.charAt(0).toUpperCase() + str.slice(1); }
+function joinPt(arr){ return arr.length<2 ? arr.join('') : arr.slice(0,-1).join(', ') + ' e ' + arr[arr.length-1]; }
+function joinEn(arr){ return arr.length<2 ? arr.join('') : arr.slice(0,-1).join(', ') + ' and ' + arr[arr.length-1]; }
+
+function buildReportText(s, lang){
+  const L = lang==='pt' ? {
+    title:'RELATÓRIO DO ALUNO', clazz:'Turma', period:'Período', allTime:'Todo o período',
+    present2:'presente', attendance:'Frequência', lost:'aulas perdidas',
+    punctuality:'Pontualidade', late:'atrasos', hw:'Lição de casa', part:'Participação',
+    phone:'Uso do celular', times:'vezes', comment:'Comentário', na:'sem dados'
+  } : {
+    title:'STUDENT REPORT', clazz:'Class', period:'Period', allTime:'All time',
+    present2:'present', attendance:'Attendance', lost:'classes missed',
+    punctuality:'Punctuality', late:'late arrivals', hw:'Homework', part:'Participation',
+    phone:'Phone use', times:'times', comment:'Comment', na:'no data'
+  };
+  const per = s.fromVal
+    ? `${formatDateShort(s.fromVal)} – ${s.toVal?formatDateShort(s.toVal):L.present2}`
+    : L.allTime;
+
+  const lines = [];
+  lines.push(`${L.title} — ${s.name}`);
+  const head = [];
+  if(s.className) head.push(`${L.clazz}: ${s.className}`);
+  head.push(`${L.period}: ${per}`);
+  lines.push(head.join('  ·  '));
+  lines.push('');
+  lines.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
+  lines.push(`${L.punctuality}: ${s.late} ${L.late}`);
+  lines.push(`${L.hw}: ${fmtPct(s.hwAvg)}`);
+  lines.push(`${L.part}: ${fmtPct(s.partScore)}`);
+  if(s.totalPhone){
+    const timesLabel = lang==='pt' ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
+    lines.push(`${L.phone}: ${s.totalPhone} ${timesLabel}`);
+  }
+  lines.push('');
+  lines.push(`${L.comment}:`);
+  lines.push(reportComment(s, lang));
+  return lines.join('\n');
+}
+
+function openReportTextModal(){
+  if(!lastReportStats){ alert('Open a student report first.'); return; }
+  const lang = state.reportLang;
+  const text = buildReportText(lastReportStats, lang);
+  const isPt = lang==='pt';
+  showModal(`
+    <h2>${isPt?'Texto para o boletim':'Report card text'}</h2>
+    <p class="meta" style="margin:6px 0 12px;">${isPt
+      ? 'Edite como quiser e copie para o boletim da escola. O comentário é uma sugestão.'
+      : 'Edit as needed and copy into the school report card. The comment is a suggestion.'}</p>
+    <textarea id="report-text-area" style="width:100%;min-height:230px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn-ghost" onclick="closeModal()">${isPt?'Fechar':'Close'}</button>
+      <button class="btn-accent" id="report-copy-btn" onclick="copyReportText()">${isPt?'Copiar':'Copy'}</button>
+    </div>
+  `);
+}
+
+function copyReportText(){
+  const area = document.getElementById('report-text-area');
+  const btn = document.getElementById('report-copy-btn');
+  const isPt = state.reportLang==='pt';
+  const done = ()=>{ if(btn){ btn.textContent = isPt?'Copiado ✓':'Copied ✓'; setTimeout(()=>{ if(btn) btn.textContent = isPt?'Copiar':'Copy'; }, 1600); } };
+  const fallback = ()=>{ area.focus(); area.select(); try{ document.execCommand('copy'); done(); }catch(e){ alert(isPt?'Selecione o texto e copie manualmente.':'Select the text and copy manually.'); } };
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(area.value).then(done).catch(fallback);
+  } else { fallback(); }
+}
+
 function renderStudentProfile(){
   const t = T[state.reportLang];
   const student = state.students.find(s=>s.id===state.studentProfileId);
@@ -2368,6 +2505,16 @@ function renderStudentProfile(){
   const totalLostMin = lostLateMin + lostEarlyMin + absentMin;
   const lostEquivClasses = avgDuration ? (totalLostMin/avgDuration).toFixed(1) : '0.0';
 
+  // Stash for the plain-text report builder, so it can never disagree with what's shown.
+  lastReportStats = {
+    name: student.name, className: cls?cls.name:null,
+    fromVal, toVal,
+    total, present, late, absent, totalPhone,
+    hwAvg, partScore, expected, classesLost, attendanceRate,
+    totalLostMin, lostEquivClasses, avgDuration,
+    contactPending: student.contactParents?.reason ? student.contactParents : null
+  };
+
   const classesLostHtml = expected!=null
     ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
     : t.classesAbsent(classesLost, null) + ` <button type="button" class="linkish no-print" onclick="navigate('classes');setTimeout(()=>openClassModal('${cls?.id}'),0)">${t.setDates}</button><span class="print-only">${t.setDates}</span>${t.setDatesRest}`;
@@ -2382,6 +2529,7 @@ function renderStudentProfile(){
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
+        <button class="btn-ghost" onclick="openReportTextModal()">${t.copyTextBtn}</button>
         <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
       </div>
     </div>
