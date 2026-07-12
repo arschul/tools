@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pop Quiz — Grammar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12131b; --bg2:#191b26; --panel:#20222f; --panel2:#282b3b;
+  --line:#333748; --ink:#f2f3f8; --mut:#9aa0b5; --dim:#6c7189;
+  --accent:#ffcf5c; --accent2:#7cd6c0; --good:#57d18e; --bad:#f2708c;
+  --a1:#7cd6c0; --a2:#8fb8ff; --b1:#ffcf5c; --b2:#f2a35c;
+  --radius:18px; --shadow:0 20px 50px rgba(0,0,0,.45);
+  --head:'Playfair Display',Georgia,serif; --body:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:var(--body); color:var(--ink);
+  background:radial-gradient(1200px 700px at 78% -8%,#232637 0%,var(--bg) 60%);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 22px 60px}
+.topbar{display:flex;align-items:center;gap:14px;margin:6px 0 22px}
+.brand{font-family:var(--head);font-weight:800;font-size:26px;letter-spacing:.2px}
+.brand .dot{color:var(--accent)}
+.tag{font-size:13px;color:var(--mut);margin-left:2px}
+.spacer{flex:1}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--mut);
+  padding:9px 14px;border-radius:12px;cursor:pointer;font:inherit;font-size:14px}
+.ghost:hover{color:var(--ink);border-color:var(--dim)}
+
+/* views */
+.view{display:none;animation:fade .25s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* setup */
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));
+  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.setup{padding:26px 26px 30px}
+.setup h1{font-family:var(--head);font-weight:700;font-size:30px;margin:0 0 4px}
+.setup .sub{color:var(--mut);margin:0 0 22px;font-size:15px}
+.block{margin:0 0 22px}
+.block > .lbl{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:0 0 11px}
+.block > .lbl small{font-weight:500;letter-spacing:0;text-transform:none;color:var(--dim);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:9px}
+.chip{border:1px solid var(--line);background:var(--panel2);color:var(--mut);
+  padding:9px 15px;border-radius:999px;cursor:pointer;font:inherit;font-size:14.5px;
+  user-select:none;transition:.14s}
+.chip:hover{color:var(--ink);border-color:var(--dim)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#20180a;font-weight:700}
+.chip.lv.on{color:#12131b}
+.chip[data-lv="A1"].on{background:var(--a1);border-color:var(--a1)}
+.chip[data-lv="A2"].on{background:var(--a2);border-color:var(--a2)}
+.chip[data-lv="B1"].on{background:var(--b1);border-color:var(--b1)}
+.chip[data-lv="B2"].on{background:var(--b2);border-color:var(--b2)}
+.topicwrap{max-height:172px;overflow:auto;border:1px solid var(--line);border-radius:14px;
+  padding:13px;background:rgba(0,0,0,.16)}
+.topicwrap::-webkit-scrollbar{width:9px}.topicwrap::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+.minibar{display:flex;gap:10px;margin:0 0 10px;align-items:center}
+.minibar .m{font-size:13px;color:var(--accent2);cursor:pointer}
+.minibar .m:hover{text-decoration:underline}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.moderow{display:flex;gap:12px}
+.modebtn{flex:1;border:1px solid var(--line);background:var(--panel2);border-radius:14px;
+  padding:15px 16px;cursor:pointer;transition:.14s}
+.modebtn:hover{border-color:var(--dim)}
+.modebtn.on{border-color:var(--accent);background:rgba(255,207,92,.10)}
+.modebtn b{display:block;font-size:16px;margin-bottom:3px}
+.modebtn span{font-size:13px;color:var(--mut)}
+.teams-cfg{margin-top:14px}
+.teamnames{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.teamnames input{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:9px 12px;font:inherit;font-size:14.5px}
+.teamnames input:focus{outline:none;border-color:var(--accent2)}
+.footer{display:flex;align-items:center;gap:16px;margin-top:6px}
+.count{color:var(--mut);font-size:14px}
+.count b{color:var(--ink)}
+.go{margin-left:auto;background:var(--accent);color:#20180a;border:none;font:inherit;
+  font-weight:700;font-size:16px;padding:14px 30px;border-radius:14px;cursor:pointer;
+  box-shadow:0 10px 26px rgba(255,207,92,.28);transition:.14s}
+.go:hover{transform:translateY(-1px)}
+.go:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;transform:none}
+
+/* runtime */
+.run-head{display:flex;align-items:center;gap:14px;margin:2px 0 16px}
+.progress{flex:1;height:8px;background:var(--panel2);border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));width:0;transition:.35s}
+.qmeta{display:flex;gap:9px;align-items:center;font-size:13px;color:var(--mut);white-space:nowrap}
+.badge{padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px;color:#12131b}
+.badge.A1{background:var(--a1)}.badge.A2{background:var(--a2)}.badge.B1{background:var(--b1)}.badge.B2{background:var(--b2)}
+.qcard{padding:40px 40px 34px;min-height:320px;display:flex;flex-direction:column;justify-content:center}
+.qtype{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+.qtopic{font-size:14px;color:var(--dim);margin:0 0 6px}
+.prompt{font-family:var(--head);font-weight:600;font-size:34px;line-height:1.34;margin:0}
+.prompt .blank{color:var(--accent);border-bottom:3px solid var(--accent);padding:0 20px}
+.chipwords{display:flex;flex-wrap:wrap;gap:11px;margin-top:8px}
+.chipwords span{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:11px 17px;font-size:23px;font-family:var(--head)}
+.answer{margin-top:26px;padding:20px 22px;border-radius:14px;background:rgba(124,214,192,.10);
+  border:1px solid rgba(124,214,192,.38);display:none}
+.answer.show{display:block;animation:fade .2s ease}
+.answer .k{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);margin:0 0 7px}
+.answer .v{font-size:22px;line-height:1.4;margin:0}
+.reveal-btn{margin-top:26px;align-self:flex-start;background:transparent;border:1.5px solid var(--accent);
+  color:var(--accent);font:inherit;font-weight:700;font-size:15px;padding:12px 26px;border-radius:12px;cursor:pointer;transition:.14s}
+.reveal-btn:hover{background:var(--accent);color:#20180a}
+.opts{display:flex;flex-direction:column;gap:11px;margin-top:26px}
+.opt{text-align:left;background:var(--panel2);border:1.5px solid var(--line);color:var(--ink);
+  font:inherit;font-size:20px;line-height:1.36;padding:15px 18px;border-radius:13px;cursor:pointer;
+  transition:.14s;display:flex;gap:13px;align-items:flex-start;width:100%}
+.opt:hover{border-color:var(--dim)}
+.opt .key{font-family:var(--head);font-weight:700;color:var(--accent);flex:none;width:20px}
+.opt.pick{border-color:var(--accent2);background:rgba(124,214,192,.09)}
+.opt.pick .key{color:var(--accent2)}
+.opt.correct{border-color:var(--good);background:rgba(87,209,142,.13)}
+.opt.correct .key{color:var(--good)}
+.opt.wrong{border-color:var(--bad);background:rgba(242,112,140,.13)}
+.opt.wrong .key{color:var(--bad)}
+.opt.locked{cursor:default}
+
+/* solo input */
+.soloin{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap}
+.soloin input{flex:1;min-width:240px;background:var(--panel2);border:1.5px solid var(--line);
+  color:var(--ink);border-radius:12px;padding:14px 16px;font:inherit;font-size:19px}
+.soloin input:focus{outline:none;border-color:var(--accent2)}
+.soloin input.right{border-color:var(--good);background:rgba(87,209,142,.10)}
+.soloin input.wrong{border-color:var(--bad);background:rgba(242,112,140,.10)}
+.selfmark{margin-top:22px;display:flex;gap:11px;align-items:center}
+.selfmark span{color:var(--mut);font-size:15px;margin-right:4px}
+.sm{border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;
+  font-size:15px;font-weight:700;padding:11px 22px;border-radius:12px;cursor:pointer}
+.sm.yes:hover{border-color:var(--good);color:var(--good)}
+.sm.no:hover{border-color:var(--bad);color:var(--bad)}
+
+/* controls */
+.controls{display:flex;align-items:center;gap:12px;margin-top:20px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:inherit;
+  font-size:15px;font-weight:600;padding:13px 24px;border-radius:12px;cursor:pointer;transition:.14s}
+.btn:hover{border-color:var(--dim)}
+.btn.primary{background:var(--accent);color:#20180a;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* scoreboard (classroom) */
+.scores{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.team{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:15px 16px;display:flex;flex-direction:column;gap:9px}
+.team .nm{font-weight:700;font-size:15px;display:flex;align-items:center;gap:7px}
+.team .sc{font-family:var(--head);font-weight:800;font-size:34px;line-height:1}
+.team .pm{display:flex;gap:8px}
+.team .pm button{flex:1;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  font:inherit;font-weight:700;font-size:17px;padding:7px 0;border-radius:10px;cursor:pointer}
+.team .pm button.plus:hover{border-color:var(--good);color:var(--good)}
+.team .pm button.minus:hover{border-color:var(--bad);color:var(--bad)}
+.team .dotc{width:10px;height:10px;border-radius:50%}
+
+/* results */
+.results{padding:40px;text-align:center}
+.results h2{font-family:var(--head);font-weight:800;font-size:34px;margin:0 0 6px}
+.bigscore{font-family:var(--head);font-weight:800;font-size:72px;line-height:1;margin:14px 0 6px;color:var(--accent)}
+.results .pct{color:var(--mut);font-size:16px;margin-bottom:24px}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:24px 0}
+.pod{background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 0 0;
+  padding:16px 20px 18px;min-width:120px;text-align:center}
+.pod .nm{font-weight:700;margin-bottom:6px}
+.pod .sc{font-family:var(--head);font-weight:800;font-size:30px;color:var(--accent)}
+.pod.first{border-color:var(--accent);background:rgba(255,207,92,.10)}
+.pod .crown{font-size:22px}
+.breakdown{display:flex;justify-content:center;gap:22px;margin:8px 0 26px;flex-wrap:wrap}
+.breakdown div{color:var(--mut);font-size:14px}
+.breakdown b{color:var(--ink);font-size:17px}
+.mute{color:var(--dim);font-size:13px;margin-top:18px}
+@media(max-width:720px){
+  .grid2{grid-template-columns:1fr}
+  .prompt{font-size:26px}.chipwords span{font-size:19px}
+  .qcard{padding:26px 22px}.bigscore{font-size:56px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">Pop&nbsp;Quiz<span class="dot">.</span></div>
+    <div class="tag">grammar bank · 31 topics</div>
+    <div class="spacer"></div>
+    <button class="ghost" id="soundToggle" title="Toggle sound">🔊 Sound</button>
+    <button class="ghost" id="homeBtn" style="display:none">↺ New quiz</button>
+  </div>
+
+  <!-- SETUP -->
+  <section class="view on" id="setup">
+    <div class="card setup">
+      <h1>Generate a pop quiz</h1>
+      <p class="sub">Pick levels, topics and question types, then fire it at the class or hand it to a student.</p>
+
+      <div class="grid2">
+        <div>
+          <div class="block">
+            <div class="lbl">Levels</div>
+            <div class="chips" id="levelChips"></div>
+          </div>
+          <div class="block">
+            <div class="lbl">Question types</div>
+            <div class="chips" id="typeChips"></div>
+          </div>
+          <div class="block">
+            <div class="lbl">Length</div>
+            <div class="chips" id="lenChips"></div>
+          </div>
+        </div>
+        <div>
+          <div class="block">
+            <div class="lbl">Topics <small id="topicSummary"></small></div>
+            <div class="minibar">
+              <span class="m" id="topicAll">Select all in view</span>
+              <span class="m" id="topicNone">Clear</span>
+            </div>
+            <div class="topicwrap"><div class="chips" id="topicChips"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="lbl">Mode</div>
+        <div class="moderow">
+          <div class="modebtn on" data-mode="classroom">
+            <b>Classroom</b><span>Projected · teams score by hand</span>
+          </div>
+          <div class="modebtn" data-mode="solo">
+            <b>Solo practice</b><span>One student · auto-check + reveal</span>
+          </div>
+        </div>
+        <div class="teams-cfg" id="teamsCfg">
+          <div class="minibar" style="margin-top:14px">
+            <span class="lbl" style="margin:0">Teams</span>
+          </div>
+          <div class="chips" id="teamCountChips"></div>
+          <div class="teamnames" id="teamNames"></div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="count"><b id="poolCount">0</b> questions match · quiz will use <b id="useCount">0</b></div>
+        <button class="go" id="generateBtn">Generate quiz →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLASSROOM -->
+  <section class="view" id="classroom">
+    <div class="run-head">
+      <div class="progress"><i id="clProgress"></i></div>
+      <div class="qmeta"><span id="clNum"></span> · <span class="badge" id="clBadge"></span></div>
+    </div>
+    <div class="card qcard">
+      <div class="qtopic" id="clTopic"></div>
+      <div class="qtype" id="clType"></div>
+      <div class="prompt" id="clPrompt"></div>
+      <div class="opts" id="clOpts" style="display:none"></div>
+      <button class="reveal-btn" id="clReveal">Reveal answer</button>
+      <div class="answer" id="clAnswer"><p class="k">Answer</p><p class="v" id="clAnswerText"></p></div>
+    </div>
+    <div class="scores" id="clScores"></div>
+    <div class="controls">
+      <button class="btn" id="clPrev">← Back</button>
+      <button class="btn primary" id="clNext">Next question →</button>
+      <button class="btn" id="clEnd" style="margin-left:auto">Finish &amp; scoreboard</button>
+    </div>
+  </section>
+
+  <!-- SOLO -->
+  <section class="view" id="solo">
+    <div class="run-head">
+      <div class="progress"><i id="soProgress"></i></div>
+      <div class="qmeta"><span id="soScore"></span> · <span id="soNum"></span> · <span class="badge" id="soBadge"></span></div>
+    </div>
+    <div class="card qcard">
+      <div class="qtopic" id="soTopic"></div>
+      <div class="qtype" id="soType"></div>
+      <div class="prompt" id="soPrompt"></div>
+      <div class="opts" id="soOpts" style="display:none"></div>
+      <div class="soloin" id="soInputWrap"><input id="soInput" type="text" autocomplete="off" placeholder="Type your answer…"></div>
+      <div id="soReveal"></div>
+      <div class="answer" id="soAnswer"><p class="k">Answer</p><p class="v" id="soAnswerText"></p></div>
+      <div class="selfmark" id="soSelfmark" style="display:none">
+        <span>Did you get it right?</span>
+        <button class="sm yes" id="soYes">✓ Yes</button>
+        <button class="sm no" id="soNo">✗ No</button>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="soCheck">Check</button>
+      <button class="btn" id="soNext" disabled>Next →</button>
+      <button class="btn" id="soEnd" style="margin-left:auto">End practice</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="view" id="results">
+    <div class="card results" id="resultsCard"></div>
+  </section>
+</div>
+
+<script>
+const BANK = [{"slug":"present-continuous","topic":"Present Continuous","level":"A1","q":[{"t":"match","p":"Complete the sentence: \"Look! The dog ___\"","a":"is chasing the cat in the garden."},{"t":"match","p":"Complete the sentence: \"Right now, my sister ___\"","a":"is doing her homework upstairs."},{"t":"match","p":"Complete the sentence: \"At the moment, the children ___\"","a":"are playing a board game."},{"t":"match","p":"Complete the sentence: \"Can you be quiet? I ___\"","a":"am trying to study for my test."},{"t":"match","p":"Complete the sentence: \"Listen! Someone ___\"","a":"is knocking on the door."},{"t":"fill","p":"Shh! The baby _____ at the moment.","a":"is sleeping — Subject 'the baby' (it) → is + sleeping."},{"t":"fill","p":"I can't talk now — I _____ dinner.","a":"am cooking — Subject 'I' → am + cooking."},{"t":"fill","p":"Look at them! They _____ at the party.","a":"are dancing — Subject 'they' (plural) → are + dancing."},{"t":"fill","p":"She _____ a letter to her grandmother.","a":"is writing — 'Write' drops the silent e before -ing. Subject 'she' → is + writing."},{"t":"fill","p":"We _____ for the bus at the station.","a":"are waiting — Subject 'we' (plural) → are + waiting."},{"t":"mistake","p":"Find the mistake: \"The dogs is barking loudly outside the house.\"","a":"'The dogs' is plural, so it should be 'are barking', not 'is barking'."},{"t":"mistake","p":"Find the mistake: \"I cooking pasta for dinner tonight.\"","a":"The present continuous needs am/is/are. It should be 'I am cooking'."},{"t":"mistake","p":"Find the mistake: \"He is sitting on the sofa and writeing a letter.\"","a":"'Write' drops the silent e before adding -ing. The correct spelling is 'writing'."},{"t":"mistake","p":"Find the mistake: \"My sister and I is doing our homework together.\"","a":"'My sister and I' is a plural subject, so it should be 'are doing', not 'is doing'."},{"t":"mistake","p":"Find the mistake: \"She not is reading a book at the moment.\"","a":"The negative word order is wrong. It should be 'She isn't reading' or 'She is not reading'."},{"t":"order","w":["She","is","reading","a","book","in","the","garden."],"a":"She is reading a book in the garden."},{"t":"order","w":["They","are","playing","basketball","at","school","now."],"a":"They are playing basketball at school now."},{"t":"order","w":["I'm","making","a","sandwich","for","lunch."],"a":"I'm making a sandwich for lunch."},{"t":"order","w":["What","is","he","doing","right","now?"],"a":"What is he doing right now?"},{"t":"order","w":["We","aren't","watching","TV","at","the","moment."],"a":"We aren't watching TV at the moment."}]},{"slug":"simple-past-to-be","topic":"Simple Past (to be)","level":"A1","q":[{"t":"match","p":"Complete the sentence: \"Were you at school yesterday? ___\"","a":"No, I wasn't. I was at home."},{"t":"match","p":"Complete the sentence: \"Was the food good? ___\"","a":"Yes, it was. It was very nice."},{"t":"match","p":"Complete the sentence: \"Were your friends at the party? ___\"","a":"No, they weren't. They were busy."},{"t":"match","p":"Complete the sentence: \"Was the film long? ___\"","a":"Yes, it was. It was two hours."},{"t":"match","p":"Complete the sentence: \"Were you and Tom in the same class? ___\"","a":"Yes, we were. We were together for two years."},{"t":"fill","p":"I _____ very tired last night, so I went to bed early.","a":"was"},{"t":"fill","p":"My parents _____ at work all day yesterday.","a":"were"},{"t":"fill","p":"The test _____ not very hard. I finished in ten minutes.","a":"was"},{"t":"fill","p":"_____ you at home last night? I called but you weren't there.","a":"Were"},{"t":"fill","p":"Tom and Lisa _____ late for class this morning.","a":"were"},{"t":"mistake","p":"Find the mistake: \"The party was fun and all my friends was there.\"","a":"'My friends' is plural and takes 'were': 'all my friends were there.'"},{"t":"mistake","p":"Find the mistake: \"We were at the beach all morning but the water were very cold.\"","a":"'The water' is singular and takes 'was': 'the water was very cold.'"},{"t":"mistake","p":"Find the mistake: \"I was hungry after school so I were happy to eat dinner.\"","a":"'I' takes 'was', not 'were': 'so I was happy to eat dinner.'"},{"t":"mistake","p":"Find the mistake: \"My mum and dad were at work and my sister were at home alone.\"","a":"'My sister' is singular and takes 'was': 'my sister was at home alone.'"},{"t":"mistake","p":"Find the mistake: \"Yesterday was a good day but the weather wasn't great — it were very windy.\"","a":"'It' takes 'was': 'it was very windy.'"},{"t":"order","w":["at","We","the","were","yesterday.","park"],"a":"We were at the park yesterday."},{"t":"order","w":["you","Were","at","the","last","game","night?"],"a":"Were you at the game last night?"},{"t":"order","w":["wasn't","She","class.","in"],"a":"She wasn't in class."},{"t":"order","w":["cold","It","was","and","wet","today."],"a":"It was cold and wet today."},{"t":"order","w":["Were","your","teachers","nice","at","your","old","school?"],"a":"Were your teachers nice at your old school?"}]},{"slug":"simple-present-do-does","topic":"Simple Present (do/does)","level":"A1","q":[{"t":"match","p":"Complete the sentence: \"She studies every night because ___\"","a":"she has an important exam next week."},{"t":"match","p":"Complete the sentence: \"My brother doesn't eat meat — ___\"","a":"he has been vegetarian since he was a child."},{"t":"match","p":"Complete the sentence: \"Do you know ___\"","a":"what time the library closes?"},{"t":"match","p":"Complete the sentence: \"Our teacher always arrives early and ___\"","a":"starts the lesson before the bell rings."},{"t":"match","p":"Complete the sentence: \"They don't own a car, so ___\"","a":"they take the bus to work every day."},{"t":"fill","p":"My father _____ (work) in a big company in the city centre.","a":"works"},{"t":"fill","p":"We _____ (not have) classes on Saturdays.","a":"don't have"},{"t":"fill","p":"_____ your sister speak any languages apart from English?","a":"Does"},{"t":"fill","p":"The shop _____ (close) at 9 p.m. every day.","a":"closes"},{"t":"fill","p":"They _____ (not know) anyone in this neighbourhood yet.","a":"don't know"},{"t":"mistake","p":"Find the mistake: \"She don't like spicy food.\"","a":"With 'she', use 'doesn't': 'She doesn't like spicy food.'"},{"t":"mistake","p":"Find the mistake: \"Does he works in a hospital?\"","a":"After 'does', use the base form (no -s): 'Does he work in a hospital?'"},{"t":"mistake","p":"Find the mistake: \"They doesn't have a car.\"","a":"'They' takes 'don't', not 'doesn't': 'They don't have a car.'"},{"t":"mistake","p":"Find the mistake: \"My brother don't speaks French.\"","a":"With 'my brother', use 'doesn't' + base verb: 'My brother doesn't speak French.'"},{"t":"mistake","p":"Find the mistake: \"Do she live near here?\"","a":"'She' needs 'does', not 'do': 'Does she live near here?'"},{"t":"order","w":["every","She","morning.","jogs"],"a":"She jogs every morning."},{"t":"order","w":["eat","don't","They","at","home."],"a":"They don't eat at home."},{"t":"order","w":["speak","Does","he","English?"],"a":"Does he speak English?"},{"t":"order","w":["doesn't","My","work","sister","on","Fridays."],"a":"My sister doesn't work on Fridays."},{"t":"order","w":["Where","parents","your","do","live?"],"a":"Where do your parents live?"}]},{"slug":"simple-present-to-be","topic":"Simple Present (to be)","level":"A1","q":[{"t":"match","p":"Complete the sentence: \"I am really nervous because ___\"","a":"it is my first day at work."},{"t":"match","p":"Complete the sentence: \"My parents are both doctors — ___\"","a":"they are very busy people."},{"t":"match","p":"Complete the sentence: \"Look at that dog! It is ___\"","a":"the biggest one I have ever seen."},{"t":"match","p":"Complete the sentence: \"You are late! The meeting ___\"","a":"is already in the second hour."},{"t":"match","p":"Complete the sentence: \"We are not from here — ___\"","a":"we are actually from New Zealand."},{"t":"fill","p":"My brother _____ a teacher at a primary school.","a":"is"},{"t":"fill","p":"I _____ not very good at maths, but I love English.","a":"am"},{"t":"fill","p":"The children _____ really excited about the school trip.","a":"are"},{"t":"fill","p":"_____ you from Spain or Portugal?","a":"Are"},{"t":"fill","p":"It _____ a beautiful day today — the sun is shining.","a":"is"},{"t":"mistake","p":"Find the mistake: \"She are a very good student.\"","a":"'She' takes 'is', not 'are': 'She is a very good student.'"},{"t":"mistake","p":"Find the mistake: \"They is from Japan.\"","a":"'They' takes 'are', not 'is': 'They are from Japan.'"},{"t":"mistake","p":"Find the mistake: \"I is happy today.\"","a":"'I' takes 'am', not 'is': 'I am happy today.'"},{"t":"mistake","p":"Find the mistake: \"Is they your parents?\"","a":"'They' takes 'are': 'Are they your parents?'"},{"t":"mistake","p":"Find the mistake: \"He not is tired.\"","a":"The negative puts 'not' after the verb: 'He is not tired.' or 'He isn't tired.'"},{"t":"order","w":["is","My","from","mother","Argentina."],"a":"My mother is from Argentina."},{"t":"order","w":["late.","not","We","are"],"a":"We are not late."},{"t":"order","w":["your","Is","teacher?","she","English"],"a":"Is she your English teacher?"},{"t":"order","w":["and","am","I","student","a","years","twenty","old."],"a":"I am a student and twenty years old."},{"t":"order","w":["They","the","are","in","office.","not"],"a":"They are not in the office."}]},{"slug":"past-progressive","topic":"Past Progressive","level":"A2","q":[{"t":"match","p":"Complete the sentence: \"While I was cooking dinner, ___\"","a":"the phone rang suddenly."},{"t":"match","p":"Complete the sentence: \"At eight o'clock last night, ___\"","a":"we were watching a movie."},{"t":"match","p":"Complete the sentence: \"She was walking to school ___\"","a":"when it started to rain."},{"t":"match","p":"Complete the sentence: \"The children were playing outside ___\"","a":"while their parents were cleaning the house."},{"t":"match","p":"Complete the sentence: \"I was reading a book ___\"","a":"when my friend called me."},{"t":"fill","p":"At 6pm yesterday, my mother _____ dinner in the kitchen — I could smell it from upstairs.","a":"was cooking — Subject 'my mother' (she) → was + cooking."},{"t":"fill","p":"While we _____ a movie last night, the power suddenly went out.","a":"were watching — Subject 'we' → were + watching."},{"t":"fill","p":"I _____ my hands when the doorbell rang.","a":"was washing — Subject 'I' → was + washing."},{"t":"fill","p":"The children _____ in the garden when it started to rain.","a":"were playing — Subject 'the children' (plural) → were + playing."},{"t":"fill","p":"He _____ a letter when his computer crashed.","a":"was writing — 'Write' drops the silent e before -ing. Subject 'he' → was + writing."},{"t":"mistake","p":"Find the mistake: \"The children was playing in the park when it started to rain.\"","a":"'The children' is plural, so it should be 'were playing', not 'was playing'."},{"t":"mistake","p":"Find the mistake: \"I were walking home when I saw my old friend.\"","a":"The subject 'I' takes 'was', not 'were'. It should be 'I was walking'."},{"t":"mistake","p":"Find the mistake: \"She was sitting by the window and writeing in her notebook.\"","a":"'Write' drops the silent e before adding -ing. The correct spelling is 'writing'."},{"t":"mistake","p":"Find the mistake: \"We was studying for the test when the fire alarm rang.\"","a":"'We' is a plural subject, so it should be 'were studying', not 'was studying'."},{"t":"mistake","p":"Find the mistake: \"He runing across the street when the car stopped suddenly.\"","a":"The past progressive needs was/were + verb-ing, and 'run' doubles the consonant. It should be 'He was running'."},{"t":"order","w":["She","was","reading","a","book","when","I","arrived."],"a":"She was reading a book when I arrived."},{"t":"order","w":["They","were","playing","football","at","five","o'clock."],"a":"They were playing football at five o'clock."},{"t":"order","w":["I","wasn't","listening","when","the","teacher","spoke."],"a":"I wasn't listening when the teacher spoke."},{"t":"order","w":["What","were","you","doing","last","night?"],"a":"What were you doing last night?"},{"t":"order","w":["While","he","was","cooking,","the","phone","rang."],"a":"While he was cooking, the phone rang."}]},{"slug":"simple-past-did","topic":"Simple Past (did)","level":"A2","q":[{"t":"match","p":"Complete the sentence: \"Did you walk to school today? ___\"","a":"No, I didn't. I took the bus."},{"t":"match","p":"Complete the sentence: \"Did she call you last night? ___\"","a":"Yes, she did. We talked for an hour."},{"t":"match","p":"Complete the sentence: \"Did they play football yesterday? ___\"","a":"No, they didn't. It rained all day."},{"t":"match","p":"Complete the sentence: \"Did he eat breakfast this morning? ___\"","a":"Yes, he did. He had eggs and toast."},{"t":"match","p":"Complete the sentence: \"Did you and Ana study together? ___\"","a":"Yes, we did. We studied at the library."},{"t":"fill","p":"I _____ (go) to the shops yesterday and bought some food.","a":"went"},{"t":"fill","p":"She _____ (not come) to class today. I think she is ill.","a":"didn't come"},{"t":"fill","p":"_____ you see that film last weekend? It was really good.","a":"Did"},{"t":"fill","p":"We _____ (eat) pizza for dinner. It was delicious.","a":"ate"},{"t":"fill","p":"He _____ (not finish) his homework, so the teacher was angry.","a":"didn't finish"},{"t":"mistake","p":"Find the mistake: \"I was tired last night and I goed to bed after dinner.\"","a":"'Go' is irregular. The past form is 'went': 'I went to bed after dinner.'"},{"t":"mistake","p":"Find the mistake: \"We had lunch at school and then we all went to played football.\"","a":"After 'went to', use the base form: 'to play football.'"},{"t":"mistake","p":"Find the mistake: \"She woke up late so she didn't ate breakfast before school.\"","a":"After 'didn't', use the base form: 'she didn't eat breakfast.'"},{"t":"mistake","p":"Find the mistake: \"My parents buyed a new car and we all went for a drive.\"","a":"'Buy' is irregular. The past form is 'bought': 'My parents bought a new car.'"},{"t":"mistake","p":"Find the mistake: \"He studied hard for the test but he didn't passed in the end.\"","a":"After 'didn't', use the base form: 'he didn't pass.'"},{"t":"order","w":["to","I","the","went","yesterday.","park"],"a":"I went to the park yesterday."},{"t":"order","w":["she","Did","her","do","homework?"],"a":"Did she do her homework?"},{"t":"order","w":["didn't","He","to","come","class."],"a":"He didn't come to class."},{"t":"order","w":["We","pizza","ate","for","dinner."],"a":"We ate pizza for dinner."},{"t":"order","w":["you","Did","the","see","film?"],"a":"Did you see the film?"}]},{"slug":"used-to","topic":"Used To","level":"A2","q":[{"t":"match","p":"Complete the sentence: \"I used to live in Paris, ___\"","a":"but now I live in Madrid."},{"t":"match","p":"Complete the sentence: \"She didn't use to like coffee, ___\"","a":"but now she drinks three cups a day."},{"t":"match","p":"Complete the sentence: \"He used to drive to work, ___\"","a":"but now he cycles everywhere."},{"t":"match","p":"Complete the sentence: \"They used to be close friends, ___\"","a":"but they don't talk anymore."},{"t":"match","p":"Complete the sentence: \"We didn't use to have a TV, ___\"","a":"but now we watch it every evening."},{"t":"fill","p":"I _____ (used to / live) in a small town, but now I live in a big city.","a":"used to live"},{"t":"fill","p":"She _____ (didn't use to / like) spicy food as a child.","a":"didn't use to like"},{"t":"fill","p":"They _____ (used to / play) football every Sunday.","a":"used to play"},{"t":"fill","p":"He _____ (didn't use to / have) a beard, but now he does.","a":"didn't use to have"},{"t":"fill","p":"We _____ (used to / walk) to school when we were young.","a":"used to walk"},{"t":"mistake","p":"Find the mistake: \"I use to play tennis every weekend.\"","a":"In positive sentences, always use 'used to' (with -d): 'I used to play'"},{"t":"mistake","p":"Find the mistake: \"She didn't used to eat meat.\"","a":"After 'didn't', there is no -d on 'use': 'She didn't use to eat meat'"},{"t":"mistake","p":"Find the mistake: \"They used to lived near the beach.\"","a":"After 'used to', use the base infinitive: 'They used to live'"},{"t":"mistake","p":"Find the mistake: \"He used to has long hair when he was a student.\"","a":"After 'used to', use the base form: 'He used to have long hair'"},{"t":"mistake","p":"Find the mistake: \"Did she used to work here?\"","a":"In questions with 'did', use 'use to' (no -d): 'Did she use to work here?'"},{"t":"order","w":["used","I","to","school.","cycle","to"],"a":"I used to cycle to school."},{"t":"order","w":["use","to","She","didn't","but","coffee,","now","she","does.","drink"],"a":"She didn't use to drink coffee, but now she does."},{"t":"order","w":["you","Did","to","use","as","here","live","child?","a"],"a":"Did you use to live here as a child?"},{"t":"order","w":["used","They","to","every","play","Sunday.","chess"],"a":"They used to play chess every Sunday."},{"t":"order","w":["use","He","didn't","to","but","vegetables,","now","eat","loves","he","them."],"a":"He didn't use to eat vegetables, but now he loves them."}]},{"slug":"zero-conditional","topic":"Zero Conditional","level":"A2","q":[{"t":"match","p":"Complete the sentence: \"If you heat ice, ___\"","a":"it melts."},{"t":"match","p":"Complete the sentence: \"If a plant doesn't get water, ___\"","a":"it dies."},{"t":"match","p":"Complete the sentence: \"If you press this button, ___\"","a":"the light comes on."},{"t":"match","p":"Complete the sentence: \"If you take this medicine, ___\"","a":"you feel better."},{"t":"match","p":"Complete the sentence: \"If you mix yellow and blue, ___\"","a":"you get green."},{"t":"fill","p":"If you _____ (drop) something, it falls to the ground.","a":"drop"},{"t":"fill","p":"Water _____ (freeze) if the temperature goes below 0°C.","a":"freezes"},{"t":"fill","p":"If you _____ (not eat), you feel hungry.","a":"don't eat"},{"t":"fill","p":"If he _____ (work) late, he always takes a taxi home.","a":"works"},{"t":"fill","p":"Metal _____ (expand) if you heat it.","a":"expands"},{"t":"mistake","p":"Find the mistake: \"If you will mix red and blue, you get purple.\"","a":"No 'will' in zero conditional. Use present simple: 'If you mix'"},{"t":"mistake","p":"Find the mistake: \"If water reaches 100°C, it will boil.\"","a":"Zero conditional uses present simple in both clauses: 'it boils'"},{"t":"mistake","p":"Find the mistake: \"If you freeze water, it will becomes ice.\"","a":"Zero conditional doesn't use 'will'. Correct: 'it becomes ice'"},{"t":"mistake","p":"Find the mistake: \"Peoples feel cold if the temperature drops.\"","a":"'Peoples' is wrong. 'People' is already plural: 'People feel cold'"},{"t":"mistake","p":"Find the mistake: \"If you don't watered plants, they die.\"","a":"After 'don't', use the base form: 'don't water'"},{"t":"order","w":["heat","you","If","melts.","ice,","it","the"],"a":"If you heat the ice, it melts."},{"t":"order","w":["you","mix","If","yellow,","red","get","orange.","and","you"],"a":"If you mix red and yellow, you get orange."},{"t":"order","w":["temperature","the","drops,","water","If","freezes."],"a":"If the temperature drops, water freezes."},{"t":"order","w":["don't","sleep,","tired.","you","you","feel","If"],"a":"If you don't sleep, you feel tired."},{"t":"order","w":["the","If","shines,","warm.","sun","it","feels"],"a":"If the sun shines, it feels warm."}]},{"slug":"articles","topic":"Articles","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"I saw a dog in the park. ___\"","a":"First mention of the dog."},{"t":"match","p":"Complete the sentence: \"The dog ran away quickly. ___\"","a":"We now know which dog."},{"t":"match","p":"Complete the sentence: \"Dogs are loyal animals. ___\"","a":"General statement about dogs."},{"t":"match","p":"Complete the sentence: \"The sun rises in the east. ___\"","a":"There is only one."},{"t":"match","p":"Complete the sentence: \"Stress is bad for your health. ___\"","a":"Uncountable noun, general meaning."},{"t":"fill","p":"She wants to be _____ engineer when she finishes university.","a":"an — Use 'an' before a vowel sound with a singular countable noun at first mention."},{"t":"fill","p":"_____ Pacific Ocean is the largest ocean in the world.","a":"The — Use 'the' when there is only one of something."},{"t":"fill","p":"I heard there is _____ new café near the station.","a":"a — Use 'a' when mentioning a singular countable noun for the first time."},{"t":"fill","p":"_____ water is essential for all living things.","a":" — No article — 'water' is an uncountable noun used in a general sense."},{"t":"fill","p":"_____ teacher who helped me most was Mr. Silva.","a":"The — Use 'the' with a specific singular noun both speaker and listener can identify."},{"t":"mistake","p":"Find the mistake: \"She plays a piano every evening after dinner.\"","a":"Musical instruments take 'the' in general use: 'She plays the piano every evening.'"},{"t":"mistake","p":"Find the mistake: \"I need the advice from a professional.\"","a":"'Advice' is uncountable and used generally here — no article needed: 'I need advice from a professional.'"},{"t":"mistake","p":"Find the mistake: \"The dogs are wonderful pets for families with children.\"","a":"General statements about plural nouns take no article: 'Dogs are wonderful pets for families with children.'"},{"t":"mistake","p":"Find the mistake: \"She is studying to become a doctor at a university in a north.\"","a":"'North' used as a region takes 'the': 'in the north.'"},{"t":"mistake","p":"Find the mistake: \"The honesty is the best quality a person can have.\"","a":"Abstract uncountable nouns used generally take no article: 'Honesty is the best quality a person can have.'"},{"t":"order","w":["is","The","ocean","Pacific","largest","the","ocean."],"a":"The Pacific Ocean is the largest ocean."},{"t":"order","w":["saw","I","elephant","an","at","zoo.","the"],"a":"I saw an elephant at the zoo."},{"t":"order","w":["are","Dogs","animals.","loyal"],"a":"Dogs are loyal animals."},{"t":"order","w":["She","wants","to","be","architect.","an"],"a":"She wants to be an architect."},{"t":"order","w":["The","talked","teacher","to","us","careers.","about"],"a":"The teacher talked to us about careers."}]},{"slug":"defining-relative-clauses","topic":"Defining Relative Clauses","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She's the teacher ___\"","a":"who inspired me to study science."},{"t":"match","p":"Complete the sentence: \"This is the neighbourhood ___\"","a":"where I grew up as a child."},{"t":"match","p":"Complete the sentence: \"I remember the day ___\"","a":"when I got my first smartphone."},{"t":"match","p":"Complete the sentence: \"The 21st-century device ___\"","a":"which does everything is the phone."},{"t":"match","p":"Complete the sentence: \"There are some inventors ___\"","a":"who are creating some pretty amusing things."},{"t":"fill","p":"Give an example of a time _____ you bought something that you were disappointed with.","a":"when — We use 'when' to introduce a relative clause about a time."},{"t":"fill","p":"Name the main places _____ you shop, apart from online.","a":"where — We use 'where' to introduce a relative clause about a place."},{"t":"fill","p":"Think of a person _____ has been very important in the first decades of the 21st century.","a":"who — We use 'who' (or 'that') to introduce a relative clause about a person."},{"t":"fill","p":"The invention _____ changed communication the most is the smartphone.","a":"that — We use 'that' or 'which' to introduce a relative clause about a thing."},{"t":"fill","p":"Do you remember the moment _____ you first used the internet?","a":"when — We use 'when' to introduce a relative clause about a moment in time."},{"t":"mistake","p":"Find the mistake: \"She's the scientist which discovered a new treatment for the disease.\"","a":"Use 'who' or 'that' for people, not 'which'. Correct: 'She's the scientist who discovered…'"},{"t":"mistake","p":"Find the mistake: \"That's the café where I used to meet my friends who she moved abroad.\"","a":"Don't repeat the subject after the relative pronoun. Correct: 'my friends who moved abroad.'"},{"t":"mistake","p":"Find the mistake: \"Which I use most is the app that helps me learn languages.\"","a":"A relative clause cannot start a sentence on its own. Correct: 'The app which I use most is the one that helps me learn languages.'"},{"t":"mistake","p":"Find the mistake: \"I remember the summer when I visited my cousin who it fixed my computer.\"","a":"Don't repeat the subject pronoun after 'who'. Correct: 'my cousin who fixed my computer.'"},{"t":"mistake","p":"Find the mistake: \"The neighbourhood where I grew up is a place which has lots of energy.\"","a":"Use 'which' or 'that' for things/places — not 'who'. Correct: '…a place which has lots of energy.'"},{"t":"order","w":["She's","the","teacher","who","helped","me","most."],"a":"She's the teacher who helped me most."},{"t":"order","w":["Do","you","remember","the","day","when","we","met?"],"a":"Do you remember the day when we met?"},{"t":"order","w":["That's","the","café","where","we","had","our","first","date."],"a":"That's the café where we had our first date."},{"t":"order","w":["The","device","that","does","everything","is","the","phone."],"a":"The device that does everything is the phone."},{"t":"order","w":["There","are","inventors","who","are","creating","amazing","things."],"a":"There are inventors who are creating amazing things."}]},{"slug":"expressing-abilities","topic":"Expressing Abilities","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She can play the piano beautifully, ___\"","a":"but she couldn't read music when she started."},{"t":"match","p":"Complete the sentence: \"After hours of trying, he managed to ___\"","a":"fix the computer before the presentation."},{"t":"match","p":"Complete the sentence: \"I wasn't able to sleep last night ___\"","a":"because it was so hot in the room."},{"t":"match","p":"Complete the sentence: \"They succeeded in finishing ___\"","a":"the project on time despite all the problems."},{"t":"match","p":"Complete the sentence: \"Are you able to drive? ___\"","a":"Yes, but I couldn't drive at all two years ago."},{"t":"fill","p":"My little sister _____ (can) already read and she is only four years old.","a":"can"},{"t":"fill","p":"We _____ (manage to) get tickets for the concert even though it was sold out.","a":"managed to"},{"t":"fill","p":"He _____ (could) run very fast when he was at school, but not anymore.","a":"could"},{"t":"fill","p":"After a lot of hard work, she _____ (succeed in) getting the job she wanted.","a":"succeeded in"},{"t":"fill","p":"I'm not _____ (be able to) come to the meeting on Monday — I have another appointment.","a":"able to"},{"t":"mistake","p":"Find the mistake: \"He studied really hard for months and then he succeeded to pass all his exams.\"","a":"'Succeed' is always followed by 'in' + -ing form: 'he succeeded in passing all his exams.'"},{"t":"mistake","p":"Find the mistake: \"When she was a child, she can swim across the whole pool.\"","a":"For past abilities, use 'could': 'she could swim across the whole pool.'"},{"t":"mistake","p":"Find the mistake: \"After three hours of hard work, they finally managed to completing the task.\"","a":"'Manage to' is followed by the base verb, not -ing: 'they managed to complete the task.'"},{"t":"mistake","p":"Find the mistake: \"My grandfather could speaks five languages and he travelled all over the world.\"","a":"After 'could', use the base form: 'My grandfather could speak five languages.'"},{"t":"mistake","p":"Find the mistake: \"We worked on it all afternoon but in the end we weren't able finish it before dinner.\"","a":"'Be able to' needs 'to' before the verb: 'we weren't able to finish it.'"},{"t":"order","w":["the","She","fix","to","managed","problem."],"a":"She managed to fix the problem."},{"t":"order","w":["could","He","really","when","fast","run","was","young.","he"],"a":"He could run really fast when he was young."},{"t":"order","w":["in","They","the","succeeded","winning","competition."],"a":"They succeeded in winning the competition."},{"t":"order","w":["speak","Can","any","you","other","languages?"],"a":"Can you speak any other languages?"},{"t":"order","w":["able","I","to","finish","the","test","wasn't","in","time."],"a":"I wasn't able to finish the test in time."}]},{"slug":"first-conditional","topic":"First Conditional","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"If she studies harder, ___\"","a":"she will pass her exams."},{"t":"match","p":"Complete the sentence: \"We'll miss the train ___\"","a":"if we don't hurry."},{"t":"match","p":"Complete the sentence: \"If it rains tomorrow, ___\"","a":"I'll bring an umbrella."},{"t":"match","p":"Complete the sentence: \"He won't get the job ___\"","a":"if he arrives late."},{"t":"match","p":"Complete the sentence: \"If you don't eat breakfast, ___\"","a":"you'll feel hungry later."},{"t":"fill","p":"If you _____ (not study), you will fail the test.","a":"don't study"},{"t":"fill","p":"She _____ (be) happy if you call her tonight.","a":"will be"},{"t":"fill","p":"If they _____ (miss) the bus, they will take a taxi.","a":"miss"},{"t":"fill","p":"We won't go to the beach if it _____ (rain).","a":"rains"},{"t":"fill","p":"If he _____ (work) harder, he will get a promotion.","a":"works"},{"t":"mistake","p":"Find the mistake: \"If it will rain, we will cancel the picnic.\"","a":"We don't use 'will' in the if-clause. Correct: 'If it rains,'"},{"t":"mistake","p":"Find the mistake: \"She will passes the exam if she studies.\"","a":"After 'will', use the base form: 'will pass'"},{"t":"mistake","p":"Find the mistake: \"If they don't hurry, they will to miss the bus.\"","a":"After 'will', no 'to': 'will miss'"},{"t":"mistake","p":"Find the mistake: \"We will go to park if it is sunny tomorrow.\"","a":"Needs the article: 'to the park'"},{"t":"mistake","p":"Find the mistake: \"If he will study tonight, he'll do well in the exam.\"","a":"No 'will' in the if-clause. Correct: 'If he studies tonight,'"},{"t":"order","w":["will","If","you","early,","leave","catch","the","train.","you'll"],"a":"If you leave early, you'll catch the train."},{"t":"order","w":["don't","study,","If","you","fail","the","you","will","exam."],"a":"If you don't study, you will fail the exam."},{"t":"order","w":["on","it","rains,","If","we","time.","won't","arrive"],"a":"If it rains, we won't arrive on time."},{"t":"order","w":["she","She","will","if","be","angry","late.","he's"],"a":"She will be angry if he's late."},{"t":"order","w":["late,","If","she","be","arrives","angry.","will","he"],"a":"If she arrives late, he will be angry."}]},{"slug":"future-forms","topic":"Future Forms","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"The concert starts at 8 p.m., ___\"","a":"so don't be late. (timetable)"},{"t":"match","p":"Complete the sentence: \"I'm meeting Anna for coffee tomorrow — ___\"","a":"we arranged it last week. (arrangement)"},{"t":"match","p":"Complete the sentence: \"Look at those clouds! ___\"","a":"It's going to rain. (evidence)"},{"t":"match","p":"Complete the sentence: \"I'll have the chicken, please. ___\"","a":"(spontaneous decision at the moment)"},{"t":"match","p":"Complete the sentence: \"She's going to study medicine. ___\"","a":"She decided last year. (intention)"},{"t":"fill","p":"The train _____ (leave) at 7:30 tomorrow morning. Don't miss it. (timetable)","a":"leaves — Use the simple present for timetables: 'The train leaves at 7:30.'"},{"t":"fill","p":"I _____ (be / go) to the gym tonight. I booked a class last week. (arrangement)","a":"'m going — Use the present progressive for fixed arrangements: 'I'm going to the gym.'"},{"t":"fill","p":"I think she _____ (do) really well in the exam. (general prediction)","a":"will do — Use 'will' for general predictions: 'I think she will do really well.'"},{"t":"fill","p":"He _____ (not come) to the party. He told me he has other plans. (intention)","a":"isn't going to come — Use 'going to' for intentions already decided: 'He isn't going to come.'"},{"t":"fill","p":"_____ they meeting tomorrow? Is it confirmed? (arrangement)","a":"Are — Use the present progressive for fixed arrangements: 'Are they meeting tomorrow?'"},{"t":"mistake","p":"Find the mistake: \"I going to see the doctor tomorrow morning.\"","a":"'Going to' needs the verb 'to be': 'I'm going to see the doctor tomorrow morning.'"},{"t":"mistake","p":"Find the mistake: \"The train wills leave at half past seven.\"","a":"'Will' never takes -s: 'The train will leave at half past seven.'"},{"t":"mistake","p":"Find the mistake: \"She isn't going to comes to the party tonight.\"","a":"After 'going to', use the base verb: 'She isn't going to come to the party.'"},{"t":"mistake","p":"Find the mistake: \"I will to call you when I arrive at the station.\"","a":"After 'will', use the base verb with no 'to': 'I will call you.'"},{"t":"mistake","p":"Find the mistake: \"We're meeting for lunch on Saturday — are you come?\"","a":"For arrangements using the present progressive, use the -ing form: 'are you coming?'"},{"t":"order","w":["going","She's","to","medicine.","study"],"a":"She's going to study medicine."},{"t":"order","w":["will","I","you","call","later."],"a":"I will call you later."},{"t":"order","w":["The","at","starts","show","nine."],"a":"The show starts at nine."},{"t":"order","w":["tomorrow.","having","We're","lunch"],"a":"We're having lunch tomorrow."},{"t":"order","w":["going","It's","to","rain.","not"],"a":"It's not going to rain."}]},{"slug":"future-possibility-certainty","topic":"Future Possibility & Certainty","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"I might stay home tonight — ___\"","a":"I'm not sure yet."},{"t":"match","p":"Complete the sentence: \"She will definitely get the job. ___\"","a":"She is completely certain about it."},{"t":"match","p":"Complete the sentence: \"He probably won't come to the party ___\"","a":"because he is very busy this week."},{"t":"match","p":"Complete the sentence: \"You could find a cheaper flat ___\"","a":"if you look outside the city centre."},{"t":"match","p":"Complete the sentence: \"They will probably move abroad ___\"","a":"but they haven't decided for sure."},{"t":"fill","p":"I'm not sure about my plans — I _____ go to the beach if the weather is good.","a":"might — Use 'might', 'may' or 'could' for something possible but uncertain."},{"t":"fill","p":"She has studied really hard, so she will _____ pass the exam.","a":"definitely — Both 'definitely' and 'probably' work, since there's not enough context."},{"t":"fill","p":"I _____ won't have enough money to travel this summer.","a":"probably — Both 'definitely' and 'probably' work, since there's not enough context."},{"t":"fill","p":"He _____ get a promotion soon — his boss really likes him.","a":"will probably — Use 'will probably' for near certainty in a positive sentence."},{"t":"fill","p":"They _____ move to another city, but they haven't decided yet.","a":"might — Use 'might', 'may' or 'could' when something is just a possibility."},{"t":"mistake","p":"Find the mistake: \"She might to call you later this evening.\"","a":"No 'to' after modal verbs: 'She might call you later.'"},{"t":"mistake","p":"Find the mistake: \"I definitely will pass the exam — I studied all week.\"","a":"'Definitely' comes after 'will': 'I will definitely pass the exam.'"},{"t":"mistake","p":"Find the mistake: \"He will probably not comes to the meeting tomorrow.\"","a":"After 'will', use the base verb: 'He will probably not come' or 'He probably won't come.'"},{"t":"mistake","p":"Find the mistake: \"They could to find a cheaper place if they look online.\"","a":"No 'to' after modal verbs: 'They could find a cheaper place.'"},{"t":"mistake","p":"Find the mistake: \"He works very hard, so he will pass definitely.\"","a":"'Definitely' must come between 'will' and the verb: 'he will definitely pass.'"},{"t":"order","w":["might","I","late.","be"],"a":"I might be late."},{"t":"order","w":["will","She","pass.","definitely"],"a":"She will definitely pass."},{"t":"order","w":["probably","He","come.","won't"],"a":"He probably won't come."},{"t":"order","w":["could","You","job.","a","find","better"],"a":"You could find a better job."},{"t":"order","w":["will","They","move","probably","year.","next"],"a":"They will probably move next year."}]},{"slug":"future-time-clauses","topic":"Future Time Clauses","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"I will call you as soon as ___\"","a":"I get the results."},{"t":"match","p":"Complete the sentence: \"Before she starts university, ___\"","a":"she is going to get a part-time job."},{"t":"match","p":"Complete the sentence: \"He won't stop working until ___\"","a":"he finishes the project."},{"t":"match","p":"Complete the sentence: \"After you take the exam, ___\"","a":"you will feel much better."},{"t":"match","p":"Complete the sentence: \"We will leave when ___\"","a":"everyone is ready."},{"t":"fill","p":"I'll text you as soon as I _____ (get) home.","a":"get — No 'will' in the time clause — use present simple: 'as soon as I get home.'"},{"t":"fill","p":"She won't go out before she _____ (finish) her homework.","a":"finishes — No 'will' in the time clause — use present simple: 'before she finishes.'"},{"t":"fill","p":"After he _____ (graduate), he is going to travel around Asia.","a":"graduates — No 'will' in the time clause — use present simple: 'after he graduates.'"},{"t":"fill","p":"We will wait here until the bus _____  (arrive).","a":"arrives — No 'will' in the time clause — use present simple: 'until the bus arrives.'"},{"t":"fill","p":"When she _____ (be) ready, we can leave.","a":"is — No 'will' in the time clause — use present simple: 'when she is ready.'"},{"t":"mistake","p":"Find the mistake: \"I will call you when I will get to the station.\"","a":"No 'will' in the time clause: 'when I get to the station.'"},{"t":"mistake","p":"Find the mistake: \"As soon as the results will come out, I'll let you know.\"","a":"No 'will' in the time clause: 'as soon as the results come out.'"},{"t":"mistake","p":"Find the mistake: \"She won't leave the office before she will send the email.\"","a":"No 'will' in the time clause: 'before she sends the email.'"},{"t":"mistake","p":"Find the mistake: \"After he will finish the course, he is going to look for a new job.\"","a":"No 'will' in the time clause: 'After he finishes the course.'"},{"t":"mistake","p":"Find the mistake: \"We are going to celebrate when we will hear the good news.\"","a":"No 'will' in the time clause: 'when we hear the good news.'"},{"t":"order","w":["I'll","as","text","you","I","as","soon","land."],"a":"I'll text you as soon as I land."},{"t":"order","w":["she","Before","leaves,","goodbye.","she'll","say"],"a":"Before she leaves, she'll say goodbye."},{"t":"order","w":["won't","He","stop","until","right.","gets","he","it"],"a":"He won't stop until he gets it right."},{"t":"order","w":["the","After","ends,","meeting","go","we'll","home."],"a":"After the meeting ends, we'll go home."},{"t":"order","w":["ready,","When","you're","will","we","start."],"a":"When you're ready, we will start."}]},{"slug":"gerund-phrases","topic":"Gerund Phrases","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"Playing video games ___\"","a":"is a lot of fun."},{"t":"match","p":"Complete the sentence: \"I love ___\"","a":"going to the beach."},{"t":"match","p":"Complete the sentence: \"She is good at ___\"","a":"drawing people's faces."},{"t":"match","p":"Complete the sentence: \"Eating vegetables ___\"","a":"is good for your health."},{"t":"match","p":"Complete the sentence: \"He avoids ___\"","a":"eating meat."},{"t":"fill","p":"_____ (swim) in the sea is really refreshing.","a":"Swimming"},{"t":"fill","p":"I enjoy _____ (cook) at home.","a":"cooking"},{"t":"fill","p":"She is good at _____ (sing).","a":"singing"},{"t":"fill","p":"He avoids _____ (eat) sugar.","a":"eating"},{"t":"fill","p":"_____ (ride) a bike is easy once you learn.","a":"Riding"},{"t":"mistake","p":"Find the mistake: \"I enjoy to play football with my friends.\"","a":"After 'enjoy', use the gerund: 'I enjoy playing football.'"},{"t":"mistake","p":"Find the mistake: \"She avoids to drink coffee in the evening.\"","a":"After 'avoid', use the gerund: 'She avoids drinking coffee.'"},{"t":"mistake","p":"Find the mistake: \"Cook at home is cheaper.\"","a":"When a verb is the subject, use the gerund: 'Cooking at home is cheaper.'"},{"t":"mistake","p":"Find the mistake: \"He is good at play chess.\"","a":"After a preposition, use the gerund: 'He is good at playing chess.'"},{"t":"mistake","p":"Find the mistake: \"My sister is afraid of fly.\"","a":"After a preposition, use the gerund: 'My sister is afraid of flying.'"},{"t":"order","w":["is","Cooking","fun.","at","home"],"a":"Cooking at home is fun."},{"t":"order","w":["loves","She","outside.","running"],"a":"She loves running outside."},{"t":"order","w":["good","He","at","is","drawing."],"a":"He is good at drawing."},{"t":"order","w":["Swimming","healthy.","is"],"a":"Swimming is healthy."},{"t":"order","w":["avoids","She","late.","going","to","bed"],"a":"She avoids going to bed late."}]},{"slug":"infinitives-with-to","topic":"Infinitives with To","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She went to the gym ___\"","a":"to get fit. (purpose)"},{"t":"match","p":"Complete the sentence: \"My doctor advised me ___\"","a":"to eat less sugar. (verb + object + infinitive)"},{"t":"match","p":"Complete the sentence: \"He decided ___\"","a":"to change jobs next year. (verb + infinitive)"},{"t":"match","p":"Complete the sentence: \"It is hard ___\"","a":"to learn a language as an adult. (adjective + infinitive)"},{"t":"match","p":"Complete the sentence: \"She persuaded her friend ___\"","a":"to come to the party with her. (verb + object + infinitive)"},{"t":"fill","p":"I went to the supermarket _____ (buy) some food for dinner.","a":"to buy — Purpose: use the infinitive with 'to' to say why you did something."},{"t":"fill","p":"My teacher encouraged me _____ (apply) for the language course.","a":"to apply — Verb + object + infinitive: 'encouraged me to apply' (encourage + person + to + verb)."},{"t":"fill","p":"She agreed _____ (help) us move to our new flat.","a":"to help — Verb + infinitive: 'agree' is directly followed by 'to + verb'."},{"t":"fill","p":"It is impossible _____ (please) everyone all the time.","a":"to please — Adjective + infinitive: 'impossible to please' (adjective + to + verb)."},{"t":"fill","p":"He warned us _____ (not touch) the hot surface.","a":"not to touch — Verb + object + negative infinitive: 'warned us not to touch' (warn + person + not to + verb)."},{"t":"mistake","p":"Find the mistake: \"She went to the shop for buy some milk.\"","a":"Use the infinitive with 'to' for purpose, not 'for + verb': 'She went to the shop to buy some milk.'"},{"t":"mistake","p":"Find the mistake: \"My parents told me be home by ten.\"","a":"Verb + object + infinitive needs 'to': 'My parents told me to be home by ten.'"},{"t":"mistake","p":"Find the mistake: \"He decided leaving his job after working there for ten years.\"","a":"'Decide' is followed by the infinitive, not the gerund: 'He decided to leave his job.'"},{"t":"mistake","p":"Find the mistake: \"It is very hard understand this grammar rule.\"","a":"Adjective + infinitive needs 'to': 'It is very hard to understand this grammar rule.'"},{"t":"mistake","p":"Find the mistake: \"She persuaded her sister apply for the scholarship.\"","a":"Verb + object + infinitive needs 'to': 'She persuaded her sister to apply for the scholarship.'"},{"t":"order","w":["called","She","me","to","help.","ask","for"],"a":"She called me to ask for help."},{"t":"order","w":["told","My","me","boss","early.","to","arrive"],"a":"My boss told me to arrive early."},{"t":"order","w":["to","She","travel.","decided"],"a":"She decided to travel."},{"t":"order","w":["is","It","hard","communicate.","to"],"a":"It is hard to communicate."},{"t":"order","w":["him","They","to","persuaded","stay."],"a":"They persuaded him to stay."}]},{"slug":"past-perfect","topic":"Past Perfect","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"By the time we arrived at the cinema, ___\"","a":"the film had already started."},{"t":"match","p":"Complete the sentence: \"She was nervous because ___\"","a":"she had never spoken in public before."},{"t":"match","p":"Complete the sentence: \"He couldn't pay for dinner because ___\"","a":"he had left his wallet at home."},{"t":"match","p":"Complete the sentence: \"I recognised her immediately because ___\"","a":"I had seen her photo online."},{"t":"match","p":"Complete the sentence: \"They had lived in Brazil for ten years ___\"","a":"before they moved to Japan."},{"t":"fill","p":"By the time the ambulance arrived, the doctors _____ (already / treat) the patient.","a":"had already treated — 'had already treated' — past perfect for the earlier completed action."},{"t":"fill","p":"She felt sick because she _____ (eat) too much at the party.","a":"had eaten — 'had eaten' — the eating happened before she felt sick."},{"t":"fill","p":"He _____ (never / try) sushi before he visited Japan.","a":"had never tried — 'had never tried' — describes a state up to a past point in time."},{"t":"fill","p":"_____ you already finished the report before the meeting started?","a":"Had — 'Had you already finished?' — question form of the past perfect uses 'Had' at the start."},{"t":"fill","p":"They realised they _____ (take) the wrong train.","a":"had taken — 'had taken' — the mistake was realised later; the action happened first."},{"t":"mistake","p":"Find the mistake: \"When I arrived, she had already went home.\"","a":"Use the past participle: 'gone', not 'went'. → 'she had already gone home.'"},{"t":"mistake","p":"Find the mistake: \"By the time he called, I had fell asleep.\"","a":"The past participle of 'fall' is 'fallen': → 'I had fallen asleep.'"},{"t":"mistake","p":"Find the mistake: \"She hadn't never visited Paris before that trip.\"","a":"Double negative is incorrect. Use either 'hadn't visited' or 'had never visited'."},{"t":"mistake","p":"Find the mistake: \"After they had ate dinner, they watched a film.\"","a":"The past participle of 'eat' is 'eaten': → 'After they had eaten dinner'."},{"t":"mistake","p":"Find the mistake: \"I didn't recognise him because he had cut his hair.\"","a":"Actually this sentence is grammatically correct. Let me replace — see below."},{"t":"order","w":["time","arrived,","the","By","we","had","show","the","started."],"a":"By the time we arrived, the show had started."},{"t":"order","w":["Before","the","exam,","she","had","studied","for","three","hours."],"a":"Before the exam, she had studied for three hours."},{"t":"order","w":["hadn't","He","before","met","her","the","party."],"a":"He hadn't met her before the party."},{"t":"order","w":["the","they","eaten","Had","before","film?","already"],"a":"Had they already eaten before the film?"},{"t":"order","w":["I","realised","I","had","left","my","phone","at","home."],"a":"I realised I had left my phone at home."}]},{"slug":"phrasal-verbs-separable","topic":"Phrasal Verbs (Separable)","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"I looked up the word. ___\"","a":"Separable — noun between verb and particle is optional."},{"t":"match","p":"Complete the sentence: \"I looked it up. ___\"","a":"Separable — pronoun must go between verb and particle."},{"t":"match","p":"Complete the sentence: \"You can rely on her. ___\"","a":"Non-separable — object follows the full phrasal verb."},{"t":"match","p":"Complete the sentence: \"I ran into Alice. ___\"","a":"Non-separable — you cannot put anything in the middle."},{"t":"match","p":"Complete the sentence: \"She came up with a great idea. ___\"","a":"Three-part phrasal verb — always non-separable."},{"t":"fill","p":"I didn't know the word so I _____ (look up / it) in the dictionary.","a":"looked it up — Separable + pronoun: the pronoun 'it' must go between the verb and the particle."},{"t":"fill","p":"She was making _____ (the story / up) — none of it was true.","a":"the story up — Separable + noun: the noun can go before or after the particle. Both positions are correct."},{"t":"fill","p":"You can always _____ (rely on / her) to give a good presentation.","a":"rely on her — Non-separable: the object always follows the full phrasal verb 'rely on'."},{"t":"fill","p":"He _____ (call back / me) as soon as he got the message.","a":"called me back — Separable + pronoun: 'me' must go between the verb and the particle."},{"t":"fill","p":"I _____ (run into / her) at the supermarket yesterday.","a":"ran into her — Non-separable: 'run into' cannot be separated — the object follows the full phrasal verb."},{"t":"mistake","p":"Find the mistake: \"I looked up it in the dictionary instead of guessing.\"","a":"With a pronoun, it must go between verb and particle: 'I looked it up in the dictionary.'"},{"t":"mistake","p":"Find the mistake: \"She called back him as soon as she got the message.\"","a":"With a pronoun, it must go between verb and particle: 'She called him back as soon as she got the message.'"},{"t":"mistake","p":"Find the mistake: \"You can rely her on to give a great presentation.\"","a":"'Rely on' is non-separable — the object always follows the full verb: 'You can rely on her to give a great presentation.'"},{"t":"mistake","p":"Find the mistake: \"Ran she into her old teacher outside the classroom.\"","a":"The subject must come before the verb: 'She ran into her old teacher outside the classroom.'"},{"t":"mistake","p":"Find the mistake: \"I turned off the lights and then I put on it.\"","a":"With a pronoun, it must go between verb and particle: 'I put it on', not 'I put on it'."},{"t":"order","w":["looked","I","up","it","online."],"a":"I looked it up online."},{"t":"order","w":["making","She","was","story","the","up."],"a":"She was making the story up."},{"t":"order","w":["rely","You","on","can","him."],"a":"You can rely on him."},{"t":"order","w":["called","He","back","me","later."],"a":"He called me back later."},{"t":"order","w":["came","She","with","up","idea.","a","great"],"a":"She came up with a great idea."}]},{"slug":"present-perfect-progressive","topic":"Present Perfect Progressive","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She has been studying medicine ___\"","a":"for five years and graduates next summer."},{"t":"match","p":"Complete the sentence: \"You look exhausted — ___\"","a":"have you been working all night?"},{"t":"match","p":"Complete the sentence: \"They have been living in Paris ___\"","a":"since they got married."},{"t":"match","p":"Complete the sentence: \"The kids are covered in mud. ___\"","a":"They have been playing outside."},{"t":"match","p":"Complete the sentence: \"I haven't been sleeping well ___\"","a":"lately and I feel really tired."},{"t":"fill","p":"I _____ (study) for this exam all week and I'm exhausted.","a":"have been studying — Present perfect progressive: have/has + been + verb-ing for ongoing actions."},{"t":"fill","p":"She _____ (work) at that company since she finished university.","a":"has been working — Use 'since' with a starting point: 'has been working since she finished.'"},{"t":"fill","p":"_____ you been learning English for long? How did you start?","a":"Have — Question form: Have/Has + subject + been + verb-ing?"},{"t":"fill","p":"It _____ (rain) all morning — the streets are completely flooded.","a":"has been raining — Recent continuous action explaining a current result."},{"t":"fill","p":"They _____ (not practise) enough and they lost the match.","a":"haven't been practising — Negative form: haven't/hasn't + been + verb-ing."},{"t":"mistake","p":"Find the mistake: \"I have been knowing her since we were children.\"","a":"Stative verbs like 'know' don't use progressive forms: 'I have known her since we were children.'"},{"t":"mistake","p":"Find the mistake: \"She has been working here since two years.\"","a":"Use 'for' with a duration, not 'since': 'She has been working here for two years.'"},{"t":"mistake","p":"Find the mistake: \"He look tired because he has been running all morning.\"","a":"'He' needs 'looks' (third person present simple): 'He looks tired because he has been running.'"},{"t":"mistake","p":"Find the mistake: \"They have been waiting since two hours for the bus.\"","a":"Use 'for' with a duration: 'They have been waiting for two hours.'"},{"t":"mistake","p":"Find the mistake: \"I've been feeling tired lately and I haven't been sleeping since weeks.\"","a":"Use 'for' with a duration, not 'since': 'I haven't been sleeping well for weeks.'"},{"t":"order","w":["studying","I've","been","hours.","for","two"],"a":"I've been studying for two hours."},{"t":"order","w":["Has","been","she","since","here","working","Monday?"],"a":"Has she been working here since Monday?"},{"t":"order","w":["been","They","haven't","practising."],"a":"They haven't been practising."},{"t":"order","w":["raining","been","It","has","morning.","all"],"a":"It has been raining all morning."},{"t":"order","w":["long","How","you","have","waiting?","been"],"a":"How long have you been waiting?"}]},{"slug":"present-perfect-vs-past","topic":"Present Perfect vs Past","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"Have you ever been to New York? ___\"","a":"Yes, I have. I went there two years ago."},{"t":"match","p":"Complete the sentence: \"Did you see the match last night? ___\"","a":"No, I didn't. I went to bed early."},{"t":"match","p":"Complete the sentence: \"Has she tried Indian food before? ___\"","a":"Yes, she has. She had it at a restaurant last month."},{"t":"match","p":"Complete the sentence: \"Did they enjoy the trip? ___\"","a":"Yes, they did. They loved every minute of it."},{"t":"match","p":"Complete the sentence: \"Have your parents met your new teacher? ___\"","a":"Yes, they have. They met him at the school event."},{"t":"fill","p":"I _____ (visit) Rome last summer. It was amazing.","a":"visited"},{"t":"fill","p":"She _____ (never eat) sushi. She wants to try it one day.","a":"has never eaten"},{"t":"fill","p":"We _____ (see) that film last Friday and we loved it.","a":"saw"},{"t":"fill","p":"_____ you ever been to a music festival? I went to one last year!","a":"Have"},{"t":"fill","p":"He _____ (play) really well in the match yesterday.","a":"played"},{"t":"mistake","p":"Find the mistake: \"I have gone to the cinema last Saturday with my friends.\"","a":"'Last Saturday' is a specific past time, so use simple past: 'I went to the cinema last Saturday.'"},{"t":"mistake","p":"Find the mistake: \"She called me yesterday and she has told me the news.\"","a":"Both actions happened at a specific past time (yesterday), so use simple past throughout: 'she told me the news.'"},{"t":"mistake","p":"Find the mistake: \"Did you ever visit Japan? I think you would love it there.\"","a":"'Ever' with a life experience uses present perfect: 'Have you ever visited Japan?'"},{"t":"mistake","p":"Find the mistake: \"We have watched the match last night and it was incredible.\"","a":"'Last night' is a specific past time, so use simple past: 'We watched the match last night.'"},{"t":"mistake","p":"Find the mistake: \"My brother studied hard last week and he has passed all his exams.\"","a":"'Last week' tells us when it happened, so use simple past throughout: 'he passed all his exams.'"},{"t":"order","w":["never","She","has","a","ridden","horse."],"a":"She has never ridden a horse."},{"t":"order","w":["enjoy","Did","you","last","holiday","your","summer?"],"a":"Did you enjoy your holiday last summer?"},{"t":"order","w":["visited","We","that","have","before.","museum"],"a":"We have visited that museum before."},{"t":"order","w":["the","He","competition","won","last","year."],"a":"He won the competition last year."},{"t":"order","w":["ever","Have","seen","you","live","a","concert?"],"a":"Have you ever seen a live concert?"}]},{"slug":"present-perfect","topic":"Present Perfect","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"Have you ever been to another country? ___\"","a":"Yes, I have. I've been to France and Spain."},{"t":"match","p":"Complete the sentence: \"Has she tried Thai food before? ___\"","a":"No, she hasn't. She wants to try it."},{"t":"match","p":"Complete the sentence: \"Have they seen the new museum? ___\"","a":"Yes, they have. They went last Sunday."},{"t":"match","p":"Complete the sentence: \"Has he ever won a competition? ___\"","a":"No, he hasn't. But he has been in two."},{"t":"match","p":"Complete the sentence: \"Have you and your sister met her new teacher? ___\"","a":"Yes, we have. She seems very nice."},{"t":"fill","p":"I _____ (visit) three different countries in my life.","a":"have visited"},{"t":"fill","p":"She _____ (not try) sushi before. It is her first time.","a":"hasn't tried"},{"t":"fill","p":"_____ you ever been to a live concert? I went to one last year.","a":"Have"},{"t":"fill","p":"My brother _____ (win) a football competition at school.","a":"has won"},{"t":"fill","p":"We _____ (not see) that film. Can we watch it tonight?","a":"haven't seen"},{"t":"mistake","p":"Find the mistake: \"I have went to London twice and I loved it.\"","a":"'Go' is irregular. The past participle is 'gone': 'I have gone to London twice.'"},{"t":"mistake","p":"Find the mistake: \"She has visited Paris and she has saw the Eiffel Tower.\"","a":"'See' is irregular. The past participle is 'seen': 'she has seen the Eiffel Tower.'"},{"t":"mistake","p":"Find the mistake: \"My parents have travalled to many places around the world.\"","a":"The correct spelling is 'travelled': 'My parents have travelled to many places.'"},{"t":"mistake","p":"Find the mistake: \"We have watch that show three times and we still love it.\"","a":"The past participle of 'watch' is 'watched': 'We have watched that show three times.'"},{"t":"mistake","p":"Find the mistake: \"Tom has read the book and he have done all the exercises too.\"","a":"'He' takes 'has', not 'have': 'he has done all the exercises too.'"},{"t":"order","w":["never","I","have","ridden","horse.","a"],"a":"I have never ridden a horse."},{"t":"order","w":["Has","tried","she","ever","food?","Japanese"],"a":"Has she ever tried Japanese food?"},{"t":"order","w":["haven't","We","that","seen","film."],"a":"We haven't seen that film."},{"t":"order","w":["He","two","has","visited","countries."],"a":"He has visited two countries."},{"t":"order","w":["Have","been","you","before?","here"],"a":"Have you been here before?"}]},{"slug":"reflexive-pronouns","topic":"Reflexive Pronouns","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She painted the whole apartment ___\"","a":"herself — nobody helped her at all."},{"t":"match","p":"Complete the sentence: \"We really enjoyed ___\"","a":"ourselves at the end-of-year party."},{"t":"match","p":"Complete the sentence: \"Be careful with that knife — ___\"","a":"you might cut yourself."},{"t":"match","p":"Complete the sentence: \"He taught himself to play guitar ___\"","a":"because there was no teacher nearby."},{"t":"match","p":"Complete the sentence: \"The children made ___\"","a":"themselves sandwiches after school."},{"t":"fill","p":"Marco burned _____ when he was cooking dinner last night.","a":"himself — The subject is 'he' (Marco), so the reflexive pronoun is himself."},{"t":"fill","p":"We introduced _____ to the new students on the first day of term.","a":"ourselves — The subject is 'we', so the reflexive pronoun is ourselves."},{"t":"fill","p":"Did you make this whole cake _____, or did someone help you?","a":"yourself — 'Yourself' emphasises that the subject did it alone. Subject = you (singular) → yourself."},{"t":"fill","p":"The little girl dressed _____ without any help from her parents.","a":"herself — The subject is 'she' (the girl), so the reflexive pronoun is herself."},{"t":"fill","p":"I couldn't believe it — I had locked _____ out of the house!","a":"myself — The subject is 'I', so the reflexive pronoun is myself."},{"t":"mistake","p":"Find the mistake: \"My brother fixed the car hisself last weekend.\"","a":"There is no word 'hisself'. The correct reflexive pronoun for 'he' is himself."},{"t":"mistake","p":"Find the mistake: \"We enjoyed ourself at the school carnival last Friday.\"","a":"The subject is 'we', so the reflexive pronoun must be ourselves, not ourself."},{"t":"mistake","p":"Find the mistake: \"She made a cup of tea for hisself after the long meeting.\"","a":"The subject is 'she', so the reflexive pronoun must be herself, not hisself."},{"t":"mistake","p":"Find the mistake: \"Ourselves cleaned the classroom before the teacher arrived.\"","a":"Reflexive pronouns cannot be the subject of a sentence. It should be: 'We cleaned the classroom ourselves…' or 'We cleaned the classroom before the teacher arrived.'"},{"t":"mistake","p":"Find the mistake: \"They built the whole stage theirself before the show.\"","a":"The plural reflexive pronoun for 'they' is themselves, not theirself."},{"t":"order","w":["She","decorated","the","whole","apartment","herself."],"a":"She decorated the whole apartment herself."},{"t":"order","w":["Don't","hurt","yourself","with","those","scissors!"],"a":"Don't hurt yourself with those scissors!"},{"t":"order","w":["We","introduced","ourselves","to","the","new","neighbours."],"a":"We introduced ourselves to the new neighbours."},{"t":"order","w":["She","left","the","house","and","locked","herself","out."],"a":"She left the house and locked herself out."},{"t":"order","w":["Did","they","build","the","whole","stage","themselves?"],"a":"Did they build the whole stage themselves?"}]},{"slug":"reported-speech","topic":"Reported Speech","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"She said she had been ___\"","a":"waiting for over an hour."},{"t":"match","p":"Complete the sentence: \"He told me he would call ___\"","a":"me the next day."},{"t":"match","p":"Complete the sentence: \"They said they couldn't ___\"","a":"come to the party that night."},{"t":"match","p":"Complete the sentence: \"She told us the meeting ___\"","a":"had already finished."},{"t":"match","p":"Complete the sentence: \"He said he had never ___\"","a":"visited that city before."},{"t":"fill","p":"&ldquo;I <strong>am</strong> really tired,&rdquo; she said. → She said she _____ really tired.","a":"was"},{"t":"fill","p":"&ldquo;I <strong>can</strong> speak French,&rdquo; he told me. → He told me he _____ speak French.","a":"could"},{"t":"fill","p":"&ldquo;We <strong>have finished</strong> the report,&rdquo; they said. → They said they _____ the report.","a":"had finished"},{"t":"fill","p":"&ldquo;I <strong>will</strong> help you tomorrow,&rdquo; she told us. → She told us she _____ help us the next day.","a":"would"},{"t":"fill","p":"&ldquo;We <strong>arrived</strong> late,&rdquo; they said. → They said they _____ late.","a":"had arrived"},{"t":"mistake","p":"Find the mistake: \"She said me that she was tired.\"","a":"'Say' doesn't take a person object directly. Use 'told me' or just 'said': 'She told me she was tired.'"},{"t":"mistake","p":"Find the mistake: \"He told that the film was boring.\"","a":"'Tell' always needs a person object. Use 'said': 'He said the film was boring.' or add a person: 'He told us the film was boring.'"},{"t":"mistake","p":"Find the mistake: \"She said she will help me the next day.\"","a":"'Will' shifts to 'would' in reported speech: 'she would help me'"},{"t":"mistake","p":"Find the mistake: \"They told me they have finished the report.\"","a":"Present perfect shifts to past perfect in reported speech: 'they had finished'"},{"t":"mistake","p":"Find the mistake: \"He said that he can come to the meeting.\"","a":"'Can' shifts to 'could' in reported speech: 'that he could come'"},{"t":"order","w":["said","She","was","she","hungry."],"a":"She said she was hungry."},{"t":"order","w":["told","He","me","would","he","next","call","the","day."],"a":"He told me he would call the next day."},{"t":"order","w":["they","said","They","had","the","seen","before.","day","film","the"],"a":"They said they had seen the film the day before."},{"t":"order","w":["me","She","couldn't","told","she","come","party.","to","the"],"a":"She told me she couldn't come to the party."},{"t":"order","w":["said","boss","The","working","were","they","hard."],"a":"The boss said they were working hard."}]},{"slug":"second-conditional","topic":"Second Conditional","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"If I had more free time, ___\"","a":"I would learn to paint."},{"t":"match","p":"Complete the sentence: \"She would be healthier ___\"","a":"if she exercised more."},{"t":"match","p":"Complete the sentence: \"If I knew the answer, ___\"","a":"I would tell you."},{"t":"match","p":"Complete the sentence: \"He could travel abroad ___\"","a":"if he spoke another language."},{"t":"match","p":"Complete the sentence: \"If I were you, ___\"","a":"I wouldn't go out tonight."},{"t":"fill","p":"If I _____ (be) taller, I would play basketball.","a":"were"},{"t":"fill","p":"She would buy a house if she _____ (have) enough money.","a":"had"},{"t":"fill","p":"If they _____ (live) closer, we would see them more often.","a":"lived"},{"t":"fill","p":"He could get a better job if he _____ (speak) English.","a":"spoke"},{"t":"fill","p":"If I _____ (be) you, I would apologise immediately.","a":"were"},{"t":"mistake","p":"Find the mistake: \"If I would have more money, I would travel the world.\"","a":"No 'would' in the if-clause. Use past simple: 'If I had more money'"},{"t":"mistake","p":"Find the mistake: \"She would be happy if she lives near the beach.\"","a":"Second conditional needs past simple in the if-clause: 'if she lived'"},{"t":"mistake","p":"Find the mistake: \"If I were you, I will look for a new job.\"","a":"Second conditional uses 'would', not 'will': 'I would look for a new job'"},{"t":"mistake","p":"Find the mistake: \"They wouldn't be late if they leaved earlier.\"","a":"'Leaved' is wrong. The past simple of 'leave' is 'left': 'if they left earlier'"},{"t":"mistake","p":"Find the mistake: \"If he studyed harder, he would pass his exams.\"","a":"'Studyed' is a spelling mistake. The correct past simple is 'studied'"},{"t":"order","w":["had","If","more","I","money,","travel.","would","I"],"a":"If I had more money, I would travel."},{"t":"order","w":["would","She","if","happier","be","closer.","lived","she"],"a":"She would be happier if she lived closer."},{"t":"order","w":["could","He","get","if","better","a","he","spoke","job","English."],"a":"He could get a better job if he spoke English."},{"t":"order","w":["were","If","you,","I","I","apologise.","would"],"a":"If I were you, I would apologise."},{"t":"order","w":["do","What","you","if","won","would","lottery?","the","you"],"a":"What would you do if you won the lottery?"}]},{"slug":"simple-past-passive","topic":"Simple Past Passive","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"The Eiffel Tower was designed ___\"","a":"by the engineer Gustave Eiffel."},{"t":"match","p":"Complete the sentence: \"The Great Wall of China was built ___\"","a":"by thousands of workers."},{"t":"match","p":"Complete the sentence: \"The famous painting was stolen ___\"","a":"and was never found."},{"t":"match","p":"Complete the sentence: \"The new hospital was opened ___\"","a":"by the president last year."},{"t":"match","p":"Complete the sentence: \"Two windows were broken in the storm ___\"","a":"but nobody was hurt."},{"t":"fill","p":"The car _____ (repair) by a mechanic yesterday.","a":"was repaired — 'The car was repaired' — singular subject, so use 'was' + past participle of 'repair'."},{"t":"fill","p":"All the tickets _____ (sell) before midday.","a":"were sold — 'All the tickets were sold' — plural subject, so use 'were' + past participle of 'sell'."},{"t":"fill","p":"The letter _____ (not / send) on time.","a":"wasn't sent — 'The letter wasn't sent' — negative: 'was not' + past participle."},{"t":"fill","p":"_____ the report _____ (finish) before the meeting?","a":"Was / finished — 'Was the report finished?' — question form: 'Was' + subject + past participle."},{"t":"fill","p":"Three students _____ (choose) to represent the school.","a":"were chosen — 'Three students were chosen' — plural subject, so use 'were' + past participle of 'choose'."},{"t":"mistake","p":"Find the mistake: \"The homework was gave back by the teacher.\"","a":"Use the past participle: 'was given back', not 'was gave back'."},{"t":"mistake","p":"Find the mistake: \"The windows were broke during the storm.\"","a":"The past participle of 'break' is 'broken': 'were broken'."},{"t":"mistake","p":"Find the mistake: \"The emails was sent early in the morning.\"","a":"'Emails' is plural, so use 'were': 'The emails were sent'."},{"t":"mistake","p":"Find the mistake: \"The trophy was win by a young student.\"","a":"Use the past participle: 'won', not 'win': 'was won by'."},{"t":"mistake","p":"Find the mistake: \"Was the package delivered by the postman yesterday?\"","a":"Actually this sentence is correct — 'by the postman' is the agent and 'delivered' is the right past participle. Wait — let me rephrase: Were the packages delivered by the postman yesterday is correct; the original has a different issue. The mistake is none — see replacement below."},{"t":"order","w":["built","The","was","by","bridge","engineers.","local"],"a":"The bridge was built by local engineers."},{"t":"order","w":["wasn't","The","on","match","broadcast","TV."],"a":"The match wasn't broadcast on TV."},{"t":"order","w":["stolen","Was","museum?","the","from","painting","the"],"a":"Was the painting stolen from the museum?"},{"t":"order","w":["the","sent","were","All","invitations","week.","last"],"a":"All the invitations were sent last week."},{"t":"order","w":["the","The","president.","school","opened","new","was","by"],"a":"The new school was opened by the president."}]},{"slug":"simple-present-passive","topic":"Simple Present Passive","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"English is spoken ___\"","a":"all over the world."},{"t":"match","p":"Complete the sentence: \"The office is cleaned ___\"","a":"by a team every morning."},{"t":"match","p":"Complete the sentence: \"These phones are made ___\"","a":"in factories in Asia."},{"t":"match","p":"Complete the sentence: \"The rules are explained ___\"","a":"at the beginning of every class."},{"t":"match","p":"Complete the sentence: \"Fresh bread is baked ___\"","a":"here every day."},{"t":"fill","p":"Spanish _____ (speak) by over 500 million people around the world.","a":"is spoken — Passive: is/are + past participle. 'Spanish' is singular → 'is spoken'."},{"t":"fill","p":"The packages _____ (deliver) every Tuesday and Thursday.","a":"are delivered — Passive: 'the packages' is plural → 'are delivered'."},{"t":"fill","p":"These products _____ (not sell) in supermarkets — you can only buy them online.","a":"are not sold — Negative passive: is/are + not + past participle. 'These products' is plural → 'are not sold'."},{"t":"fill","p":"_____ these shoes made in Italy or somewhere else?","a":"Are — Question passive: Are/Is + subject + past participle? 'These shoes' is plural → 'Are'."},{"t":"fill","p":"The results _____ (announce) at the end of the ceremony every year.","a":"are announced — Passive: 'the results' is plural → 'are announced'."},{"t":"mistake","p":"Find the mistake: \"English is speak in many countries around the world.\"","a":"Use the past participle, not the base form: 'English is spoken in many countries.'"},{"t":"mistake","p":"Find the mistake: \"The product is maked by hand in a small workshop.\"","a":"'Make' is irregular — the past participle is 'made': 'The product is made by hand.'"},{"t":"mistake","p":"Find the mistake: \"Fresh coffee are served here every morning before nine.\"","a":"'Fresh coffee' is uncountable/singular → use 'is': 'Fresh coffee is served here every morning.'"},{"t":"mistake","p":"Find the mistake: \"These cars is built in a factory by hundreds of workers.\"","a":"'These cars' is plural → use 'are': 'These cars are built in a factory.'"},{"t":"mistake","p":"Find the mistake: \"The exam papers are collected by the teacher and then keeped in a safe place.\"","a":"'Keep' is irregular — the past participle is 'kept': 'and then kept in a safe place.'"},{"t":"order","w":["spoken","English","here.","is"],"a":"English is spoken here."},{"t":"order","w":["The","cleaned","office","every","is","day."],"a":"The office is cleaned every day."},{"t":"order","w":["Are","sold","these","here?","products"],"a":"Are these products sold here?"},{"t":"order","w":["sold","Tickets","at","are","not","the","door."],"a":"Tickets are not sold at the door."},{"t":"order","w":["made","This","by","is","cheese","hand."],"a":"This cheese is made by hand."}]},{"slug":"so-such","topic":"So / Such","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"The film was so boring ___\"","a":"that I fell asleep."},{"t":"match","p":"Complete the sentence: \"She is such a talented singer ___\"","a":"that everyone stood up to applaud."},{"t":"match","p":"Complete the sentence: \"The food was so spicy ___\"","a":"that I had to drink three glasses of water."},{"t":"match","p":"Complete the sentence: \"It was such terrible weather ___\"","a":"that we stayed indoors all day."},{"t":"match","p":"Complete the sentence: \"They spoke so quietly ___\"","a":"that nobody could hear them."},{"t":"fill","p":"It was _____ a hot day that we went swimming.","a":"such"},{"t":"fill","p":"He speaks _____ fast that I can't understand him.","a":"so"},{"t":"fill","p":"They are _____ good friends that they tell each other everything.","a":"such"},{"t":"fill","p":"She was _____ tired that she fell asleep on the sofa.","a":"so"},{"t":"fill","p":"It was _____ bad news that she started to cry.","a":"such"},{"t":"mistake","p":"Find the mistake: \"It was so a difficult exam that half the class failed.\"","a":"'so' cannot go before 'a'. Use 'such a': 'It was such a difficult exam'"},{"t":"mistake","p":"Find the mistake: \"She is such beautiful that everyone looks at her.\"","a":"Before an adjective alone, use 'so': 'She is so beautiful'"},{"t":"mistake","p":"Find the mistake: \"The weather was so cold weather that we stayed inside.\"","a":"Don't repeat the noun after 'so + adjective'. Use 'such cold weather' or just 'so cold'"},{"t":"mistake","p":"Find the mistake: \"He told such funny jokes and everyone laughed.\"","a":"Use 'that' not 'and' for the result clause: 'such funny jokes that everyone laughed'"},{"t":"mistake","p":"Find the mistake: \"They drove so a long way that they were exhausted.\"","a":"Before a noun phrase, use 'such a': 'such a long way'"},{"t":"order","w":["She","so","quickly","speaks","follow.","that","impossible","it's","to"],"a":"She speaks so quickly that it's impossible to follow."},{"t":"order","w":["It","kind","was","a","such","that","gesture","moved.","everyone","was"],"a":"It was such a kind gesture that everyone was moved."},{"t":"order","w":["so","noisy","was","The","party","sleep.","couldn't","that","we"],"a":"The party was so noisy that we couldn't sleep."},{"t":"order","w":["They","terrible","such","gave","a","that","performance","left.","all"],"a":"They gave such a terrible performance that all left."},{"t":"order","w":["He","fast","so","reads","he","book","that","a","day.","can","in","a"],"a":"He reads so fast that he can read a book in a day."}]},{"slug":"tag-questions","topic":"Tag Questions","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"You are a student, ___\"","a":"aren't you?"},{"t":"match","p":"Complete the sentence: \"She can speak French, ___\"","a":"can't she?"},{"t":"match","p":"Complete the sentence: \"They don't eat meat, ___\"","a":"do they?"},{"t":"match","p":"Complete the sentence: \"He will be here soon, ___\"","a":"won't he?"},{"t":"match","p":"Complete the sentence: \"It isn't very warm today, ___\"","a":"is it?"},{"t":"fill","p":"You like chocolate, _____?","a":"don't you"},{"t":"fill","p":"She is your sister, _____?","a":"isn't she"},{"t":"fill","p":"They can play the guitar, _____?","a":"can't they"},{"t":"fill","p":"He doesn't smoke, _____?","a":"does he"},{"t":"fill","p":"You will call me later, _____?","a":"won't you"},{"t":"mistake","p":"Find the mistake: \"She is a nurse, isn't it?\"","a":"The tag pronoun must match the subject. 'She' → 'isn't she?'"},{"t":"mistake","p":"Find the mistake: \"They likes football, don't they?\"","a":"'They' takes the base form — no -s: 'They like football, don't they?'"},{"t":"mistake","p":"Find the mistake: \"You aren't ready, are I?\"","a":"The tag pronoun must match the subject. 'You' → 'are you?'"},{"t":"mistake","p":"Find the mistake: \"They doesn't like fish, do they?\"","a":"'They' takes 'don't', not 'doesn't': 'They don't like fish, do they?'"},{"t":"mistake","p":"Find the mistake: \"You speak English, don't he?\"","a":"The tag pronoun must match the subject. 'You' → 'don't you?'"},{"t":"order","w":["speaks","She","Spanish,","she?","doesn't"],"a":"She speaks Spanish, doesn't she?"},{"t":"order","w":["your","He's","friend,","he?","isn't"],"a":"He's your friend, isn't he?"},{"t":"order","w":["isn't","cold,","It's","it?"],"a":"It's cold, isn't it?"},{"t":"order","w":["like","You","don't","coffee,","you?"],"a":"You like coffee, don't you?"},{"t":"order","w":["late,","be","She'll","she?","won't"],"a":"She'll be late, won't she?"}]},{"slug":"verb-gerund-infinitive","topic":"Verb + Gerund/Infinitive","level":"B1","q":[{"t":"match","p":"Complete the sentence: \"I hate ___\"","a":"waiting in queues."},{"t":"match","p":"Complete the sentence: \"She'd like ___\"","a":"to visit Japan one day."},{"t":"match","p":"Complete the sentence: \"They'd rather ___\"","a":"stay home tonight."},{"t":"match","p":"Complete the sentence: \"He'd prefer ___\"","a":"to drive than take the bus."},{"t":"match","p":"Complete the sentence: \"We love ___\"","a":"cooking together at weekends."},{"t":"fill","p":"I'd like _____ (meet) your brother. He sounds really interesting.","a":"to meet"},{"t":"fill","p":"She'd rather _____ (stay) home than go to the party.","a":"stay"},{"t":"fill","p":"He hates _____ (wait) for people who are late.","a":"waiting"},{"t":"fill","p":"They'd prefer _____ (eat) at home tonight.","a":"to eat"},{"t":"fill","p":"I'd rather _____ (watch) a comedy than a horror film.","a":"watch"},{"t":"mistake","p":"Find the mistake: \"I'd like going to the beach this weekend.\"","a":"'Would like' is always followed by the infinitive: 'I'd like to go to the beach.'"},{"t":"mistake","p":"Find the mistake: \"She'd prefer staying at a hotel rather than camping.\"","a":"'Would prefer' is always followed by the infinitive: 'She'd prefer to stay at a hotel.'"},{"t":"mistake","p":"Find the mistake: \"They'd rather to see a comedy than a drama.\"","a":"'Would rather' is followed by the base verb with no 'to': 'They'd rather see a comedy.'"},{"t":"mistake","p":"Find the mistake: \"Hates she cooking and prefers to eat out.\"","a":"The subject must come before the verb: 'She hates cooking and prefers to eat out.'"},{"t":"mistake","p":"Find the mistake: \"On weekends I'd rather stay home and would like watch a film.\"","a":"'Would like' is followed by the infinitive: 'would like to watch a film.'"},{"t":"order","w":["to","I'd","go","like","cinema.","the","to"],"a":"I'd like to go to the cinema."},{"t":"order","w":["rather","She'd","tea.","drink"],"a":"She'd rather drink tea."},{"t":"order","w":["prefer","He'd","by","to","travel","train."],"a":"He'd prefer to travel by train."},{"t":"order","w":["loves","She","outside.","running"],"a":"She loves running outside."},{"t":"order","w":["rather","I'd","action","watch","film.","an"],"a":"I'd rather watch an action film."}]},{"slug":"third-conditional","topic":"Third Conditional","level":"B2","q":[{"t":"match","p":"Complete the sentence: \"If she had left earlier, ___\"","a":"she wouldn't have missed the train."},{"t":"match","p":"Complete the sentence: \"If they had trained harder, ___\"","a":"we would have won the match."},{"t":"match","p":"Complete the sentence: \"If I had known you were coming, ___\"","a":"I would have cooked dinner."},{"t":"match","p":"Complete the sentence: \"If he had prepared better, ___\"","a":"he could have got the job."},{"t":"match","p":"Complete the sentence: \"If we hadn't taken a wrong turn, ___\"","a":"we would have arrived on time."},{"t":"fill","p":"If I _____ (study) harder, I would have passed the exam.","a":"had studied"},{"t":"fill","p":"She would have got the job if she _____ (arrive) on time.","a":"had arrived"},{"t":"fill","p":"If they _____ (not take) the wrong road, they would have arrived earlier.","a":"hadn't taken"},{"t":"fill","p":"He _____ (not lose) his wallet if he had been more careful.","a":"wouldn't have lost"},{"t":"fill","p":"If we _____ (leave) at 7, we would have caught the flight.","a":"had left"},{"t":"mistake","p":"Find the mistake: \"If I would have studied, I would have passed.\"","a":"No 'would have' in the if-clause. Use past perfect: 'If I had studied'"},{"t":"mistake","p":"Find the mistake: \"She would have come if she knew about the party.\"","a":"Third conditional needs past perfect in the if-clause: 'if she had known'"},{"t":"mistake","p":"Find the mistake: \"If he had worked harder, he would passed the exam.\"","a":"After 'would' in third conditional: 'would have passed'"},{"t":"mistake","p":"Find the mistake: \"We wouldn't have been late if we had leaved on time.\"","a":"'Leaved' is wrong. The past participle of 'leave' is 'left'"},{"t":"mistake","p":"Find the mistake: \"If they had listened, they would have understanded.\"","a":"'Understanded' is not a word. The past participle is 'understood'"},{"t":"order","w":["studied,","had","If","I","passed.","have","would","I"],"a":"If I had studied, I would have passed."},{"t":"order","w":["had","She","have","if","earlier.","left","would","she","arrived"],"a":"She would have arrived if she had left earlier."},{"t":"order","w":["hadn't","rained,","it","If","have","we","would","picnic.","had","a"],"a":"If it hadn't rained, we would have had a picnic."},{"t":"order","w":["map,","got","used","If","the","we","lost.","have","wouldn't","we","had"],"a":"If we had used the map, we wouldn't have got lost."},{"t":"order","w":["could","he","If","harder,","have","trained","won.","had","he"],"a":"If he had trained harder, he could have won."}]}];
+
+/* ---------- audio ---------- */
+let SOUND = JSON.parse(localStorage.getItem('popquiz.sound') ?? 'true');
+let actx=null;
+function beep(freqs, dur=.12, type='sine', gain=.14){
+  if(!SOUND) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    let t=actx.currentTime;
+    (Array.isArray(freqs)?freqs:[freqs]).forEach((f,i)=>{
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type=type; o.frequency.value=f;
+      o.connect(g); g.connect(actx.destination);
+      const s=t+i*dur*.85;
+      g.gain.setValueAtTime(0,s);
+      g.gain.linearRampToValueAtTime(gain,s+.012);
+      g.gain.exponentialRampToValueAtTime(.0001,s+dur);
+      o.start(s); o.stop(s+dur);
+    });
+  }catch(e){}
+}
+const sfx={
+  good:()=>beep([660,880],.16,'sine',.13),
+  bad:()=>beep([200,150],.2,'sawtooth',.09),
+  reveal:()=>beep([520],.14,'triangle',.1),
+  next:()=>beep([440],.07,'sine',.07),
+  done:()=>beep([523,659,784,1046],.18,'triangle',.13),
+};
+
+/* ---------- state ---------- */
+const LEVELS=['A1','A2','B1','B2'];
+const TYPES=[['match','Match'],['fill','Fill gap'],['mistake','Find mistake'],['order','Unscramble']];
+const LENS=[5,10,15,20,'All'];
+const TEAM_PALETTE=['#ffcf5c','#7cd6c0','#8fb8ff','#f2a35c','#c69cff','#f2708c'];
+const saved = JSON.parse(localStorage.getItem('popquiz.config') || '{}');
+const state = {
+  mode: saved.mode || 'classroom',
+  levels: new Set(saved.levels || ['A1','A2','B1','B2']),
+  types: new Set(saved.types || ['match','fill','mistake','order']),
+  topics: new Set(saved.topics || BANK.map(t=>t.slug)),
+  len: saved.len ?? 10,
+  teamCount: saved.teamCount || 3,
+  teamNames: saved.teamNames || ['Team 1','Team 2','Team 3','Team 4','Team 5','Team 6'],
+  quiz:[], i:0, teams:[], soloCorrect:0, soloAnswered:0, soloByType:{},
+};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const MATCH_POOL=(()=>{const byTopic={},byLevel={},all=[];
+  BANK.forEach(t=>t.q.forEach(q=>{if(q.t==='match'){
+    (byTopic[t.topic]=byTopic[t.topic]||[]).push(q.a);
+    (byLevel[t.level]=byLevel[t.level]||[]).push(q.a); all.push(q.a);}}));
+  return {byTopic,byLevel,all};})();
+function buildOptions(q){
+  const correct=q.a, picks=[];
+  for(const tier of [MATCH_POOL.byTopic[q.topic]||[],MATCH_POOL.byLevel[q.level]||[],MATCH_POOL.all]){
+    for(const a of shuffle(tier)){if(a!==correct&&!picks.includes(a)){picks.push(a);if(picks.length>=3)break;}}
+    if(picks.length>=3)break;
+  }
+  return shuffle([{text:correct,correct:true},...picks.map(a=>({text:a,correct:false}))]);
+}
+function norm(s){
+  return (s||'').toLowerCase().trim()
+    .replace(/[’‘]/g,"'").replace(/[“”]/g,'"')
+    .replace(/[.,!?;:]+$/,'').replace(/\s+/g,' ');
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));$('#'+id).classList.add('on');
+  $('#homeBtn').style.display = id==='setup' ? 'none':'inline-block';}
+
+/* ---------- build setup UI ---------- */
+function chip(label,attrs=''){return `<div class="chip" ${attrs}>${label}</div>`;}
+function renderChips(){
+  $('#levelChips').innerHTML = LEVELS.map(l=>`<div class="chip lv ${state.levels.has(l)?'on':''}" data-lv="${l}">${l}</div>`).join('');
+  $('#typeChips').innerHTML = TYPES.map(([k,l])=>`<div class="chip ${state.types.has(k)?'on':''}" data-type="${k}">${l}</div>`).join('');
+  $('#lenChips').innerHTML = LENS.map(n=>`<div class="chip ${state.len===n?'on':''}" data-len="${n}">${n}</div>`).join('');
+  renderTopics();
+  renderTeamCfg();
+}
+function renderTopics(){
+  const inView = BANK.filter(t=>state.levels.has(t.level));
+  $('#topicChips').innerHTML = inView.map(t=>
+    `<div class="chip ${state.topics.has(t.slug)?'on':''}" data-topic="${t.slug}" title="${t.level}">${esc(t.topic)} <span style="opacity:.6;font-size:11px">${t.level}</span></div>`
+  ).join('') || '<span style="color:var(--dim);font-size:14px">Select a level first.</span>';
+  const sel = inView.filter(t=>state.topics.has(t.slug)).length;
+  $('#topicSummary').textContent = `${sel}/${inView.length} in view`;
+}
+function renderTeamCfg(){
+  $('#teamsCfg').style.display = state.mode==='classroom' ? 'block':'none';
+  document.querySelectorAll('.modebtn').forEach(b=>b.classList.toggle('on', b.dataset.mode===state.mode));
+  $('#teamCountChips').innerHTML = [2,3,4,5,6].map(n=>`<div class="chip ${state.teamCount===n?'on':''}" data-tc="${n}">${n} teams</div>`).join('');
+  $('#teamNames').innerHTML = Array.from({length:state.teamCount},(_,i)=>
+    `<input data-ti="${i}" value="${esc(state.teamNames[i]||('Team '+(i+1)))}" placeholder="Team ${i+1}">`).join('');
+}
+function pool(){
+  return BANK.filter(t=>state.levels.has(t.level)&&state.topics.has(t.slug))
+    .flatMap(t=>t.q.filter(q=>state.types.has(q.t)).map(q=>({...q,topic:t.topic,level:t.level})));
+}
+function updateCount(){
+  const p=pool().length;
+  const use = state.len==='All'?p:Math.min(state.len,p);
+  $('#poolCount').textContent=p; $('#useCount').textContent=use;
+  $('#generateBtn').disabled = use===0;
+}
+function persist(){
+  localStorage.setItem('popquiz.config', JSON.stringify({
+    mode:state.mode, levels:[...state.levels], types:[...state.types],
+    topics:[...state.topics], len:state.len, teamCount:state.teamCount, teamNames:state.teamNames
+  }));
+}
+
+/* setup events */
+$('#levelChips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;
+  const l=c.dataset.lv; state.levels.has(l)?state.levels.delete(l):state.levels.add(l);
+  if(state.levels.size===0)state.levels.add(l);
+  BANK.forEach(t=>{if(!state.levels.has(t.level))state.topics.delete(t.slug);else if(!saved._touched)state.topics.add(t.slug);});
+  renderChips();updateCount();persist();sfx.next();};
+$('#typeChips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;
+  const k=c.dataset.type; state.types.has(k)?state.types.delete(k):state.types.add(k);
+  if(state.types.size===0)state.types.add(k);
+  renderChips();updateCount();persist();sfx.next();};
+$('#lenChips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;
+  let v=c.dataset.len; state.len = v==='All'?'All':+v; renderChips();updateCount();persist();sfx.next();};
+$('#topicChips').onclick=e=>{const c=e.target.closest('.chip');if(!c||!c.dataset.topic)return;
+  const s=c.dataset.topic; state.topics.has(s)?state.topics.delete(s):state.topics.add(s);
+  saved._touched=true; renderTopics();updateCount();persist();};
+$('#topicAll').onclick=()=>{BANK.filter(t=>state.levels.has(t.level)).forEach(t=>state.topics.add(t.slug));renderTopics();updateCount();persist();};
+$('#topicNone').onclick=()=>{BANK.filter(t=>state.levels.has(t.level)).forEach(t=>state.topics.delete(t.slug));renderTopics();updateCount();persist();};
+document.querySelector('.moderow').onclick=e=>{const b=e.target.closest('.modebtn');if(!b)return;
+  state.mode=b.dataset.mode;renderTeamCfg();persist();sfx.next();};
+$('#teamCountChips').onclick=e=>{const c=e.target.closest('.chip');if(!c)return;
+  state.teamCount=+c.dataset.tc;renderTeamCfg();persist();};
+$('#teamNames').oninput=e=>{const i=+e.target.dataset.ti;state.teamNames[i]=e.target.value;persist();};
+
+/* ---------- generate ---------- */
+$('#generateBtn').onclick=()=>{
+  const p=shuffle(pool());
+  const n = state.len==='All'?p.length:Math.min(state.len,p.length);
+  state.quiz=p.slice(0,n); state.i=0;
+  state.quiz.forEach(q=>{ if(q.t==='match') q._opts=buildOptions(q); });
+  if(state.mode==='classroom'){
+    state.teams=Array.from({length:state.teamCount},(_,i)=>({name:state.teamNames[i]||('Team '+(i+1)),score:0}));
+    showView('classroom'); renderClassroom();
+  }else{
+    state.soloCorrect=0;state.soloAnswered=0;state.soloByType={};
+    showView('solo'); renderSolo();
+  }
+  sfx.next();
+};
+$('#homeBtn').onclick=()=>{showView('setup');renderChips();updateCount();};
+
+/* ---------- render prompt body ---------- */
+const TYPELABEL={match:'Complete it',fill:'Fill the gap',mistake:'Find the mistake',order:'Put it in order'};
+function promptHTML(q){
+  if(q.t==='order'){
+    return `<div class="chipwords">${shuffle(q.w).map(w=>`<span>${esc(w)}</span>`).join('')}</div>`;
+  }
+  let p=q.p;
+  if(q.t==='fill') p=p.replace(/_{2,}/g,'<span class="blank">?</span>');
+  return p;
+}
+
+/* ---------- classroom ---------- */
+function renderClassroom(){
+  const q=state.quiz[state.i];
+  $('#clProgress').style.width=((state.i)/state.quiz.length*100)+'%';
+  $('#clNum').textContent=`Q ${state.i+1} / ${state.quiz.length}`;
+  $('#clBadge').textContent=q.level; $('#clBadge').className='badge '+q.level;
+  $('#clTopic').textContent=q.topic;
+  $('#clType').textContent=TYPELABEL[q.t];
+  $('#clPrompt').innerHTML=promptHTML(q);
+  const clOpts=$('#clOpts');
+  if(q.t==='match'){
+    clOpts.style.display='flex'; q._pick=null;
+    clOpts.innerHTML=q._opts.map((o,i)=>`<button class="opt" data-i="${i}"><span class="key">${'ABCD'[i]}</span><span>${esc(o.text)}</span></button>`).join('');
+  }else{ clOpts.style.display='none'; clOpts.innerHTML=''; }
+  $('#clAnswer').classList.remove('show');
+  $('#clAnswerText').innerHTML=q.a;
+  $('#clReveal').style.display='inline-block';
+  $('#clReveal').textContent = q.t==='match' ? 'Reveal correct option':'Reveal answer';
+  $('#clPrev').disabled = state.i===0;
+  $('#clNext').textContent = state.i===state.quiz.length-1 ? 'Finish →':'Next question →';
+  renderScores();
+}
+function renderScores(){
+  $('#clScores').innerHTML=state.teams.map((t,i)=>`
+    <div class="team">
+      <div class="nm"><span class="dotc" style="background:${TEAM_PALETTE[i]}"></span>${esc(t.name)}</div>
+      <div class="sc">${t.score}</div>
+      <div class="pm"><button class="minus" data-t="${i}" data-d="-1">−</button><button class="plus" data-t="${i}" data-d="1">+</button></div>
+    </div>`).join('');
+}
+$('#clScores').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  const t=+b.dataset.t,d=+b.dataset.d; state.teams[t].score=Math.max(0,state.teams[t].score+d);
+  renderScores(); d>0?sfx.good():sfx.next();};
+$('#clOpts').onclick=e=>{const b=e.target.closest('.opt');if(!b||b.classList.contains('locked'))return;
+  [...$('#clOpts').children].forEach(x=>x.classList.remove('pick'));
+  b.classList.add('pick'); state.quiz[state.i]._pick=+b.dataset.i; sfx.next();};
+$('#clReveal').onclick=()=>{const q=state.quiz[state.i];
+  if(q.t==='match'){[...$('#clOpts').children].forEach((el,i)=>{el.classList.add('locked');
+    if(q._opts[i].correct)el.classList.add('correct'); else if(q._pick===i)el.classList.add('wrong');});}
+  else{$('#clAnswer').classList.add('show');}
+  $('#clReveal').style.display='none';sfx.reveal();};
+$('#clNext').onclick=()=>{if(state.i<state.quiz.length-1){state.i++;renderClassroom();sfx.next();}else finishClassroom();};
+$('#clPrev').onclick=()=>{if(state.i>0){state.i--;renderClassroom();}};
+$('#clEnd').onclick=finishClassroom;
+function finishClassroom(){
+  sfx.done();
+  const ranked=state.teams.map((t,i)=>({...t,c:TEAM_PALETTE[i]})).sort((a,b)=>b.score-a.score);
+  const max=ranked[0].score;
+  $('#resultsCard').innerHTML=`
+    <h2>Final scoreboard</h2>
+    <div class="podium">${ranked.map(t=>`
+      <div class="pod ${t.score===max&&max>0?'first':''}">
+        ${t.score===max&&max>0?'<div class="crown">👑</div>':''}
+        <div class="nm"><span class="dotc" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${t.c};margin-right:6px"></span>${esc(t.name)}</div>
+        <div class="sc">${t.score}</div>
+      </div>`).join('')}</div>
+    <div class="controls" style="justify-content:center">
+      <button class="btn" onclick="restart()">↺ New quiz</button>
+      <button class="btn primary" onclick="replaySame()">Play same set again</button>
+    </div>`;
+  showView('results');
+}
+
+/* ---------- solo ---------- */
+function autoGradable(q){return q.t==='fill'||q.t==='order';}
+function renderSolo(){
+  const q=state.quiz[state.i];
+  $('#soProgress').style.width=((state.i)/state.quiz.length*100)+'%';
+  $('#soNum').textContent=`Q ${state.i+1}/${state.quiz.length}`;
+  $('#soScore').textContent=`Score ${state.soloCorrect}/${state.soloAnswered}`;
+  $('#soBadge').textContent=q.level; $('#soBadge').className='badge '+q.level;
+  $('#soTopic').textContent=q.topic;
+  $('#soType').textContent=TYPELABEL[q.t];
+  $('#soPrompt').innerHTML=promptHTML(q);
+  $('#soAnswer').classList.remove('show');
+  $('#soAnswerText').innerHTML=q.a;
+  $('#soReveal').innerHTML='';
+  $('#soSelfmark').style.display='none';
+  $('#soNext').disabled=true;
+  $('#soNext').textContent = state.i===state.quiz.length-1 ? 'See results →':'Next →';
+  const soOpts=$('#soOpts');
+  if(q.t==='match'){
+    $('#soInputWrap').style.display='none';
+    $('#soCheck').style.display='none';
+    soOpts.style.display='flex'; soOpts.dataset.locked='';
+    soOpts.innerHTML=q._opts.map((o,i)=>`<button class="opt" data-i="${i}"><span class="key">${'ABCD'[i]}</span><span>${esc(o.text)}</span></button>`).join('');
+  }else{
+    soOpts.style.display='none'; soOpts.innerHTML='';
+    $('#soInputWrap').style.display='flex';
+    $('#soCheck').style.display='inline-block';
+    const inp=$('#soInput');
+    inp.value=''; inp.className=''; inp.disabled=false;
+    inp.placeholder = q.t==='order' ? 'Type the full sentence…' : (autoGradable(q)?'Type your answer…':'Type your answer (optional)…');
+    $('#soCheck').disabled=false; $('#soCheck').textContent= autoGradable(q)?'Check':'Reveal answer';
+    setTimeout(()=>$('#soInput').focus(),40);
+  }
+}
+function tallyType(q,ok){state.soloByType[q.t]=state.soloByType[q.t]||{c:0,n:0};state.soloByType[q.t].n++;if(ok)state.soloByType[q.t].c++;}
+$('#soCheck').onclick=()=>{
+  const q=state.quiz[state.i], inp=$('#soInput');
+  $('#soAnswer').classList.add('show');
+  $('#soCheck').disabled=true; inp.disabled=true;
+  if(autoGradable(q)){
+    const ok=norm(inp.value)===norm(q.a);
+    inp.className = ok?'right':'wrong';
+    state.soloAnswered++; if(ok)state.soloCorrect++; tallyType(q,ok);
+    $('#soReveal').innerHTML = ok
+      ? '<p style="color:var(--good);font-weight:700;margin:16px 0 0;font-size:16px">✓ Correct!</p>'
+      : '<p style="color:var(--bad);font-weight:700;margin:16px 0 0;font-size:16px">✗ Not quite — see the answer above.</p>';
+    ok?sfx.good():sfx.bad();
+    $('#soScore').textContent=`Score ${state.soloCorrect}/${state.soloAnswered}`;
+    $('#soNext').disabled=false;
+  }else{
+    sfx.reveal();
+    $('#soSelfmark').style.display='flex';
+  }
+};
+$('#soOpts').onclick=e=>{const b=e.target.closest('.opt');if(!b)return;
+  const soOpts=$('#soOpts'); if(soOpts.dataset.locked==='1')return; soOpts.dataset.locked='1';
+  const q=state.quiz[state.i], sel=+b.dataset.i, ok=q._opts[sel].correct;
+  [...soOpts.children].forEach((el,i)=>{el.classList.add('locked');
+    if(q._opts[i].correct)el.classList.add('correct'); else if(i===sel)el.classList.add('wrong');});
+  state.soloAnswered++; if(ok)state.soloCorrect++; tallyType(q,ok);
+  ok?sfx.good():sfx.bad();
+  $('#soScore').textContent=`Score ${state.soloCorrect}/${state.soloAnswered}`;
+  $('#soNext').disabled=false;};
+$('#soYes').onclick=()=>selfMark(true);
+$('#soNo').onclick=()=>selfMark(false);
+function selfMark(ok){
+  const q=state.quiz[state.i];
+  state.soloAnswered++; if(ok)state.soloCorrect++; tallyType(q,ok);
+  ok?sfx.good():sfx.bad();
+  $('#soSelfmark').style.display='none';
+  $('#soScore').textContent=`Score ${state.soloCorrect}/${state.soloAnswered}`;
+  $('#soNext').disabled=false;
+}
+$('#soInput').addEventListener('keydown',e=>{if(e.key==='Enter'){if(!$('#soCheck').disabled)$('#soCheck').click();else if(!$('#soNext').disabled)$('#soNext').click();}});
+$('#soNext').onclick=()=>{if(state.i<state.quiz.length-1){state.i++;renderSolo();sfx.next();}else finishSolo();};
+$('#soEnd').onclick=finishSolo;
+function finishSolo(){
+  sfx.done();
+  const pct = state.soloAnswered? Math.round(state.soloCorrect/state.soloAnswered*100):0;
+  const msg = pct>=90?'Outstanding.':pct>=70?'Solid work.':pct>=50?'Good start — keep going.':'Worth another round.';
+  const bd=Object.entries(state.soloByType).map(([k,v])=>{
+    const lbl=(TYPES.find(t=>t[0]===k)||[k,k])[1];
+    return `<div>${lbl}<br><b>${v.c}/${v.n}</b></div>`;}).join('');
+  $('#resultsCard').innerHTML=`
+    <h2>${msg}</h2>
+    <div class="bigscore">${state.soloCorrect}/${state.soloAnswered}</div>
+    <div class="pct">${pct}% correct</div>
+    <div class="breakdown">${bd}</div>
+    <div class="controls" style="justify-content:center">
+      <button class="btn" onclick="restart()">↺ New quiz</button>
+      <button class="btn primary" onclick="replaySame()">Try same set again</button>
+    </div>`;
+  // log
+  const log=JSON.parse(localStorage.getItem('popquiz.sololog')||'[]');
+  log.unshift({d:Date.now(),c:state.soloCorrect,n:state.soloAnswered});
+  localStorage.setItem('popquiz.sololog',JSON.stringify(log.slice(0,50)));
+  showView('results');
+}
+
+/* ---------- results actions ---------- */
+window.restart=()=>{showView('setup');renderChips();updateCount();};
+window.replaySame=()=>{
+  state.i=0;
+  if(state.mode==='classroom'){state.teams.forEach(t=>t.score=0);showView('classroom');renderClassroom();}
+  else{state.soloCorrect=0;state.soloAnswered=0;state.soloByType={};showView('solo');renderSolo();}
+};
+
+/* ---------- sound toggle ---------- */
+$('#soundToggle').onclick=()=>{SOUND=!SOUND;localStorage.setItem('popquiz.sound',JSON.stringify(SOUND));
+  $('#soundToggle').textContent = SOUND?'🔊 Sound':'🔇 Muted'; if(SOUND)sfx.next();};
+$('#soundToggle').textContent = SOUND?'🔊 Sound':'🔇 Muted';
+
+/* ---------- init ---------- */
+renderChips(); updateCount();
+</script>
+</body>
+</html>
