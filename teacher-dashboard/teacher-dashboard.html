@@ -1842,10 +1842,9 @@ function cmDurRow(i, e, c){
   const isFirst = i===0;
   const fromVal = (e.from && e.from!=='1900-01-01') ? e.from : (isFirst ? (c?.startDate||'') : '');
   return `<div class="field-row cm-dur-row" style="align-items:center;margin-bottom:6px;">
-    <div style="flex:1;">
-      <input class="cm-dur-from" type="date" value="${fromVal}" placeholder="From" style="width:100%;" ${isFirst?'title="From the start of the class"':''}>
-      ${isFirst?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">From the start (leave blank = always)</div>`:''}
-    </div>
+    ${isFirst
+      ? `<div style="flex:1;font-size:12px;color:var(--muted);align-self:center;">From the start</div>`
+      : `<div style="flex:1;"><input class="cm-dur-from" type="date" value="${fromVal}" placeholder="From" style="width:100%;"></div>`}
     <input class="cm-dur-min" type="number" min="1" step="5" value="${e.duration||150}" style="width:100px;" title="minutes">
     <span style="font-size:12px;color:var(--muted);">min</span>
     ${isFirst?'<span style="width:34px;"></span>':`<button type="button" class="icon-btn danger" aria-label="Remove this duration period" onclick="this.closest('.cm-dur-row').remove()">×</button>`}
@@ -1883,7 +1882,7 @@ function saveClass(classId){
   // Build duration history
   const rows = [...document.querySelectorAll('.cm-dur-row')];
   let durationHistory = rows.map((r,i)=>({
-    from: (i===0 ? (r.querySelector('.cm-dur-from').value || '1900-01-01') : r.querySelector('.cm-dur-from').value),
+    from: (i===0 ? (r.querySelector('.cm-dur-from')?.value || '1900-01-01') : r.querySelector('.cm-dur-from')?.value),
     duration: parseInt(r.querySelector('.cm-dur-min').value) || 150
   })).filter(e=>e.from);
   if(!durationHistory.length) durationHistory = [{from:'1900-01-01', duration:150}];
