@@ -3427,22 +3427,33 @@ function regenerateRecurring(s){
 /* ---------- placement bridge ---------- */
 /* Auto-import placement Focus Areas as learning points (deduped by ptKey) */
 function syncFocusToLearningPoints(s){
-  const place = latestPlacement(s.id);
-  if(!place || !Array.isArray(place.focus) || !place.focus.length) return;
-  let added = false;
+  const h = getPlacementHistory(s.id);
+  if(!h || !h.length) return;
+  const sorted = h.slice().sort((a,b)=>String(b.testDate||b.date||'').localeCompare(String(a.testDate||a.date||'')));
+  const place = sorted.find(r => Array.isArray(r.focus) && r.focus.length);
+  if(!place) return;
+  let changed = false;
   place.focus.forEach(f => {
     const bankQ = (PT_QB[f.lvl]||[])[f.qi];
     const recOutcome = f.outcome || place.scores?.[f.lvl]?.[f.qi]?.outcome || '';
     let topic, outcome;
-    if(f.tests){ topic = f.tests; outcome = f.outcome || ''; }                     // new self-describing pin
+    if(f.tests){ topic = f.tests; outcome = f.outcome || ''; }
     else if(bankQ && (!recOutcome || bankQ.outcome === recOutcome)){ topic = bankQ.tests; outcome = bankQ.outcome; }
-    else if(recOutcome){ topic = recOutcome; outcome = recOutcome; }               // pin from an older question bank
+    else if(recOutcome){ topic = recOutcome; outcome = recOutcome; }
     else return;
     const key = 'pt:' + f.lvl + ':' + (outcome || ('q' + f.qi));
     const legacyKey = 'pt:' + f.lvl + ':' + f.qi;
-    // Skip if this exact point exists or was dismissed
-    if(state.learningPoints.some(p => p.studentId===s.id && p.ptKey===key)) return;
-    // Skip if a live legacy-keyed point for the same slot still exists (avoid duplicates)
+    const existing = state.learningPoints.find(p => p.studentId===s.id && p.ptKey===key);
+    if(existing){
+      // Re-pinning after a dismissal revives the point
+      if(existing.dismissed && f.pinnedAt && f.pinnedAt > (existing.dismissedAt || '')){
+        existing.dismissed = false;
+        delete existing.dismissedAt;
+        changed = true;
+      }
+      return;
+    }
+    // Avoid duplicating a live legacy-keyed point for the same slot
     if(state.learningPoints.some(p => p.studentId===s.id && p.ptKey===legacyKey && !p.dismissed)) return;
     const sc = place.scores?.[f.lvl]?.[f.qi]?.score;
     state.learningPoints.push({
@@ -3454,10 +3465,11 @@ function syncFocusToLearningPoints(s){
       notes: 'From placement (' + f.lvl + '): ' + (outcome || topic) + (sc!=null ? ' — scored ' + sc + '%' : ''),
       complete: false
     });
-    added = true;
+    changed = true;
   });
-  if(added) persistPrivate();
+  if(changed) persistPrivate();
 }
+
 
 function getPlacementHistory(studentId){
   try{
@@ -4427,7 +4439,7 @@ function saveLearningPoint(id, studentId){
 function deleteLearningPoint(id){
   if(!confirm('Delete this learning point?')) return;
   const p = state.learningPoints.find(x=>x.id===id);
-  if(p && p.ptKey){ p.dismissed = true; }
+  if(p && p.ptKey){ p.dismissed = true; p.dismissedAt = new Date().toISOString(); }
   else state.learningPoints = state.learningPoints.filter(x=>x.id!==id);
   persistPrivate(); closeModal(); refreshView();
 }
