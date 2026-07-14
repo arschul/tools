@@ -1095,7 +1095,8 @@ function toggleFocus(lvl, qi) {
     currentStudent.focus.splice(idx, 1);
   } else {
     if(currentStudent.focus.length >= 3) currentStudent.focus.shift();
-    currentStudent.focus.push({lvl, qi});
+    const q = QB[lvl][qi];
+    currentStudent.focus.push({lvl, qi, outcome: q.outcome, tests: q.tests});
   }
   saveStudent();
   renderFocusPanel();
