@@ -4187,10 +4187,10 @@ function renderPrivStudent(){
             ${sp.slice(0,6).map(p=>`<span class="badge hw" title="${esc(p.outcome)}">${esc(p.tests.split(',')[0].trim())}</span>`).join('')}
           </div>`;
       })()}
-      <div class="no-print" style="margin-top:10px;"><a href="${PT_URL}?student=${encodeURIComponent(s.id)}" target="_blank" class="btn-ghost small" style="text-decoration:none;display:inline-block;">Open placement test →</a></div>
+      <div class="no-print" style="margin-top:10px;"><a href="${PT_URL}?studentId=${encodeURIComponent(s.id)}&name=${encodeURIComponent(s.name||'')}" target="_blank" class="btn-ghost small" style="text-decoration:none;display:inline-block;">Open placement test →</a></div>
     </div>` : `<div class="card section no-print" style="margin-bottom:16px;">
       <h3>🎓 Placement</h3>
-      <div class="empty">No placement test on record. <a href="${PT_URL}?student=${encodeURIComponent(s.id)}" target="_blank">Run the placement test →</a></div>
+      <div class="empty">No placement test on record. <a href="${PT_URL}?studentId=${encodeURIComponent(s.id)}&name=${encodeURIComponent(s.name||'')}" target="_blank">Run the placement test →</a></div>
     </div>`}
 
     <div class="card section" style="margin-bottom:16px;">
