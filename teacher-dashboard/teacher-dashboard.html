@@ -3425,6 +3425,30 @@ function regenerateRecurring(s){
 }
 
 /* ---------- placement bridge ---------- */
+/* Auto-import placement Focus Areas as learning points (deduped by ptKey) */
+function syncFocusToLearningPoints(s){
+  const place = latestPlacement(s.id);
+  if(!place || !Array.isArray(place.focus) || !place.focus.length) return;
+  let added = false;
+  place.focus.forEach(f => {
+    const q = (PT_QB[f.lvl]||[])[f.qi];
+    if(!q) return;
+    const key = 'pt:' + f.lvl + ':' + f.qi;
+    if(state.learningPoints.some(p => p.studentId===s.id && p.ptKey===key)) return;
+    const sc = place.scores?.[f.lvl]?.[f.qi]?.score;
+    state.learningPoints.push({
+      id: uid(), studentId: s.id, ptKey: key,
+      topic: q.tests,
+      skill: 'grammar',
+      grade: '',
+      dateIntroduced: todayStr(),
+      notes: 'From placement (' + f.lvl + '): ' + q.outcome + (sc!=null ? ' — scored ' + sc + '%' : ''),
+      complete: false
+    });
+    added = true;
+  });
+  if(added) persistPrivate();
+}
 function getPlacementHistory(studentId){
   try{
     const raw = localStorage.getItem(PT_SK_PREFIX + studentId);
@@ -4114,6 +4138,7 @@ function renderPrivStudent(){
   const lessons = state.privateLessons.filter(l=>l.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
   const pays = state.payments.filter(p=>p.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
   const cps = state.checkpoints.filter(c=>c.studentId===s.id).sort((a,b)=>b.date.localeCompare(a.date));
+  syncFocusToLearningPoints(s);
   const lps = state.learningPoints.filter(p=>p.studentId===s.id);
   const nx = nextPrivLesson(s.id);
   const place = latestPlacement(s.id);
