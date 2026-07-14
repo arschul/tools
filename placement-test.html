@@ -418,7 +418,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 //  DASHBOARD INTEGRATION (URL params)
 // ═══════════════════════════════════════════════
 const _p  = new URLSearchParams(location.search);
-const _sid  = _p.get('studentId') || null;   // dashboard student id
+const _sid  = _p.get('studentId') || _p.get('student') || null;   // dashboard student id
 const _sname = _p.get('name')      || null;   // pre-filled name
 const _view  = _p.get('view')      || null;   // 'tracker' → skip test
 
