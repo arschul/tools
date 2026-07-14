@@ -186,7 +186,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 /* focus panel */
 .focus-panel{padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
 .focus-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-.focus-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.focus-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .focus-slot{border:1px solid var(--border);border-radius:8px;padding:12px 14px;background:var(--card);min-height:88px;display:flex;flex-direction:column}
 .focus-slot.empty{border-style:dashed;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
 .focus-slot.filled{border-color:var(--accent);background:var(--accent-dim)}
@@ -197,6 +197,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
 .focus-fscore{font-family:var(--fd);font-weight:700;font-size:14px}
 .focus-rm{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1;transition:color .15s}
 .focus-rm:hover{color:var(--accent)}
+.qr-gram{display:block;font-size:11px;color:var(--purple);font-style:italic;margin-top:2px;font-weight:400}
 /* pin buttons */
 .pin-btn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:3px 4px;opacity:.25;transition:opacity .15s;line-height:1;flex-shrink:0}
 .pin-btn:hover{opacity:.7}
@@ -402,14 +403,9 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
       <button class="tr-btn" onclick="window.print()">🖨 Print</button>
     </div>
   </div>
-  <div class="tr-tabs">
-    <button class="tr-tab active" id="tab-progress" onclick="switchTab('progress')">📊 Progress</button>
-    <button class="tr-tab" id="tab-teach" onclick="switchTab('teach')">🎯 Teach Next</button>
-  </div>
   <div id="tr-focus" class="focus-panel"></div>
   <div class="tr-body">
     <div id="tp-progress"></div>
-    <div id="tp-teach" style="display:none"></div>
   </div>
 </section>
 
@@ -1043,50 +1039,39 @@ function openTracker(student) {
   $('tr-date').textContent = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
   renderFocusPanel();
   renderProgressTab();
-  renderTeachNextTab();
-  switchTab('progress');
   showScreen('ts');
-}
-
-// ═══════════════════════════════════════════════
-//  TAB SWITCHING
-// ═══════════════════════════════════════════════
-function switchTab(tab) {
-  $('tp-progress').style.display = tab === 'progress' ? 'block' : 'none';
-  $('tp-teach').style.display   = tab === 'teach'    ? 'block' : 'none';
-  $('tab-progress').classList.toggle('active', tab === 'progress');
-  $('tab-teach').classList.toggle('active',    tab === 'teach');
 }
 
 // ═══════════════════════════════════════════════
 //  FOCUS PANEL
 // ═══════════════════════════════════════════════
 function renderFocusPanel() {
-  const slots = [0,1,2].map(i => {
-    const f = currentStudent.focus[i];
-    if(!f) return `<div class="focus-slot empty">＋ Add focus area</div>`;
+  const slots = currentStudent.focus.map(f => {
     const q  = QB[f.lvl][f.qi];
+    const outcome = f.outcome || (q ? q.outcome : '');
+    const tests   = f.tests   || (q ? q.tests   : '');
     const qd = currentStudent.scores[f.lvl][f.qi];
-    const score = qd.score;
+    const score = qd ? qd.score : null;
     const sc = score !== null ? hslColor(score) : 'var(--muted)';
     const st = score !== null ? score + '%' : '—';
-    // escape single quotes in lvl for inline onclick
     const lvlSafe = f.lvl.replace(/'/g,"\\'");
     return `
       <div class="focus-slot filled">
         <div class="focus-flvl">${f.lvl}</div>
-        <div class="focus-foc">${q.outcome}</div>
-        <div class="focus-gram">📌 ${q.tests}</div>
+        <div class="focus-foc">${outcome}</div>
+        <div class="focus-gram">📌 ${tests}</div>
         <div class="focus-foot">
           <span class="focus-fscore" style="color:${sc}">${st}</span>
           <button class="focus-rm" onclick="toggleFocus('${lvlSafe}',${f.qi})" title="Remove">✕</button>
         </div>
       </div>`;
   });
+  if(!slots.length) slots.push(`<div class="focus-slot empty">＋ Pin learning points below to add focus areas</div>`);
   $('tr-focus').innerHTML = `
-    <div class="focus-title">Focus Areas <span style="font-weight:400;opacity:.6">(${currentStudent.focus.length}/3)</span></div>
+    <div class="focus-title">Focus Areas <span style="font-weight:400;opacity:.6">(${currentStudent.focus.length} pinned)</span></div>
     <div class="focus-slots">${slots.join('')}</div>`;
 }
+
 
 function toggleFocus(lvl, qi) {
   qi = parseInt(qi);
@@ -1094,14 +1079,12 @@ function toggleFocus(lvl, qi) {
   if(idx !== -1) {
     currentStudent.focus.splice(idx, 1);
   } else {
-    if(currentStudent.focus.length >= 3) currentStudent.focus.shift();
     const q = QB[lvl][qi];
     currentStudent.focus.push({lvl, qi, outcome: q.outcome, tests: q.tests});
   }
   saveStudent();
   renderFocusPanel();
   renderProgressTab();
-  renderTeachNextTab();
 }
 
 function makePinBtn(lvl, qi) {
@@ -1170,7 +1153,8 @@ function renderProgressTab() {
       tr.className = 'qr';
       const n = document.createElement('td'); n.className = 'qr-n'; n.textContent = qi+1;
       const u = document.createElement('td'); u.className = 'qr-u'; u.textContent = q.unit;
-      const o = document.createElement('td'); o.className = 'qr-oc'; o.textContent = q.outcome;
+      const o = document.createElement('td'); o.className = 'qr-oc';
+      o.innerHTML = `${q.outcome}<span class="qr-gram">📌 ${q.tests}</span>`;
       const s = document.createElement('td'); s.className = 'qr-s';
       s.appendChild(makeScoreCell(lvl, qi, false));
       const p = document.createElement('td'); p.className = 'qr-pin';
@@ -1200,85 +1184,6 @@ function updateLvlHeader(lvl) {
 }
 
 // ═══════════════════════════════════════════════
-//  TEACH NEXT TAB
-// ═══════════════════════════════════════════════
-function getPriority(score, atOrBelow) {
-  if(!atOrBelow) return 4;
-  if(score === null) return 1;
-  if(score < 65)    return 2;
-  if(score < 80)    return 3;
-  return 5;
-}
-
-function renderTeachNextTab() {
-  const wrap = $('tp-teach');
-  wrap.innerHTML = '';
-  const placementIdx = LEVELS.indexOf(currentStudent.placement);
-
-  const all = [];
-  LEVELS.forEach((lvl, li) => {
-    QB[lvl].forEach((q, qi) => {
-      const score = currentStudent.scores[lvl][qi].score;
-      const atOrBelow = li <= placementIdx;
-      all.push({ lvl, li, qi, q, score, priority: getPriority(score, atOrBelow) });
-    });
-  });
-
-  all.sort((a, b) => {
-    if(a.priority !== b.priority) return a.priority - b.priority;
-    if(a.score !== b.score){
-      if(a.score === null) return -1;
-      if(b.score === null) return  1;
-      return a.score - b.score;
-    }
-    return a.li !== b.li ? a.li - b.li : a.qi - b.qi;
-  });
-
-  const groups = [
-    { pMin:1, pMax:2, label:'🔴 Needs Work',     desc:'Unassessed or below 65% — priority teaching targets' },
-    { pMin:3, pMax:3, label:'🟡 Review',          desc:'Borderline 65–79% at or below placement' },
-    { pMin:4, pMax:4, label:'🔵 Future Content',  desc:'Levels above placement — teach when ready' },
-    { pMin:5, pMax:5, label:'✅ Strong',           desc:'Scored 80%+ — no action needed' }
-  ];
-
-  groups.forEach(g => {
-    const items = all.filter(x => x.priority >= g.pMin && x.priority <= g.pMax);
-    if(!items.length) return;
-
-    const sec = document.createElement('div');
-    sec.className = 'tn-sec';
-
-    const hdrEl = document.createElement('div');
-    hdrEl.className = 'tn-hdr';
-    hdrEl.title = g.desc;
-    hdrEl.innerHTML = `${g.label} <span class="tn-cnt">${items.length}</span>`;
-    sec.appendChild(hdrEl);
-
-    const card = document.createElement('div');
-    card.className = 'tn-card';
-
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'tn-row';
-
-      const lvlSpan = document.createElement('span');
-      lvlSpan.className = 'tn-lvl';
-      lvlSpan.textContent = item.lvl;
-
-      const ocSpan = document.createElement('span');
-      ocSpan.className = 'tn-oc';
-      ocSpan.innerHTML = `${item.q.outcome} <span class="tn-unit">${item.q.unit}</span><span class="tn-grammar">📌 ${item.q.tests}</span>`;
-
-      row.append(lvlSpan, ocSpan, makeScoreCell(item.lvl, item.qi, true), makePinBtn(item.lvl, item.qi));
-      card.appendChild(row);
-    });
-
-    sec.appendChild(card);
-    wrap.appendChild(sec);
-  });
-}
-
-// ═══════════════════════════════════════════════
 //  SCORE EDITING
 // ═══════════════════════════════════════════════
 function editScore(el, lvl, qi, fromTeach) {
@@ -1301,7 +1206,6 @@ function editScore(el, lvl, qi, fromTeach) {
     inp.replaceWith(newEl);
     updateLvlHeader(lvl);
     renderFocusPanel();
-    renderTeachNextTab();
     if(fromTeach) {
       // Also update the matching cell in the progress tab if visible
       const qt = $('qt-' + LEVELS.indexOf(lvl));
