@@ -37,6 +37,7 @@
      A theme is a block below that overrides them; nothing else changes.
   */
   :root{
+    --sched:var(--accent);
     /* type */
     --font-body:'Inter',sans-serif;
     --font-head:'Sora',sans-serif;
@@ -154,6 +155,7 @@
     --purple:#1D45C4;--purple-soft:#DDE3F7;
     --gray:#6E7466;  --gray-soft:#E1E8DC;
     --teal:#1D45C4;
+    --sched:#8A6A00;
     --stripe-a:#EBF0E7; --stripe-b:#DCE4D7;
     --card-shadow:none;
     --radius:0px; --radius-sm:0px; --border-w:2px;
@@ -186,6 +188,7 @@
     --purple:#4A5C8A;--purple-soft:#E4E8F2;
     --gray:#3A4247;  --gray-soft:#ECEEED;
     --teal:#0F6E7A;
+    --sched:#2456A6;
     --stripe-a:#ffffff; --stripe-b:#E9ECEA;
     --card-shadow:none;
     --radius:2px; --radius-sm:2px; --border-w:1px;
@@ -3629,7 +3632,7 @@ function privScheduleHtml(){
       <div class="cal-items">
         ${todays.map(l=>{
           const s = privStudent(l.studentId);
-          const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='cancelled'?'var(--gray)':'var(--accent)';
+          const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='cancelled'?'var(--gray)':'var(--sched)';
           return `<button type="button" class="cal-tag" style="background:${col}22;color:${col};border-color:${col}55;cursor:pointer;" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${s?esc(s.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</button>`;
         }).join('')}
       </div>
@@ -3651,7 +3654,7 @@ function privScheduleHtml(){
       <div class="cal-grid">${cells}</div>
     </div>
     <div class="cal-legend">
-      <div class="legend-item"><span class="color-dot" style="background:var(--accent)"></span>Scheduled</div>
+      <div class="legend-item"><span class="color-dot" style="background:var(--sched)"></span>Scheduled</div>
       <div class="legend-item"><span class="color-dot" style="background:var(--green)"></span>Completed</div>
       <div class="legend-item"><span class="color-dot" style="background:var(--red)"></span>No-show</div>
       <div class="legend-item"><span class="color-dot" style="background:var(--gray)"></span>Cancelled</div>
