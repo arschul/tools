@@ -4217,9 +4217,16 @@ function renderPrivStudent(){
         const lvl = place.placement||place.level;
         const sp = studyPointsForLevel(lvl);
         if(!sp) return '';
-        return `<div style="margin-top:10px;font-size:12px;color:var(--muted);">Next study points for ${esc(lvl)}:</div>
+        const chipLabel = t => esc(String(t).replace(/\s*\([^)]*\)?/g,'').trim());
+        const items = sp.map((p,i)=>{
+          const rec = place.scores?.[lvl]?.[i];
+          const sc = (rec && rec.outcome === p.outcome && rec.score != null) ? rec.score : null;
+          return {p, sc};
+        });
+        items.sort((a,b)=>(a.sc??101)-(b.sc??101));
+        return `<div style="margin-top:10px;font-size:12px;color:var(--muted);">Next study points for ${esc(lvl)}${items.some(x=>x.sc!=null)?' (weakest first)':''}:</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-            ${sp.slice(0,6).map(p=>`<span class="badge hw" title="${esc(p.outcome)}">${esc(p.tests.split(',')[0].trim())}</span>`).join('')}
+            ${items.map(x=>`<span class="badge hw" title="${esc(x.p.outcome)}${x.sc!=null?' — scored '+x.sc+'%':''}">${chipLabel(x.p.tests)}${x.sc!=null?` · ${x.sc}%`:''}</span>`).join('')}
           </div>`;
       })()}
       <div class="no-print" style="margin-top:10px;"><a href="${PT_URL}?studentId=${encodeURIComponent(s.id)}&name=${encodeURIComponent(s.name||'')}&view=tracker" target="_blank" class="btn-ghost small" style="text-decoration:none;display:inline-block;">Open placement test →</a></div>
