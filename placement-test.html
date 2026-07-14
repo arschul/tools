@@ -1030,6 +1030,7 @@ function loadPreviousScores() {
 //  OPEN TRACKER
 // ═══════════════════════════════════════════════
 function openTracker(student) {
+  $('tr-back').style.display = (S.levelResults && S.levelResults.length) ? '' : 'none';
   currentStudent = student;
   if(!currentStudent.focus) currentStudent.focus = [];
   saveStudent();
@@ -1080,7 +1081,7 @@ function toggleFocus(lvl, qi) {
     currentStudent.focus.splice(idx, 1);
   } else {
     const q = QB[lvl][qi];
-    currentStudent.focus.push({lvl, qi, outcome: q.outcome, tests: q.tests});
+    currentStudent.focus.push({lvl, qi, outcome: q.outcome, tests: q.tests, pinnedAt: new Date().toISOString()});
   }
   saveStudent();
   renderFocusPanel();
