@@ -1084,7 +1084,8 @@ function saveStudent() {
               : [];
     }
   } catch {}
-  history.push(currentStudent);
+  const ix = history.findIndex(r => r.testDate === currentStudent.testDate);
+  if(ix !== -1) history[ix] = currentStudent; else history.push(currentStudent);
   localStorage.setItem(SK, JSON.stringify({ history }));
 }
 
