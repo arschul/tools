@@ -1611,17 +1611,17 @@ function _renderDashboard(el){
   });
   pendingCompletions.sort((a,b)=>a.date.localeCompare(b.date));
 
-  // — Today's private lessons (shown even on school holidays) —
+  // — Today's private lessons (shown even on school holidays; completed ones stay visible) —
   const privTodayList = state.privateLessons
-    .filter(l=>l.date===today && l.status==='scheduled')
+    .filter(l=>l.date===today && l.status!=='cancelled')
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   window._dashPrivTodayIds = privTodayList.map(l=>l.studentId);
   const privTodayHtml = privTodayList.map((l,i)=>`
-    <div class="dash-row">
+    <div class="dash-row" ${l.status!=='scheduled'?'style="opacity:.75;"':''}>
       <div class="dash-row-left">
         <span class="color-dot" style="background:#0ea5b8"></span>
         <div>
-          <div class="dash-row-title">${esc(privName(l.studentId))} <span class="badge hw" style="margin-left:6px;">Private</span></div>
+          <div class="dash-row-title">${esc(privName(l.studentId))} <span class="badge hw" style="margin-left:6px;">Private</span>${l.status==='completed'?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':l.status==='no-show'?' <span class="badge red" style="margin-left:6px;">No-show</span>':''}</div>
           <div class="dash-row-sub">${l.time?l.time+' · ':''}${l.duration||60} min</div>
         </div>
       </div>
@@ -1633,19 +1633,24 @@ function _renderDashboard(el){
   if(todayHoliday){
     todayHtml = `<div class="empty">🎉 Holiday: ${esc(todayHoliday.label)} — no classes today.</div>`;
   } else if(todaysClasses.length){
-    const todaysPending = todaysClasses.filter(c=>!isSessionCompleted(c.id, today));
-    todayHtml = todaysPending.length ? todaysPending.map(c=>`
-      <div class="dash-row">
+    const allDone = todaysClasses.every(c=>isSessionCompleted(c.id, today));
+    todayHtml = (allDone?`<div class="empty" style="padding:4px 0 8px;">✓ All of today's classes are done.</div>`:'') +
+      todaysClasses.map(c=>{
+        const done = isSessionCompleted(c.id, today);
+        return `
+      <div class="dash-row" ${done?'style="opacity:.75;"':''}>
         <div class="dash-row-left">
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
-            <div class="dash-row-title">${esc(c.name)}</div>
+            <div class="dash-row-title">${esc(c.name)}${done?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}</div>
             <div class="dash-row-sub">${c.time?c.time+' · ':''}${studentsInClass(c.id).length} students</div>
           </div>
         </div>
-        <button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>
-      </div>`).join('')
-      : `<div class="empty">✓ All of today's classes are done.</div>`;
+        ${done
+          ? `<button class="btn-ghost small" onclick="goToRollCall('${c.id}','${today}')">View →</button>`
+          : `<button class="btn-accent" onclick="goToRollCall('${c.id}','${today}')">Start Roll Call →</button>`}
+      </div>`;
+      }).join('');
   } else {
     todayHtml = privTodayList.length ? '' : `<div class="empty">No classes scheduled today.</div>`;
   }
