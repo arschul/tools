@@ -3351,6 +3351,20 @@ function ledgerStamp(ledger){
     : '<span class="badge amber">Owes</span>';
   return '<span class="badge green">Even</span>';
 }
+function addLpToNextClass(lpId, studentId){
+  const p = state.learningPoints.find(x=>x.id===lpId);
+  if(!p) return;
+  const l = nextPrivLesson(studentId);
+  if(!l){ alert('No upcoming scheduled class for this student. Schedule one first.'); return; }
+  const cur = (l.notes||'').trim();
+  const parts = cur ? cur.split(';').map(x=>x.trim()).filter(Boolean) : [];
+  if(parts.includes(p.topic)){ alert('"' + p.topic + '" is already in the content of the next class (' + formatDateShort(l.date) + ').'); return; }
+  parts.push(p.topic);
+  l.notes = parts.join('; ');
+  persistPrivate();
+  refreshView();
+  alert('Added to the class on ' + formatDateShort(l.date) + (l.time ? ' at ' + l.time : '') + '.');
+}
 function nextPrivLesson(studentId){
   const today = todayStr();
   return state.privateLessons
@@ -3926,7 +3940,7 @@ function openRescheduleModal(lessonId){
       <div class="field" style="flex:1;"><label>New time</label><input id="rs-time" type="time" value="${l.time||''}"></div>
     </div>
     <div class="field"><label>Duration (minutes)</label><input id="rs-dur" type="number" min="15" step="15" value="${l.duration}"></div>
-    <div class="field"><label>Reason / notes</label><input id="rs-notes" type="text" value="${esc(l.notes||'')}" placeholder="e.g. student asked to move to Friday"></div>
+    <div class="field"><label>Content</label><input id="rs-notes" type="text" value="${esc(l.notes||'')}" placeholder="e.g. Past perfect review; unit 4 exercises"></div>
     <div class="field"><label>Status</label>
       <div class="pill-group">
         ${PRIV_STATUSES.map(st=>{
@@ -4286,7 +4300,9 @@ function renderPrivStudent(){
             <td>${p.dateIntroduced?formatDateShort(p.dateIntroduced):'—'}</td>
             <td>${p.complete?`<span class="badge green">Done ${p.dateCompleted?formatDateShort(p.dateCompleted):''}</span>`:`<span class="badge amber">In progress</span>`}</td>
             <td>${esc(p.notes||'—')}</td>
-            <td class="no-print"><button class="icon-btn" onclick="openLearningPointModal(window._privLpIds[${i}],'${s.id}')">Edit</button></td>
+            <td class="no-print" style="white-space:nowrap;">
+              <button class="icon-btn" onclick="addLpToNextClass(window._privLpIds[${i}],'${s.id}')" title="Add this topic to the content of the next scheduled class">→ Next class</button>
+              <button class="icon-btn" onclick="openLearningPointModal(window._privLpIds[${i}],'${s.id}')">Edit</button></td>
           </tr>`;
         }).join('')}</tbody></table></div>` : `<div class="empty">No learning points yet.</div>`}
     </div>
@@ -4294,7 +4310,7 @@ function renderPrivStudent(){
     <div class="card section" style="margin-bottom:16px;">
       <h3>📅 Lesson history</h3>
       ${lessons.length ? `<div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Status</th><th>Notes</th><th class="no-print">Quick</th></tr></thead>
+        <thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Status</th><th>Content</th><th class="no-print">Quick</th></tr></thead>
         <tbody>${lessons.map((l,i)=>`<tr>
           <td>${formatDateShort(l.date)}</td>
           <td>${l.time||'—'}</td>
