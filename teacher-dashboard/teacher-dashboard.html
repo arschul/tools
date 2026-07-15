@@ -1107,6 +1107,11 @@ function setGradeMargin(v){
   refreshView();   // dashboard alert cards react immediately
 }
 
+function setDashUpcomingRange(r){
+  localStorage.setItem('dashUpcomingRange', r);   // per-device preference, like theme
+  refreshView();
+}
+
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','privateStudents','privateLessons','payments','checkpoints',
   'learningPoints','privateSettings','grades','gradeSettings'];
@@ -1570,14 +1575,18 @@ function _renderDashboard(el){
     return true;
   });
   // Upcoming = calendar events + scheduled private lessons, merged chronologically,
-  // so the dashboard shows everything in one place.
+  // filtered by range: Today (default) / Tomorrow / This week (next 7 days).
   const privName = id => state.privateStudents.find(p=>p.id===id)?.name || 'Private student';
+  const upRange = localStorage.getItem('dashUpcomingRange') || 'today';
+  const addDays = (dstr,n)=>{ const d=new Date(dstr+'T00:00:00'); d.setDate(d.getDate()+n); return dateToStr(d.getFullYear(), d.getMonth(), d.getDate()); };
+  const upFrom = upRange==='tomorrow' ? addDays(today,1) : today;
+  const upTo   = upRange==='week' ? addDays(today,6) : upFrom;
   const upcoming = [
-    ...state.events.filter(e=>e.date>=today).map(e=>({kind:'event', date:e.date, time:'', e})),
-    ...state.privateLessons.filter(l=>l.status==='scheduled' && l.date>=today)
+    ...state.events.filter(e=>e.date>=upFrom && e.date<=upTo).map(e=>({kind:'event', date:e.date, time:'', e})),
+    ...state.privateLessons.filter(l=>l.status==='scheduled' && l.date>=upFrom && l.date<=upTo)
         .map(l=>({kind:'priv', date:l.date, time:l.time||'', l}))
   ].sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))
-   .slice(0,8);
+   .slice(0,12);
 
   // — Pending session completions (today + recent past days with data but not marked complete) —
   const pendingCompletions = [];
@@ -1663,7 +1672,7 @@ function _renderDashboard(el){
       </div>
       <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashUpcomingPrivIds[${i}]})">Open →</button>
     </div>`).join('')
-    : `<div class="empty">No upcoming items. <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
+    : `<div class="empty">${upRange==='today'?'Nothing scheduled for today.':upRange==='tomorrow'?'Nothing scheduled for tomorrow.':'Nothing scheduled this week.'} <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
 
   // — Contact Parents —
   const cpStudents = [
@@ -1896,7 +1905,16 @@ function _renderDashboard(el){
     ${pendingHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}${privTodayHtml}</div>
-      <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
+      <div class="card section">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+          <h3 style="margin:0;">Upcoming</h3>
+          <div class="pill-group" role="radiogroup" aria-label="Upcoming range">
+            ${[['today','Today'],['tomorrow','Tomorrow'],['week','This week']].map(([v,l])=>`
+              <button type="button" class="pill ${upRange===v?'on':''}" role="radio" aria-checked="${upRange===v}" onclick="setDashUpcomingRange('${v}')">${l}</button>`).join('')}
+          </div>
+        </div>
+        ${upcomingHtml}
+      </div>
     </div>
     ${gradesAlertHtml}
     ${attnAlertHtml}
