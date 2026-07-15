@@ -1073,6 +1073,18 @@ function openSettingsModal(){
           aria-checked="${ui.scale===s.v}" onclick="setScale(${s.v})">${s.label}</button>`).join('')}
     </div>
 
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Grade alerts</h3>
+    <div class="card section" style="padding:14px 16px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+        <span style="flex:1;">Contact-parents margin<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Points above the minimum that still flag a student as "close". Applies to all classes.</span></span>
+        <input id="settings-grade-margin" type="number" min="0" step="1" value="${gradeMargin()}" onchange="setGradeMargin(this.value)" style="width:90px;text-align:center;">
+      </label>
+      <div style="font-size:12px;color:var(--muted);margin-top:10px;">
+        <b>0</b> = only flag students under the minimum (average 80 / TOEFL level target).
+        Example: margin <b>3</b> also flags passing averages of 80, 81 or 82 — and, for Advanced, TOEFL scores up to 3 points above the target.
+      </div>
+    </div>
+
     <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Backup</h3>
     <div class="card section" style="padding:14px 16px;${days>=7?'border-left:4px solid var(--amber);':''}">
       <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Last backup: <b style="color:var(--text);">${esc(lastLabel)}</b></div>
@@ -1089,6 +1101,12 @@ function openSettingsModal(){
    Independent of Supabase — a local file the teacher controls.
    The state keys in BACKUP_KEYS + backupMeta are the full source of truth.
 */
+function setGradeMargin(v){
+  state.gradeSettings.margin = Math.max(0, Number(v)||0);
+  scheduleSave('gradeSettings', state.gradeSettings);
+  refreshView();   // dashboard alert cards react immediately
+}
+
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','privateStudents','privateLessons','payments','checkpoints',
   'learningPoints','privateSettings','grades','gradeSettings'];
@@ -1551,7 +1569,15 @@ function _renderDashboard(el){
     if(c.endDate && today > c.endDate) return false;
     return true;
   });
-  const upcoming = state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6);
+  // Upcoming = calendar events + scheduled private lessons, merged chronologically,
+  // so the dashboard shows everything in one place.
+  const privName = id => state.privateStudents.find(p=>p.id===id)?.name || 'Private student';
+  const upcoming = [
+    ...state.events.filter(e=>e.date>=today).map(e=>({kind:'event', date:e.date, time:'', e})),
+    ...state.privateLessons.filter(l=>l.status==='scheduled' && l.date>=today)
+        .map(l=>({kind:'priv', date:l.date, time:l.time||'', l}))
+  ].sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))
+   .slice(0,8);
 
   // — Pending session completions (today + recent past days with data but not marked complete) —
   const pendingCompletions = [];
@@ -1576,6 +1602,23 @@ function _renderDashboard(el){
   });
   pendingCompletions.sort((a,b)=>a.date.localeCompare(b.date));
 
+  // — Today's private lessons (shown even on school holidays) —
+  const privTodayList = state.privateLessons
+    .filter(l=>l.date===today && l.status==='scheduled')
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  window._dashPrivTodayIds = privTodayList.map(l=>l.studentId);
+  const privTodayHtml = privTodayList.map((l,i)=>`
+    <div class="dash-row">
+      <div class="dash-row-left">
+        <span class="color-dot" style="background:#0ea5b8"></span>
+        <div>
+          <div class="dash-row-title">${esc(privName(l.studentId))} <span class="badge hw" style="margin-left:6px;">Private</span></div>
+          <div class="dash-row-sub">${l.time?l.time+' · ':''}${l.duration||60} min</div>
+        </div>
+      </div>
+      <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashPrivTodayIds[${i}]})">Open →</button>
+    </div>`).join('');
+
   // — Today's classes —
   let todayHtml = '';
   if(todayHoliday){
@@ -1595,19 +1638,30 @@ function _renderDashboard(el){
       </div>`).join('')
       : `<div class="empty">✓ All of today's classes are done.</div>`;
   } else {
-    todayHtml = `<div class="empty">No classes scheduled today.</div>`;
+    todayHtml = privTodayList.length ? '' : `<div class="empty">No classes scheduled today.</div>`;
   }
 
   // — Upcoming —
-  const upcomingHtml = upcoming.length ? upcoming.map(e=>`
+  window._dashUpcomingPrivIds = upcoming.map(u=>u.kind==='priv'?u.l.studentId:null);
+  const upcomingHtml = upcoming.length ? upcoming.map((u,i)=> u.kind==='event' ? `
     <div class="dash-row">
       <div class="dash-row-left">
-        <span class="badge ${e.type}">${eventTypeLabel(e.type)}</span>
+        <span class="badge ${u.e.type}">${eventTypeLabel(u.e.type)}</span>
         <div>
-          <div class="dash-row-title" style="font-size:15px;">${esc(e.title)}</div>
-          <div class="dash-row-sub">${formatDateShort(e.date)}${e.classId?' · '+esc(classById(e.classId)?.name||''):''}</div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(u.e.title)}</div>
+          <div class="dash-row-sub">${formatDateShort(u.e.date)}${u.e.classId?' · '+esc(classById(u.e.classId)?.name||''):''}</div>
         </div>
       </div>
+    </div>` : `
+    <div class="dash-row">
+      <div class="dash-row-left">
+        <span class="badge hw">Private</span>
+        <div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(privName(u.l.studentId))}</div>
+          <div class="dash-row-sub">${formatDateShort(u.l.date)}${u.l.time?' · '+u.l.time:''}${u.l.duration?' · '+u.l.duration+' min':''}</div>
+        </div>
+      </div>
+      <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashUpcomingPrivIds[${i}]})">Open →</button>
     </div>`).join('')
     : `<div class="empty">No upcoming items. <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
 
@@ -1841,7 +1895,7 @@ function _renderDashboard(el){
     ${backupHtml}
     ${pendingHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
-      <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
+      <div class="card section"><h3>Today's Classes</h3>${todayHtml}${privTodayHtml}</div>
       <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
     </div>
     ${gradesAlertHtml}
@@ -2276,7 +2330,7 @@ function renderGradesModal(){
   showModal(`
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <h3 style="margin:0;">📝 Grades — ${esc(c.name)}${c.level?` <span class="badge other">${esc(c.level)}</span>`:''}</h3>
-      <button class="icon-btn" onclick="openGradeSettingsModal(true)" title="Alert threshold settings">⚙ Alerts${margin?` (+${margin})`:''}</button>
+      <span style="font-size:12px;color:var(--muted);white-space:nowrap;" title="Change in Settings (sidebar)">⚙ Alert margin: +${margin} · set in Settings</span>
     </div>
     <div style="font-size:13px;color:var(--muted);margin:8px 0 12px;">${ruleNote}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
@@ -2356,32 +2410,6 @@ function gmSetTestDate(testIdx, value){
   scheduleSave('events', state.events);
   scheduleSave('grades', state.grades);
   renderGradesModal();
-}
-
-function openGradeSettingsModal(reopenGrades){
-  const margin = gradeMargin();
-  showModal(`
-    <h3>⚙ Grade alert threshold</h3>
-    <div class="field">
-      <label>Contact-parents margin (points above the minimum)</label>
-      <input id="gset-margin" type="number" min="0" step="1" value="${margin}">
-      <div style="font-size:12px;color:var(--muted);margin-top:6px;">
-        <b>0</b> = only flag students under the minimum (average 80 / TOEFL level target).<br>
-        Example: margin <b>3</b> also flags a passing average of 80, 81 or 82 as <span class="badge amber">Close</span> —
-        for Advanced it flags TOEFL scores up to 3 points above the target. Applies to all classes.
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="${reopenGrades?'renderGradesModal()':'closeModal()'}">Cancel</button>
-      <button class="btn-accent" onclick="saveGradeSettings(${reopenGrades?'true':'false'})">Save</button>
-    </div>
-  `, true);
-}
-function saveGradeSettings(reopenGrades){
-  state.gradeSettings.margin = Math.max(0, Number(document.getElementById('gset-margin').value)||0);
-  scheduleSave('gradeSettings', state.gradeSettings);
-  if(reopenGrades) renderGradesModal();
-  else { closeModal(); refreshView(); }
 }
 
 function gmSetScore(studentId, testIdx, value){
