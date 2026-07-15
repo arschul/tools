@@ -4053,6 +4053,10 @@ function deleteLesson(id){
 function setLessonStatus(id, status){
   const l = state.privateLessons.find(x=>x.id===id);
   if(!l) return;
+  if((status==='completed' || status==='no-show') && l.date > todayStr()){
+    alert('This class is on ' + formatDateShort(l.date) + " — it hasn't happened yet.");
+    return;
+  }
   l.status = status;
   persistPrivate();
   refreshView();
@@ -4318,7 +4322,7 @@ function renderPrivStudent(){
           <td><span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></td>
           <td>${esc(l.notes||'—')}</td>
           <td class="no-print" style="white-space:nowrap;">
-            ${l.status==='scheduled'?`
+            ${l.status==='scheduled' && l.date<=todayStr()?`
               <button type="button" class="icon-btn" onclick="setLessonStatus(window._privLessonIds[${i}],'completed')" title="Mark completed" aria-label="Mark lesson completed">✓</button>
               <button type="button" class="icon-btn danger" onclick="setLessonStatus(window._privLessonIds[${i}],'no-show')" title="No-show" aria-label="Mark lesson as no-show">✗</button>`:''}
             <button class="icon-btn" onclick="openRescheduleModal(window._privLessonIds[${i}])">Reschedule</button>
