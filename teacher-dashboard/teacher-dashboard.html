@@ -1085,11 +1085,11 @@ function openSettingsModal(){
 
 /* ---------- JSON backup: export / import ----------
    Independent of Supabase — a local file the teacher controls.
-   The 14 state keys + backupMeta are the full source of truth.
+   The state keys in BACKUP_KEYS + backupMeta are the full source of truth.
 */
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','privateSettings'];
+  'learningPoints','privateSettings','grades'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -1210,6 +1210,57 @@ function scheduleLabel(cls){
 function classById(id){ return state.classes.find(c=>c.id===id); }
 function activeClasses(){ return state.classes.filter(c=>!c.archived); }
 function archivedClasses(){ return state.classes.filter(c=>c.archived); }
+
+/* ---------- group level tags & test grades ----------
+   Group tags live on the CLASS (not the student). Test regime derives from the tag:
+   - Teens / Basic / Intermediate: 3 tests per cycle, need 240 total (avg 80).
+     If the running average of entered tests is under 80 -> contact parents.
+   - Advanced: 2 TOEFL tests per cycle, per-level target score
+     (Adv 1 = 475, Adv 2 = 500, Adv 3 = 525, Adv 4 = 550).
+     If any entered test is under the target -> contact parents.
+*/
+const GROUP_LEVELS = ['Teens 1','Teens 2','Teens 3','Teens 4','Basic 1','Basic 2','Basic 3','Basic 4','Intermediate 1','Intermediate 2','Intermediate 3','Intermediate 4','Advanced 1','Advanced 2','Advanced 3','Advanced 4'];
+const TOEFL_TARGETS = {'Advanced 1':475,'Advanced 2':500,'Advanced 3':525,'Advanced 4':550};
+const CYCLE_TOTAL_TARGET = 240, CYCLE_AVG_TARGET = 80;
+function isAdvancedLevel(lv){ return /^Advanced /.test(lv||''); }
+function testCountFor(cls){ return isAdvancedLevel(cls?.level) ? 2 : 3; }
+function testLabelFor(cls, i){ return isAdvancedLevel(cls?.level) ? 'TOEFL '+(i+1) : 'Test '+(i+1); }
+// Ensures a grades record with at least one cycle exists for a class. Mutates state — never call during a pure render loop.
+function classGrades(classId){
+  if(!state.grades[classId]) state.grades[classId] = { cycles: [] };
+  const g = state.grades[classId];
+  if(!g.cycles.length) g.cycles.push({ id: uid(), label: 'Cycle 1', startedAt: todayStr(), scores: {} });
+  return g;
+}
+function studentScores(cycle, studentId, n){
+  const arr = ((cycle.scores||{})[studentId]||[]).slice(0, n);
+  while(arr.length < n) arr.push(null);
+  return arr;
+}
+// Evaluate a student's standing in a cycle. Returns null if no scores entered yet.
+function gradeStatus(cls, cycle, studentId){
+  const n = testCountFor(cls);
+  const scores = studentScores(cycle, studentId, n);
+  const nums = scores.filter(v=>v!=null && v!=='').map(Number).filter(v=>!isNaN(v));
+  if(!nums.length) return null;
+  const total = nums.reduce((a,b)=>a+b,0);
+  const avg = Math.round((total/nums.length)*10)/10;
+  if(isAdvancedLevel(cls.level)){
+    const target = TOEFL_TARGETS[cls.level];
+    const belowCount = nums.filter(v=>v<target).length;
+    return { advanced:true, target, total, avg, entered:nums.length, of:n, scores, under: belowCount>0, belowCount };
+  }
+  return { advanced:false, target:CYCLE_AVG_TARGET, totalTarget:CYCLE_TOTAL_TARGET, total, avg, entered:nums.length, of:n, scores, under: avg < CYCLE_AVG_TARGET };
+}
+// Human line describing a status (for dashboard alerts / reports). lang: 'en' | 'pt'
+function gradeStatusLine(st, lang){
+  const pt = lang==='pt';
+  const scoresTxt = st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ');
+  if(st.advanced){
+    return `TOEFL ${scoresTxt} · ${pt?'meta':'target'} ${st.target}` + (st.under ? (pt?` — ${st.belowCount} abaixo da meta`:` — ${st.belowCount} below target`) : '');
+  }
+  return `${scoresTxt} · ${pt?'total':'total'} ${st.total}/${st.totalTarget} · ${pt?'média':'avg'} ${st.avg}` + (st.under ? (pt?' — abaixo da média 80':' — below the 80 average') : '');
+}
 function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
 
 function daysAgo(dateStr){ return (Date.now() - new Date(dateStr+'T00:00:00').getTime()) / 86400000; }
@@ -1688,6 +1739,41 @@ function _renderDashboard(el){
           </div>`).join('')}` : ''}
     </div>` : '';
 
+  // — Grades alerts: contact parents —
+  // Non-advanced: running average of entered tests under 80 (240-point cycle).
+  // Advanced: any entered TOEFL test under the level target.
+  const gradeAlerts = [];
+  state.students.forEach(s=>{
+    const c = classById(s.classId);
+    if(!c || c.archived) return;
+    const g = state.grades[c.id];
+    if(!g || !g.cycles || !g.cycles.length) return;
+    const cyc = g.cycles[g.cycles.length-1];
+    const st = gradeStatus(c, cyc, s.id);
+    if(st && st.under) gradeAlerts.push({ id:s.id, name:s.name, classId:s.classId, st, cycleLabel:cyc.label });
+  });
+  window._dashGradeIds = gradeAlerts.map(x=>x.id);
+  window._dashGradeClassIds = gradeAlerts.map(x=>x.classId);
+  const gradesAlertHtml = gradeAlerts.length ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
+      <h3>📝 Grades — contact parents</h3>
+      ${gradeAlerts.map((x,i)=>`
+        <div class="dash-row">
+          <div class="dash-row-left">
+            ${attnDot(x.classId)}
+            <div>
+              <div class="dash-row-title">${esc(x.name)} <span class="badge red" style="margin-left:6px;">${x.st.advanced?'TOEFL below target':'Avg under 80'}</span></div>
+              <div class="dash-row-sub">${esc(classById(x.classId)?.name||'')} · ${esc(x.cycleLabel)} · ${gradeStatusLine(x.st,'en')}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="openGradesModal(window._dashGradeClassIds[${i}])">Grades →</button>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashGradeIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <button class="icon-btn" onclick="openContactParentsModal(window._dashGradeIds[${i}])" title="Flag contact parents">📞 Flag</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
     <div class="stat-row">
@@ -1701,6 +1787,7 @@ function _renderDashboard(el){
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}</div>
       <div class="card section"><h3>Upcoming</h3>${upcomingHtml}</div>
     </div>
+    ${gradesAlertHtml}
     ${attnAlertHtml}
     ${cpHtml}
     ${ecHtml}
@@ -1741,7 +1828,7 @@ function renderClassCard(c, isArchived){
         <button type="button" class="dash-row-left" aria-expanded="${expanded}" onclick="toggleClassExpand('${c.id}')">
           <span class="color-dot" style="background:${c.color}" aria-hidden="true"></span>
           <span>
-            <span class="dash-row-title">${esc(c.name)}${isArchived?` <span class="badge other" style="margin-left:6px;">Archived</span>`:''}</span>
+            <span class="dash-row-title">${esc(c.name)}${c.level?` <span class="badge other" style="margin-left:6px;">${esc(c.level)}</span>`:''}${isArchived?` <span class="badge other" style="margin-left:6px;">Archived</span>`:''}</span>
             <span class="dash-row-sub">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students · ${(()=>{const h=durationHistoryOf(c);return h.length>1?h.map(e=>e.duration).join('→')+' min':h[0].duration+' min';})()}</span>
           </span>
           <span class="chevron" style="margin-left:8px;" aria-hidden="true">${expanded?'▾':'▸'}</span>
@@ -1750,7 +1837,8 @@ function renderClassCard(c, isArchived){
           ${isArchived
             ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">↩ Unarchive</button>
                <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
-            : `<button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
+            : `<button class="icon-btn" onclick="openGradesModal('${c.id}')">📝 Grades</button>
+               <button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
                <button class="icon-btn" onclick="archiveClass('${c.id}')">📦 Archive</button>`}
         </div>
       </div>
@@ -1797,6 +1885,13 @@ function openClassModal(classId){
   showModal(`
     <h3>${c?'Edit class':'Add class'}</h3>
     <div class="field"><label>Class name</label><input id="cm-name" type="text" autofocus value="${c?esc(c.name):''}" placeholder="e.g. Turma B1"></div>
+    <div class="field"><label>Group tag (level)</label>
+      <select id="cm-level">
+        <option value="">— No tag</option>
+        ${GROUP_LEVELS.map(l=>`<option value="${l}" ${c?.level===l?'selected':''}>${l}</option>`).join('')}
+      </select>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">Sets the test rules: Teens/Basic/Intermediate = 3 tests, 240 pts total (avg 80). Advanced = 2 TOEFL tests (Adv 1: 475 · Adv 2: 500 · Adv 3: 525 · Adv 4: 550).</div>
+    </div>
     <div class="field"><label>Days</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${dayOptions.map(([d,label])=>`
@@ -1875,6 +1970,7 @@ function saveClass(classId){
   const days = [1,2,3,4,5,6,0].filter(d=>document.getElementById('cm-day-'+d)?.checked);
   if(!days.length){ alert('Please select at least one day.'); return; }
   const time = document.getElementById('cm-time').value;
+  const level = document.getElementById('cm-level')?.value || '';
   const color = document.getElementById('cm-color').value;
   const startDate = document.getElementById('cm-start').value || null;
   const endDate = document.getElementById('cm-end').value || null;
@@ -1895,10 +1991,10 @@ function saveClass(classId){
 
   if(classId){
     const c = classById(classId);
-    c.name=name; c.days=days; c.time=time; c.color=color; c.startDate=startDate; c.endDate=endDate;
+    c.name=name; c.days=days; c.time=time; c.level=level; c.color=color; c.startDate=startDate; c.endDate=endDate;
     c.duration=duration; c.durationHistory=durationHistory;
   }else{
-    state.classes.push({id:uid(), name, days, time, color, startDate, endDate, duration, durationHistory});
+    state.classes.push({id:uid(), name, days, time, level, color, startDate, endDate, duration, durationHistory});
   }
   scheduleSave('classes', state.classes);
   closeModal();
@@ -1910,6 +2006,7 @@ function deleteClass(classId){
   state.students = state.students.filter(s=>s.classId!==classId);
   Object.keys(state.sessions).forEach(k=>{ if(splitSessionKey(k)[0]===classId) delete state.sessions[k]; });
   state.events = state.events.filter(e=>e.classId!==classId);
+  if(state.grades[classId]){ delete state.grades[classId]; scheduleSave('grades', state.grades); }
   if(state.expandedClassId===classId) state.expandedClassId=null;
   scheduleSave('classes', state.classes);
   scheduleSave('students', state.students);
@@ -2085,6 +2182,101 @@ function deleteStudent(studentId){
   state.students = state.students.filter(s=>s.id!==studentId);
   scheduleSave('students', state.students);
   refreshView();
+}
+
+/* ================= GRADES (test scores per cycle) ================= */
+let gmClassId = null, gmCycleIdx = 0;
+
+function openGradesModal(classId, cycleIdx){
+  const c = classById(classId);
+  if(!c) return;
+  const g = classGrades(classId);          // ensures at least one cycle exists
+  gmClassId = classId;
+  gmCycleIdx = (cycleIdx!=null && g.cycles[cycleIdx]) ? cycleIdx : g.cycles.length-1;
+  scheduleSave('grades', state.grades);    // persist the auto-created record
+  renderGradesModal();
+}
+
+function renderGradesModal(){
+  const c = classById(gmClassId);
+  const g = classGrades(gmClassId);
+  const cycle = g.cycles[gmCycleIdx];
+  const students = studentsInClass(gmClassId);
+  const n = testCountFor(c);
+  const adv = isAdvancedLevel(c.level);
+  const target = adv ? TOEFL_TARGETS[c.level] : null;
+  const isCurrent = gmCycleIdx === g.cycles.length-1;
+
+  const ruleNote = !c.level
+    ? `⚠ This class has no group tag yet, so it defaults to the 3-test / 240-point rule. <button type="button" class="linkish" onclick="closeModal();openClassModal('${c.id}')">Set the tag</button> for the right rules.`
+    : adv
+      ? `TOEFL — 2 tests per cycle. Target for ${esc(c.level)}: <b>${target}</b> per test. Any test under the target flags Contact Parents.`
+      : `3 tests per cycle · <b>240 points total</b> needed (average 80). An average under 80 flags Contact Parents.`;
+
+  window._gmIds = students.map(s=>s.id);
+  showModal(`
+    <h3>📝 Grades — ${esc(c.name)}${c.level?` <span class="badge other">${esc(c.level)}</span>`:''}</h3>
+    <div style="font-size:13px;color:var(--muted);margin:4px 0 12px;">${ruleNote}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Cycle:</label>
+      <select onchange="gmSelectCycle(this.value)">
+        ${g.cycles.map((cy,i)=>`<option value="${i}" ${i===gmCycleIdx?'selected':''}>${esc(cy.label)} (${formatDateShort(cy.startedAt)})${i===g.cycles.length-1?' · current':''}</option>`).join('')}
+      </select>
+      <button class="btn-ghost small" onclick="gmNewCycle()">+ Start new cycle</button>
+      ${!isCurrent?`<span class="badge other">Viewing a past cycle — still editable</span>`:''}
+    </div>
+    ${students.length ? `
+    <div class="table-wrap" style="max-height:50vh;overflow:auto;">
+      <table>
+        <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}</th>`).join('')}<th style="text-align:center;">Total</th><th style="text-align:center;">Avg</th><th>Status</th></tr></thead>
+        <tbody>
+          ${students.map((s,si)=>{
+            const scores = studentScores(cycle, s.id, n);
+            const st = gradeStatus(c, cycle, s.id);
+            const statusHtml = !st ? '<span style="color:var(--muted);font-size:12px;">—</span>'
+              : st.under ? `<span class="badge red">📞 ${adv?'Below '+target:'Avg under 80'}</span>`
+              : (st.entered<st.of ? `<span class="badge other">On track (${st.entered}/${st.of})</span>` : `<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${adv?'Target met':'Approved'}</span>`);
+            return `<tr>
+              <td style="font-weight:600;">${esc(s.name)}</td>
+              ${scores.map((v,ti)=>`<td style="text-align:center;"><input type="number" min="0" max="${adv?677:100}" value="${v==null?'':v}" style="width:70px;text-align:center;" onchange="gmSetScore(window._gmIds[${si}], ${ti}, this.value)"></td>`).join('')}
+              <td style="text-align:center;">${st?st.total:'—'}</td>
+              <td style="text-align:center;">${st?st.avg:'—'}</td>
+              <td>${statusHtml}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : `<div class="empty">No students in this class yet.</div>`}
+    <div class="modal-actions">
+      <button class="btn-accent" onclick="closeModal()">Done</button>
+    </div>
+  `, true);
+}
+
+function gmSetScore(studentId, testIdx, value){
+  const c = classById(gmClassId);
+  const g = classGrades(gmClassId);
+  const cycle = g.cycles[gmCycleIdx];
+  if(!cycle.scores) cycle.scores = {};
+  const n = testCountFor(c);
+  const arr = studentScores(cycle, studentId, n);
+  const num = value==='' ? null : Number(value);
+  arr[testIdx] = (num==null || isNaN(num)) ? null : num;
+  cycle.scores[studentId] = arr;
+  scheduleSave('grades', state.grades);
+  renderGradesModal();
+}
+
+function gmSelectCycle(idx){ gmCycleIdx = Number(idx); renderGradesModal(); }
+
+function gmNewCycle(){
+  const g = classGrades(gmClassId);
+  const label = prompt('Name for the new cycle:', 'Cycle '+(g.cycles.length+1));
+  if(label===null) return;
+  g.cycles.push({ id: uid(), label: label.trim() || ('Cycle '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
+  gmCycleIdx = g.cycles.length-1;
+  scheduleSave('grades', state.grades);
+  renderGradesModal();
 }
 
 /* ================= ROLL CALL ================= */
@@ -2459,6 +2651,22 @@ function buildReportText(s, lang){
     out.push(`${L.phone}: ${s.totalPhone} ${tl}`);
   }
 
+  // --- grades (test scores) ---
+  if(s.grades && s.grades.cycles && s.grades.cycles.length){
+    out.push('');
+    out.push(isPt ? 'NOTAS' : 'GRADES');
+    if(s.grades.level) out.push(`${isPt?'Nível':'Level'}: ${s.grades.level}`);
+    s.grades.cycles.forEach(cy=>{
+      const st = cy.status;
+      const scoresTxt = st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ');
+      if(st.advanced){
+        out.push(`- ${cy.label}: TOEFL ${scoresTxt} (${isPt?'meta':'target'} ${st.target})${st.under ? (isPt?' — ABAIXO DA META':' — BELOW TARGET') : (st.entered===st.of ? (isPt?' — meta atingida':' — target met') : '')}`);
+      }else{
+        out.push(`- ${cy.label}: ${scoresTxt} — total ${st.total}/240 · ${isPt?'média':'average'} ${st.avg} (${isPt?'mínimo':'min'} 80)${st.under ? (isPt?' — ABAIXO DA MÉDIA':' — BELOW AVERAGE') : (st.entered===st.of ? (isPt?' — aprovado':' — approved') : '')}`);
+      }
+    });
+  }
+
   // --- classes missed detail ---
   if(s.missed && s.missed.length){
     out.push('');
@@ -2668,9 +2876,22 @@ function renderStudentProfile(){
   const totalLostMin = lostLateMin + lostEarlyMin + absentMin;
   const lostEquivClasses = avgDuration ? (totalLostMin/avgDuration).toFixed(1) : '0.0';
 
+  // Grades (test scores per cycle) for this student's class
+  let gradesInfo = null;
+  if(cls){
+    const g = state.grades[cls.id];
+    if(g && g.cycles && g.cycles.length){
+      const cyc = g.cycles
+        .map((cy,i)=>({label:cy.label, startedAt:cy.startedAt, isCurrent:i===g.cycles.length-1, status:gradeStatus(cls, cy, student.id)}))
+        .filter(x=>x.status);
+      if(cyc.length) gradesInfo = { level: cls.level||null, advanced: isAdvancedLevel(cls.level), cycles: cyc };
+    }
+  }
+
   // Stash for the plain-text report builder, so it can never disagree with what's shown.
   lastReportStats = {
     name: student.name, className: cls?cls.name:null,
+    grades: gradesInfo,
     fromVal, toVal,
     total, present, late, absent, totalPhone,
     hwAvg, partScore, expected, classesLost, attendanceRate,
@@ -2767,6 +2988,33 @@ function renderStudentProfile(){
         ], partScore!=null?partScore+'%':'—', t.participation)}
       </div>` : ''}
     </div>
+    ${gradesInfo ? `
+    <div class="card section" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
+      <h3>📝 ${state.reportLang==='pt'?'Notas':'Test Grades'}${gradesInfo.level?` <span class="badge other" style="font-size:12px;vertical-align:middle;">${esc(gradesInfo.level)}</span>`:''}</h3>
+      <div class="chart-note" style="margin-bottom:8px;">${gradesInfo.advanced
+        ? (state.reportLang==='pt' ? `TOEFL — meta por prova: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>` : `TOEFL — target per test: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>`)
+        : (state.reportLang==='pt' ? `3 provas por ciclo · <b>240 pontos</b> no total (média 80) para aprovação` : `3 tests per cycle · <b>240 points</b> total (average 80) to be approved`)}</div>
+      <table>
+        <thead><tr><th>${state.reportLang==='pt'?'Ciclo':'Cycle'}</th><th>${state.reportLang==='pt'?'Notas':'Scores'}</th><th style="text-align:center;">Total</th><th style="text-align:center;">${state.reportLang==='pt'?'Média':'Average'}</th><th>Status</th></tr></thead>
+        <tbody>
+          ${gradesInfo.cycles.map(cy=>{
+            const st = cy.status;
+            const ok = !st.under && st.entered===st.of;
+            const statusTxt = st.under
+              ? (state.reportLang==='pt' ? (st.advanced?'Abaixo da meta':'Abaixo da média') : (st.advanced?'Below target':'Below average'))
+              : (st.entered<st.of ? (state.reportLang==='pt'?`Em andamento (${st.entered}/${st.of})`:`In progress (${st.entered}/${st.of})`)
+                 : (state.reportLang==='pt' ? (st.advanced?'Meta atingida':'Aprovado') : (st.advanced?'Target met':'Approved')));
+            return `<tr>
+              <td>${esc(cy.label)}${cy.isCurrent?` <span class="badge other" style="font-size:11px;">${state.reportLang==='pt'?'atual':'current'}</span>`:''}</td>
+              <td>${st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ')}</td>
+              <td style="text-align:center;">${st.total}</td>
+              <td style="text-align:center;">${st.avg}</td>
+              <td>${st.under?`<span class="badge red">📞 ${statusTxt}</span>`:(ok?`<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${statusTxt}</span>`:`<span class="badge other">${statusTxt}</span>`)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
     <div class="card section">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
@@ -4502,6 +4750,7 @@ async function init(){
   state.checkpoints = loadKey('checkpoints', []);
   state.learningPoints = loadKey('learningPoints', []);
   state.privateSettings = loadKey('privateSettings', { overdueThresholdDays: 14 });
+  state.grades = loadKey('grades', {});
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   dataReady = true;   // writes unlocked only now
