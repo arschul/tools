@@ -1574,19 +1574,40 @@ function _renderDashboard(el){
     if(c.endDate && today > c.endDate) return false;
     return true;
   });
-  // Upcoming = calendar events + scheduled private lessons, merged chronologically,
-  // filtered by range: Today (default) / Tomorrow / This week (next 7 days).
+  // Upcoming = group class occurrences + calendar events + scheduled private lessons,
+  // merged chronologically, filtered by range: Today (default) / Tomorrow / This week.
   const privName = id => state.privateStudents.find(p=>p.id===id)?.name || 'Private student';
   const upRange = localStorage.getItem('dashUpcomingRange') || 'today';
   const addDays = (dstr,n)=>{ const d=new Date(dstr+'T00:00:00'); d.setDate(d.getDate()+n); return dateToStr(d.getFullYear(), d.getMonth(), d.getDate()); };
   const upFrom = upRange==='tomorrow' ? addDays(today,1) : today;
   const upTo   = upRange==='week' ? addDays(today,6) : upFrom;
+
+  // Expand recurring group classes into dated occurrences within the range
+  const classOccurrences = [];
+  for(let d=upFrom; d<=upTo; d=addDays(d,1)){
+    if(isHoliday(d)) continue;
+    const wd = new Date(d+'T00:00:00').getDay();
+    activeClasses().forEach(c=>{
+      if(!getClassDays(c).includes(wd)) return;
+      if(c.startDate && d < c.startDate) return;
+      if(c.endDate && d > c.endDate) return;
+      classOccurrences.push({kind:'class', date:d, time:c.time||'', c});
+    });
+  }
+
   const upcoming = [
+    ...classOccurrences,
     ...state.events.filter(e=>e.date>=upFrom && e.date<=upTo).map(e=>({kind:'event', date:e.date, time:'', e})),
     ...state.privateLessons.filter(l=>l.status==='scheduled' && l.date>=upFrom && l.date<=upTo)
         .map(l=>({kind:'priv', date:l.date, time:l.time||'', l}))
   ].sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))
-   .slice(0,12);
+   .slice(0, upRange==='week' ? 24 : 12);
+
+  // — Private lessons whose scheduled time has already passed: remind to flag —
+  const nowHM = new Date().toTimeString().slice(0,5);
+  const staleLessons = state.privateLessons
+    .filter(l=>l.status==='scheduled' && (l.date<today || (l.date===today && l.time && l.time<nowHM)))
+    .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date));
 
   // — Pending session completions (today + recent past days with data but not marked complete) —
   const pendingCompletions = [];
@@ -1657,7 +1678,19 @@ function _renderDashboard(el){
 
   // — Upcoming —
   window._dashUpcomingPrivIds = upcoming.map(u=>u.kind==='priv'?u.l.studentId:null);
-  const upcomingHtml = upcoming.length ? upcoming.map((u,i)=> u.kind==='event' ? `
+  window._dashUpcomingClassIds = upcoming.map(u=>u.kind==='class'?u.c.id:null);
+  window._dashUpcomingDates = upcoming.map(u=>u.date);
+  const upcomingHtml = upcoming.length ? upcoming.map((u,i)=> u.kind==='class' ? `
+    <div class="dash-row" ${u.date===today && isSessionCompleted(u.c.id, u.date)?'style="opacity:.75;"':''}>
+      <div class="dash-row-left">
+        <span class="color-dot" style="background:${u.c.color}"></span>
+        <div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(u.c.name)}${u.c.level?` <span class="badge other" style="margin-left:6px;">${esc(u.c.level)}</span>`:''}${u.date===today && isSessionCompleted(u.c.id, u.date)?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}</div>
+          <div class="dash-row-sub">${formatDateShort(u.date)}${u.time?' · '+u.time:''} · ${studentsInClass(u.c.id).length} students</div>
+        </div>
+      </div>
+      <button class="btn-ghost small" onclick="goToRollCall(window._dashUpcomingClassIds[${i}], window._dashUpcomingDates[${i}])">Roll Call →</button>
+    </div>` : u.kind==='event' ? `
     <div class="dash-row">
       <div class="dash-row-left">
         <span class="badge ${u.e.type}">${eventTypeLabel(u.e.type)}</span>
@@ -1728,6 +1761,31 @@ function _renderDashboard(el){
   // — Pending completions —
   window._dashPendingClassIds = pendingCompletions.map(p=>p.cls.id);
   window._dashPendingDates = pendingCompletions.map(p=>p.date);
+
+  // — Private lessons past their time but still "scheduled" —
+  window._dashStaleIds = staleLessons.map(l=>l.id);
+  window._dashStaleStudentIds = staleLessons.map(l=>l.studentId);
+  const staleHtml = staleLessons.length ? `
+    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
+      <h3>⏰ Private lessons awaiting status</h3>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">These are past their scheduled time but still flagged as "scheduled". Mark them so hours and payments stay accurate.</div>
+      ${staleLessons.map((l,i)=>`
+        <div class="dash-row">
+          <div class="dash-row-left">
+            <span class="color-dot" style="background:#0ea5b8"></span>
+            <div>
+              <div class="dash-row-title">${esc(privName(l.studentId))} <span class="badge hw" style="margin-left:6px;">Private</span></div>
+              <div class="dash-row-sub">${formatDateShort(l.date)}${l.date===today?' · Today':''}${l.time?' · '+l.time:''}${l.duration?' · '+l.duration+' min':''}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashStaleStudentIds[${i}]})">Open →</button>
+            <button class="btn-ghost small" style="color:var(--red);" onclick="setLessonStatus(window._dashStaleIds[${i}],'no-show')">No-show</button>
+            <button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="setLessonStatus(window._dashStaleIds[${i}],'completed')">✓ Completed</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
   const pendingHtml = pendingCompletions.length ? `
     <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
       <h3>⏳ Sessions awaiting completion</h3>
@@ -1908,6 +1966,7 @@ function _renderDashboard(el){
     </div>
     ${backupHtml}
     ${pendingHtml}
+    ${staleHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}${privTodayHtml}</div>
       <div class="card section">
