@@ -1712,28 +1712,47 @@ function _renderDashboard(el){
     </div>`).join('')
     : `<div class="empty">${upRange==='today'?'Nothing scheduled for today.':upRange==='tomorrow'?'Nothing scheduled for tomorrow.':'Nothing scheduled this week.'} <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
 
-  // — Contact Parents —
-  const cpStudents = [
-    ...state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; }).map(s=>({...s, _priv:false})),
-    ...state.privateStudents.filter(s=>s.contactParents?.reason).map(s=>({...s, _priv:true}))
-  ];
+  // — Contact Parents (group students) —
+  const cpStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; });
   window._dashCpIds = cpStudents.map(s=>s.id);
   const cpHtml = cpStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
       <h3>📞 Contact Parents</h3>
-      ${cpStudents.map((s,i)=>{ const c=s._priv?null:classById(s.classId); return `
+      ${cpStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
-            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:(s._priv?`<span class="color-dot" style="background:#0ea5b8"></span>`:'')}
+            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
             <div>
-              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span>${s._priv?' <span class="badge hw">Private</span>':''}</div>
+              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span></div>
               <div class="dash-row-sub">${esc(s.contactParents.reason)}</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="${s._priv?`navigate('priv-student',{privOpenStudentId:window._dashCpIds[${i}]})`:`navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})`}">Report →</button>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
             <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>          </div>
         </div>`; }).join('')}
+    </div>` : '';
+
+  // — Reminders (private students: adults, so it's "send that link", not "call home") —
+  const remStudents = state.privateStudents.filter(s=>s.contactParents?.reason);
+  window._dashRemIds = remStudents.map(s=>s.id);
+  const remHtml = remStudents.length ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--amber);">
+      <h3>⏰ Reminders — private students</h3>
+      ${remStudents.map((s,i)=>`
+        <div class="dash-row">
+          <div class="dash-row-left">
+            <span class="color-dot" style="background:#0ea5b8"></span>
+            <div>
+              <div class="dash-row-title">${esc(s.name)} <span class="badge amber" style="margin-left:6px;">${esc(s.contactParents.category)}</span></div>
+              <div class="dash-row-sub">${esc(s.contactParents.reason)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashRemIds[${i}]})">Open →</button>
+            <button class="icon-btn" onclick="clearContactParents(window._dashRemIds[${i}])">✓ Done</button>
+          </div>
+        </div>`).join('')}
     </div>` : '';
 
   // — English Club —
@@ -1983,6 +2002,7 @@ function _renderDashboard(el){
     ${gradesAlertHtml}
     ${attnAlertHtml}
     ${cpHtml}
+    ${remHtml}
     ${ecHtml}
   `;
 }
@@ -2247,22 +2267,26 @@ function openContactParentsModal(studentId){
   const s = anyStudent(studentId);
   if(!s) return;
   const cp = s.contactParents || {};
+  const isPriv = !!privStudent(studentId);
+  // Private students are adults: this is a personal reminder (send material, share a
+  // link...), not a call home. Same data underneath, different framing.
+  const cats = isPriv
+    ? ['Send material','Send link','Homework','Follow-up','Other']
+    : ['English Club','Grades','Behavior','Other'];
+  if(cp.category && !cats.includes(cp.category)) cats.push(cp.category);
   showModal(`
-    <h3>📞 Contact Parents — ${esc(s.name)}</h3>
-    <div class="field"><label>Reason category</label>
+    <h3>${isPriv?'⏰ Reminder':'📞 Contact Parents'} — ${esc(s.name)}</h3>
+    <div class="field"><label>${isPriv?'Category':'Reason category'}</label>
       <select id="cp-cat">
-        <option value="English Club" ${cp.category==='English Club'?'selected':''}>English Club</option>
-        <option value="Grades" ${cp.category==='Grades'?'selected':''}>Grades</option>
-        <option value="Behavior" ${cp.category==='Behavior'?'selected':''}>Behavior</option>
-        <option value="Other" ${cp.category==='Other'||!cp.category?'selected':''}>Other</option>
+        ${cats.map(cat=>`<option value="${cat}" ${cp.category===cat || (!cp.category && cat==='Other')?'selected':''}>${cat}</option>`).join('')}
       </select>
     </div>
-    <div class="field"><label>Notes / reason</label>
-      <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(cp.reason||'')}</textarea>
+    <div class="field"><label>${isPriv?'What to remember':'Notes / reason'}</label>
+      <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;" placeholder="${isPriv?'e.g. Send the phrasal verbs exercise I promised · share the podcast link from class':''}">${esc(cp.reason||'')}</textarea>
     </div>
     <div class="modal-actions">
       ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ Mark done</button>`:''}      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn-accent" onclick="saveContactParents('${studentId}')">Save flag</button>
+      <button class="btn-accent" onclick="saveContactParents('${studentId}')">${isPriv?'Save reminder':'Save flag'}</button>
     </div>
   `);
 }
@@ -2281,6 +2305,23 @@ function saveContactParents(studentId){
 function clearContactParents(studentId){
   const s = anyStudent(studentId);
   if(!s || !s.contactParents?.reason) return;
+  const isPriv = !!privStudent(studentId);
+  if(isPriv){
+    // Reminders for adult private students: no mandatory call summary, one tap done.
+    showModal(`
+      <h3>⏰ Reminder done — ${esc(s.name)}</h3>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">"${esc(s.contactParents.reason)}"</p>
+      <div class="field"><label>Note (optional)</label>
+        <textarea id="cp-summary" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:13px;" placeholder="e.g. Sent by WhatsApp"></textarea>
+      </div>
+      <input id="cp-call-date" type="hidden" value="${todayStr()}">
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="confirmCallDone('${studentId}')">✓ Mark done</button>
+      </div>
+    `);
+    return;
+  }
   showModal(`
     <h3>📞 Log Call — ${esc(s.name)}</h3>
     <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">Before marking done, write a brief summary of the conversation. This will appear on the student's report.</p>
@@ -2299,7 +2340,8 @@ function confirmCallDone(studentId){
   if(!s) return;
   const summary = document.getElementById('cp-summary').value.trim();
   const callDate = document.getElementById('cp-call-date').value;
-  if(!summary){ alert('Please enter a summary of the conversation.'); return; }
+  const isPrivDone = !!privStudent(studentId);
+  if(!summary && !isPrivDone){ alert('Please enter a summary of the conversation.'); return; }
   if(!s.contactParentsHistory) s.contactParentsHistory = [];
   s.contactParentsHistory.unshift({
     date: callDate,
@@ -4103,7 +4145,7 @@ function privStudentsHtml(){
           : '—';
         const range = s.startDate ? `${formatDateShort(s.startDate)} – ${s.endDate?formatDateShort(s.endDate):'ongoing'}` : '—';
         return `<tr>
-          <td style="font-weight:600;"><button type="button" class="student-name-link" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">${esc(s.name)}</button>${s.isMinor?' <span class="badge other">minor</span>':''}${s.contactParents?.reason?' <span class="badge red">📞</span>':''}</td>
+          <td style="font-weight:600;"><button type="button" class="student-name-link" onclick="navigate('priv-student',{privOpenStudentId:window._privListIds[${i}]})">${esc(s.name)}</button>${s.isMinor?' <span class="badge other">minor</span>':''}${s.contactParents?.reason?' <span class="badge amber">⏰</span>':''}</td>
           <td><span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}">${s.status}</span></td>
           <td>${esc(sched)}<div style="font-size:11px;color:var(--muted);">${range}</div></td>
           <td>${money(lessonCost(s))}/lesson</td>
@@ -4697,13 +4739,13 @@ function renderPrivStudent(){
         <h1>${esc(s.name)}
           <span class="badge ${s.status==='active'?'green':s.status==='paused'?'amber':'other'}" style="font-size:13px;vertical-align:middle;">${s.status}</span>
           ${s.cefr?`<span class="badge hw" style="font-size:13px;vertical-align:middle;">${s.cefr}</span>`:''}
-          ${s.contactParents?.reason?`<span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(s.contactParents.category)}</span>`:''}
+          ${s.contactParents?.reason?`<span class="badge amber" style="font-size:13px;vertical-align:middle;">⏰ ${esc(s.contactParents.category)}</span>`:''}
         </h1>
         <div class="meta">${sched}${dateRange?` · ${dateRange}`:''}</div>
         <div class="meta">${s.contactPhone?'📱 '+esc(s.contactPhone):''}${s.isMinor?` · Guardian: ${esc(s.guardianName||'—')} ${esc(s.guardianPhone||'')}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;" class="no-print">
-        <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="Contact parents">📞${s.contactParents?.reason?' ●':''}</button>
+        <button class="icon-btn ${s.contactParents?.reason?'danger':''}" onclick="openContactParentsModal('${s.id}')" title="Reminder">⏰${s.contactParents?.reason?' ●':''}</button>
         <button class="btn-ghost" onclick="openPrivStudentModal('${s.id}')">Edit</button>
         <button class="btn-accent" onclick="window.print()">🖨️ Print Report</button>
       </div>
@@ -4835,12 +4877,12 @@ function renderPrivStudent(){
     </div>
 
     ${(s.contactParents?.reason || s.contactParentsHistory?.length) ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
-      <h3>📞 Contact Parents</h3>
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--amber);">
+      <h3>⏰ Reminders</h3>
       ${s.contactParents?.reason ? `
         <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
-            <span class="badge red">Pending</span><span class="badge other">${esc(s.contactParents.category)}</span>
+            <span class="badge amber">Pending</span><span class="badge other">${esc(s.contactParents.category)}</span>
           </div>
           <div style="font-size:13px;">${esc(s.contactParents.reason)}</div>
         </div>`:''}
