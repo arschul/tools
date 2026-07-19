@@ -451,6 +451,9 @@
   .hist-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:11px;color:var(--muted);align-items:baseline;}
   .hist-legend-item{white-space:nowrap;}
   .hist-legend-item b{color:var(--text);}
+  .contact-list{display:flex;flex-direction:column;gap:10px;}
+  .contact-entry{border:1px solid var(--border);border-radius:10px;padding:12px 14px;break-inside:avoid;}
+  .contact-entry-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
   th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 12px;background:var(--surface-alt);border-bottom:1px solid var(--border);white-space:nowrap;}
   td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -630,6 +633,10 @@
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/></svg></span>
     Reports
   </button>
+  <button type="button" class="nav-item" data-view="contacts" onclick="navigate('contacts')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+    Contacts
+  </button>
   <button type="button" class="nav-item" data-view="private" onclick="navigate('private')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
     Private Lessons
@@ -657,6 +664,7 @@
   <div id="view-group-report" class="view"></div>
   <div id="view-private" class="view"></div>
   <div id="view-priv-student" class="view"></div>
+  <div id="view-contacts" class="view"></div>
 </main>
 
 <div id="modal-root"></div>
@@ -709,6 +717,7 @@ let state = {
   studentProfileReturn: 'reports',
   reportRange: { from: '', to: '' },
   reportsSelection: { classId: '', studentId: '' },
+  contactsFilter: { search: '', classId: '' },
   reportLang: 'en'
 };
 
@@ -770,6 +779,7 @@ const T = {
     noRecords: 'No session records in this period.',
     printBtn: '🖨️ Print Report',
     backToReports: '← Back to Reports',
+    backToContacts: '← Back to Contacts',
     backToClasses: '← Back to Classes & Students',
     englishClubBadge: '⭐ English Club',
     langToggle: 'PT',
@@ -846,6 +856,7 @@ const T = {
     noRecords: 'Nenhuma aula registrada neste período.',
     printBtn: '🖨️ Imprimir Relatório',
     backToReports: '← Voltar aos Relatórios',
+    backToContacts: '← Voltar para Contatos',
     backToClasses: '← Voltar a Turmas e Alunos',
     englishClubBadge: '⭐ English Club',
     langToggle: 'EN',
@@ -1872,7 +1883,7 @@ document.addEventListener('keydown', (e)=>{
 function navigate(view, params={}){
   Object.assign(state, params);
   state.view = view;
-  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', private:'private', 'priv-student':'private'};
+  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', contacts:'contacts', private:'private', 'priv-student':'private'};
   document.querySelectorAll('.nav-item').forEach(n=>{
     const on = n.dataset.view===navMap[view];
     n.classList.toggle('active', on);
@@ -1902,6 +1913,7 @@ function refreshView(){
   else if(v==='student') renderStudentProfile();
   else if(v==='reports') renderReports();
   else if(v==='group-report') renderGroupReport();
+  else if(v==='contacts') renderContacts();
   else if(v==='private') renderPrivate();
   else if(v==='priv-student') renderPrivStudent();
   updatePrivAlertDot();
@@ -2915,6 +2927,7 @@ function confirmCallDone(studentId){
   if(!summary && !isPrivDone){ alert('Please enter a summary of the conversation.'); return; }
   if(!s.contactParentsHistory) s.contactParentsHistory = [];
   s.contactParentsHistory.unshift({
+    id: uid(),
     date: callDate,
     category: s.contactParents.category,
     reason: s.contactParents.reason,
@@ -3790,7 +3803,7 @@ function renderStudentProfile(){
   const t = T[state.reportLang];
   const student = state.students.find(s=>s.id===state.studentProfileId);
   const returnView = state.studentProfileReturn || 'reports';
-  const returnLabel = returnView==='classes' ? t.backToClasses : t.backToReports;
+  const returnLabel = returnView==='classes' ? t.backToClasses : returnView==='contacts' ? t.backToContacts : t.backToReports;
   if(!student){
     document.getElementById('view-student').innerHTML = `
       <div class="topbar"><div><button class="btn-ghost back-btn" onclick="navigate('${returnView}')">${returnLabel}</button></div></div>
@@ -4163,6 +4176,206 @@ function setReportRangeFromReports(which, val){
 function resetReportRangeFromReports(){
   state.reportRange = {from:'', to:''};
   refreshView();
+}
+
+/* ================= CONTACTS ================= */
+/* A management surface for LOGGED contacts (contactParentsHistory) across every
+   student — the place to fix a contact that was marked done by mistake. Group
+   and private students are separated; searchable by name; each entry can be
+   edited, deleted, or printed. */
+
+// Flatten every logged contact into rows tagged with student + class context.
+function allContactRows(){
+  const rows = [];
+  state.students.forEach(s=>{
+    const c = classById(s.classId);
+    (s.contactParentsHistory||[]).forEach((h,idx)=>{
+      rows.push({ studentId:s.id, studentName:s.name, kind:'group',
+        classId: s.classId, className: c?c.name:'—', classColor: c?c.color:'var(--muted)',
+        archived: !!c?.archived, entry:h, idx });
+    });
+  });
+  state.privateStudents.forEach(s=>{
+    (s.contactParentsHistory||[]).forEach((h,idx)=>{
+      rows.push({ studentId:s.id, studentName:s.name, kind:'private',
+        classId:'__priv__', className:'Private students', classColor:'#0ea5b8',
+        archived:false, entry:h, idx });
+    });
+  });
+  // newest first
+  rows.sort((a,b)=> (b.entry.date||'').localeCompare(a.entry.date||''));
+  return rows;
+}
+// Resolve an entry by id (preferred) or by student+index (legacy entries w/o id).
+function findContactEntry(studentId, entryId, idx){
+  const s = anyStudent(studentId);
+  if(!s || !Array.isArray(s.contactParentsHistory)) return null;
+  let i = -1;
+  if(entryId) i = s.contactParentsHistory.findIndex(h=>h.id===entryId);
+  if(i<0 && idx!=null && s.contactParentsHistory[idx]) i = Number(idx);
+  if(i<0) return null;
+  return { student:s, list:s.contactParentsHistory, index:i, entry:s.contactParentsHistory[i] };
+}
+
+function renderContacts(){
+  const q = (state.contactsFilter.search||'').trim().toLowerCase();
+  const classFilter = state.contactsFilter.classId||'';
+  let rows = allContactRows();
+  if(q) rows = rows.filter(r=>r.studentName.toLowerCase().includes(q));
+  if(classFilter) rows = rows.filter(r=>r.classId===classFilter);
+
+  // group rows by class (order: active classes, archived, then private)
+  const groups = new Map();
+  rows.forEach(r=>{ if(!groups.has(r.classId)) groups.set(r.classId, {name:r.className, color:r.classColor, archived:r.archived, items:[]}); groups.get(r.classId).items.push(r); });
+  // stable display order
+  const order = [...activeClasses().map(c=>c.id), ...archivedClasses().map(c=>c.id), '__priv__'];
+  const orderedIds = [...groups.keys()].sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+
+  const total = allContactRows().length;
+  const shown = rows.length;
+
+  // class filter options — only classes that actually have contacts
+  const classesWithContacts = [...new Set(allContactRows().map(r=>r.classId))];
+  const classOpts = classesWithContacts.map(cid=>{
+    if(cid==='__priv__') return `<option value="__priv__" ${classFilter==='__priv__'?'selected':''}>Private students</option>`;
+    const c = classById(cid);
+    return `<option value="${cid}" ${classFilter===cid?'selected':''}>${esc(c?c.name:'—')}${c?.archived?' (archived)':''}</option>`;
+  }).join('');
+
+  document.getElementById('view-contacts').innerHTML = `
+    <div class="topbar">
+      <div><h1>Contacts</h1><div class="meta">Every logged parent contact &amp; reminder — edit, delete, or print</div></div>
+      <div class="no-print" style="display:flex;gap:10px;">
+        <button class="btn-accent" onclick="printContactsReport()" ${total?'':'disabled'}>🖨️ Print</button>
+      </div>
+    </div>
+    <div class="card section no-print" style="margin-bottom:16px;">
+      <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
+        <input type="text" value="${esc(state.contactsFilter.search)}" oninput="setContactsSearch(this.value)" placeholder="Search student…" style="border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:14px;min-width:200px;">
+        <select onchange="setContactsClass(this.value)">
+          <option value="">All classes</option>
+          ${classOpts}
+        </select>
+        ${(q||classFilter)?`<button class="btn-ghost small" onclick="clearContactsFilter()">Clear</button>`:''}
+        <span style="font-size:12px;color:var(--muted);margin-left:auto;">${shown} of ${total} contact${total===1?'':'s'}</span>
+      </div>
+    </div>
+
+    <div id="contacts-print-title" class="print-only" style="margin-bottom:12px;">
+      <h1 style="margin:0;">Contact Log</h1>
+      <div style="color:#444;font-size:13px;">${q?`Student: ${esc(state.contactsFilter.search)} · `:''}${classFilter?`${esc(groups.get(classFilter)?.name||'')} · `:''}Generated ${formatDateLong(todayStr())}</div>
+    </div>
+
+    ${total===0 ? `<div class="card empty-card">No contacts have been logged yet. When you mark a Contact Parents flag as done, it's recorded here.</div>`
+      : shown===0 ? `<div class="card empty-card">No contacts match your search.</div>`
+      : orderedIds.map(cid=>{
+        const g = groups.get(cid);
+        return `
+        <div class="card section" style="margin-bottom:14px;break-inside:avoid;">
+          <h3 style="display:flex;align-items:center;gap:8px;margin-top:0;">
+            <span class="color-dot" style="background:${g.color}"></span>${esc(g.name)}
+            ${g.archived?`<span class="badge other">Archived</span>`:''}
+            <span style="font-size:12px;color:var(--muted);font-weight:400;">${g.items.length} contact${g.items.length===1?'':'s'}</span>
+          </h3>
+          <div class="contact-list">
+            ${g.items.map(r=>{
+              const e = r.entry;
+              const eid = e.id||'';
+              return `
+              <div class="contact-entry">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                  <div style="font-weight:700;">${esc(r.studentName)} <span class="badge ${r.kind==='private'?'hw':'red'}" style="margin-left:4px;">${esc(e.category||'—')}</span></div>
+                  <div style="font-size:12px;color:var(--muted);white-space:nowrap;">${e.date?formatDateShort(e.date):'—'}</div>
+                </div>
+                ${e.reason?`<div style="font-size:13px;color:var(--muted);margin-top:4px;"><b>Reason:</b> ${esc(e.reason)}</div>`:''}
+                ${e.summary?`<div style="font-size:13px;margin-top:4px;"><b>Summary:</b> ${esc(e.summary)}</div>`:`<div style="font-size:13px;margin-top:4px;color:var(--muted);font-style:italic;">No summary recorded</div>`}
+                <div class="contact-entry-actions no-print">
+                  <button class="btn-ghost small" onclick="navigate('${r.kind==='private'?'priv-student':'student'}',${r.kind==='private'?`{privOpenStudentId:'${r.studentId}'}`:`{studentProfileId:'${r.studentId}',studentProfileReturn:'contacts'}`})">Open student →</button>
+                  <button class="icon-btn" onclick="openEditContactModal('${r.studentId}','${eid}',${r.idx})">✏️ Edit</button>
+                  <button class="icon-btn danger" onclick="deleteContact('${r.studentId}','${eid}',${r.idx})">🗑 Delete</button>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+  `;
+}
+
+function setContactsSearch(v){ state.contactsFilter.search = v; renderContacts(); }
+function setContactsClass(v){ state.contactsFilter.classId = v; renderContacts(); }
+function clearContactsFilter(){ state.contactsFilter = {search:'', classId:''}; renderContacts(); }
+
+function openEditContactModal(studentId, entryId, idx){
+  const found = findContactEntry(studentId, entryId, idx);
+  if(!found){ alert('Could not find this contact.'); return; }
+  const s = anyStudent(studentId);
+  const e = found.entry;
+  const isPriv = !!privStudent(studentId);
+  const cats = isPriv
+    ? ['Send material','Send link','Homework','Follow-up','Other']
+    : ['English Club','Grades','Behavior','Other'];
+  if(e.category && !cats.includes(e.category)) cats.push(e.category);
+  showModal(`
+    <h3>${isPriv?'⏰ Edit reminder':'📞 Edit contact'} — ${esc(s.name)}</h3>
+    <div class="field"><label>Date</label><input id="ec-date" type="date" value="${e.date||todayStr()}"></div>
+    <div class="field"><label>Category</label>
+      <select id="ec-cat">${cats.map(c=>`<option value="${c}" ${e.category===c?'selected':''}>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Reason</label>
+      <textarea id="ec-reason" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(e.reason||'')}</textarea>
+    </div>
+    <div class="field"><label>Summary</label>
+      <textarea id="ec-summary" rows="4" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;">${esc(e.summary||'')}</textarea>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <button class="btn-ghost" style="color:var(--red);" onclick="deleteContact('${studentId}','${entryId}',${idx})">🗑 Delete</button>
+      <span style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn-accent" onclick="saveEditContact('${studentId}','${entryId}',${idx})">Save</button>
+      </span>
+    </div>
+  `);
+}
+function saveEditContact(studentId, entryId, idx){
+  const found = findContactEntry(studentId, entryId, idx);
+  if(!found) return;
+  const e = found.entry;
+  e.date = document.getElementById('ec-date').value || e.date;
+  e.category = document.getElementById('ec-cat').value;
+  e.reason = document.getElementById('ec-reason').value.trim();
+  e.summary = document.getElementById('ec-summary').value.trim();
+  if(!e.id) e.id = uid();   // backfill id on legacy entries we touch
+  const isPriv = !!privStudent(studentId);
+  if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
+  closeModal();
+  refreshView();
+}
+function deleteContact(studentId, entryId, idx){
+  const found = findContactEntry(studentId, entryId, idx);
+  if(!found) return;
+  const s = found.student;
+  const snapshot = {...found.entry};
+  const at = found.index;
+  if(!confirm(`Delete this logged contact for ${s.name} (${found.entry.date||'—'})?\n\nIt will no longer appear on their report.`)) return;
+  found.list.splice(at, 1);
+  const isPriv = !!privStudent(studentId);
+  if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
+  closeModal();
+  refreshView();
+  showUndoToast(`Deleted contact for ${s.name}`, ()=>{
+    const st = anyStudent(studentId);
+    if(st){
+      if(!st.contactParentsHistory) st.contactParentsHistory = [];
+      st.contactParentsHistory.splice(Math.min(at, st.contactParentsHistory.length), 0, snapshot);
+      if(privStudent(studentId)) persistPrivate(); else scheduleSave('students', state.students);
+      refreshView();
+    }
+  });
+}
+function printContactsReport(){
+  // The contacts view already renders print-friendly (filters hidden, title shown).
+  window.print();
 }
 
 /* ================= GROUP REPORT ================= */
