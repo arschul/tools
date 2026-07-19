@@ -721,6 +721,8 @@ const T = {
     sessionsLogged: 'Sessions logged',
     present: 'Present',
     late: 'Late',
+    ofWhichLate: 'Of which late',
+    lateNote: 'arrived late',
     absent: 'Absent',
     phoneUses: 'Phone uses (total)',
     homeworkDone: 'Homework done',
@@ -784,6 +786,8 @@ const T = {
     sessionsLogged: 'Aulas registradas',
     present: 'Presente',
     late: 'Atrasado',
+    ofWhichLate: 'Dos quais atrasados',
+    lateNote: 'chegaram atrasados',
     absent: 'Ausente',
     phoneUses: 'Uso do celular (total)',
     homeworkDone: 'Dever feito',
@@ -1634,16 +1638,19 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
 // profile donut, and the group report so they can never disagree.
 // Preferred: schedule-based (expected − absent) / expected — this punishes
 // missed classes against the real schedule. When no schedule/dates give an
-// expected count, fall back to recorded-based (present+late)/recorded and flag
-// it so the UI can label it differently.
+// expected count, fall back to recorded-based present/recorded and flag it so
+// the UI can label it differently.
+// NOTE: `present` already counts everyone who attended, INCLUDING late arrivals
+// (arriving late is still being present). `late` is passed only for callers that
+// want it; it is a subset of present and must not be added again here.
 // Args: expected (number|null), absent, present, late (all counts).
 // Returns {rate:0-100|null, basis:'schedule'|'recorded'}.
 function attendanceRate(expected, absent, present, late){
   if(expected){
     return { rate: Math.round(100*(expected-absent)/expected), basis:'schedule' };
   }
-  const recorded = present + late + absent;
-  if(recorded) return { rate: Math.round(100*(present+late)/recorded), basis:'recorded' };
+  const recorded = present + absent;   // present already includes late
+  if(recorded) return { rate: Math.round(100*present/recorded), basis:'recorded' };
   return { rate: null, basis:'recorded' };
 }
 function renderDonut(slices, centerLabel, centerSub){
@@ -3777,7 +3784,7 @@ function renderStudentProfile(){
   const total = records.length;
   const absent = records.filter(r=>r.attendance==='absent').length;
   const late = records.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
-  const present = total - absent - late;
+  const present = total - absent;   // attended = present, including those who arrived late
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
   const hwRecords = records.filter(r=>r.hw!=null);
   const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>{
@@ -3889,7 +3896,7 @@ function renderStudentProfile(){
     <div class="stat-row">
       <div class="card stat"><div class="stat-num">${total}</div><div class="stat-label">${t.sessionsLogged}</div></div>
       <div class="card stat"><div class="stat-num">${present}</div><div class="stat-label">${t.present}</div></div>
-      <div class="card stat"><div class="stat-num">${late}</div><div class="stat-label">${t.late}</div></div>
+      <div class="card stat"><div class="stat-num">${late}</div><div class="stat-label">${t.ofWhichLate}</div></div>
       <div class="card stat"><div class="stat-num">${absent}</div><div class="stat-label">${t.absent}</div></div>
       <div class="card stat"><div class="stat-num">${totalPhone}</div><div class="stat-label">${t.phoneUses}</div></div>
       <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
@@ -3898,10 +3905,9 @@ function renderStudentProfile(){
     <div class="charts-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
       <div class="card chart-card">
         <h3>${t.attendance}</h3>
-        <div class="chart-note">${t.basedOn(total)}</div>
+        <div class="chart-note">${t.basedOn(total)}${late?` · ${late} ${t.lateNote}`:''}</div>
         ${renderDonut([
           {label:t.present, value:present, color:'var(--green)'},
-          {label:t.late, value:late, color:'var(--amber)'},
           {label:t.absent, value:absent, color:'var(--red)'}
         ], attendanceRate_!=null?`${attendanceRate_}%`:'—', attRateBasis==='schedule'?t.attended:t.attendedRecorded)}
       </div>
@@ -4130,7 +4136,7 @@ function renderGroupReport(){
     const total   = filtered.length;
     const absent  = filtered.filter(r=>r.attendance==='absent').length;
     const late    = filtered.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
-    const present = total - absent - late;
+    const present = total - absent;   // attended, including late arrivals
     const lostLate  = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.lateMin||0),0);
     const lostEarly = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.leftEarlyMin||0),0);
     const absentMin = filtered.filter(r=>r.attendance==='absent').reduce((s,r)=>s+dur(r.date),0);
@@ -4194,7 +4200,7 @@ function renderGroupReport(){
             <th>${state.reportLang==='pt'?'Aluno':'Student'}</th>
             <th>${state.reportLang==='pt'?'Aulas':'Sessions'}</th>
             <th>${t.present}</th>
-            <th>${t.late}</th>
+            <th>${t.ofWhichLate}</th>
             <th>${t.absent}</th>
             <th>${state.reportLang==='pt'?'% Presença':'Att. rate'}</th>
             <th>${state.reportLang==='pt'?'% Ausência':'Abs. rate'}</th>
