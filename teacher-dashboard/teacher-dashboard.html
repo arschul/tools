@@ -460,6 +460,8 @@
   .cal-grid-wrap{padding:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-grid-week .cal-cell{min-height:220px;}
+  @media (max-width:700px){ .cal-grid-week{grid-template-columns:1fr;} .cal-grid-week .cal-cell{min-height:auto;} }
   .cal-cell{border:1px solid var(--border);border-radius:10px;padding:8px;min-height:90px;cursor:pointer;display:flex;flex-direction:column;gap:4px;}
   .cal-cell:hover{border-color:var(--accent);}
   .cal-cell.empty{border:none;cursor:default;background:transparent;}
@@ -493,6 +495,12 @@
   .lost-summary{font-size:13px;line-height:1.7;}
   .lost-summary b{font-family:var(--font-head);}
   @media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
+
+  /* toast (undo) */
+  #toast-root{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+  .toast{pointer-events:auto;background:var(--text);color:var(--bg);border-radius:12px;padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:14px;box-shadow:0 6px 24px rgba(0,0,0,.25);max-width:90vw;animation:toast-in .18s ease;}
+  .toast button{background:none;border:none;color:var(--bg);font-weight:700;font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline;padding:0;white-space:nowrap;}
+  @keyframes toast-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
   /* print */
   .print-only{display:none;}
@@ -593,6 +601,10 @@
 <nav class="sidebar app-hidden" id="app-sidebar" aria-label="Main navigation">
   <div class="brand"><span class="dot"></span>EFL Dashboard</div>
   <a href="../" style="display:flex;align-items:center;gap:6px;color:#7d869c;font-size:12px;text-decoration:none;margin:-16px 0 20px 2px;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7d869c'">← Tool Hub</a>
+  <button type="button" onclick="openStudentSearch()" title="Search students (press /)" style="display:flex;align-items:center;gap:8px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#aab3c5;border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:16px;text-align:left;">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    Search students…
+  </button>
   <button type="button" class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9"/></svg></span>
     Dashboard
@@ -643,6 +655,7 @@
 </main>
 
 <div id="modal-root"></div>
+<div id="toast-root" class="no-print" aria-live="polite"></div>
 
 <script>
 /* ---------- constants ---------- */
@@ -682,6 +695,8 @@ let state = {
   rollcall: { classId: null, date: todayStr() },
   rollcallShowAll: false,   // when true, Roll Call dropdown lists all classes (for makeups)
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
+  calView: 'month',
+  calWeekStart: null,
   expandedClassId: null,
   openDrawer: null,
   studentProfileId: null,
@@ -1608,6 +1623,84 @@ function showModal(html, persistent){
   (auto || modal).focus();
 }
 
+/* ===== C6: undo toast — recover the last destructive action ===== */
+let toastTimer = null;
+function showUndoToast(message, undoFn){
+  const root = document.getElementById('toast-root');
+  if(!root) return;
+  if(toastTimer){ clearTimeout(toastTimer); toastTimer = null; }
+  root.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'toast';
+  const msg = document.createElement('span'); msg.textContent = message;
+  const btn = document.createElement('button'); btn.textContent = 'Undo';
+  const dismiss = ()=>{ if(toastTimer){clearTimeout(toastTimer);toastTimer=null;} root.innerHTML=''; };
+  btn.onclick = ()=>{ dismiss(); try{ undoFn(); }catch(e){ console.error('Undo failed', e); } };
+  el.appendChild(msg); el.appendChild(btn);
+  root.appendChild(el);
+  toastTimer = setTimeout(dismiss, 6000);
+}
+
+/* ===== C3: global student search ===== */
+function openStudentSearch(){
+  showModal(`
+    <h3 style="margin-top:0;">Search students</h3>
+    <input id="stu-search-input" type="text" autocomplete="off" placeholder="Type a name…" oninput="renderStudentSearchResults(this.value)"
+      style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:15px;box-sizing:border-box;margin-bottom:12px;">
+    <div id="stu-search-results" style="max-height:52vh;overflow:auto;"></div>
+  `);
+  setTimeout(()=>{ const i=document.getElementById('stu-search-input'); if(i) i.focus(); renderStudentSearchResults(''); }, 0);
+}
+function renderStudentSearchResults(qRaw){
+  const box = document.getElementById('stu-search-results');
+  if(!box) return;
+  const q = (qRaw||'').trim().toLowerCase();
+  const group = state.students.map(s=>{ const c=classById(s.classId); return {
+    id:s.id, name:s.name, type:'group',
+    sub: c ? (c.name + (c.archived?' · archived':'')) : 'No class',
+    color: c?.color || 'var(--muted)'
+  };});
+  const priv = state.privateStudents.map(s=>({
+    id:s.id, name:s.name, type:'priv',
+    sub: 'Private' + (s.status && s.status!=='active' ? ' · '+s.status : ''),
+    color: '#0ea5b8'
+  }));
+  let all = group.concat(priv);
+  if(q) all = all.filter(x=>x.name.toLowerCase().includes(q));
+  all.sort((a,b)=>a.name.localeCompare(b.name));
+  window._stuSearch = all;
+  if(!all.length){ box.innerHTML = `<div class="empty">${q?'No students match.':'No students yet.'}</div>`; return; }
+  box.innerHTML = all.slice(0,50).map((x,i)=>`
+    <button type="button" class="dash-row" style="width:100%;text-align:left;cursor:pointer;background:none;border:none;border-radius:8px;" onclick="pickStudentSearch(${i})">
+      <div class="dash-row-left">
+        <span class="color-dot" style="background:${x.color}"></span>
+        <div>
+          <div class="dash-row-title">${esc(x.name)}${x.type==='priv'?' <span class="badge hw" style="margin-left:6px;">Private</span>':''}</div>
+          <div class="dash-row-sub">${esc(x.sub)}</div>
+        </div>
+      </div>
+      <span style="color:var(--muted);">→</span>
+    </button>`).join('') + (all.length>50?`<div class="dash-row-sub" style="padding:8px 4px;">…and ${all.length-50} more — keep typing to narrow.</div>`:'');
+}
+function pickStudentSearch(i){
+  const x = (window._stuSearch||[])[i];
+  if(!x) return;
+  closeModal();
+  if(x.type==='priv') navigate('priv-student',{privOpenStudentId:x.id});
+  else navigate('student',{studentProfileId:x.id, studentProfileReturn:'reports'});
+}
+// "/" opens search (unless typing in a field)
+document.addEventListener('keydown', (e)=>{
+  if(e.key!=='/' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target;
+  const typing = t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable);
+  if(typing) return;
+  if(!dataReady) return;
+  if(document.getElementById('app-main')?.classList.contains('app-hidden')) return;
+  e.preventDefault();
+  openStudentSearch();
+});
+
 function closeModal(){
   const root = document.getElementById('modal-root');
   if(!root.firstElementChild) return;
@@ -2344,18 +2437,11 @@ function exportClassLogCsv(){
   const c = classById(clLogClassId);
   if(!c) return;
   const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
-  const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const header = ['Date','What we did','Homework assigned','Promise','Present','Absent','Roster','Completed','Holiday'];
-  const lines = [header.map(q).join(',')].concat(
-    rows.map(r=>[r.date, r.content, r.hw, r.promise, r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'].map(q).join(','))
+  const data = [header].concat(
+    rows.map(r=>[r.date, r.content, r.hw, r.promise, r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'])
   );
-  const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `class-log-${c.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}-${todayStr()}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+  downloadCsv(`class-log-${slugify(c.name)}-${todayStr()}.csv`, data);
 }
 function openClassModal(classId){
   const c = classId ? classById(classId) : null;
@@ -2730,7 +2816,9 @@ function renderGradesModal(){
       <select onchange="gmSelectCycle(this.value)">
         ${g.cycles.map((cy,i)=>`<option value="${i}" ${i===gmCycleIdx?'selected':''}>${esc(cy.label)} (${formatDateShort(cy.startedAt)})${i===g.cycles.length-1?' · current':''}</option>`).join('')}
       </select>
-      <button class="btn-ghost small" onclick="gmNewCycle()">+ Start new cycle</button>
+      <button class="btn-ghost small" onclick="gmRenameCycle()" title="Rename this cycle">✏️ Rename</button>
+      <button class="btn-ghost small" onclick="gmNewCycle()">+ New cycle</button>
+      ${g.cycles.length>1?`<button class="btn-ghost small" style="color:var(--red);" onclick="gmDeleteCycle()" title="Delete this cycle">🗑 Delete</button>`:''}
       ${!isCurrent?`<span class="badge other">Viewing a past cycle — still editable</span>`:''}
     </div>
     <div class="card" style="padding:10px 14px;margin-bottom:12px;">
@@ -2766,7 +2854,8 @@ function renderGradesModal(){
         </tbody>
       </table>
     </div>` : `<div class="empty">No students in this class yet.</div>`}
-    <div class="modal-actions">
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn-ghost small" onclick="exportGradesCsv()">⬇ Export CSV</button>
       <button class="btn-accent" onclick="closeModal()">Done</button>
     </div>
   `, true);
@@ -2822,11 +2911,50 @@ function gmSelectCycle(idx){ gmCycleIdx = Number(idx); renderGradesModal(); }
 
 function gmNewCycle(){
   const g = classGrades(gmClassId);
+  if(!confirm('Start a new grading cycle?\n\nThe current cycle stays saved and selectable. Scores do NOT carry over — the new cycle starts empty.')) return;
   const label = prompt('Name for the new cycle:', 'Cycle '+(g.cycles.length+1));
   if(label===null) return;
   g.cycles.push({ id: uid(), label: label.trim() || ('Cycle '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
   gmCycleIdx = g.cycles.length-1;
   scheduleSave('grades', state.grades);
+  renderGradesModal();
+}
+
+function gmRenameCycle(){
+  const g = classGrades(gmClassId);
+  const cy = g.cycles[gmCycleIdx];
+  if(!cy) return;
+  const label = prompt('Rename cycle:', cy.label);
+  if(label===null) return;
+  const trimmed = label.trim();
+  if(!trimmed) return;
+  cy.label = trimmed;
+  // Keep any linked test-day calendar events in sync with the new name.
+  const c = classById(gmClassId);
+  (cy.testEventIds||[]).forEach((evId, ti)=>{
+    if(!evId) return;
+    const ev = state.events.find(e=>e.id===evId);
+    if(ev) ev.title = `${testLabelFor(c,ti)} — ${trimmed}`;
+  });
+  scheduleSave('grades', state.grades);
+  scheduleSave('events', state.events);
+  renderGradesModal();
+}
+
+function gmDeleteCycle(){
+  const g = classGrades(gmClassId);
+  if(g.cycles.length<=1){ alert('A class needs at least one cycle.'); return; }
+  const cy = g.cycles[gmCycleIdx];
+  if(!cy) return;
+  const linked = (cy.testEventIds||[]).filter(Boolean).length;
+  if(!confirm(`Delete cycle "${cy.label}"?\n\nAll test scores in it will be removed${linked?`, along with ${linked} test event(s) on the Calendar`:''}.\n\nThis cannot be undone.`)) return;
+  // Remove this cycle's linked calendar events.
+  const evIds = new Set((cy.testEventIds||[]).filter(Boolean));
+  if(evIds.size) state.events = state.events.filter(e=>!evIds.has(e.id));
+  g.cycles.splice(gmCycleIdx, 1);
+  gmCycleIdx = Math.min(gmCycleIdx, g.cycles.length-1);
+  scheduleSave('grades', state.grades);
+  if(evIds.size) scheduleSave('events', state.events);
   renderGradesModal();
 }
 
@@ -3862,6 +3990,9 @@ function renderGroupReport(){
     return {s, total, present, late, absent, attRate, attBasis, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
   });
 
+  // Stash for CSV export so the file matches exactly what's shown.
+  window._groupReportExport = { className: cls.name, fromVal, toVal, rows };
+
   // group averages
   const avg = (arr, key) => { const v=arr.filter(r=>r[key]!=null); return v.length?Math.round(v.reduce((s,r)=>s+r[key],0)/v.length):null; };
   const attAvg = avg(rows,'attRate');
@@ -3886,6 +4017,7 @@ function renderGroupReport(){
       </div>
       <div style="display:flex;gap:10px;" class="no-print">
         <button class="btn-ghost" onclick="toggleGroupReportLang()">${t.langToggle}</button>
+        <button class="btn-ghost" onclick="exportGroupReportCsv()">⬇ CSV</button>
         <button class="btn-accent" onclick="window.print()">🖨️ ${state.reportLang==='pt'?'Imprimir':'Print'}</button>
       </div>
     </div>
@@ -3944,8 +4076,78 @@ function toggleGroupReportLang(){
   refreshView();
 }
 
+/* ===== D4: CSV export helpers ===== */
+function downloadCsv(filename, rows){
+  const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const body = rows.map(r=>r.map(q).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+body], {type:'text/csv;charset=utf-8;'});   // BOM so Excel reads accents
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function slugify(s){ return String(s||'').replace(/[^a-z0-9]+/gi,'-').toLowerCase().replace(/^-|-$/g,''); }
+
+function exportGroupReportCsv(){
+  const data = window._groupReportExport;
+  if(!data){ alert('Open a group report first.'); return; }
+  const header = ['Student','Attendance %','Attendance basis','Present','Late','Absent','In-class min','Total min','Homework %','Phone uses','Participation %'];
+  const rows = [header].concat(data.rows.map(r=>[
+    r.s.name, r.attRate??'', r.attBasis||'', r.present, r.late, r.absent,
+    r.inClass, r.totalPoss, r.hwAvg??'', r.phone, r.partAvg??''
+  ]));
+  const period = `${data.fromVal||'start'}_${data.toVal||'present'}`;
+  downloadCsv(`group-report-${slugify(data.className)}-${period}.csv`, rows);
+}
+
+function exportGradesCsv(){
+  const c = classById(gmClassId);
+  const g = classGrades(gmClassId);
+  const cycle = g.cycles[gmCycleIdx];
+  if(!c || !cycle) return;
+  const n = testCountFor(c);
+  const students = studentsInClass(gmClassId);
+  const header = ['Student', ...Array.from({length:n},(_,i)=>testLabelFor(c,i)), 'Total','Avg','Status'];
+  const rows = [header].concat(students.map(s=>{
+    const scores = studentScores(cycle, s.id, n);
+    const st = gradeStatus(c, cycle, s.id);
+    const statusTxt = !st ? '' : st.under ? (st.advanced?`below ${st.target}`:'avg under 80')
+      : st.close ? 'close' : (st.entered<st.of ? `on track (${st.entered}/${st.of})` : (st.advanced?'target met':'approved'));
+    return [s.name, ...scores.map(v=>v==null?'':v), st?st.total:'', st?st.avg:'', statusTxt];
+  }));
+  downloadCsv(`grades-${slugify(c.name)}-${slugify(cycle.label)}.csv`, rows);
+}
+
 /* ================= CALENDAR ================= */
+// Shared inner-content builder for one calendar day (used by month + week views).
+function calDayItemsHtml(dateStr){
+  const dow = new Date(dateStr+'T00:00:00').getDay();
+  const holiday = getHoliday(dateStr);
+  const classesToday = activeClasses().filter(c=>{
+    if(!getClassDays(c).includes(dow)) return false;
+    if(c.startDate && dateStr < c.startDate) return false;
+    if(c.endDate && dateStr > c.endDate) return false;
+    return true;
+  });
+  const eventsToday = state.events.filter(e=>e.date===dateStr);
+  const privToday = state.privateLessons.filter(l=>l.date===dateStr && l.status!=='cancelled')
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  return `
+    ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
+    ${!holiday?classesToday.map(c=>{
+      const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
+      return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, promises)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
+    }).join(''):''}
+    ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
+    ${privToday.map(l=>{
+      const st = privStudent(l.studentId);
+      return `<button type="button" class="cal-tag priv-tag" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</button>`;
+    }).join('')}`;
+}
+
 function renderCalendar(){
+  if(state.calView === 'week') return renderCalendarWeek();
   const {year, month} = state.calendar;
   const firstDay = new Date(year, month, 1);
   const startWeekday = firstDay.getDay();
@@ -3956,33 +4158,12 @@ function renderCalendar(){
   for(let i=0;i<startWeekday;i++) cells += `<div class="cal-cell empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
-    const dow = new Date(year, month, d).getDay();
-    const classesToday = activeClasses().filter(c=>{
-      if(!getClassDays(c).includes(dow)) return false;
-      if(c.startDate && dateStr < c.startDate) return false;
-      if(c.endDate && dateStr > c.endDate) return false;
-      return true;
-    });
-    const eventsToday = state.events.filter(e=>e.date===dateStr);
-    const privToday = state.privateLessons.filter(l=>l.date===dateStr && l.status!=='cancelled')
-      .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
     cells += `
       <div class="cal-cell ${isToday?'today':''} ${holiday?'holiday':''}" onclick="openDayModal('${dateStr}')">
         <button type="button" class="cal-date" aria-label="${formatDateLong(dateStr)}${holiday?', holiday':''}" onclick="event.stopPropagation();openDayModal('${dateStr}')">${d}</button>
-        <div class="cal-items">
-          ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
-          ${!holiday?classesToday.map(c=>{
-            const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
-            return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, promises)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
-          }).join(''):''}
-          ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
-          ${privToday.map((l,pi)=>{
-            const st = privStudent(l.studentId);
-            return `<button type="button" class="cal-tag priv-tag" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</button>`;
-          }).join('')}
-        </div>
+        <div class="cal-items">${calDayItemsHtml(dateStr)}</div>
       </div>`;
   }
 
@@ -3990,6 +4171,7 @@ function renderCalendar(){
     <div class="topbar">
       <div><h1>Calendar</h1></div>
       <div class="cal-nav">
+        <div class="tabs" style="margin-right:6px;"><button class="tab active" onclick="setCalView('month')">Month</button><button class="tab" onclick="setCalView('week')">Week</button></div>
         <button class="btn-ghost" onclick="changeMonth(-1)">←</button>
         <div class="cal-month-label">${monthName} ${year}</div>
         <button class="btn-ghost" onclick="changeMonth(1)">→</button>
@@ -4000,6 +4182,12 @@ function renderCalendar(){
       <div class="cal-weekdays">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>
       <div class="cal-grid">${cells}</div>
     </div>
+    ${calLegendHtml()}
+  `;
+}
+
+function calLegendHtml(){
+  return `
     <div class="cal-legend">
       ${activeClasses().map(c=>`<div class="legend-item"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`).join('')}
       <div class="legend-item"><span class="badge hw">HW</span> Homework due</div>
@@ -4008,7 +4196,77 @@ function renderCalendar(){
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
       <div class="legend-item">🎉 Holiday</div>
       <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
+    </div>`;
+}
+
+function setCalView(v){
+  state.calView = v;
+  if(v==='week' && !state.calWeekStart){
+    // anchor on the Sunday of the current week
+    const t = new Date(todayStr()+'T00:00:00');
+    t.setDate(t.getDate()-t.getDay());
+    state.calWeekStart = dateToStr(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  refreshView();
+}
+
+function changeWeek(delta){
+  const s = new Date((state.calWeekStart||todayStr())+'T00:00:00');
+  s.setDate(s.getDate()+delta*7);
+  state.calWeekStart = dateToStr(s.getFullYear(), s.getMonth(), s.getDate());
+  refreshView();
+}
+function goToCurrentWeek(){
+  const t = new Date(todayStr()+'T00:00:00');
+  t.setDate(t.getDate()-t.getDay());
+  state.calWeekStart = dateToStr(t.getFullYear(), t.getMonth(), t.getDate());
+  refreshView();
+}
+
+function renderCalendarWeek(){
+  if(!state.calWeekStart){
+    const t = new Date(todayStr()+'T00:00:00');
+    t.setDate(t.getDate()-t.getDay());
+    state.calWeekStart = dateToStr(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  const start = new Date(state.calWeekStart+'T00:00:00');
+  const days = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(start); d.setDate(d.getDate()+i);
+    days.push(dateToStr(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+  const endStr = days[6];
+  const rangeLabel = `${formatDateShort(days[0])} – ${formatDateShort(endStr)}`;
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  const cols = days.map((dateStr,i)=>{
+    const isToday = dateStr===todayStr();
+    const holiday = getHoliday(dateStr);
+    const dnum = Number(dateStr.slice(8,10));
+    return `
+      <div class="cal-cell week-cell ${isToday?'today':''} ${holiday?'holiday':''}" onclick="openDayModal('${dateStr}')">
+        <button type="button" class="cal-date" onclick="event.stopPropagation();openDayModal('${dateStr}')">
+          <span style="color:var(--muted);font-weight:600;">${dayNames[i]}</span> ${dnum}
+        </button>
+        <div class="cal-items">${calDayItemsHtml(dateStr)}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('view-calendar').innerHTML = `
+    <div class="topbar">
+      <div><h1>Calendar</h1></div>
+      <div class="cal-nav">
+        <div class="tabs" style="margin-right:6px;"><button class="tab" onclick="setCalView('month')">Month</button><button class="tab active" onclick="setCalView('week')">Week</button></div>
+        <button class="btn-ghost" onclick="changeWeek(-1)">←</button>
+        <div class="cal-month-label">${rangeLabel}</div>
+        <button class="btn-ghost" onclick="changeWeek(1)">→</button>
+        <button class="btn-ghost" onclick="goToCurrentWeek()">This week</button>
+      </div>
     </div>
+    <div class="card cal-grid-wrap">
+      <div class="cal-grid cal-grid-week">${cols}</div>
+    </div>
+    ${calLegendHtml()}
   `;
 }
 function changeMonth(delta){
@@ -4116,11 +4374,17 @@ function addEvent(dateStr){
 function deleteEvent(eventId, dateStr){
   const ev = state.events.find(e=>e.id===eventId);
   if(!ev) return;
-  if(!confirm(`Delete "${ev.title}" on ${formatDateShort(ev.date)}?\n\nThis cannot be undone.`)) return;
+  const snapshot = {...ev};
   state.events = state.events.filter(e=>e.id!==eventId);
   scheduleSave('events', state.events);
   refreshView();
   openDayModal(dateStr);
+  showUndoToast(`Deleted "${ev.title}"`, ()=>{
+    if(!state.events.some(e=>e.id===snapshot.id)) state.events.push(snapshot);
+    scheduleSave('events', state.events);
+    refreshView();
+    openDayModal(dateStr);
+  });
 }
 function markHoliday(dateStr){
   const label = document.getElementById('holiday-label').value.trim() || 'Holiday';
@@ -4950,13 +5214,31 @@ function saveLesson(id){
 function deleteLesson(id){
   const l = state.privateLessons.find(x=>x.id===id);
   if(!l) return;
-  if(!confirm('Delete this lesson?')) return;
+  const snapshot = {...l};
+  const wasRecurring = l.isRecurring;
+  let addedSkipKey = null;
   // A recurring occurrence would be regenerated on next load unless we mark the slot.
-  if(l.isRecurring) addRecurringSkip(l.studentId, l.date, l.time);
+  if(l.isRecurring){
+    const s = privStudent(l.studentId);
+    const key = slotKey(l.date, l.time);
+    const had = s?.skips?.includes(key);
+    addRecurringSkip(l.studentId, l.date, l.time);
+    if(!had) addedSkipKey = key;   // only remove on undo if we were the ones who added it
+  }
   state.privateLessons = state.privateLessons.filter(x=>x.id!==id);
   persistPrivate();
   closeModal();
   refreshView();
+  const name = privStudent(snapshot.studentId)?.name || 'lesson';
+  showUndoToast(`Deleted ${name} lesson (${formatDateShort(snapshot.date)})`, ()=>{
+    if(addedSkipKey){
+      const s = privStudent(snapshot.studentId);
+      if(s?.skips) s.skips = s.skips.filter(k=>k!==addedSkipKey);
+    }
+    if(!state.privateLessons.some(x=>x.id===snapshot.id)) state.privateLessons.push(snapshot);
+    persistPrivate();
+    refreshView();
+  });
 }
 function setLessonStatus(id, status){
   const l = state.privateLessons.find(x=>x.id===id);
@@ -5025,11 +5307,18 @@ function savePayment(id){
   refreshView();
 }
 function deletePayment(id){
-  if(!confirm('Delete this payment?')) return;
-  state.payments = state.payments.filter(p=>p.id!==id);
+  const p = state.payments.find(x=>x.id===id);
+  if(!p) return;
+  const snapshot = {...p};
+  state.payments = state.payments.filter(x=>x.id!==id);
   persistPrivate();
   closeModal();
   refreshView();
+  showUndoToast(`Deleted payment ${money(snapshot.amount)}`, ()=>{
+    if(!state.payments.some(x=>x.id===snapshot.id)) state.payments.push(snapshot);
+    persistPrivate();
+    refreshView();
+  });
 }
 function openPrivSettingsModal(){
   showModal(`
