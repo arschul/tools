@@ -4185,6 +4185,8 @@ function resetReportRangeFromReports(){
    edited, deleted, or printed. */
 
 // Flatten every logged contact into rows tagged with student + class context.
+// Private students are excluded — "contact parents" reports are a group-class
+// concept; private students are adults and their reminders aren't reportable.
 function allContactRows(){
   const rows = [];
   state.students.forEach(s=>{
@@ -4193,13 +4195,6 @@ function allContactRows(){
       rows.push({ studentId:s.id, studentName:s.name, kind:'group',
         classId: s.classId, className: c?c.name:'—', classColor: c?c.color:'var(--muted)',
         archived: !!c?.archived, entry:h, idx });
-    });
-  });
-  state.privateStudents.forEach(s=>{
-    (s.contactParentsHistory||[]).forEach((h,idx)=>{
-      rows.push({ studentId:s.id, studentName:s.name, kind:'private',
-        classId:'__priv__', className:'Private students', classColor:'#0ea5b8',
-        archived:false, entry:h, idx });
     });
   });
   // newest first
@@ -4228,7 +4223,7 @@ function renderContacts(){
   const groups = new Map();
   rows.forEach(r=>{ if(!groups.has(r.classId)) groups.set(r.classId, {name:r.className, color:r.classColor, archived:r.archived, items:[]}); groups.get(r.classId).items.push(r); });
   // stable display order
-  const order = [...activeClasses().map(c=>c.id), ...archivedClasses().map(c=>c.id), '__priv__'];
+  const order = [...activeClasses().map(c=>c.id), ...archivedClasses().map(c=>c.id)];
   const orderedIds = [...groups.keys()].sort((a,b)=>{ const ia=order.indexOf(a), ib=order.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
 
   const total = allContactRows().length;
@@ -4237,7 +4232,6 @@ function renderContacts(){
   // class filter options — only classes that actually have contacts
   const classesWithContacts = [...new Set(allContactRows().map(r=>r.classId))];
   const classOpts = classesWithContacts.map(cid=>{
-    if(cid==='__priv__') return `<option value="__priv__" ${classFilter==='__priv__'?'selected':''}>Private students</option>`;
     const c = classById(cid);
     return `<option value="${cid}" ${classFilter===cid?'selected':''}>${esc(c?c.name:'—')}${c?.archived?' (archived)':''}</option>`;
   }).join('');
