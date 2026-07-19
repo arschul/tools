@@ -710,6 +710,7 @@ const T = {
     homeworkDone: 'Homework done',
     attendance: 'Attendance',
     attended: 'attended',
+    attendedRecorded: 'of recorded',
     basedOn: n => `Based on ${n} recorded session${n===1?'':'s'}.`,
     timeInClass: 'Time in class',
     timeMissed: 'time missed',
@@ -772,6 +773,7 @@ const T = {
     homeworkDone: 'Dever feito',
     attendance: 'Presença',
     attended: 'de presença',
+    attendedRecorded: 'de sessões',
     basedOn: n => `Com base em ${n} aula${n===1?'':'s'} registrada${n===1?'':'s'}.`,
     timeInClass: 'Tempo em aula',
     timeMissed: 'tempo perdido',
@@ -1439,6 +1441,7 @@ function getNextClassDate(cls, fromDateStr){
   for(let i=0; i<60; i++){
     d.setDate(d.getDate()+1);
     const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+    if(cls.endDate && dateStr > cls.endDate) return null;   // course has ended
     if(days.includes(d.getDay()) && !isHoliday(dateStr)) return dateStr;
   }
   return null;
@@ -1485,11 +1488,27 @@ function classForStudentOnDate(st, dateStr){
   return classById(en ? en.classId : st.classId);
 }
 
+// A4: earliest date this class has any session record for. Used to bound the
+// expected-session window when the class has no explicit startDate, so we don't
+// count expected sessions from before the class actually began.
+function firstSessionDateOf(classId){
+  let earliest = null;
+  for(const key of Object.keys(state.sessions)){
+    const [cid, date] = splitSessionKey(key);
+    if(cid !== classId) continue;
+    if(!earliest || date < earliest) earliest = date;
+  }
+  return earliest;
+}
+
 function expectedSessionsForClass(cls, startOverride, endOverride){
   const days = getClassDays(cls);
   if(!days.length) return null;
-  const startStr = startOverride || cls.startDate;
-  const endStr = endOverride || cls.endDate;
+  // A4: if no startDate anywhere, fall back to the first recorded session.
+  const startStr = startOverride || cls.startDate || firstSessionDateOf(cls.id);
+  // End fallback: an override, the class end, or today (an ongoing class counts
+  // only sessions up to now, never into the future).
+  const endStr = endOverride || cls.endDate || todayStr();
   if(!startStr || !endStr) return null;
   const start = new Date(startStr+'T00:00:00');
   const end = new Date(endStr+'T00:00:00');
@@ -1503,6 +1522,23 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
     d.setDate(d.getDate()+1);
   }
   return count;
+}
+
+// A3: THE single attendance-rate definition, used by the profile headline, the
+// profile donut, and the group report so they can never disagree.
+// Preferred: schedule-based (expected − absent) / expected — this punishes
+// missed classes against the real schedule. When no schedule/dates give an
+// expected count, fall back to recorded-based (present+late)/recorded and flag
+// it so the UI can label it differently.
+// Args: expected (number|null), absent, present, late (all counts).
+// Returns {rate:0-100|null, basis:'schedule'|'recorded'}.
+function attendanceRate(expected, absent, present, late){
+  if(expected){
+    return { rate: Math.round(100*(expected-absent)/expected), basis:'schedule' };
+  }
+  const recorded = present + late + absent;
+  if(recorded) return { rate: Math.round(100*(present+late)/recorded), basis:'recorded' };
+  return { rate: null, basis:'recorded' };
 }
 function renderDonut(slices, centerLabel, centerSub){
   const total = slices.reduce((s,x)=>s+x.value,0);
@@ -1778,12 +1814,14 @@ function _renderDashboard(el){
     todayHtml = (allDone?`<div class="empty" style="padding:4px 0 8px;">✓ All of today's classes are done.</div>`:'') +
       todaysClasses.map(c=>{
         const done = isSessionCompleted(c.id, today);
+        const hasHw = !!getHomework(c.id, today);
+        const hasProm = !!getPromise(c.id, today);
         return `
       <div class="dash-row" ${done?'style="opacity:.75;"':''}>
         <div class="dash-row-left">
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
-            <div class="dash-row-title">${esc(c.name)}${done?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}</div>
+            <div class="dash-row-title">${esc(c.name)}${done?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${hasProm?' <span class="badge amber" style="margin-left:6px;">📌 Promise</span>':''}${hasHw?' <span class="badge hw" style="margin-left:6px;">📘 HW due</span>':''}</div>
             <div class="dash-row-sub">${c.time?c.time+' · ':''}${studentsInClass(c.id).length} students</div>
           </div>
         </div>
@@ -1805,7 +1843,7 @@ function _renderDashboard(el){
       <div class="dash-row-left">
         <span class="color-dot" style="background:${u.c.color}"></span>
         <div>
-          <div class="dash-row-title" style="font-size:15px;">${esc(u.c.name)}${u.c.level?` <span class="badge other" style="margin-left:6px;">${esc(u.c.level)}</span>`:''}${u.date===today && isSessionCompleted(u.c.id, u.date)?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}</div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(u.c.name)}${u.c.level?` <span class="badge other" style="margin-left:6px;">${esc(u.c.level)}</span>`:''}${u.date===today && isSessionCompleted(u.c.id, u.date)?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${getPromise(u.c.id,u.date)?' <span class="badge amber" style="margin-left:6px;">📌</span>':''}${getHomework(u.c.id,u.date)?' <span class="badge hw" style="margin-left:6px;">📘</span>':''}</div>
           <div class="dash-row-sub">${formatDateShort(u.date)}${u.time?' · '+u.time:''} · ${studentsInClass(u.c.id).length} students</div>
         </div>
       </div>
@@ -2170,7 +2208,8 @@ function renderClassCard(c, isArchived){
           ${isArchived
             ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">↩ Unarchive</button>
                <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
-            : `<button class="icon-btn" onclick="openGradesModal('${c.id}')">📝 Grades</button>
+            : `<button class="icon-btn" onclick="openClassLogModal('${c.id}')">📋 Log</button>
+               <button class="icon-btn" onclick="openGradesModal('${c.id}')">📝 Grades</button>
                <button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
                <button class="icon-btn" onclick="archiveClass('${c.id}')">📦 Archive</button>`}
         </div>
@@ -2208,6 +2247,115 @@ function renderClassCard(c, isArchived){
 function toggleClassExpand(classId){
   state.expandedClassId = state.expandedClassId===classId ? null : classId;
   refreshView();
+}
+
+/* ===== D1: Class Log — chronological teaching history for one class ===== */
+let clLogClassId = null, clLogFrom = '', clLogTo = '';
+function openClassLogModal(classId){
+  clLogClassId = classId;
+  clLogFrom = ''; clLogTo = '';
+  renderClassLogModal();
+}
+function clSetRange(which, val){ if(which==='from') clLogFrom = val||''; else clLogTo = val||''; renderClassLogModal(); }
+function clResetRange(){ clLogFrom=''; clLogTo=''; renderClassLogModal(); }
+
+// Gather every dated entry for a class: any date that has a session record,
+// lesson note, homework, or promise. Returns rows newest-first with an
+// attendance summary computed from completed sessions only.
+function classLogRows(classId, fromVal, toVal){
+  const dates = new Set();
+  for(const key of Object.keys(state.sessions)){
+    const [cid, date] = splitSessionKey(key);
+    if(cid===classId) dates.add(date);
+  }
+  for(const store of [state.lessonNotes, state.homework, state.promises]){
+    if(!store) continue;
+    for(const key of Object.keys(store)){
+      const [cid, date] = splitSessionKey(key);
+      if(cid===classId) dates.add(date);
+    }
+  }
+  const rows = [...dates]
+    .filter(d => (!fromVal || d>=fromVal) && (!toVal || d<=toVal))
+    .sort((a,b)=>b.localeCompare(a))
+    .map(date=>{
+      const sess = state.sessions[classId+'_'+date] || {};
+      const ids = Object.keys(sess);
+      const completed = isSessionCompleted(classId, date);
+      const present = ids.filter(id=>sess[id]?.attendance!=='absent').length;
+      const absent  = ids.filter(id=>sess[id]?.attendance==='absent').length;
+      return {
+        date,
+        content: getLessonNote(classId, date),
+        hw: getHomework(classId, date),
+        promise: getPromise(classId, date),
+        completed, present, absent, roster: ids.length,
+        holiday: isHoliday(date)
+      };
+    });
+  return rows;
+}
+
+function renderClassLogModal(){
+  const c = classById(clLogClassId);
+  if(!c) return;
+  const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
+  const body = rows.length ? `
+    <div class="table-wrap" style="max-height:56vh;overflow:auto;">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>What we did</th><th>Homework assigned</th><th>Promise</th><th style="text-align:center;white-space:nowrap;">Attendance</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr${r.holiday?' style="opacity:.6;"':''}>
+              <td style="white-space:nowrap;font-weight:600;">
+                <button type="button" class="linkish" onclick="closeModal();goToRollCall('${clLogClassId}','${r.date}')">${formatDateShort(r.date)}</button>
+                ${r.holiday?' <span class="badge other">Holiday</span>':r.completed?'':' <span class="badge amber" title="Not marked complete">draft</span>'}
+              </td>
+              <td>${r.content?esc(r.content):'<span style="color:var(--muted);">—</span>'}</td>
+              <td>${r.hw?esc(r.hw):'<span style="color:var(--muted);">—</span>'}</td>
+              <td>${r.promise?esc(r.promise):'<span style="color:var(--muted);">—</span>'}</td>
+              <td style="text-align:center;white-space:nowrap;">${r.roster?`${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`:'<span style="color:var(--muted);">—</span>'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : `<div class="empty">No log entries in this period yet. Lesson content, homework and promises recorded in Roll Call show up here.</div>`;
+
+  showModal(`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <h3 style="margin:0;"><span class="color-dot" style="background:${c.color}"></span>📋 Class Log — ${esc(c.name)}</h3>
+      <span style="font-size:12px;color:var(--muted);">${rows.length} entr${rows.length===1?'y':'ies'}</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;">
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Period:</label>
+      <input type="date" value="${clLogFrom}" onchange="clSetRange('from',this.value)">
+      <span style="color:var(--muted);font-size:13px;">–</span>
+      <input type="date" value="${clLogTo}" onchange="clSetRange('to',this.value)">
+      <button class="btn-ghost small" onclick="clResetRange()">All time</button>
+      <button class="btn-ghost small" onclick="exportClassLogCsv()">⬇ Export CSV</button>
+    </div>
+    ${body}
+    <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Done</button></div>
+  `, true);
+}
+
+function exportClassLogCsv(){
+  const c = classById(clLogClassId);
+  if(!c) return;
+  const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
+  const q = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const header = ['Date','What we did','Homework assigned','Promise','Present','Absent','Roster','Completed','Holiday'];
+  const lines = [header.map(q).join(',')].concat(
+    rows.map(r=>[r.date, r.content, r.hw, r.promise, r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'].map(q).join(','))
+  );
+  const blob = new Blob([lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `class-log-${c.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}-${todayStr()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 function openClassModal(classId){
   const c = classId ? classById(classId) : null;
@@ -2746,6 +2894,7 @@ function renderRollCall(){
           })()}
         </select>
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
+        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}')" title="Class log — full teaching history for this class">📋 Log</button>
       </div>
     </div>
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
@@ -2766,9 +2915,27 @@ function renderRollCall(){
         const lbl = 'font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;';
         const nextDate = getNextClassDate(cls, date);
         const isPast = date < todayStr();
+        // C1: on the phone (roll-call device) the roster is the priority, so the
+        // Class View collapses by default on narrow screens. An explicit toggle,
+        // once used, is remembered per-device.
+        const pref = localStorage.getItem('classViewCollapsed');
+        const narrow = window.matchMedia('(max-width: 700px)').matches;
+        const collapsed = pref===null ? narrow : pref==='1';
+        const hwT = getHomework(cls.id,date), prT = getPromise(cls.id,date), lnT = getLessonNote(cls.id,date);
+        const summaryBits = [
+          hwT?'📘 HW due':'', prT?'📌 Promise':'', lnT?'📝 Content':''
+        ].filter(Boolean);
+        const summary = summaryBits.length ? summaryBits.join(' · ') : 'Nothing recorded yet';
         return `
       <div class="card" style="margin-bottom:14px;padding:16px 18px;">
-        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Class View</div>
+        <button type="button" aria-expanded="${!collapsed}" onclick="toggleClassView()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;">
+          <span style="font-weight:700;font-size:14px;">Class View</span>
+          <span style="display:flex;align-items:center;gap:10px;">
+            ${collapsed?`<span style="font-size:12px;color:var(--muted);font-weight:600;">${summary}</span>`:''}
+            <span aria-hidden="true" style="color:var(--muted);">${collapsed?'▸':'▾'}</span>
+          </span>
+        </button>
+        <div style="${collapsed?'display:none;':'margin-top:10px;'}">
         <div class="field" style="margin-bottom:10px;">
           <label style="${lbl}">Homework due today ${locked?'':'<span style="font-weight:400;">(what students should hand in today)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
@@ -2798,6 +2965,7 @@ function renderRollCall(){
           ${getHomework(cls.id,nextDate)?`<div><b>Homework:</b> ${esc(getHomework(cls.id,nextDate))}</div>`:''}
           ${getPromise(cls.id,nextDate)?`<div><b>Promised:</b> ${esc(getPromise(cls.id,nextDate))}</div>`:''}
         </div>`:'')}
+      </div>
       </div>`;
       })()}
       <div class="rollcall-actions">
@@ -3005,6 +3173,13 @@ function setNote(studentId, val){
 }
 function toggleDrawer(studentId){
   state.openDrawer = state.openDrawer===studentId ? null : studentId;
+  refreshView();
+}
+function toggleClassView(){
+  const pref = localStorage.getItem('classViewCollapsed');
+  const narrow = window.matchMedia('(max-width: 700px)').matches;
+  const collapsed = pref===null ? narrow : pref==='1';
+  localStorage.setItem('classViewCollapsed', collapsed ? '0' : '1');
   refreshView();
 }
 function markAllPresent(){
@@ -3317,7 +3492,7 @@ function renderStudentProfile(){
   const late = records.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
   const present = total - absent - late;
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
-  const hwRecords = records.filter(r=>r.hw!=null && r.hw!=='done' && r.hw!=='not_done' ? true : r.hw!=null);
+  const hwRecords = records.filter(r=>r.hw!=null);
   const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>{
     const v = typeof r.hw==='number' ? r.hw : (r.hw==='done'?100:0);
     return s+v;
@@ -3340,7 +3515,9 @@ function renderStudentProfile(){
     return any ? sum : null;
   })();
   const classesLost = absent;
-  const attendanceRate = expected ? Math.round(100*(expected-classesLost)/expected) : null;
+  const attRateInfo = attendanceRate(expected, absent, present, late);
+  const attendanceRate_ = attRateInfo.rate;
+  const attRateBasis = attRateInfo.basis;
 
   const attended = records.filter(r=>r.attendance!=='absent');
   const totalPossibleMin = records.reduce((s,r)=>s+recDur(r), 0);
@@ -3380,7 +3557,7 @@ function renderStudentProfile(){
     grades: gradesInfo,
     fromVal, toVal,
     total, present, late, absent, totalPhone,
-    hwAvg, partScore, expected, classesLost, attendanceRate,
+    hwAvg, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
     totalLostMin, lostEquivClasses, avgDuration,
     contactPending: student.contactParents?.reason ? student.contactParents : null,
     contactHistory: (student.contactParentsHistory||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)),
@@ -3394,7 +3571,7 @@ function renderStudentProfile(){
   rcState = null;  // recomputed per student when the text modal opens
 
   const classesLostHtml = expected!=null
-    ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate)
+    ? t.classesAbsent(classesLost, expected, fromVal?formatDateShort(fromVal):'?', toVal?formatDateShort(toVal):'?', attendanceRate_)
     : t.classesAbsent(classesLost, null) + ` <button type="button" class="linkish no-print" onclick="navigate('classes');setTimeout(()=>openClassModal('${cls?.id}'),0)">${t.setDates}</button><span class="print-only">${t.setDates}</span>${t.setDatesRest}`;
 
   document.getElementById('view-student').innerHTML = `
@@ -3439,7 +3616,7 @@ function renderStudentProfile(){
           {label:t.present, value:present, color:'var(--green)'},
           {label:t.late, value:late, color:'var(--amber)'},
           {label:t.absent, value:absent, color:'var(--red)'}
-        ], total?`${Math.round(100*(present+late)/total)}%`:'—', t.attended)}
+        ], attendanceRate_!=null?`${attendanceRate_}%`:'—', attRateBasis==='schedule'?t.attended:t.attendedRecorded)}
       </div>
       <div class="card chart-card">
         <h3>${t.timeInClass}</h3>
@@ -3588,7 +3765,7 @@ function resetReportRange(){
 
 /* ================= REPORTS ================= */
 function renderReports(){
-  if(!classById(state.reportsSelection.classId)) state.reportsSelection.classId = state.classes[0]?.id || '';
+  if(!classById(state.reportsSelection.classId)) state.reportsSelection.classId = (activeClasses()[0] || state.classes[0])?.id || '';
   const selClassId = state.reportsSelection.classId;
   const fromVal = state.reportRange.from;
   const toVal   = state.reportRange.to;
@@ -3672,15 +3849,17 @@ function renderGroupReport(){
     const absentMin = filtered.filter(r=>r.attendance==='absent').reduce((s,r)=>s+dur(r.date),0);
     const totalPoss = filtered.reduce((s,r)=>s+dur(r.date),0);
     const inClass   = Math.max(0, totalPoss - lostLate - lostEarly - absentMin);
-    const attRate   = total ? Math.round(100*(present+late)/total) : null;
+    const expected  = expectedSessionsForClass(cls, fromVal||null, toVal||null);
+    const attInfo   = attendanceRate(expected, absent, present, late);
+    const attRate   = attInfo.rate;
+    const attBasis  = attInfo.basis;
     const hwRecs    = filtered.filter(r=>r.hw!=null);
     const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>{ const v=typeof r.hw==='number'?r.hw:(r.hw==='done'?100:0); return s+v; },0)/hwRecs.length) : null;
     const phone     = filtered.reduce((s,r)=>s+(r.phone||0),0);
     const partRecs  = filtered.filter(r=>r.attendance!=='absent'&&r.participation);
     const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>r.participation==='great').length + partRecs.filter(r=>r.participation==='good').length*0.5)/partRecs.length) : null;
-    const expected  = expectedSessionsForClass(cls, fromVal||null, toVal||null);
     const absRate   = expected ? Math.round(100*absent/expected) : null;
-    return {s, total, present, late, absent, attRate, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
+    return {s, total, present, late, absent, attRate, attBasis, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
   });
 
   // group averages
