@@ -145,6 +145,17 @@ function run(T, state){
   ok('other class excluded', !rows.some(r=>r.roster===1 && r.date==='2026-07-15'), rows);
   const rows2 = T.classLogRows('c1','2026-07-15','');
   eq('range filter drops 07-10', rows2.length, 2);
+
+  // Class-plan rich text helpers (promises store now holds the day's plan)
+  eq('plan: legacy text upgraded', T.planDisplayHtml('bring cards\nprint lyrics'), 'bring cards<br>print lyrics');
+  eq('plan: bold survives sanitize', T.sanitizePlanHtml('<b>hi</b>'), '<b>hi</b>');
+  ok('plan: script stripped', !T.sanitizePlanHtml('<div>a<script>alert(1)<\/script></div>').includes('script'));
+  ok('plan: onclick stripped', !T.sanitizePlanHtml('<div onclick="x()">a</div>').includes('onclick'));
+  eq('plan: img unwrapped', T.sanitizePlanHtml('<div><img src=x onerror=alert(1)>t</div>'), '<div>t</div>');
+  eq('plan: font size kept', T.sanitizePlanHtml('<font size="5">big</font>'), '<font size="5">big</font>');
+  eq('plan: style filtered to safe props', T.sanitizePlanHtml('<span style="color:red;font-size:18px">x</span>'), '<span style="font-size:18px">x</span>');
+  eq('plan: block newlines in plain', T.htmlToPlain('<div>a</div><div><b>b</b></div>'), 'a\nb');
+  eq('plan: empty editor is empty', T.htmlToPlain('<div><br></div>'), '');
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
