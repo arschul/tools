@@ -41,7 +41,8 @@ function run(T, state){
   // ---------- attendanceRate (A3) ----------
   section('attendanceRate — unified definition');
   eq('schedule basis: 20 expected, 2 absent', T.attendanceRate(20,2,15,3), {rate:90, basis:'schedule'});
-  eq('recorded fallback when no expected', T.attendanceRate(null,2,15,3), {rate:90, basis:'recorded'});
+  eq('recorded fallback: present incl. late, not double-counted', T.attendanceRate(null,2,15,3), {rate:88, basis:'recorded'});
+  eq('late does NOT lower the rate (7 present, 1 late, 0 absent)', T.attendanceRate(null,0,7,1), {rate:100, basis:'recorded'});
   eq('no data returns null', T.attendanceRate(null,0,0,0), {rate:null, basis:'recorded'});
   eq('expected 0 falls back to recorded', T.attendanceRate(0,1,4,0), {rate:80, basis:'recorded'});
   eq('perfect schedule', T.attendanceRate(10,0,10,0), {rate:100, basis:'schedule'});
