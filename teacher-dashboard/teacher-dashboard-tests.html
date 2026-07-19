@@ -156,6 +156,23 @@ function run(T, state){
   eq('plan: style filtered to safe props', T.sanitizePlanHtml('<span style="color:red;font-size:18px">x</span>'), '<span style="font-size:18px">x</span>');
   eq('plan: block newlines in plain', T.htmlToPlain('<div>a</div><div><b>b</b></div>'), 'a\nb');
   eq('plan: empty editor is empty', T.htmlToPlain('<div><br></div>'), '');
+
+  // Class points (per-class opt-in, computed totals with round filter)
+  T._setState({
+    classes:[{id:'c1',name:'C1',pointsEnabled:true},{id:'c2',name:'C2',pointsEnabled:true,pointsSince:'2026-07-05'}],
+    students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[], holidays:[],
+    pointsLog:[
+      {id:'p1',classId:'c1',studentId:'s1',delta:2, date:'2026-07-01', ts:1},
+      {id:'p2',classId:'c1',studentId:'s1',delta:-1,date:'2026-07-10', ts:2},
+      {id:'p3',classId:'c1',studentId:'s2',delta:3, date:'2026-07-10', ts:3},
+      {id:'p4',classId:'c2',studentId:'s1',delta:2, date:'2026-07-01', ts:4},
+      {id:'p5',classId:'c2',studentId:'s1',delta:5, date:'2026-07-10', ts:5}
+    ]
+  });
+  eq('points: per student+class sum', T.pointsFor('s1','c1'), 1);
+  eq('points: students isolated', T.pointsFor('s2','c1'), 3);
+  eq('points: round filter (pointsSince) drops earlier awards', T.pointsFor('s1','c2'), 5);
+  eq('points: explicit since override', T.pointsFor('s1','c1','2026-07-05'), -1);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
