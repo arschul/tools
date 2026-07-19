@@ -1329,6 +1329,17 @@ function getPreviousClassDate(cls, fromDateStr){
   }
   return null;
 }
+function getNextClassDate(cls, fromDateStr){
+  const days = getClassDays(cls);
+  if(!days.length) return null;
+  let d = new Date(fromDateStr+'T00:00:00');
+  for(let i=0; i<60; i++){
+    d.setDate(d.getDate()+1);
+    const dateStr = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+    if(days.includes(d.getDay()) && !isHoliday(dateStr)) return dateStr;
+  }
+  return null;
+}
 function esc(str){
   return String(str ?? '').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
@@ -2639,30 +2650,36 @@ function renderRollCall(){
       })()}
       ${(()=>{
         const taStyle = `width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${locked?'background:var(--gray-soft);':''}`;
+        const taStyleNext = taStyle.replace('background:var(--gray-soft);','');
         const lbl = 'font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;';
-        const prevHw = prevDate ? getHomework(cls.id, prevDate) : '';
-        const prevProm = prevDate ? getPromise(cls.id, prevDate) : '';
+        const nextDate = getNextClassDate(cls, date);
         return `
       <div class="card" style="margin-bottom:14px;padding:16px 18px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Class View</div>
-        ${(prevHw||prevProm)?`
-        <div style="background:var(--amber-soft);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;">
-          <b>\uD83D\uDCCC From last class (${formatDateShort(prevDate)}):</b>
-          ${prevHw?`<div style="margin-top:4px;"><b>Homework due today:</b> ${esc(prevHw)}</div>`:''}
-          ${prevProm?`<div style="margin-top:4px;"><b>You promised:</b> ${esc(prevProm)}</div>`:''}
-        </div>`:''}
         <div class="field" style="margin-bottom:10px;">
+          <label style="${lbl}">Homework due today ${locked?'':'<span style="font-weight:400;">(what students should hand in today)</span>'}</label>
+          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label style="${lbl}">You promised for today ${locked?'':'<span style="font-weight:400;">(things you said you would bring or do this class)</span>'}</label>
+          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. bring Uno cards, print song lyrics" style="${taStyle}" oninput="setPromise('${cls.id}','${date}', this.value)">${esc(getPromise(cls.id, date))}</textarea>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
           <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
         </div>
-        <div class="field" style="margin-bottom:10px;">
-          <label style="${lbl}">Homework assigned ${locked?'':'<span style="font-weight:400;">(due next class)</span>'}</label>
-          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
-        </div>
-        <div class="field">
-          <label style="${lbl}">Promises ${locked?'':'<span style="font-weight:400;">(anything you promised to bring or do next class)</span>'}</label>
-          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. bring Uno cards, print song lyrics" style="${taStyle}" oninput="setPromise('${cls.id}','${date}', this.value)">${esc(getPromise(cls.id, date))}</textarea>
-        </div>
+        ${nextDate?`
+        <div style="border-top:1px dashed var(--border);padding-top:12px;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Next class \u2014 ${formatDateLong(nextDate)}</div>
+          <div class="field" style="margin-bottom:10px;">
+            <label style="${lbl}">Homework to assign <span style="font-weight:400;">(due next class)</span></label>
+            <textarea rows="2" placeholder="e.g. Workbook p.46, study irregular verbs" style="${taStyleNext}" oninput="setHomework('${cls.id}','${nextDate}', this.value)">${esc(getHomework(cls.id, nextDate))}</textarea>
+          </div>
+          <div class="field">
+            <label style="${lbl}">Promise <span style="font-weight:400;">(anything you promised for next class)</span></label>
+            <textarea rows="2" placeholder="e.g. bring the board game, check that song they asked about" style="${taStyleNext}" oninput="setPromise('${cls.id}','${nextDate}', this.value)">${esc(getPromise(cls.id, nextDate))}</textarea>
+          </div>
+        </div>`:''}
       </div>`;
       })()}
       <div class="rollcall-actions">
@@ -3925,6 +3942,11 @@ function addLpToNextClass(lpId, studentId){
   refreshView();
   alert('Added to the class on ' + formatDateShort(l.date) + (l.time ? ' at ' + l.time : '') + '.');
 }
+function nextLessonAfter(studentId, date, excludeId){
+  return state.privateLessons
+    .filter(x=>x.studentId===studentId && x.id!==excludeId && x.status!=='cancelled' && x.date>date)
+    .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))[0] || null;
+}
 function nextPrivLesson(studentId){
   const today = todayStr();
   return state.privateLessons
@@ -4570,7 +4592,20 @@ function openLessonModal(id, presetStudentId, presetDate){
         <select id="pl-status">${PRIV_STATUSES.map(v=>`<option value="${v}" ${(l?.status||'scheduled')===v?'selected':''}>${v}</option>`).join('')}</select>
       </div>
     </div>
-    <div class="field"><label>Notes</label><textarea id="pl-notes" rows="2">${esc(l?.notes||'')}</textarea></div>
+    <div class="field"><label>What we did / content</label><textarea id="pl-notes" rows="2" placeholder="e.g. reviewed past perfect, IELTS speaking part 2">${esc(l?.notes||'')}</textarea></div>
+    <div class="field"><label>Homework due this lesson</label><textarea id="pl-hw" rows="2" placeholder="e.g. essay draft, workbook p.12">${esc(l?.homework||'')}</textarea></div>
+    <div class="field"><label>You promised for this lesson</label><textarea id="pl-promise" rows="2" placeholder="e.g. send podcast list, bring graded essay">${esc(l?.promise||'')}</textarea></div>
+    ${(()=>{
+      if(!l) return '';
+      const nx = nextLessonAfter(l.studentId, l.date, l.id);
+      if(!nx) return `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">No upcoming lesson scheduled \u2014 schedule one to assign homework or promises for it.</div>`;
+      return `
+      <div style="border-top:1px dashed var(--border);padding-top:12px;margin-bottom:4px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Next lesson \u2014 ${formatDateLong(nx.date)}${nx.time?' at '+nx.time:''}</div>
+        <div class="field"><label>Homework to assign (due next lesson)</label><textarea id="pl-next-hw" data-lesson-id="${nx.id}" rows="2">${esc(nx.homework||'')}</textarea></div>
+        <div class="field"><label>Promise (for next lesson)</label><textarea id="pl-next-promise" rows="2">${esc(nx.promise||'')}</textarea></div>
+      </div>`;
+    })()}
     <div style="font-size:12px;color:var(--muted);margin-top:-4px;">Completed and no-show lessons are billed.</div>
     <div class="modal-actions" style="${l?'justify-content:space-between;':''}">
       ${l?`<button class="icon-btn danger" onclick="deleteLesson('${l.id}')">Delete</button>`:''}
@@ -4594,6 +4629,16 @@ function saveLesson(id){
   l.duration = Number(document.getElementById('pl-dur').value)||60;
   l.status = document.getElementById('pl-status').value;
   l.notes = document.getElementById('pl-notes').value;
+  l.homework = document.getElementById('pl-hw').value;
+  l.promise = document.getElementById('pl-promise').value;
+  const nxHwEl = document.getElementById('pl-next-hw');
+  if(nxHwEl){
+    const nx = state.privateLessons.find(x=>x.id===nxHwEl.dataset.lessonId);
+    if(nx){
+      nx.homework = nxHwEl.value;
+      nx.promise = document.getElementById('pl-next-promise').value;
+    }
+  }
   if(!isNew && l.date!==oldDate) l.isRecurring = false;  // detach manually moved lessons
   persistPrivate();
   closeModal();
@@ -4880,7 +4925,7 @@ function renderPrivStudent(){
           <td>${l.time||'—'}</td>
           <td>${l.duration} min</td>
           <td><span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></td>
-          <td>${esc(l.notes||'—')}</td>
+          <td>${esc(l.notes||'\u2014')}${l.homework?`<div style="font-size:12px;color:var(--muted);">HW due: ${esc(l.homework)}</div>`:''}${l.promise?`<div style="font-size:12px;color:var(--muted);">Promised: ${esc(l.promise)}</div>`:''}</td>
           <td class="no-print" style="white-space:nowrap;">
             ${l.status==='scheduled' && l.date<=todayStr()?`
               <button type="button" class="icon-btn" onclick="setLessonStatus(window._privLessonIds[${i}],'completed')" title="Mark completed" aria-label="Mark lesson completed">✓</button>
