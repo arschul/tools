@@ -680,6 +680,7 @@ let state = {
   privCal: { year: new Date().getFullYear(), month: new Date().getMonth() },
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
+  rollcallShowAll: false,   // when true, Roll Call dropdown lists all classes (for makeups)
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
   expandedClassId: null,
   openDrawer: null,
@@ -880,6 +881,11 @@ async function enterApp(){
 */
 let dataReady = false;        // true only after a complete, successful load
 let loadedBlobs = {};         // key -> value, from the single batched read
+// key -> updated_at string we last saw for that row (from load or our own writes).
+// Used for optimistic concurrency: if the server row moved past this, another
+// device wrote it and we must not blindly overwrite.
+let knownUpdatedAt = {};
+let staleConflict = false;    // true once a cross-device conflict is detected
 const pendingSaves = new Map();   // key -> latest value awaiting a successful write
 const failedSaves = new Set();
 
@@ -887,11 +893,23 @@ async function loadAllKeys(){
   // One round trip instead of 14. Throws on failure — caller must handle.
   const { data, error } = await sb
     .from('dashboard_data')
-    .select('key, value')
+    .select('key, value, updated_at')
     .eq('user_id', currentUser.id);
   if(error) throw error;
   const map = {};
-  (data||[]).forEach(row => { map[row.key] = row.value; });
+  knownUpdatedAt = {};
+  (data||[]).forEach(row => { map[row.key] = row.value; knownUpdatedAt[row.key] = row.updated_at; });
+  return map;
+}
+// Re-read only the timestamps (cheap) to see if any row changed underneath us.
+async function fetchServerTimestamps(){
+  const { data, error } = await sb
+    .from('dashboard_data')
+    .select('key, updated_at')
+    .eq('user_id', currentUser.id);
+  if(error) throw error;
+  const map = {};
+  (data||[]).forEach(row => { map[row.key] = row.updated_at; });
   return map;
 }
 // Reads from the already-fetched blob map. Absent key => fallback (a genuinely new user).
@@ -904,11 +922,44 @@ async function saveKey(key, value){
     console.warn('Blocked save before data was loaded:', key);
     return false;
   }
+  if(staleConflict){
+    // A cross-device conflict is already showing. Keep the change queued (so a
+    // reload/merge can recover it) but do not write over newer server data.
+    pendingSaves.set(key, value);
+    return false;
+  }
+  const stamp = new Date().toISOString();
+  const seen = knownUpdatedAt[key];   // undefined for a key that didn't exist at load
   try{
-    const { error } = await sb
-      .from('dashboard_data')
-      .upsert({ user_id: currentUser.id, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
-    if(error) throw error;
+    // Optimistic concurrency: only write if the row is still at the timestamp we
+    // last saw. If it moved, another device wrote it and we must not clobber.
+    if(seen === undefined){
+      // We believe this key doesn't exist yet — insert. A duplicate-key error
+      // means another device created it first (a conflict we must surface).
+      const { data, error } = await sb
+        .from('dashboard_data')
+        .insert({ user_id: currentUser.id, key, value, updated_at: stamp })
+        .select('updated_at');
+      if(error){
+        if(error.code === '23505'){ pendingSaves.set(key, value); await handleConflict(key); return false; }
+        throw error;
+      }
+      knownUpdatedAt[key] = (data && data[0]?.updated_at) || stamp;
+    } else {
+      const { data, error } = await sb
+        .from('dashboard_data')
+        .update({ value, updated_at: stamp })
+        .eq('user_id', currentUser.id).eq('key', key).eq('updated_at', seen)
+        .select('updated_at');
+      if(error) throw error;
+      if(!data || data.length === 0){
+        // 0 rows updated => the guard failed => the row changed under us.
+        pendingSaves.set(key, value);
+        await handleConflict(key);
+        return false;
+      }
+      knownUpdatedAt[key] = data[0].updated_at;
+    }
     pendingSaves.delete(key);
     failedSaves.delete(key);
     renderSaveState();
@@ -921,6 +972,14 @@ async function saveKey(key, value){
     scheduleRetry();
     return false;
   }
+}
+
+// A save was blocked because another device already changed this row.
+// We stop all writes and ask the user to reload, rather than overwriting their
+// other device's newer work. The unsaved change stays in pendingSaves.
+async function handleConflict(key){
+  staleConflict = true;
+  renderSaveState();
 }
 
 let retryTimer = null, retryDelay = 2000;
@@ -948,6 +1007,14 @@ async function retryNow(){
 function renderSaveState(){
   const banner = document.getElementById('save-banner');
   const el = document.getElementById('save-indicator');
+  if(staleConflict){
+    if(el){ el.textContent = '⚠ Out of date'; el.style.color = 'var(--red)'; }
+    if(banner){
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠ <b>This data was changed on another device.</b> To avoid overwriting that newer work, saving is paused. Your unsaved change is still on screen — copy anything you need, then <button type="button" class="linkish" onclick="location.reload()" style="text-decoration:underline;">reload to get the latest</button>.`;
+    }
+    return;
+  }
   if(failedSaves.size){
     if(el){ el.textContent = '⚠ Not saved'; el.style.color = 'var(--red)'; }
     if(banner){
@@ -976,6 +1043,42 @@ window.addEventListener('beforeunload', (e)=>{
     return '';
   }
 });
+
+// When this tab regains focus, check whether another device changed anything.
+// If nothing is pending locally, silently reload the newer data so the stale
+// tab can't later overwrite it. If we have unsaved edits and the server also
+// moved, surface the conflict banner instead of guessing whose wins.
+let checkingFreshness = false;
+async function checkFreshnessOnFocus(){
+  if(!dataReady || staleConflict || checkingFreshness) return;
+  checkingFreshness = true;
+  try{
+    const server = await fetchServerTimestamps();
+    const changedKeys = Object.keys(server).filter(k => server[k] !== knownUpdatedAt[k]);
+    if(!changedKeys.length) return;
+    const pendingChanged = changedKeys.some(k => pendingSaves.has(k));
+    if(pendingChanged){
+      staleConflict = true;
+      renderSaveState();
+    } else if(pendingSaves.size === 0){
+      // Safe to just adopt the newer data.
+      loadedBlobs = await loadAllKeys();
+      BACKUP_KEYS.forEach(k => {
+        const fresh = loadKey(k, Array.isArray(state[k]) ? [] : {});
+        state[k] = fresh;
+      });
+      refreshView();
+    }
+    // else: pending saves exist but on different keys — they'll save fine; the
+    // next successful write refreshes their timestamps. No action needed.
+  }catch(e){
+    console.warn('Freshness check failed (offline?)', e);
+  }finally{
+    checkingFreshness = false;
+  }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkFreshnessOnFocus(); });
+window.addEventListener('focus', checkFreshnessOnFocus);
 
 /* ---------- appearance: themes + interface size ----------
    Stored in localStorage, not Supabase: these are per-device preferences
@@ -1553,6 +1656,11 @@ function goToRollCall(classId, date){
   state.rollcall.classId = classId;
   state.rollcall.date = date;
   state.openDrawer = null;
+  // If the target class isn't scheduled on that weekday (a makeup opened from
+  // the calendar/dashboard), reveal the full list so it stays selectable.
+  const cls = classById(classId);
+  const dow = new Date(date+'T00:00:00').getDay();
+  state.rollcallShowAll = !!(cls && !getClassDays(cls).includes(dow));
   navigate('rollcall');
 }
 
@@ -2604,16 +2712,12 @@ function renderRollCall(){
   const offSchedule = !getClassDays(cls).includes(dow);
   const holiday = getHoliday(date);
 
-  // Don't create session records for holidays
-  if(!holiday){
-    if(!state.sessions[sessionKey]) state.sessions[sessionKey] = {};
-    const session = state.sessions[sessionKey];
-    let created = false;
-    students.forEach(s=>{ if(!session[s.id]){ session[s.id]=defaultRecord(); created=true; } });
-    if(created) scheduleSave('sessions', state.sessions);
-  }
-
+  // Do NOT create records just by viewing — that used to leave empty sessions
+  // behind that then nagged in "awaiting completion". Records are created only
+  // on first real edit (getCurrentRecord). For rendering, fall back to an
+  // in-memory default when nothing is stored yet.
   const session = state.sessions[sessionKey] || {};
+  const recFor = s => session[s.id] || defaultRecord();
 
   // Find students absent in the immediately preceding non-holiday class session
   const prevDate = getPreviousClassDate(cls, date);
@@ -2631,7 +2735,15 @@ function renderRollCall(){
       <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
       <div class="rollcall-controls">
         <select onchange="setRollcallClass(this.value)">
-          ${(offSchedule?[cls,...scheduled]:scheduled).map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}${getClassDays(c).includes(dow)?'':' (off-schedule)'}</option>`).join('')}
+          ${(()=>{
+            // Default: only classes scheduled this weekday. If we're already on an
+            // off-schedule class (makeup), or the user asked to see all, list every
+            // active class so a makeup can be started right here.
+            const showAll = offSchedule || state.rollcallShowAll;
+            const list = showAll ? active : scheduled;
+            const opts = list.map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}${getClassDays(c).includes(dow)?'':' (off-schedule)'}</option>`).join('');
+            return opts + (showAll ? '' : `<option value="__all__">+ Off-schedule class…</option>`);
+          })()}
         </select>
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
       </div>
@@ -2653,6 +2765,7 @@ function renderRollCall(){
         const taStyleNext = taStyle.replace('background:var(--gray-soft);','');
         const lbl = 'font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;';
         const nextDate = getNextClassDate(cls, date);
+        const isPast = date < todayStr();
         return `
       <div class="card" style="margin-bottom:14px;padding:16px 18px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Class View</div>
@@ -2668,7 +2781,7 @@ function renderRollCall(){
           <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
         </div>
-        ${nextDate?`
+        ${nextDate && !isPast ? `
         <div style="border-top:1px dashed var(--border);padding-top:12px;">
           <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Next class \u2014 ${formatDateLong(nextDate)}</div>
           <div class="field" style="margin-bottom:10px;">
@@ -2679,7 +2792,12 @@ function renderRollCall(){
             <label style="${lbl}">Promise <span style="font-weight:400;">(anything you promised for next class)</span></label>
             <textarea rows="2" placeholder="e.g. bring the board game, check that song they asked about" style="${taStyleNext}" oninput="setPromise('${cls.id}','${nextDate}', this.value)">${esc(getPromise(cls.id, nextDate))}</textarea>
           </div>
-        </div>`:''}
+        </div>` : (isPast && nextDate && (getHomework(cls.id,nextDate)||getPromise(cls.id,nextDate)) ? `
+        <div style="border-top:1px dashed var(--border);padding-top:12px;font-size:13px;color:var(--muted);">
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text);">Assigned for next class (${formatDateShort(nextDate)})</div>
+          ${getHomework(cls.id,nextDate)?`<div><b>Homework:</b> ${esc(getHomework(cls.id,nextDate))}</div>`:''}
+          ${getPromise(cls.id,nextDate)?`<div><b>Promised:</b> ${esc(getPromise(cls.id,nextDate))}</div>`:''}
+        </div>`:'')}
       </div>`;
       })()}
       <div class="rollcall-actions">
@@ -2687,7 +2805,7 @@ function renderRollCall(){
         <span class="save-indicator" id="save-indicator"></span>
       </div>
       <div class="card roster-list ${locked?'locked-session':''}">
-        ${students.map(s=>renderRosterRow(s, session[s.id], absentPrevSession.has(s.id), locked)).join('')}
+        ${students.map(s=>renderRosterRow(s, recFor(s), absentPrevSession.has(s.id), locked)).join('')}
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <button type="button" class="linkish" onclick="navigate('classes')">Classes &amp; Students</button>.</div>` : ''}
   `;
@@ -2895,6 +3013,11 @@ function markAllPresent(){
   refreshView();
 }
 function setRollcallClass(classId){
+  if(classId === '__all__'){   // reveal all active classes for a makeup on this date
+    state.rollcallShowAll = true;
+    refreshView();
+    return;
+  }
   state.rollcall.classId = classId;
   state.openDrawer = null;
   refreshView();
@@ -2902,6 +3025,7 @@ function setRollcallClass(classId){
 function setRollcallDate(date){
   state.rollcall.date = date;
   state.openDrawer = null;
+  state.rollcallShowAll = false;   // a new date starts from the clean scheduled list
   const dow = new Date(date+'T00:00:00').getDay();
   const cls = classById(state.rollcall.classId);
   if(!cls || !getClassDays(cls).includes(dow)){
@@ -5073,6 +5197,35 @@ function deleteLearningPoint(id){
 
 /* ================= INIT ================= */
 window.state = state;
+
+// One-time cleanup: earlier versions seeded empty records just by opening a
+// session. Remove any session whose records are all pristine defaults and that
+// isn't marked completed — it carries no information but pollutes "awaiting
+// completion" and grows the sessions blob. Runs once per load; only writes if
+// it actually removed something.
+function isDefaultRecord(r){
+  const d = defaultRecord();
+  if(!r) return true;
+  // lateHwOutcome is set separately and meaningful even on an otherwise-default row
+  if(r.lateHwOutcome) return false;
+  for(const k of Object.keys(d)){
+    if(k === 'notes'){ if((r.notes||'').trim() !== '') return false; }
+    else if(r[k] !== d[k]) return false;
+  }
+  return true;
+}
+function cleanupEmptySessions(){
+  let removed = 0;
+  for(const key of Object.keys(state.sessions)){
+    if(state.sessionMeta && state.sessionMeta[key]?.completed) continue;   // never touch completed
+    const recs = state.sessions[key];
+    const ids = Object.keys(recs || {});
+    if(ids.length === 0){ delete state.sessions[key]; removed++; continue; }
+    if(ids.every(id => isDefaultRecord(recs[id]))){ delete state.sessions[key]; removed++; }
+  }
+  if(removed){ scheduleSave('sessions', state.sessions); }
+  return removed;
+}
 function showLoadError(err){
   dataReady = false;
   document.getElementById('app-main').innerHTML = `
@@ -5113,6 +5266,8 @@ async function init(){
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   dataReady = true;   // writes unlocked only now
+
+  cleanupEmptySessions();   // drop empty sessions left by older view-creates-data behaviour
 
   // refresh recurring placeholders for active students on load
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
