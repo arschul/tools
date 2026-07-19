@@ -338,6 +338,14 @@
   .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
   .btn-ghost.small{padding:6px 12px;font-size:12px;}
   .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;}
+  /* Class-plan rich editor */
+  .plan-toolbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--gray-soft);border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;}
+  .plan-tb-btn{background:none;border:1px solid transparent;border-radius:6px;min-width:28px;height:28px;padding:0 6px;font-size:13px;cursor:pointer;color:var(--text);font-family:inherit;display:inline-flex;align-items:center;justify-content:center;}
+  .plan-tb-btn:hover{background:var(--accent-soft);border-color:var(--border);}
+  .plan-tb-sep{width:1px;height:18px;background:var(--border);margin:0 4px;}
+  .plan-editor:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none;}
+  .plan-editor ul,.plan-editor ol{margin:4px 0;padding-left:22px;}
+  .plan-editor:focus{outline:none;}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
   .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
@@ -2051,7 +2059,7 @@ function _renderDashboard(el){
         <div class="dash-row-left">
           <span class="color-dot" style="background:${c.color}"></span>
           <div>
-            <div class="dash-row-title">${esc(c.name)}${done?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${hasProm?' <span class="badge amber" style="margin-left:6px;">📌 Promise</span>':''}${hasHw?' <span class="badge hw" style="margin-left:6px;">📘 HW due</span>':''}</div>
+            <div class="dash-row-title">${esc(c.name)}${done?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${hasProm?' <span class="badge amber" style="margin-left:6px;">📋 Plan</span>':''}${hasHw?' <span class="badge hw" style="margin-left:6px;">📘 HW due</span>':''}</div>
             <div class="dash-row-sub">${c.time?c.time+' · ':''}${studentsInClass(c.id).length} students</div>
           </div>
         </div>
@@ -2073,7 +2081,7 @@ function _renderDashboard(el){
       <div class="dash-row-left">
         <span class="color-dot" style="background:${u.c.color}"></span>
         <div>
-          <div class="dash-row-title" style="font-size:15px;">${esc(u.c.name)}${u.c.level?` <span class="badge other" style="margin-left:6px;">${esc(u.c.level)}</span>`:''}${u.date===today && isSessionCompleted(u.c.id, u.date)?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${getPromise(u.c.id,u.date)?' <span class="badge amber" style="margin-left:6px;">📌</span>':''}${getHomework(u.c.id,u.date)?' <span class="badge hw" style="margin-left:6px;">📘</span>':''}</div>
+          <div class="dash-row-title" style="font-size:15px;">${esc(u.c.name)}${u.c.level?` <span class="badge other" style="margin-left:6px;">${esc(u.c.level)}</span>`:''}${u.date===today && isSessionCompleted(u.c.id, u.date)?' <span class="badge green" style="margin-left:6px;">✓ Done</span>':''}${getPromise(u.c.id,u.date)?' <span class="badge amber" style="margin-left:6px;">📋</span>':''}${getHomework(u.c.id,u.date)?' <span class="badge hw" style="margin-left:6px;">📘</span>':''}</div>
           <div class="dash-row-sub">${formatDateShort(u.date)}${u.time?' · '+u.time:''} · ${studentsInClass(u.c.id).length} students</div>
         </div>
       </div>
@@ -2500,7 +2508,7 @@ function renderClassFocus(classId){
                 <span style="${f.done?'text-decoration:line-through;':''}overflow:hidden;text-overflow:ellipsis;">${esc(f.topic)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
-                ${f.done?'':`<button class="icon-btn" onclick="focusToNextClass('${classId}','${f.id}')" title="Add to next class content">→ Next class</button>`}
+                ${f.done?'':`<button class="icon-btn" onclick="focusToNextClass('${classId}','${f.id}')" title="Add to next class plan">→ Next class</button>`}
                 <button class="icon-btn danger" onclick="deleteClassFocus('${classId}','${f.id}')">Remove</button>
               </div>
             </div>`).join('')}
@@ -2537,13 +2545,16 @@ function focusToNextClass(classId, id){
   if(!c || !f) return;
   const nextDate = getNextClassDate(c, todayStr());
   if(!nextDate){ alert('No upcoming scheduled class for this class.'); return; }
-  const cur = (getLessonNote(classId, nextDate) || '').trim();
-  const parts = cur ? cur.split(';').map(x=>x.trim()).filter(Boolean) : [];
-  if(parts.includes(f.topic)){ alert(`"${f.topic}" is already in the content for ${formatDateShort(nextDate)}.`); return; }
-  parts.push(f.topic);
-  setLessonNote(classId, nextDate, parts.join('; '));
+  // Appends to the class PLAN for that date (not "what we did", which is a
+  // record of what actually happened and feeds absent reports).
+  const cur = getPromise(classId, nextDate);
+  if(htmlToPlain(planDisplayHtml(cur)).toLowerCase().includes(f.topic.trim().toLowerCase())){
+    alert(`"${f.topic}" is already in the plan for ${formatDateShort(nextDate)}.`); return;
+  }
+  const line = `<div>\u{1F4CD} ${esc(f.topic)}</div>`;
+  setPromise(classId, nextDate, cur ? planDisplayHtml(cur) + line : line);
   refreshView();
-  alert(`Added "${f.topic}" to the class on ${formatDateShort(nextDate)}.`);
+  alert(`Added "${f.topic}" to the class plan for ${formatDateShort(nextDate)}.`);
 }
 function toggleClassExpand(classId){
   state.expandedClassId = state.expandedClassId===classId ? null : classId;
@@ -2605,7 +2616,7 @@ function renderClassLogModal(){
     <div class="table-wrap" style="max-height:56vh;overflow:auto;">
       <table>
         <thead><tr>
-          <th>Date</th><th>What we did</th><th>Homework assigned</th><th>Promise</th><th style="text-align:center;white-space:nowrap;">Attendance</th>
+          <th>Date</th><th>What we did</th><th>Homework assigned</th><th>Class plan</th><th style="text-align:center;white-space:nowrap;">Attendance</th>
         </tr></thead>
         <tbody>
           ${rows.map(r=>`
@@ -2616,12 +2627,12 @@ function renderClassLogModal(){
               </td>
               <td>${r.content?esc(r.content):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.hw?esc(r.hw):'<span style="color:var(--muted);">—</span>'}</td>
-              <td>${r.promise?esc(r.promise):'<span style="color:var(--muted);">—</span>'}</td>
+              <td>${r.promise?planDisplayHtml(r.promise):'<span style="color:var(--muted);">—</span>'}</td>
               <td style="text-align:center;white-space:nowrap;">${r.roster?`${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`:'<span style="color:var(--muted);">—</span>'}</td>
             </tr>`).join('')}
         </tbody>
       </table>
-    </div>` : `<div class="empty">No log entries in this period yet. Lesson content, homework and promises recorded in Roll Call show up here.</div>`;
+    </div>` : `<div class="empty">No log entries in this period yet. Lesson content, homework and class plans recorded in Roll Call show up here.</div>`;
 
   showModal(`
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -2645,9 +2656,9 @@ function exportClassLogCsv(){
   const c = classById(clLogClassId);
   if(!c) return;
   const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
-  const header = ['Date','What we did','Homework assigned','Promise','Present','Absent','Roster','Completed','Holiday'];
+  const header = ['Date','What we did','Homework assigned','Class plan','Present','Absent','Roster','Completed','Holiday'];
   const data = [header].concat(
-    rows.map(r=>[r.date, r.content, r.hw, r.promise, r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'])
+    rows.map(r=>[r.date, r.content, r.hw, htmlToPlain(planDisplayHtml(r.promise)), r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'])
   );
   downloadCsv(`class-log-${slugify(c.name)}-${todayStr()}.csv`, data);
 }
@@ -3281,7 +3292,7 @@ function renderRollCall(){
         const collapsed = pref===null ? narrow : pref==='1';
         const hwT = getHomework(cls.id,date), prT = getPromise(cls.id,date), lnT = getLessonNote(cls.id,date);
         const summaryBits = [
-          hwT?'📘 HW due':'', prT?'📌 Promise':'', lnT?'📝 Content':''
+          prT?'📋 Plan':'', hwT?'📘 HW due':'', lnT?'📝 Content':''
         ].filter(Boolean);
         const summary = summaryBits.length ? summaryBits.join(' · ') : 'Nothing recorded yet';
         return `
@@ -3294,13 +3305,10 @@ function renderRollCall(){
           </span>
         </button>
         <div style="${collapsed?'display:none;':'margin-top:10px;'}">
+        ${renderPlanEditor(cls.id, date, { locked, cta:true, label:'📋 Class plan for today', hint:'(your plan for this class — focus points and promises land here)' })}
         <div class="field" style="margin-bottom:10px;">
           <label style="${lbl}">Homework due today ${locked?'':'<span style="font-weight:400;">(what students should hand in today)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
-        </div>
-        <div class="field" style="margin-bottom:10px;">
-          <label style="${lbl}">You promised for today ${locked?'':'<span style="font-weight:400;">(things you said you would bring or do this class)</span>'}</label>
-          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. bring Uno cards, print song lyrics" style="${taStyle}" oninput="setPromise('${cls.id}','${date}', this.value)">${esc(getPromise(cls.id, date))}</textarea>
         </div>
         <div class="field" style="margin-bottom:12px;">
           <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
@@ -3313,15 +3321,12 @@ function renderRollCall(){
             <label style="${lbl}">Homework to assign <span style="font-weight:400;">(due next class)</span></label>
             <textarea rows="2" placeholder="e.g. Workbook p.46, study irregular verbs" style="${taStyleNext}" oninput="setHomework('${cls.id}','${nextDate}', this.value)">${esc(getHomework(cls.id, nextDate))}</textarea>
           </div>
-          <div class="field">
-            <label style="${lbl}">Promise <span style="font-weight:400;">(anything you promised for next class)</span></label>
-            <textarea rows="2" placeholder="e.g. bring the board game, check that song they asked about" style="${taStyleNext}" oninput="setPromise('${cls.id}','${nextDate}', this.value)">${esc(getPromise(cls.id, nextDate))}</textarea>
-          </div>
+          ${renderPlanEditor(cls.id, nextDate, { label:'Plan for next class', hint:'(promises, focus points, anything to prepare \u2014 becomes that day\u2019s class plan)' })}
         </div>` : (isPast && nextDate && (getHomework(cls.id,nextDate)||getPromise(cls.id,nextDate)) ? `
         <div style="border-top:1px dashed var(--border);padding-top:12px;font-size:13px;color:var(--muted);">
           <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text);">Assigned for next class (${formatDateShort(nextDate)})</div>
           ${getHomework(cls.id,nextDate)?`<div><b>Homework:</b> ${esc(getHomework(cls.id,nextDate))}</div>`:''}
-          ${getPromise(cls.id,nextDate)?`<div><b>Promised:</b> ${esc(getPromise(cls.id,nextDate))}</div>`:''}
+          ${getPromise(cls.id,nextDate)?`<div><b>Planned:</b> ${planDisplayHtml(getPromise(cls.id,nextDate))}</div>`:''}
         </div>`:'')}
       </div>
       </div>`;
@@ -3365,6 +3370,105 @@ function setPromise(classId, date, val){
   if(val && val.trim()) state.promises[key] = val;
   else delete state.promises[key];
   scheduleSave('promises', state.promises);
+}
+/* ===== Class plan (repurposed promises store) — rich text helpers =====
+   The old "promised for today" store now holds the day's class plan.
+   Values may be legacy plain text or HTML written by the rich editor.
+   No migration needed: legacy text is upgraded to HTML on display. */
+function htmlToPlain(html){
+  if(!html) return '';
+  const d = document.createElement('div');
+  d.innerHTML = String(html)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(div|p|li|h1|h2|h3|blockquote)>/gi, '\n');
+  return (d.textContent || '').replace(/\u00a0/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+function looksLikeHtml(val){ return /<[a-z][\s\S]*>/i.test(val||''); }
+// Whitelist sanitizer: only formatting tags/attrs the toolbar can produce
+// (plus what sensible pasting yields). Everything else is unwrapped to text.
+const PLAN_TAGS = new Set(['B','STRONG','I','EM','U','S','STRIKE','BR','DIV','P','UL','OL','LI','SPAN','FONT','H1','H2','H3','BLOCKQUOTE']);
+function sanitizePlanHtml(html){
+  if(!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node)=>{
+    for(const child of Array.from(node.childNodes)){
+      if(child.nodeType === Node.ELEMENT_NODE){
+        if(!PLAN_TAGS.has(child.tagName)){
+          // unwrap: keep children, drop the tag (kills script/iframe/img etc.)
+          walk(child);
+          while(child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          continue;
+        }
+        // strip all attributes except a safe subset
+        for(const attr of Array.from(child.attributes)){
+          const n = attr.name.toLowerCase();
+          if(n === 'size' && child.tagName === 'FONT') continue;
+          if(n === 'style'){
+            // keep only font-size / font-weight / font-style / text-decoration
+            const kept = attr.value.split(';').map(s=>s.trim()).filter(s=>
+              /^(font-size|font-weight|font-style|text-decoration)\s*:/i.test(s));
+            if(kept.length){ child.setAttribute('style', kept.join(';')); continue; }
+          }
+          child.removeAttribute(attr.name);
+        }
+        walk(child);
+      } else if(child.nodeType !== Node.TEXT_NODE){
+        node.removeChild(child); // comments etc.
+      }
+    }
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+// Display form: legacy plain text -> escaped html with line breaks; html -> sanitized
+function planDisplayHtml(val){
+  if(!val) return '';
+  return looksLikeHtml(val) ? sanitizePlanHtml(val) : esc(val).replace(/\n/g,'<br>');
+}
+function savePlanFromEditor(classId, date, el){
+  const html = sanitizePlanHtml(el.innerHTML);
+  setPromise(classId, date, htmlToPlain(html) ? html : '');
+}
+function planCmd(cmd, arg){
+  document.execCommand(cmd, false, arg || null);
+}
+// Renders the rich-text class-plan editor. cta=true gives it the prominent
+// call-to-action treatment at the top of the Class View.
+function renderPlanEditor(classId, date, opts){
+  const { locked=false, cta=false, label='Class plan', hint='' } = opts || {};
+  const val = planDisplayHtml(getPromise(classId, date));
+  const eid = `plan-ed-${classId}-${date}${cta?'-cta':''}`;
+  const boxStyle = `border:1px solid var(--border);border-radius:${cta?'10px':'8px'};background:${locked?'var(--gray-soft)':'var(--card, #fff)'};` +
+    (cta ? 'border:2px solid var(--accent);box-shadow:0 0 0 3px var(--accent-soft);' : '');
+  const btn = (title, cmd, arg, html) =>
+    `<button type="button" class="plan-tb-btn" title="${title}" onmousedown="event.preventDefault()" onclick="planCmd('${cmd}'${arg?`,'${arg}'`:''})">${html}</button>`;
+  const toolbar = locked ? '' : `
+    <div class="plan-toolbar" onmousedown="if(event.target===this)event.preventDefault()">
+      ${btn('Bold','bold','','<b>B</b>')}
+      ${btn('Italic','italic','','<i>I</i>')}
+      ${btn('Underline','underline','','<u>U</u>')}
+      ${btn('Strikethrough','strikeThrough','','<s>S</s>')}
+      <span class="plan-tb-sep"></span>
+      ${btn('Small text','fontSize','2','<span style="font-size:11px;">A</span>')}
+      ${btn('Normal text','fontSize','3','A')}
+      ${btn('Large text','fontSize','5','<span style="font-size:17px;font-weight:600;">A</span>')}
+      <span class="plan-tb-sep"></span>
+      ${btn('Bulleted list','insertUnorderedList','','&bull; ≡')}
+      ${btn('Numbered list','insertOrderedList','','1. ≡')}
+      <span class="plan-tb-sep"></span>
+      ${btn('Clear formatting','removeFormat','','⌫')}
+    </div>`;
+  return `
+    <div class="field" style="margin-bottom:${cta?'14px':'10px'};">
+      <label style="font-size:${cta?'13px':'12px'};font-weight:${cta?'800':'600'};color:${cta?'var(--accent)':'var(--muted)'};margin-bottom:6px;display:block;">${label}${hint&&!locked?` <span style="font-weight:400;color:var(--muted);">${hint}</span>`:''}</label>
+      <div style="${boxStyle}">
+        ${toolbar}
+        <div id="${eid}" class="plan-editor" contenteditable="${!locked}" data-placeholder="Write or paste your class plan here…"
+          style="min-height:${cta?'88px':'52px'};padding:10px 12px;font-size:14px;line-height:1.5;outline:none;overflow-wrap:anywhere;"
+          oninput="savePlanFromEditor('${classId}','${date}', this)">${val}</div>
+      </div>
+    </div>`;
 }
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
@@ -4565,7 +4669,7 @@ function calDayItemsHtml(dateStr){
     ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
     ${!holiday?classesToday.map(c=>{
       const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
-      return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, promises)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
+      return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, class plan)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
     }).join(''):''}
     ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
     ${privToday.map(l=>{
@@ -6095,6 +6199,9 @@ window.state = state;
 // interferes with normal use. See teacher-dashboard-tests.html.
 window.__testables = {
   attendanceRate,
+  htmlToPlain,
+  sanitizePlanHtml,
+  planDisplayHtml,
   expectedSessionsForClass,
   gradeStatus,
   classLogRows,
