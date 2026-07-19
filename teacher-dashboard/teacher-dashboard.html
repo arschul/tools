@@ -601,7 +601,7 @@
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="7" r="2.5"/><path d="M21 20c0-2.7-1.8-5-4.5-5.8"/></svg></span>
     Classes &amp; Students
   </button>
-  <button type="button" class="nav-item" data-view="rollcall" onclick="navigate('rollcall')">
+  <button type="button" class="nav-item" data-view="rollcall" onclick="openRollCallNav()">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="m9 13 2 2 4-4"/></svg></span>
     Roll Call
   </button>
@@ -660,6 +660,7 @@ let state = {
   sessionMeta: {},
   lessonNotes: {},
   homework: {},
+  promises: {},
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -1113,7 +1114,7 @@ function setDashUpcomingRange(r){
 }
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
-  'lessonNotes','homework','privateStudents','privateLessons','payments','checkpoints',
+  'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
   'learningPoints','privateSettings','grades','gradeSettings'];
 
 function daysSinceLastBackup(){
@@ -2571,12 +2572,24 @@ function renderRollCall(){
       <div class="card empty-card">Add a class first in <button type="button" class="linkish" onclick="navigate('classes')">Classes &amp; Students</button>.</div>`;
     return;
   }
-  if(!classById(state.rollcall.classId) || classById(state.rollcall.classId).archived) state.rollcall.classId = active[0].id;
-  const cls = classById(state.rollcall.classId);
   const date = state.rollcall.date;
+  const dow = new Date(date+'T00:00:00').getDay();
+  const scheduled = active.filter(c=>getClassDays(c).includes(dow));
+  let cls = classById(state.rollcall.classId);
+  if(!cls || cls.archived){ cls = scheduled[0] || null; state.rollcall.classId = cls ? cls.id : null; }
+  if(!cls){
+    document.getElementById('view-rollcall').innerHTML = `
+      <div class="topbar">
+        <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
+        <div class="rollcall-controls">
+          <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
+        </div>
+      </div>
+      <div class="card empty-card">No classes are scheduled on ${DAY_NAMES[dow]}s. Pick another date, or open a specific session from the <button type="button" class="linkish" onclick="navigate('calendar')">Calendar</button>.</div>`;
+    return;
+  }
   const students = studentsInClass(cls.id);
   const sessionKey = cls.id + '_' + date;
-  const dow = new Date(date+'T00:00:00').getDay();
   const offSchedule = !getClassDays(cls).includes(dow);
   const holiday = getHoliday(date);
 
@@ -2607,7 +2620,7 @@ function renderRollCall(){
       <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
       <div class="rollcall-controls">
         <select onchange="setRollcallClass(this.value)">
-          ${activeClasses().map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+          ${(offSchedule?[cls,...scheduled]:scheduled).map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}${getClassDays(c).includes(dow)?'':' (off-schedule)'}</option>`).join('')}
         </select>
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
       </div>
@@ -2624,10 +2637,34 @@ function renderRollCall(){
         if(isToday) return `<div class="warn-banner">⏳ Today's class isn't counted in reports yet. Mark it completed when the class is over. <button class="btn-accent" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">✓ Complete session</button></div>`;
         return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">🔒 Lock (complete)</button></div>`;
       })()}
-      <div class="field" style="margin-bottom:14px;">
-        <label style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;">Today's lesson content ${locked?'':'<span style="font-weight:400;">(what was covered — shown on absent reports)</span>'}</label>
-        <input type="text" value="${esc(getLessonNote(cls.id, date))}" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43 assigned" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;${locked?'background:var(--gray-soft);':''}" oninput="setLessonNote('${cls.id}','${date}', this.value)">
-      </div>
+      ${(()=>{
+        const taStyle = `width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${locked?'background:var(--gray-soft);':''}`;
+        const lbl = 'font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;';
+        const prevHw = prevDate ? getHomework(cls.id, prevDate) : '';
+        const prevProm = prevDate ? getPromise(cls.id, prevDate) : '';
+        return `
+      <div class="card" style="margin-bottom:14px;padding:16px 18px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">Class View</div>
+        ${(prevHw||prevProm)?`
+        <div style="background:var(--amber-soft);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;">
+          <b>\uD83D\uDCCC From last class (${formatDateShort(prevDate)}):</b>
+          ${prevHw?`<div style="margin-top:4px;"><b>Homework due today:</b> ${esc(prevHw)}</div>`:''}
+          ${prevProm?`<div style="margin-top:4px;"><b>You promised:</b> ${esc(prevProm)}</div>`:''}
+        </div>`:''}
+        <div class="field" style="margin-bottom:10px;">
+          <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
+          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
+        </div>
+        <div class="field" style="margin-bottom:10px;">
+          <label style="${lbl}">Homework assigned ${locked?'':'<span style="font-weight:400;">(due next class)</span>'}</label>
+          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
+        </div>
+        <div class="field">
+          <label style="${lbl}">Promises ${locked?'':'<span style="font-weight:400;">(anything you promised to bring or do next class)</span>'}</label>
+          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. bring Uno cards, print song lyrics" style="${taStyle}" oninput="setPromise('${cls.id}','${date}', this.value)">${esc(getPromise(cls.id, date))}</textarea>
+        </div>
+      </div>`;
+      })()}
       <div class="rollcall-actions">
         ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>`}
         <span class="save-indicator" id="save-indicator"></span>
@@ -2657,6 +2694,16 @@ function setHomework(classId, date, val){
   if(val && val.trim()) state.homework[key] = val;
   else delete state.homework[key];
   scheduleSave('homework', state.homework);
+}
+function getPromise(classId, date){
+  return (state.promises && state.promises[classId+'_'+date]) || '';
+}
+function setPromise(classId, date, val){
+  if(!state.promises) state.promises = {};
+  const key = classId+'_'+date;
+  if(val && val.trim()) state.promises[key] = val;
+  else delete state.promises[key];
+  scheduleSave('promises', state.promises);
 }
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
@@ -2838,7 +2885,22 @@ function setRollcallClass(classId){
 function setRollcallDate(date){
   state.rollcall.date = date;
   state.openDrawer = null;
+  const dow = new Date(date+'T00:00:00').getDay();
+  const cls = classById(state.rollcall.classId);
+  if(!cls || !getClassDays(cls).includes(dow)){
+    const sched = activeClasses().filter(c=>getClassDays(c).includes(dow));
+    state.rollcall.classId = sched[0] ? sched[0].id : null;
+  }
   refreshView();
+}
+function openRollCallNav(){
+  const dow = new Date(state.rollcall.date+'T00:00:00').getDay();
+  const cls = classById(state.rollcall.classId);
+  if(!cls || cls.archived || !getClassDays(cls).includes(dow)){
+    const sched = activeClasses().filter(c=>getClassDays(c).includes(dow));
+    state.rollcall.classId = sched[0] ? sched[0].id : null;
+  }
+  navigate('rollcall');
 }
 
 /* ================= STUDENT PROFILE ================= */
@@ -3592,8 +3654,8 @@ function renderCalendar(){
         <div class="cal-items">
           ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
           ${!holiday?classesToday.map(c=>{
-            const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr));
-            return `<button type="button" class="cal-tag" title="Click to edit lesson content &amp; homework" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();openClassSessionModal('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
+            const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
+            return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, promises)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
           }).join(''):''}
           ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
           ${privToday.map((l,pi)=>{
@@ -3720,41 +3782,6 @@ function openDayModal(dateStr){
       <button class="btn-accent" onclick="addEvent('${dateStr}')">Add event</button>
     </div>
   `);
-}
-function openClassSessionModal(classId, dateStr){
-  const c = classById(classId);
-  if(!c) return;
-  const locked = !!(state.sessionMeta && state.sessionMeta[classId+'_'+dateStr]?.completed);
-  const dis = locked ? 'disabled' : '';
-  const lockedStyle = locked ? 'background:var(--gray-soft);' : '';
-  showModal(`
-    <h3><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}${c.time?' · '+c.time:''}</h3>
-    <div class="meta" style="margin:-6px 0 14px;">${formatDateLong(dateStr)}</div>
-    ${locked?`<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">🔒 Completed session — read-only. Reopen it from Roll Call to edit.</div>`:''}
-    <div class="modal-section">
-      <div class="modal-section-label">Lesson content</div>
-      <div class="field">
-        <textarea id="cs-content" rows="3" ${dis} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getLessonNote(classId, dateStr))}</textarea>
-      </div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-section-label">Homework due</div>
-      <div class="field">
-        <textarea id="cs-hw" rows="2" ${dis} placeholder="e.g. Workbook p.44–45, write 150-word essay" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${lockedStyle}">${esc(getHomework(classId, dateStr))}</textarea>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Close</button>
-      <button class="btn-ghost" onclick="closeModal();goToRollCall('${classId}','${dateStr}')">Roll Call →</button>
-      ${locked?'':`<button class="btn-accent" onclick="saveClassSession('${classId}','${dateStr}')">Save</button>`}
-    </div>
-  `);
-}
-function saveClassSession(classId, dateStr){
-  setLessonNote(classId, dateStr, document.getElementById('cs-content').value);
-  setHomework(classId, dateStr, document.getElementById('cs-hw').value);
-  closeModal();
-  refreshView();
 }
 function addEvent(dateStr){
   const title = document.getElementById('ev-title').value.trim();
@@ -5029,6 +5056,7 @@ async function init(){
   state.sessionMeta = loadKey('sessionMeta', {});
   state.lessonNotes = loadKey('lessonNotes', {});
   state.homework = loadKey('homework', {});
+  state.promises = loadKey('promises', {});
   state.privateStudents = loadKey('privateStudents', []);
   state.privateLessons = loadKey('privateLessons', []);
   state.payments = loadKey('payments', []);
