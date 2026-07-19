@@ -682,6 +682,7 @@ let state = {
   payments: [],
   checkpoints: [],
   learningPoints: [],
+  classFocus: {},   // D2: per-class focus points {classId: [{id,topic,added,done}]}
   privateSettings: { overdueThresholdDays: 14 },
   grades: {},
   gradeSettings: { margin: 0 },
@@ -905,6 +906,17 @@ let knownUpdatedAt = {};
 let staleConflict = false;    // true once a cross-device conflict is detected
 const pendingSaves = new Map();   // key -> latest value awaiting a successful write
 const failedSaves = new Set();
+let authExpired = false;           // D5: set when the Supabase session has lapsed
+let refreshingSession = false;
+
+// Does this error look like an expired/invalid auth session (vs a network blip)?
+function isAuthError(e){
+  if(!e) return false;
+  const code = e.code || e.status || (e.originalError && e.originalError.status);
+  if(code===401 || code==='401' || code==='PGRST301') return true;
+  const msg = String(e.message || e.error_description || e.msg || '').toLowerCase();
+  return msg.includes('jwt') || msg.includes('token') || (msg.includes('auth') && msg.includes('expired')) || msg.includes('not authenticated');
+}
 
 async function loadAllKeys(){
   // One round trip instead of 14. Throws on failure — caller must handle.
@@ -943,6 +955,12 @@ async function saveKey(key, value){
     // A cross-device conflict is already showing. Keep the change queued (so a
     // reload/merge can recover it) but do not write over newer server data.
     pendingSaves.set(key, value);
+    return false;
+  }
+  if(authExpired){
+    // Session is dead; queue the change and wait for inline re-login to flush it.
+    pendingSaves.set(key, value);
+    failedSaves.add(key);
     return false;
   }
   const stamp = new Date().toISOString();
@@ -985,9 +1003,60 @@ async function saveKey(key, value){
     console.error('Save failed for', key, e);
     pendingSaves.set(key, value);
     failedSaves.add(key);
+    if(isAuthError(e)){
+      // Try a silent refresh first; only prompt for re-login if that fails.
+      const recovered = await tryRefreshSession();
+      if(recovered){
+        renderSaveState();
+        scheduleRetry();     // resume pending writes with the fresh token
+        return false;
+      }
+      authExpired = true;    // banner will show the inline re-login form
+      renderSaveState();
+      return false;          // don't hammer retry while the session is dead
+    }
     renderSaveState();
     scheduleRetry();
     return false;
+  }
+}
+
+// D5: attempt a silent session refresh. Returns true if we got a valid session.
+async function tryRefreshSession(){
+  if(refreshingSession) return false;
+  refreshingSession = true;
+  try{
+    const { data, error } = await sb.auth.refreshSession();
+    if(error || !data?.session) return false;
+    currentUser = data.session.user;
+    authExpired = false;
+    return true;
+  }catch(_){
+    return false;
+  }finally{
+    refreshingSession = false;
+  }
+}
+
+// D5: re-login inline (from the save banner) without a page reload, then resume
+// any pending saves so no work is lost.
+async function reauthInline(){
+  const emailEl = document.getElementById('reauth-email');
+  const passEl = document.getElementById('reauth-pass');
+  const errEl = document.getElementById('reauth-err');
+  const email = emailEl ? emailEl.value.trim() : '';
+  const pass = passEl ? passEl.value : '';
+  if(errEl) errEl.textContent = '';
+  if(!email || !pass){ if(errEl) errEl.textContent = 'Enter your email and password.'; return; }
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw error;
+    currentUser = data.user;
+    authExpired = false;
+    renderSaveState();
+    await retryNow();        // flush everything that was queued while logged out
+  }catch(e){
+    if(errEl) errEl.textContent = 'Sign-in failed: ' + (e.message || 'try again');
   }
 }
 
@@ -1024,6 +1093,20 @@ async function retryNow(){
 function renderSaveState(){
   const banner = document.getElementById('save-banner');
   const el = document.getElementById('save-indicator');
+  if(authExpired){
+    if(el){ el.textContent = '⚠ Signed out'; el.style.color = 'var(--red)'; }
+    if(banner){
+      banner.style.display = 'block';
+      banner.innerHTML = `⚠ <b>Your session expired.</b> Sign in again to save your work — nothing on screen is lost, and your ${pendingSaves.size} pending change(s) will save as soon as you're back in.
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+          <input id="reauth-email" type="email" placeholder="Email" autocomplete="username" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;">
+          <input id="reauth-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')reauthInline()" style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;">
+          <button type="button" class="btn-accent" onclick="reauthInline()">Sign in &amp; save</button>
+          <span id="reauth-err" style="color:var(--red);font-size:12px;"></span>
+        </div>`;
+    }
+    return;
+  }
   if(staleConflict){
     if(el){ el.textContent = '⚠ Out of date'; el.style.color = 'var(--red)'; }
     if(banner){
@@ -1206,6 +1289,14 @@ function openSettingsModal(){
       </div>
     </div>
 
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Private lessons</h3>
+    <div class="card section" style="padding:14px 16px;">
+      <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+        <span style="flex:1;">Mark as overdue after<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Days a private student's oldest unpaid lesson can go before the Dashboard flags them.</span></span>
+        <input id="settings-overdue-days" type="number" min="1" step="1" value="${state.privateSettings.overdueThresholdDays}" onchange="setOverdueThreshold(this.value)" style="width:90px;text-align:center;">
+      </label>
+    </div>
+
     <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Backup</h3>
     <div class="card section" style="padding:14px 16px;${days>=7?'border-left:4px solid var(--amber);':''}">
       <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Last backup: <b style="color:var(--text);">${esc(lastLabel)}</b></div>
@@ -1235,7 +1326,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','privateSettings','grades','gradeSettings'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -2332,10 +2423,78 @@ function renderClassCard(c, isArchived){
               `).join('')}
             </div>
           ` : `<div class="empty">No students yet. Add the first one above.</div>`}
+          ${renderClassFocus(c.id)}
         </div>
       ` : ''}
     </div>
   `;
+}
+
+/* ===== D2: group focus points — recurring topics a class needs to work on ===== */
+function classFocusList(classId){ return (state.classFocus && state.classFocus[classId]) || []; }
+function renderClassFocus(classId){
+  const items = classFocusList(classId);
+  return `
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;">🎯 Focus points</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Recurring things this class needs to work on. Send one to the next lesson's content when you plan to cover it.</div>
+      <div class="add-student-row">
+        <input type="text" id="focus-input-${classId}" placeholder="e.g. past perfect keeps tripping them up" onkeydown="if(event.key==='Enter') addClassFocus('${classId}')">
+        <button class="btn-accent" onclick="addClassFocus('${classId}')">+ Add</button>
+      </div>
+      ${items.length ? `
+        <div class="student-list" style="margin-top:8px;">
+          ${items.map(f=>`
+            <div class="student-list-row" ${f.done?'style="opacity:.55;"':''}>
+              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+                <button class="icon-btn" onclick="toggleClassFocusDone('${classId}','${f.id}')" title="${f.done?'Mark not done':'Mark done'}">${f.done?'☑':'☐'}</button>
+                <span style="${f.done?'text-decoration:line-through;':''}overflow:hidden;text-overflow:ellipsis;">${esc(f.topic)}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${f.done?'':`<button class="icon-btn" onclick="focusToNextClass('${classId}','${f.id}')" title="Add to next class content">→ Next class</button>`}
+                <button class="icon-btn danger" onclick="deleteClassFocus('${classId}','${f.id}')">Remove</button>
+              </div>
+            </div>`).join('')}
+        </div>` : ''}
+    </div>`;
+}
+function addClassFocus(classId){
+  const input = document.getElementById('focus-input-'+classId);
+  if(!input) return;
+  const topic = input.value.trim();
+  if(!topic) return;
+  if(!state.classFocus) state.classFocus = {};
+  if(!state.classFocus[classId]) state.classFocus[classId] = [];
+  state.classFocus[classId].push({ id: uid(), topic, added: todayStr(), done: false });
+  scheduleSave('classFocus', state.classFocus);
+  refreshView();
+}
+function toggleClassFocusDone(classId, id){
+  const f = classFocusList(classId).find(x=>x.id===id);
+  if(!f) return;
+  f.done = !f.done;
+  scheduleSave('classFocus', state.classFocus);
+  refreshView();
+}
+function deleteClassFocus(classId, id){
+  if(!state.classFocus || !state.classFocus[classId]) return;
+  state.classFocus[classId] = state.classFocus[classId].filter(x=>x.id!==id);
+  scheduleSave('classFocus', state.classFocus);
+  refreshView();
+}
+function focusToNextClass(classId, id){
+  const c = classById(classId);
+  const f = classFocusList(classId).find(x=>x.id===id);
+  if(!c || !f) return;
+  const nextDate = getNextClassDate(c, todayStr());
+  if(!nextDate){ alert('No upcoming scheduled class for this class.'); return; }
+  const cur = (getLessonNote(classId, nextDate) || '').trim();
+  const parts = cur ? cur.split(';').map(x=>x.trim()).filter(Boolean) : [];
+  if(parts.includes(f.topic)){ alert(`"${f.topic}" is already in the content for ${formatDateShort(nextDate)}.`); return; }
+  parts.push(f.topic);
+  setLessonNote(classId, nextDate, parts.join('; '));
+  refreshView();
+  alert(`Added "${f.topic}" to the class on ${formatDateShort(nextDate)}.`);
 }
 function toggleClassExpand(classId){
   state.expandedClassId = state.expandedClassId===classId ? null : classId;
@@ -5320,17 +5479,14 @@ function deletePayment(id){
     refreshView();
   });
 }
+function setOverdueThreshold(v){
+  state.privateSettings.overdueThresholdDays = Math.max(1, Number(v)||14);
+  scheduleSave('privateSettings', state.privateSettings);
+  updatePrivAlertDot();
+}
 function openPrivSettingsModal(){
-  showModal(`
-    <h3>Private lesson settings</h3>
-    <div class="field"><label>Mark as overdue after (days unpaid)</label>
-      <input id="pset-days" type="number" min="1" value="${state.privateSettings.overdueThresholdDays}">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn-accent" onclick="savePrivSettings()">Save</button>
-    </div>
-  `);
+  // Consolidated into the main Settings modal (C5).
+  openSettingsModal();
 }
 function savePrivSettings(){
   state.privateSettings.overdueThresholdDays = Number(document.getElementById('pset-days').value)||14;
@@ -5666,6 +5822,20 @@ function deleteLearningPoint(id){
 /* ================= INIT ================= */
 window.state = state;
 
+// E2: expose pure/near-pure functions for the test harness. Guarded so it never
+// interferes with normal use. See teacher-dashboard-tests.html.
+window.__testables = {
+  attendanceRate,
+  expectedSessionsForClass,
+  gradeStatus,
+  classLogRows,
+  computeLedger,
+  isDefaultRecord,
+  getNextClassDate,
+  // let tests inject fixture state
+  _setState: (s)=>{ Object.keys(state).forEach(k=>delete state[k]); Object.assign(state, s); }
+};
+
 // One-time cleanup: earlier versions seeded empty records just by opening a
 // session. Remove any session whose records are all pristine defaults and that
 // isn't marked completed — it carries no information but pollutes "awaiting
@@ -5728,6 +5898,7 @@ async function init(){
   state.payments = loadKey('payments', []);
   state.checkpoints = loadKey('checkpoints', []);
   state.learningPoints = loadKey('learningPoints', []);
+  state.classFocus = loadKey('classFocus', {});
   state.privateSettings = loadKey('privateSettings', { overdueThresholdDays: 14 });
   state.grades = loadKey('grades', {});
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
