@@ -346,6 +346,34 @@
   .plan-editor:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none;}
   .plan-editor ul,.plan-editor ol{margin:4px 0;padding-left:22px;}
   .plan-editor:focus{outline:none;}
+  /* Class points (ClassDojo-style) */
+  .pts-ctrl{display:flex;align-items:center;gap:4px;margin-right:8px;}
+  .pts-btn{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;font-size:15px;line-height:1;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);}
+  .pts-btn.plus:hover{background:#e7f6ec;color:#1c7c3c;border-color:#1c7c3c;}
+  .pts-btn.minus:hover{background:#fdeaea;color:#b3261e;border-color:#b3261e;}
+  .pts-chip{border:1px solid var(--border);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .pts-chip.neg{background:#fdeaea;color:#b3261e;}
+  .pts-total{font-size:32px;font-weight:800;color:var(--accent);}
+  .pts-total.neg{color:#b3261e;}
+  .pts-total.small{font-size:15px;font-weight:800;color:var(--accent);}
+  .pts-total.small.neg{color:#b3261e;}
+  .pts-preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .pts-preset{border:1px solid var(--border);border-radius:10px;background:none;padding:8px 10px;font-size:13px;font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:7px;}
+  .pts-preset b{margin-left:auto;}
+  .pts-preset.pos:hover{background:#e7f6ec;border-color:#1c7c3c;}
+  .pts-preset.neg:hover{background:#fdeaea;border-color:#b3261e;}
+  .pts-preset.pos b{color:#1c7c3c;}
+  .pts-preset.neg b{color:#b3261e;}
+  .pts-history{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:4px 8px;}
+  .pts-hist-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .pts-hist-row:last-child{border-bottom:none;}
+  .pts-delta{font-weight:800;min-width:28px;text-align:center;border-radius:6px;padding:1px 4px;font-size:12px;}
+  .pts-delta.pos{background:#e7f6ec;color:#1c7c3c;}
+  .pts-delta.neg{background:#fdeaea;color:#b3261e;}
+  .pts-board{border:1px solid var(--border);border-radius:10px;padding:4px 10px;max-height:340px;overflow-y:auto;}
+  .pts-board-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+  .pts-board-row:last-child{border-bottom:none;}
+  @media (max-width:700px){ .pts-ctrl{gap:2px;margin-right:4px;} .pts-btn{width:30px;height:30px;} }
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
   .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
@@ -695,6 +723,7 @@ let state = {
   lessonNotes: {},
   homework: {},
   promises: {},
+  pointsLog: [],
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -1376,7 +1405,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -2450,6 +2479,7 @@ function renderClassCard(c, isArchived){
             ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">↩ Unarchive</button>
                <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
             : `<button class="icon-btn" onclick="openClassLogModal('${c.id}')">📋 Log</button>
+               ${c.pointsEnabled?`<button class="icon-btn" onclick="openPointsModal('${c.id}')">🏆 Points</button>`:''}
                <button class="icon-btn" onclick="openGradesModal('${c.id}')">📝 Grades</button>
                <button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
                <button class="icon-btn" onclick="archiveClass('${c.id}')">📦 Archive</button>`}
@@ -2704,6 +2734,13 @@ function openClassModal(classId){
       <button class="btn-ghost small" style="margin-top:6px;" onclick="cmAddDurRow()">+ Duration change</button>
       <div style="font-size:12px;color:var(--muted);margin-top:6px;">Add a row when the class length changes. Sessions before that date keep the earlier duration.</div>
     </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="cm-points" ${c?.pointsEnabled?'checked':''} style="width:16px;height:16px;">
+        ⭐ Points mode
+      </label>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">Students win and lose points on top of their regular assessment (ClassDojo-style). Adds ± buttons to Roll Call and a class scoreboard.</div>
+    </div>
     <div class="field"><label>Color</label>
       <div class="swatches">
         ${PALETTE.map(col=>`<button type="button" class="swatch ${ (c?c.color===col:col===PALETTE[0]) ?'on':''}" style="background:${col}" aria-label="Colour ${col}" aria-pressed="${ (c?c.color===col:col===PALETTE[0]) }" onclick="selectSwatch(this,'${col}')"></button>`).join('')}
@@ -2760,6 +2797,7 @@ function saveClass(classId){
   const color = document.getElementById('cm-color').value;
   const startDate = document.getElementById('cm-start').value || null;
   const endDate = document.getElementById('cm-end').value || null;
+  const pointsEnabled = !!document.getElementById('cm-points')?.checked;
 
   // Build duration history
   const rows = [...document.querySelectorAll('.cm-dur-row')];
@@ -2778,9 +2816,9 @@ function saveClass(classId){
   if(classId){
     const c = classById(classId);
     c.name=name; c.days=days; c.time=time; c.level=level; c.color=color; c.startDate=startDate; c.endDate=endDate;
-    c.duration=duration; c.durationHistory=durationHistory;
+    c.duration=duration; c.durationHistory=durationHistory; c.pointsEnabled=pointsEnabled;
   }else{
-    state.classes.push({id:uid(), name, days, time, level, color, startDate, endDate, duration, durationHistory});
+    state.classes.push({id:uid(), name, days, time, level, color, startDate, endDate, duration, durationHistory, pointsEnabled});
   }
   scheduleSave('classes', state.classes);
   closeModal();
@@ -2792,6 +2830,10 @@ function deleteClass(classId){
   state.students = state.students.filter(s=>s.classId!==classId);
   Object.keys(state.sessions).forEach(k=>{ if(splitSessionKey(k)[0]===classId) delete state.sessions[k]; });
   state.events = state.events.filter(e=>e.classId!==classId);
+  if((state.pointsLog||[]).some(e=>e.classId===classId)){
+    state.pointsLog = state.pointsLog.filter(e=>e.classId!==classId);
+    scheduleSave('pointsLog', state.pointsLog);
+  }
   if(state.grades[classId]){ delete state.grades[classId]; scheduleSave('grades', state.grades); }
   if(state.expandedClassId===classId) state.expandedClassId=null;
   scheduleSave('classes', state.classes);
@@ -3264,6 +3306,7 @@ function renderRollCall(){
         </select>
         <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
         <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}')" title="Class log — full teaching history for this class">📋 Log</button>
+        ${cls.pointsEnabled?`<button type="button" class="btn-ghost small" onclick="openPointsModal('${cls.id}')" title="Class points scoreboard">🏆 Points</button>`:''}
       </div>
     </div>
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
@@ -3470,6 +3513,165 @@ function renderPlanEditor(classId, date, opts){
       </div>
     </div>`;
 }
+/* ================= CLASS POINTS (ClassDojo-style, per-class opt-in) =================
+   Enabled per class via cls.pointsEnabled. Every award is an append-only log
+   entry (never a mutated total), so history, undo and cross-device merging
+   all stay safe. Totals are computed, filtered by cls.pointsSince so a
+   "new round" keeps old history without counting it. */
+const POINT_PRESETS = [
+  { emoji:'🙋', label:'Participation',       delta:+1 },
+  { emoji:'🗣️', label:'Speaking English',    delta:+1 },
+  { emoji:'🤝', label:'Helping a colleague', delta:+1 },
+  { emoji:'🌟', label:'Great work',          delta:+2 },
+  { emoji:'🇧🇷', label:'Speaking Portuguese', delta:-1 },
+  { emoji:'📵', label:'Off task',            delta:-1 },
+  { emoji:'📕', label:'No homework',         delta:-1 },
+];
+function classPointsEnabled(classId){ return !!classById(classId)?.pointsEnabled; }
+function pointsFor(studentId, classId, sinceOverride){
+  const since = sinceOverride !== undefined ? sinceOverride : (classById(classId)?.pointsSince || '');
+  return (state.pointsLog||[]).reduce((t,e)=>
+    t + ((e.studentId===studentId && e.classId===classId && (!since || e.date>=since)) ? e.delta : 0), 0);
+}
+function pointsHistory(studentId, classId){
+  return (state.pointsLog||[])
+    .filter(e=>e.studentId===studentId && e.classId===classId)
+    .sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+function awardPoints(classId, studentId, delta, reason, date){
+  delta = parseInt(delta, 10);
+  if(!delta) return null;
+  if(!state.pointsLog) state.pointsLog = [];
+  const entry = { id: uid(), classId, studentId, delta, reason:(reason||'').trim(), date: date || todayStr(), ts: Date.now() };
+  state.pointsLog.push(entry);
+  scheduleSave('pointsLog', state.pointsLog);
+  return entry;
+}
+function quickPoint(classId, studentId, delta, date){
+  awardPoints(classId, studentId, delta, '', date || state.rollcall?.date || todayStr());
+  refreshView();
+}
+function deletePointEntry(id, rerender){
+  const idx = (state.pointsLog||[]).findIndex(e=>e.id===id);
+  if(idx<0) return;
+  const snapshot = state.pointsLog[idx];
+  state.pointsLog.splice(idx,1);
+  scheduleSave('pointsLog', state.pointsLog);
+  const s = anyStudent(snapshot.studentId);
+  showUndoToast(`Removed ${snapshot.delta>0?'+':''}${snapshot.delta} for ${s?s.name:'student'}`, ()=>{
+    state.pointsLog.push(snapshot);
+    scheduleSave('pointsLog', state.pointsLog);
+    if(typeof rerender==='function') rerender(); else refreshView();
+  });
+  if(typeof rerender==='function') rerender(); else refreshView();
+}
+/* --- per-student modal: presets, custom award, history --- */
+function openStudentPointsModal(studentId){
+  const st = state.students.find(x=>x.id===studentId);
+  if(!st) return;
+  const classId = st.classId;
+  const c = classById(classId);
+  const total = pointsFor(studentId, classId);
+  const hist = pointsHistory(studentId, classId);
+  const since = c?.pointsSince;
+  const inRound = e => !since || e.date >= since;
+  const presetBtn = (pr,i)=>`
+    <button type="button" class="pts-preset ${pr.delta<0?'neg':'pos'}" onclick="ptsApplyPreset('${classId}','${studentId}',${i})">
+      <span>${pr.emoji}</span> ${esc(pr.label)} <b>${pr.delta>0?'+':''}${pr.delta}</b>
+    </button>`;
+  showModal(`
+    <h3 style="margin-bottom:2px;">⭐ ${esc(st.name)}</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')}${since?` · round started ${formatDateShort(since)}`:''}</div>
+    <div style="text-align:center;margin-bottom:14px;">
+      <span class="pts-total ${total<0?'neg':''}">${total>0?'+':''}${total}</span>
+      <span style="font-size:13px;color:var(--muted);margin-left:6px;">point${Math.abs(total)===1?'':'s'}</span>
+    </div>
+    <div class="pts-preset-grid">${POINT_PRESETS.map(presetBtn).join('')}</div>
+    <div class="field-row" style="align-items:flex-end;margin-top:12px;">
+      <div class="field" style="width:90px;margin-bottom:0;"><label>Points</label>
+        <input id="pts-custom-delta" type="number" step="1" value="1" style="width:100%;"></div>
+      <div class="field" style="flex:1;margin-bottom:0;"><label>Reason (optional)</label>
+        <input id="pts-custom-reason" type="text" placeholder="e.g. won the vocabulary game" style="width:100%;"
+          onkeydown="if(event.key==='Enter')ptsApplyCustom('${classId}','${studentId}')"></div>
+      <button class="btn-accent" style="height:38px;" onclick="ptsApplyCustom('${classId}','${studentId}')">Give</button>
+    </div>
+    ${hist.length?`
+    <div style="margin-top:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">HISTORY</div>
+      <div class="pts-history">
+        ${hist.slice(0,25).map(e=>`
+          <div class="pts-hist-row" style="${inRound(e)?'':'opacity:.45;'}">
+            <span class="pts-delta ${e.delta<0?'neg':'pos'}">${e.delta>0?'+':''}${e.delta}</span>
+            <span style="flex:1;">${e.reason?esc(e.reason):'<span style="color:var(--muted);">Quick point</span>'}${inRound(e)?'':' <span style="font-size:11px;">(previous round)</span>'}</span>
+            <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${formatDateShort(e.date)}</span>
+            <button type="button" class="icon-btn danger" style="padding:1px 7px;" title="Remove this entry" onclick="deletePointEntry('${e.id}', ()=>openStudentPointsModal('${studentId}'))">×</button>
+          </div>`).join('')}
+        ${hist.length>25?`<div style="font-size:12px;color:var(--muted);padding:6px 2px;">…and ${hist.length-25} older entries</div>`:''}
+      </div>
+    </div>`:''}
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal();refreshView();">Close</button>
+    </div>
+  `, true);
+}
+function ptsApplyPreset(classId, studentId, i){
+  const pr = POINT_PRESETS[i];
+  if(!pr) return;
+  awardPoints(classId, studentId, pr.delta, pr.label, state.rollcall?.date || todayStr());
+  openStudentPointsModal(studentId);
+}
+function ptsApplyCustom(classId, studentId){
+  const delta = parseInt(document.getElementById('pts-custom-delta')?.value, 10);
+  const reason = document.getElementById('pts-custom-reason')?.value || '';
+  if(!delta){ alert('Points must be a non-zero number (use negative to take points away).'); return; }
+  awardPoints(classId, studentId, delta, reason, state.rollcall?.date || todayStr());
+  openStudentPointsModal(studentId);
+}
+/* --- class scoreboard: ranking, whole-class awards, new round --- */
+function openPointsModal(classId){
+  const c = classById(classId);
+  if(!c) return;
+  const roster = state.students.filter(s=>s.classId===classId).sort((a,b)=>a.name.localeCompare(b.name));
+  const rows = roster.map(s=>({ s, total: pointsFor(s.id, classId) }))
+    .sort((a,b)=> b.total-a.total || a.s.name.localeCompare(b.s.name));
+  const medal = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+  showModal(`
+    <h3 style="margin-bottom:2px;">🏆 ${esc(c.name)} — points</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${c.pointsSince?`Round started ${formatDateShort(c.pointsSince)}`:'All-time'}</div>
+    ${rows.length?`
+    <div class="pts-board">
+      ${rows.map((r,i)=>`
+        <div class="pts-board-row">
+          <span style="width:30px;text-align:center;">${r.total!==0||i<3?medal(i):`${i+1}.`}</span>
+          <button type="button" class="linkish" style="flex:1;text-align:left;font-size:14px;" onclick="openStudentPointsModal('${r.s.id}')">${esc(r.s.name)}</button>
+          <button type="button" class="pts-btn minus" onclick="quickPoint('${classId}','${r.s.id}',-1, todayStr());openPointsModal('${classId}')">−</button>
+          <span class="pts-total small ${r.total<0?'neg':''}" style="min-width:44px;text-align:center;">${r.total>0?'+':''}${r.total}</span>
+          <button type="button" class="pts-btn plus" onclick="quickPoint('${classId}','${r.s.id}',1, todayStr());openPointsModal('${classId}')">+</button>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+      <button class="btn-ghost small" onclick="ptsAwardAll('${classId}',1)">⭐ Whole class +1</button>
+      <button class="btn-ghost small" onclick="ptsAwardAll('${classId}',-1)">Whole class −1</button>
+      <button class="btn-ghost small" onclick="ptsNewRound('${classId}')" title="Totals restart from zero today. History is kept.">🔄 Start new round</button>
+    </div>`:`<div class="empty">No students in this class yet.</div>`}
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal();refreshView();">Close</button>
+    </div>
+  `, true);
+}
+function ptsAwardAll(classId, delta){
+  const roster = state.students.filter(s=>s.classId===classId);
+  roster.forEach(s=> awardPoints(classId, s.id, delta, 'Whole class', todayStr()));
+  openPointsModal(classId);
+}
+function ptsNewRound(classId){
+  const c = classById(classId);
+  if(!c) return;
+  if(!confirm('Start a new round? Everyone goes back to 0 from today. Past points stay in each student\u2019s history.')) return;
+  c.pointsSince = todayStr();
+  scheduleSave('classes', state.classes);
+  openPointsModal(classId);
+}
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
   if(date < todayStr()) return true;
@@ -3496,6 +3698,12 @@ function renderRosterRow(s, rec, missedHw=false, locked=false){
         ${missedHw && hwOutcome==='late' ? `<span class="badge green" style="margin-left:8px;font-size:11px;">✓ Late HW</span>` : ''}
         ${missedHw && hwOutcome==='no_hw' ? `<span class="badge red" style="margin-left:8px;font-size:11px;">✗ No HW</span>` : ''}
       </div>
+      ${classPointsEnabled(s.classId)?(()=>{const tot=pointsFor(s.id,s.classId);return `
+      <div class="pts-ctrl" onclick="event.stopPropagation()">
+        <button type="button" class="pts-btn minus" title="Take 1 point" onclick="quickPoint('${s.classId}','${s.id}',-1)">−</button>
+        <button type="button" class="pts-chip ${tot<0?'neg':''}" title="Points — reasons, custom amounts and history" onclick="openStudentPointsModal('${s.id}')">⭐ ${tot>0?'+':''}${tot}</button>
+        <button type="button" class="pts-btn plus" title="Give 1 point" onclick="quickPoint('${s.classId}','${s.id}',1)">+</button>
+      </div>`;})():''}
       <div class="seg" onclick="event.stopPropagation()">
         <button class="present ${rec?.attendance!=='absent'?'on':''}" aria-pressed="${rec?.attendance!=='absent'}" ${locked?'disabled':''} onclick="setAttendance('${s.id}','present')">Present</button>
         <button class="absent ${rec?.attendance==='absent'?'on':''}" aria-pressed="${rec?.attendance==='absent'}" ${locked?'disabled':''} onclick="setAttendance('${s.id}','absent')">Absent</button>
@@ -6199,6 +6407,7 @@ window.state = state;
 // interferes with normal use. See teacher-dashboard-tests.html.
 window.__testables = {
   attendanceRate,
+  pointsFor,
   htmlToPlain,
   sanitizePlanHtml,
   planDisplayHtml,
@@ -6269,6 +6478,7 @@ async function init(){
   state.lessonNotes = loadKey('lessonNotes', {});
   state.homework = loadKey('homework', {});
   state.promises = loadKey('promises', {});
+  state.pointsLog = loadKey('pointsLog', []);
   state.privateStudents = loadKey('privateStudents', []);
   state.privateLessons = loadKey('privateLessons', []);
   state.payments = loadKey('payments', []);
