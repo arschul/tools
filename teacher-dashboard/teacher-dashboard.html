@@ -448,6 +448,9 @@
 
   /* tables */
   .table-wrap{overflow-x:auto;border-radius:var(--radius);}
+  .hist-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:11px;color:var(--muted);align-items:baseline;}
+  .hist-legend-item{white-space:nowrap;}
+  .hist-legend-item b{color:var(--text);}
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px;}
   th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 12px;background:var(--surface-alt);border-bottom:1px solid var(--border);white-space:nowrap;}
   td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
@@ -532,6 +535,8 @@
     .table-wrap table{min-width:0;font-size:11px;table-layout:fixed;width:100%;}
     .table-wrap table th:last-child,
     .table-wrap table td:last-child{width:28%;white-space:normal;word-wrap:break-word;}
+    .table-wrap table th{white-space:nowrap;text-align:center;}
+    .hist-legend{display:block !important;margin-top:8px;font-size:9.5px;line-height:1.5;color:#333;}
     thead{display:table-header-group;}
     tr{break-inside:avoid;}
   }
@@ -733,6 +738,7 @@ const T = {
     timeInClass: 'Time in class',
     timeMissed: 'time missed',
     outOf: (possible, n, dur) => `Out of ${possible} min possible (${n} session${n===1?'':'s'} × ${dur} min).`,
+    durationVaries: ds => `· duration varies (${ds} min)`,
     inClass: 'In class',
     lateArrivals: 'Late arrivals',
     leftEarly: 'Left early',
@@ -749,6 +755,16 @@ const T = {
     hw: 'HW',
     englishOnly: 'English only',
     notes: 'Notes',
+    histLegendTitle: 'Column key',
+    histCols: {
+      late:   {abbr:'Late',  full:'Late (minutes)'},
+      early:  {abbr:'Early', full:'Left early (minutes)'},
+      phone:  {abbr:'Phone', full:'Phone uses'},
+      hw:     {abbr:'HW',    full:'Homework'},
+      hwLate: {abbr:'HW+',   full:'Homework brought late (was absent)'},
+      eng:    {abbr:'Eng',   full:'English only'},
+      part:   {abbr:'Part.', full:'Participation'}
+    },
     yes: 'Yes',
     no: 'No',
     noRecords: 'No session records in this period.',
@@ -786,7 +802,7 @@ const T = {
     sessionsLogged: 'Aulas registradas',
     present: 'Presente',
     late: 'Atrasado',
-    ofWhichLate: 'Dos quais atrasados',
+    ofWhichLate: 'Das quais com atraso',
     lateNote: 'chegaram atrasados',
     absent: 'Ausente',
     phoneUses: 'Uso do celular (total)',
@@ -798,6 +814,7 @@ const T = {
     timeInClass: 'Tempo em aula',
     timeMissed: 'tempo perdido',
     outOf: (possible, n, dur) => `De ${possible} min possíveis (${n} aula${n===1?'':'s'} × ${dur} min).`,
+    durationVaries: ds => `· duração varia (${ds} min)`,
     inClass: 'Em aula',
     lateArrivals: 'Atrasos',
     leftEarly: 'Saiu mais cedo',
@@ -814,6 +831,16 @@ const T = {
     hw: 'Dever',
     englishOnly: 'Só inglês',
     notes: 'Observações',
+    histLegendTitle: 'Legenda das colunas',
+    histCols: {
+      late:   {abbr:'Atr.',  full:'Atraso (minutos)'},
+      early:  {abbr:'Saída', full:'Saída antecipada (minutos)'},
+      phone:  {abbr:'Cel.',  full:'Uso de celular'},
+      hw:     {abbr:'Dever', full:'Dever de casa'},
+      hwLate: {abbr:'Dev+',  full:'Dever trazido com atraso (estava ausente)'},
+      eng:    {abbr:'Inglês',full:'Somente inglês'},
+      part:   {abbr:'Part.', full:'Participação'}
+    },
     yes: 'Sim',
     no: 'Não',
     noRecords: 'Nenhuma aula registrada neste período.',
@@ -2078,7 +2105,9 @@ function _renderDashboard(el){
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])">✓ Done</button>          </div>
+            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])" title="Log the call and mark done">✓ Done</button>
+            <button class="icon-btn danger" onclick="discardContactParents(window._dashCpIds[${i}])" title="Discard — no longer needed, nothing logged">✕</button>
+          </div>
         </div>`; }).join('')}
     </div>` : '';
 
@@ -2099,7 +2128,8 @@ function _renderDashboard(el){
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashRemIds[${i}]})">Open →</button>
-            <button class="icon-btn" onclick="clearContactParents(window._dashRemIds[${i}])">✓ Done</button>
+            <button class="icon-btn" onclick="clearContactParents(window._dashRemIds[${i}])" title="Mark done">✓ Done</button>
+            <button class="icon-btn danger" onclick="discardContactParents(window._dashRemIds[${i}])" title="Discard — no longer needed, nothing logged">✕</button>
           </div>
         </div>`).join('')}
     </div>` : '';
@@ -2804,8 +2834,10 @@ function openContactParentsModal(studentId){
     <div class="field"><label>${isPriv?'What to remember':'Notes / reason'}</label>
       <textarea id="cp-reason" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;" placeholder="${isPriv?'e.g. Send the phrasal verbs exercise I promised · share the podcast link from class':''}">${esc(cp.reason||'')}</textarea>
     </div>
-    <div class="modal-actions">
-      ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ Mark done</button>`:''}      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
+      ${cp.reason?`<button class="btn-ghost" onclick="closeModal();clearContactParents('${studentId}')">✓ ${isPriv?'Mark done':'Log call &amp; mark done'}</button>
+      <button class="btn-ghost" style="color:var(--red);" onclick="discardContactParents('${studentId}')" title="Remove this flag without logging anything — nothing shows on the report">🗑 Discard flag</button>`:''}
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn-accent" onclick="saveContactParents('${studentId}')">${isPriv?'Save reminder':'Save flag'}</button>
     </div>
   `);
@@ -2854,6 +2886,25 @@ function clearContactParents(studentId){
       <button class="btn-accent" onclick="confirmCallDone('${studentId}')">Save &amp; Mark Done</button>
     </div>
   `);
+}
+function discardContactParents(studentId){
+  const s = anyStudent(studentId);
+  if(!s || !s.contactParents?.reason) return;
+  if(!confirm(`Discard the "${s.contactParents.category}" flag for ${s.name}?\n\nNothing will be logged and nothing will appear on the report. Use "Mark done" instead if you actually contacted them.`)) return;
+  const snapshot = s.contactParents;
+  s.contactParents = null;
+  const isPriv = !!privStudent(studentId);
+  if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
+  closeModal();
+  refreshView();
+  showUndoToast(`Discarded flag for ${s.name}`, ()=>{
+    const st = anyStudent(studentId);
+    if(st){
+      st.contactParents = snapshot;
+      if(privStudent(studentId)) persistPrivate(); else scheduleSave('students', state.students);
+      refreshView();
+    }
+  });
 }
 function confirmCallDone(studentId){
   const s = anyStudent(studentId);
@@ -3913,7 +3964,7 @@ function renderStudentProfile(){
       </div>
       <div class="card chart-card">
         <h3>${t.timeInClass}</h3>
-        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}${(()=>{const ds=[...new Set(records.map(recDur))];return ds.length>1?` <span style="color:var(--amber);">· duration varies (${ds.sort((a,b)=>a-b).join('/')} min)</span>`:'';})()}</div>
+        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}${(()=>{const ds=[...new Set(records.map(recDur))];return ds.length>1?` <span style="color:var(--amber);">${t.durationVaries(ds.sort((a,b)=>a-b).join('/'))}</span>`:'';})()}</div>
         ${renderDonut([
           {label:t.inClass, value:inClassMin, color:'var(--green)', unit:' min'},
           {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', unit:' min'},
@@ -4000,7 +4051,7 @@ function renderStudentProfile(){
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
       <table>
-        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.lateMin}</th><th>${t.leftEarlyMin}</th><th>${t.phone}</th><th>${t.hw}</th><th>${t.lateHwCol}</th><th>${t.englishOnly}</th><th>${t.participation}</th><th>${t.notes}</th></tr></thead>
+        <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th title="${t.histCols.late.full}">${t.histCols.late.abbr}</th><th title="${t.histCols.early.full}">${t.histCols.early.abbr}</th><th title="${t.histCols.phone.full}">${t.histCols.phone.abbr}</th><th title="${t.histCols.hw.full}">${t.histCols.hw.abbr}</th><th title="${t.histCols.hwLate.full}">${t.histCols.hwLate.abbr}</th><th title="${t.histCols.eng.full}">${t.histCols.eng.abbr}</th><th title="${t.histCols.part.full}">${t.histCols.part.abbr}</th><th>${t.notes}</th></tr></thead>
         <tbody>
           ${(()=>{
             const partLabel = p => p?({great:t.participationLabels.great,good:t.participationLabels.good,low:t.participationLabels.low}[p]):null;
@@ -4039,6 +4090,11 @@ function renderStudentProfile(){
           })()}
         </tbody>
       </table>
+      <div class="hist-legend">
+        <b>${t.histLegendTitle}:</b>
+        ${[t.histCols.late,t.histCols.early,t.histCols.phone,t.histCols.hw,t.histCols.hwLate,t.histCols.eng,t.histCols.part]
+          .map(c=>`<span class="hist-legend-item"><b>${c.abbr}</b> = ${c.full}</span>`).join('')}
+      </div>
       ` : `<div class="empty-card">${t.noRecords}</div>`}
     </div>
   `;
