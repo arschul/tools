@@ -791,6 +791,7 @@ const T = {
     timeInClass: 'Time in class',
     timeMissed: 'time missed',
     outOf: (possible, n, dur) => `Out of ${possible} min possible (${n} session${n===1?'':'s'} × ${dur} min).`,
+    outOfMixed: (possible, breakdown) => `Out of ${possible} min possible (${breakdown}).`,
     durationVaries: ds => `· duration varies (${ds} min)`,
     inClass: 'In class',
     lateArrivals: 'Late arrivals',
@@ -868,6 +869,7 @@ const T = {
     timeInClass: 'Tempo em aula',
     timeMissed: 'tempo perdido',
     outOf: (possible, n, dur) => `De ${possible} min possíveis (${n} aula${n===1?'':'s'} × ${dur} min).`,
+    outOfMixed: (possible, breakdown) => `De ${possible} min possíveis (${breakdown}).`,
     durationVaries: ds => `· duração varia (${ds} min)`,
     inClass: 'Em aula',
     lateArrivals: 'Atrasos',
@@ -4527,7 +4529,14 @@ function renderStudentProfile(){
       </div>
       <div class="card chart-card">
         <h3>${t.timeInClass}</h3>
-        <div class="chart-note">${t.outOf(totalPossibleMin, total, duration)}${(()=>{const ds=[...new Set(records.map(recDur))];return ds.length>1?` <span style="color:var(--amber);">${t.durationVaries(ds.sort((a,b)=>a-b).join('/'))}</span>`:'';})()}</div>
+        <div class="chart-note">${(()=>{
+          const counts = {};
+          records.forEach(r=>{ const d=recDur(r); counts[d]=(counts[d]||0)+1; });
+          const durs = Object.keys(counts).map(Number).sort((a,b)=>a-b);
+          if(durs.length<=1) return t.outOf(totalPossibleMin, total, duration);
+          const breakdown = durs.map(d=>`${counts[d]} × ${d} min`).join(' + ');
+          return t.outOfMixed(totalPossibleMin, breakdown);
+        })()}</div>
         ${renderDonut([
           {label:t.inClass, value:inClassMin, color:'var(--green)', unit:' min'},
           {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', unit:' min'},
