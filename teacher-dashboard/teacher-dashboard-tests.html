@@ -173,6 +173,22 @@ function run(T, state){
   eq('points: students isolated', T.pointsFor('s2','c1'), 3);
   eq('points: round filter (pointsSince) drops earlier awards', T.pointsFor('s1','c2'), 5);
   eq('points: explicit since override', T.pointsFor('s1','c1','2026-07-05'), -1);
+
+  // Trends & at-risk signals (all pure)
+  const A_=(date,att,hw)=>({date,attendance:att,hw});
+  const mk_=(...atts)=>atts.map((a,i)=>A_(`2026-07-${String(19-i).padStart(2,'0')}`,a));
+  const am_ = T.attendanceMonthly([A_('2026-05-04','present'),A_('2026-05-06','absent'),A_('2026-06-01','present')]);
+  ok('trend: monthly attendance buckets', am_.length===2 && am_[0].value===50 && am_[1].value===100, am_);
+  const hm_ = T.hwMonthly([A_('2026-05-04','present',100),A_('2026-05-06','absent',0),A_('2026-05-08','present',50)]);
+  ok('trend: hw monthly skips absences', hm_.length===1 && hm_[0].value===75, hm_);
+  eq('trend: points monthly net', T.pointsMonthly([{date:'2026-05-10',delta:3},{date:'2026-05-12',delta:-1}])[0].value, 2);
+  ok('risk: low attendance sev2', (()=>{const s=T.sigAttendance(mk_('absent','absent','present','absent','present','absent')); return s&&s.sev===2;})());
+  ok('risk: attendance drop sev1', (()=>{const s=T.sigAttendance(mk_('absent','present','present','present','present','present','present','present','present','present','present','present')); return s&&s.sev===1&&s.recent===83&&s.prior===100;})());
+  ok('risk: steady attendance null', T.sigAttendance(mk_('present','present','present','present','present','present'))===null);
+  ok('risk: hw avg sev2', (()=>{const s=T.sigHomework(mk_('present','present','present').map((r,i)=>({...r,hw:[40,30,50][i]}))); return s&&s.sev===2&&s.avg===40;})());
+  ok('risk: grades failing sev2', (()=>{const s=T.sigGrades([{label:'C1',value:85},{label:'C2',value:72,under:true}]); return s&&s.sev===2&&s.falling;})());
+  ok('risk: grades falling-but-passing sev1', (()=>{const s=T.sigGrades([{label:'C1',value:95},{label:'C2',value:85}]); return s&&s.sev===1;})());
+  ok('risk: advanced fall threshold higher', T.sigGrades([{label:'C1',value:500,advanced:true},{label:'C2',value:490,advanced:true}])===null);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
