@@ -189,6 +189,21 @@ function run(T, state){
   ok('risk: grades failing sev2', (()=>{const s=T.sigGrades([{label:'C1',value:85},{label:'C2',value:72,under:true}]); return s&&s.sev===2&&s.falling;})());
   ok('risk: grades falling-but-passing sev1', (()=>{const s=T.sigGrades([{label:'C1',value:95},{label:'C2',value:85}]); return s&&s.sev===1;})());
   ok('risk: advanced fall threshold higher', T.sigGrades([{label:'C1',value:500,advanced:true},{label:'C2',value:490,advanced:true}])===null);
+
+  // Activities A–F grading math
+  eq('act: A=4 F=0', T.letterToNum('A')*10 + T.letterToNum('F'), 40);
+  ok('act: roundtrip letters', ['A','B','C','D','F'].every(L=>T.numToLetter(T.letterToNum(L))===L));
+  ok('act: rounding boundary', T.numToLetter(3.5)==='A' && T.numToLetter(3.4)==='B');
+  ok('act: avg mixed A/C/F = C', T.numToLetter(T.activityAvg({grades:{a:'A',b:'C',c:'F'}}))==='C');
+  ok('act: empty avg null', T.activityAvg({grades:{}})===null);
+  T._setState({ classes:[], students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[], holidays:[],
+    activities:[
+      {classId:'c1', skill:'writing', grades:{s1:'A', s2:'C'}},
+      {classId:'c1', skill:'writing', grades:{s1:'B'}},
+      {classId:'c1', skill:'speaking', grades:{s1:'F'}}
+    ]});
+  const sa_ = T.studentSkillAverages('s1','c1');
+  ok('act: per-skill averages', sa_.writing.letter==='A' && sa_.writing.n===2 && sa_.speaking.letter==='F', sa_);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
