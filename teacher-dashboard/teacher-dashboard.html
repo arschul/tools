@@ -374,6 +374,13 @@
   .pts-board-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
   .pts-board-row:last-child{border-bottom:none;}
   @media (max-width:700px){ .pts-ctrl{gap:2px;margin-right:4px;} .pts-btn{width:30px;height:30px;} }
+  /* Trends sparklines */
+  .spark{display:block;}
+  .spark-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);width:190px;max-width:100%;}
+  .spark-empty{font-size:12px;color:var(--muted);padding:8px 0;}
+  .trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+  .trend-block{border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .trend-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
   .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
@@ -2364,6 +2371,31 @@ function _renderDashboard(el){
     });
   });
 
+  // — At-risk: combined signals (attendance dip + homework + grades) —
+  const risks = state.students.map(riskAssess).filter(Boolean)
+    .sort((a,b)=> b.score-a.score || a.name.localeCompare(b.name));
+  window._dashRiskIds = risks.map(x=>x.studentId);
+  const riskHtml = risks.length ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--purple);">
+      <h3>⚠️ At-risk students <span style="font-weight:400;font-size:13px;color:var(--muted);">— two or more warning signs together</span></h3>
+      ${risks.map((x,i)=>`
+        <div class="dash-row">
+          <div class="dash-row-left">
+            ${attnDot(x.classId)}
+            <div>
+              <div class="dash-row-title">${esc(x.name)}
+                ${x.signals.map(sg=>`<span class="badge ${sg.sev>=2?'red':'amber'}" style="margin-left:6px;font-size:11px;">${RISK_ICON[sg.kind]||''} ${sg.kind}</span>`).join('')}
+              </div>
+              <div class="dash-row-sub">${esc(classById(x.classId)?.name||'')} · ${x.signals.map(sg=>esc(sg.text)).join(' · ')}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashRiskIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <button class="icon-btn" onclick="openContactParentsModal(window._dashRiskIds[${i}])" title="Flag contact parents">📞 Flag</button>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
   window._dashGradeIds = gradeAlerts.map(x=>x.id);
   window._dashGradeClassIds = gradeAlerts.map(x=>x.classId);
   window._dashMissTestIds = missedTests.map(x=>x.id);
@@ -2427,6 +2459,7 @@ function _renderDashboard(el){
         ${upcomingHtml}
       </div>
     </div>
+    ${riskHtml}
     ${gradesAlertHtml}
     ${attnAlertHtml}
     ${cpHtml}
@@ -2479,6 +2512,7 @@ function renderClassCard(c, isArchived){
             ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">↩ Unarchive</button>
                <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
             : `<button class="icon-btn" onclick="openClassLogModal('${c.id}')">📋 Log</button>
+               <button class="icon-btn" onclick="openTrendsModal('${c.id}')">📈 Trends</button>
                ${c.pointsEnabled?`<button class="icon-btn" onclick="openPointsModal('${c.id}')">🏆 Points</button>`:''}
                <button class="icon-btn" onclick="openGradesModal('${c.id}')">📝 Grades</button>
                <button class="icon-btn" onclick="openClassModal('${c.id}')">Edit</button>
@@ -3672,6 +3706,210 @@ function ptsNewRound(classId){
   scheduleSave('classes', state.classes);
   openPointsModal(classId);
 }
+/* ================= TRENDS & AT-RISK (derived, read-only) =================
+   Longitudinal views computed from data that already exists (sessions,
+   grades, pointsLog). No new state keys — nothing here can corrupt data. */
+function monthKeyOf(date){ return (date||'').slice(0,7); }
+function monthShortLabel(mk){
+  const [y,m] = mk.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[(+m)-1] + (todayStr().slice(0,4)===y ? '' : ' '+y.slice(2));
+}
+// records: attendance records in any order → per-month attendance %.
+function attendanceMonthly(records, maxMonths=8){
+  const by = {};
+  for(const r of records){
+    const k = monthKeyOf(r.date);
+    by[k] = by[k] || {p:0,a:0};
+    if(r.attendance==='absent') by[k].a++; else by[k].p++;
+  }
+  return Object.keys(by).sort().slice(-maxMonths)
+    .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(100*by[k].p/(by[k].p+by[k].a)), n: by[k].p+by[k].a }));
+}
+function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
+function hwMonthly(records, maxMonths=8){
+  const by = {};
+  for(const r of records){
+    if(r.hw==null || r.attendance==='absent') continue;
+    const k = monthKeyOf(r.date);
+    by[k] = by[k] || {s:0,n:0};
+    by[k].s += hwValueOf(r); by[k].n++;
+  }
+  return Object.keys(by).sort().slice(-maxMonths)
+    .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(by[k].s/by[k].n), n: by[k].n }));
+}
+function pointsMonthly(entries, maxMonths=8){
+  const by = {};
+  for(const e of entries){ const k = monthKeyOf(e.date); by[k] = (by[k]||0) + e.delta; }
+  return Object.keys(by).sort().slice(-maxMonths)
+    .map(k=>({ key:k, label:monthShortLabel(k), value: by[k] }));
+}
+// One point per grade cycle that has any scores for the student.
+function studentGradeSeries(cls, studentId){
+  const g = state.grades[cls.id];
+  if(!g || !g.cycles) return [];
+  return g.cycles
+    .map(cy=>({ label: cy.label, st: gradeStatus(cls, cy, studentId) }))
+    .filter(x=>x.st)
+    .map(x=>({ label:x.label, value:x.st.avg, under:x.st.under, close:x.st.close, advanced:x.st.advanced, target:x.st.target }));
+}
+function classGradeSeries(cls){
+  const g = state.grades[cls.id];
+  if(!g || !g.cycles) return [];
+  const roster = studentsInClass(cls.id);
+  return g.cycles.map(cy=>{
+    const avgs = roster.map(s=>gradeStatus(cls, cy, s.id)).filter(Boolean).map(st=>st.avg);
+    if(!avgs.length) return null;
+    return { label: cy.label, value: Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length*10)/10, n: avgs.length };
+  }).filter(Boolean);
+}
+/* --- sparkline: dependency-free inline SVG --- */
+function sparklineSvg(points, opts){
+  const { w=190, h=46, target=null, suffix='', color='var(--accent)' } = opts||{};
+  if(!points || !points.length) return `<div class="spark-empty">no data yet</div>`;
+  const vals = points.map(p=>p.value);
+  let lo = Math.min(...vals, target!=null?target:Infinity);
+  let hi = Math.max(...vals, target!=null?target:-Infinity);
+  if(lo===hi){ lo -= 1; hi += 1; }
+  const span = hi-lo; lo -= span*0.12; hi += span*0.12;
+  const pad=5, lw=40, iw=w-pad*2-lw, ih=h-pad*2;
+  const x = i => points.length===1 ? pad+iw/2 : pad + i*(iw/(points.length-1));
+  const y = v => pad + ih - (v-lo)/(hi-lo)*ih;
+  const poly = points.map((p,i)=>`${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const last = points[points.length-1];
+  return `
+  <svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="trend">
+    ${target!=null?`<line x1="${pad}" x2="${pad+iw}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1" opacity=".55"/>`:''}
+    ${points.length>1?`<polyline points="${poly}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`:''}
+    ${points.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="${i===points.length-1?3:2}" fill="${color}"><title>${esc(p.label)}: ${p.value}${suffix}</title></circle>`).join('')}
+    <text x="${pad+iw+5}" y="${Math.min(h-4, Math.max(11, y(last.value)+4)).toFixed(1)}" font-size="11" font-weight="700" fill="${color}">${last.value}${suffix}</text>
+  </svg>
+  <div class="spark-labels"><span>${esc(points[0].label)}</span><span>${esc(last.label)}</span></div>`;
+}
+function trendDelta(points){
+  if(!points || points.length<2) return null;
+  return points[points.length-1].value - points[points.length-2].value;
+}
+function trendArrow(points, goodIsUp=true){
+  const d = trendDelta(points);
+  if(d==null || d===0) return '';
+  const up = d>0;
+  const good = up===goodIsUp;
+  return ` <span style="font-size:12px;font-weight:700;color:${good?'var(--green)':'var(--red)'};">${up?'▲':'▼'} ${Math.abs(d)}</span>`;
+}
+/* --- at-risk: combined signals, each pure and individually testable --- */
+const RISK = {
+  RECENT_N:6, PRIOR_N:6, MIN_RECENT:4,     // attendance windows (class meetings)
+  ATT_LOW:75, ATT_DROP:15, ATT_WARN:85,    // % thresholds
+  HW_MIN_N:3, HW_LOW:50, HW_WARN:70,       // homework avg thresholds
+  GRADE_FALL:8, GRADE_FALL_ADV:15          // cycle-over-cycle drop (regular / TOEFL scale)
+};
+// records: completed attendance records NEWEST-FIRST (studentAttendanceRecords)
+function sigAttendance(records){
+  const recent = records.slice(0, RISK.RECENT_N);
+  if(recent.length < RISK.MIN_RECENT) return null;
+  const rate = arr => Math.round(100*arr.filter(r=>r.attendance!=='absent').length/arr.length);
+  const rRecent = rate(recent);
+  const prior = records.slice(RISK.RECENT_N, RISK.RECENT_N+RISK.PRIOR_N);
+  const rPrior = prior.length >= RISK.MIN_RECENT ? rate(prior) : null;
+  if(rRecent < RISK.ATT_LOW)
+    return { kind:'attendance', sev:2, recent:rRecent, prior:rPrior,
+             text:`Attendance ${rRecent}% in the last ${recent.length} classes${rPrior!=null?` (was ${rPrior}%)`:''}` };
+  if(rPrior!=null && rPrior-rRecent >= RISK.ATT_DROP && rRecent < RISK.ATT_WARN)
+    return { kind:'attendance', sev:1, recent:rRecent, prior:rPrior, text:`Attendance fell ${rPrior}% → ${rRecent}%` };
+  return null;
+}
+function sigHomework(records){
+  const withHw = records.filter(r=>r.attendance!=='absent' && r.hw!=null).slice(0, RISK.RECENT_N);
+  if(withHw.length < RISK.HW_MIN_N) return null;
+  const avg = Math.round(withHw.reduce((s,r)=>s+hwValueOf(r),0)/withHw.length);
+  if(avg < RISK.HW_LOW) return { kind:'homework', sev:2, avg, text:`Homework avg ${avg}% over the last ${withHw.length} classes` };
+  if(avg < RISK.HW_WARN) return { kind:'homework', sev:1, avg, text:`Homework avg ${avg}%` };
+  return null;
+}
+// series: chronological [{label, value, under, close, advanced}]
+function sigGrades(series){
+  if(!series || !series.length) return null;
+  const cur = series[series.length-1];
+  const prev = series.length>1 ? series[series.length-2] : null;
+  const fallBar = cur.advanced ? RISK.GRADE_FALL_ADV : RISK.GRADE_FALL;
+  const falling = !!prev && (prev.value - cur.value) >= fallBar;
+  if(cur.under) return { kind:'grades', sev:2, avg:cur.value, falling,
+    text:`${cur.label}: avg ${cur.value} — ${cur.advanced?'below TOEFL target':'failing'}${falling?` (down from ${prev.value})`:''}` };
+  if(falling) return { kind:'grades', sev: cur.close?2:1, avg:cur.value, falling:true,
+    text:`Avg fell ${prev.value} → ${cur.value} (${cur.label})` };
+  if(cur.close) return { kind:'grades', sev:1, avg:cur.value, falling:false,
+    text:`${cur.label}: avg ${cur.value} — close to the minimum` };
+  return null;
+}
+// A student is at-risk only when TWO OR MORE independent signal categories
+// fire — single-signal cases are already covered by the contact-parents cards.
+function riskAssess(student){
+  const cls = classById(student.classId);
+  if(!cls || cls.archived) return null;
+  const records = studentAttendanceRecords(student);
+  const signals = [
+    sigAttendance(records),
+    sigHomework(records),
+    sigGrades(studentGradeSeries(cls, student.id))
+  ].filter(Boolean);
+  if(signals.length < 2) return null;
+  return { studentId: student.id, name: student.name, classId: student.classId,
+           signals, score: signals.reduce((s,x)=>s+x.sev,0) };
+}
+const RISK_ICON = { attendance:'📉', homework:'📕', grades:'📝' };
+/* --- per-class trends modal --- */
+function openTrendsModal(classId){
+  const c = classById(classId);
+  if(!c) return;
+  const roster = studentsInClass(classId).sort((a,b)=>a.name.localeCompare(b.name));
+  // All completed non-holiday records of THIS class, across all its students
+  const classRecords = [];
+  Object.keys(state.sessions).forEach(key=>{
+    const [cid, date] = splitSessionKey(key);
+    if(cid!==classId || isHoliday(date) || !isSessionCompleted(cid, date)) return;
+    Object.values(state.sessions[key]).forEach(rec=> classRecords.push({...rec, date}));
+  });
+  const att = attendanceMonthly(classRecords, 10);
+  const hw = hwMonthly(classRecords, 10);
+  const grades = classGradeSeries(c);
+  const gradeTarget = isAdvancedLevel(c.level) ? TOEFL_TARGETS[c.level] : CYCLE_AVG_TARGET;
+  const pts = c.pointsEnabled ? pointsMonthly((state.pointsLog||[]).filter(e=>e.classId===classId), 10) : null;
+  const block = (title, series, opts, goodIsUp=true) => `
+    <div class="trend-block">
+      <div class="trend-title">${title}${trendArrow(series, goodIsUp)}</div>
+      ${sparklineSvg(series, opts)}
+    </div>`;
+  const perStudent = roster.map(s=>{
+    const recs = studentAttendanceRecords(s).filter(r=>r._classId===classId);
+    const attS = attendanceMonthly(recs, 8);
+    const risk = riskAssess(s);
+    const cur = attS.length ? attS[attS.length-1].value : null;
+    return `
+      <div class="dash-row" style="align-items:center;">
+        <button type="button" class="linkish" style="flex:1;text-align:left;font-size:14px;" onclick="closeModal();navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'classes'})">${esc(s.name)}${risk?` <span class="badge red" style="margin-left:6px;font-size:11px;">⚠ at risk</span>`:''}</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${attS.length>1?sparklineSvg(attS,{w:110,h:30,suffix:'%'}):'<span class="spark-empty">—</span>'}
+        </div>
+      </div>`;
+  }).join('');
+  showModal(`
+    <h3 style="margin-bottom:2px;">📈 ${esc(c.name)} — trends</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Completed sessions only · holidays excluded</div>
+    <div class="trend-grid">
+      ${block('Attendance / month', att, {suffix:'%'})}
+      ${block('Homework / month', hw, {suffix:'%'})}
+      ${block(`Grade avg / cycle <span style="font-weight:400;color:var(--muted);">(target ${gradeTarget})</span>`, grades, {target:gradeTarget})}
+      ${pts?block('Points / month (net)', pts, {}):''}
+    </div>
+    ${roster.length?`
+    <div style="margin-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;">PER STUDENT — attendance by month</div>
+      ${perStudent}
+    </div>`:''}
+    <div class="modal-actions"><button class="btn-ghost" onclick="closeModal()">Close</button></div>
+  `, true);
+}
 function isSessionCompleted(classId, date){
   // Past sessions auto-count; today needs explicit completion; future never counts
   if(date < todayStr()) return true;
@@ -4320,6 +4558,34 @@ function renderStudentProfile(){
         ], partScore!=null?partScore+'%':'—', t.participation)}
       </div>` : ''}
     </div>
+    ${(()=>{
+      const pt = state.reportLang==='pt';
+      const allRecs = studentAttendanceRecords(student);
+      const attS = attendanceMonthly(allRecs, 10);
+      const hwS = hwMonthly(allRecs, 10);
+      const gradeS = cls ? studentGradeSeries(cls, student.id) : [];
+      const gradeTarget = cls ? (isAdvancedLevel(cls.level) ? TOEFL_TARGETS[cls.level] : CYCLE_AVG_TARGET) : null;
+      const ptsS = (cls && cls.pointsEnabled) ? pointsMonthly((state.pointsLog||[]).filter(e=>e.classId===cls.id && e.studentId===student.id), 10) : [];
+      if(attS.length<2 && hwS.length<2 && gradeS.length<2 && ptsS.length<2) return '';
+      const risk = riskAssess(student);
+      const block = (title, series, opts) => series.length<2 ? '' : `
+        <div class="trend-block">
+          <div class="trend-title">${title}${trendArrow(series)}</div>
+          ${sparklineSvg(series, opts)}
+        </div>`;
+      return `
+    <div class="card section">
+      <h3>📈 ${pt?'Tendências':'Trends'}</h3>
+      <div class="chart-note" style="margin-bottom:10px;">${pt?'Sessões concluídas, feriados excluídos':'Completed sessions only, holidays excluded'}</div>
+      ${risk?`<div class="warn-banner" style="margin-bottom:12px;">⚠️ ${pt?'Sinais de risco combinados':'Combined warning signs'}: ${risk.signals.map(sg=>esc(sg.text)).join(' · ')}</div>`:''}
+      <div class="trend-grid">
+        ${block(pt?'Frequência / mês':'Attendance / month', attS, {suffix:'%'})}
+        ${block(pt?'Tarefas / mês':'Homework / month', hwS, {suffix:'%'})}
+        ${block((pt?'Média por ciclo':'Grade avg / cycle')+(gradeTarget?` <span style="font-weight:400;color:var(--muted);">(${pt?'meta':'target'} ${gradeTarget})</span>`:''), gradeS, {target:gradeTarget})}
+        ${block(pt?'Pontos / mês':'Points / month (net)', ptsS, {})}
+      </div>
+    </div>`;
+    })()}
     ${gradesInfo ? `
     <div class="card section" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
       <h3>📝 ${state.reportLang==='pt'?'Notas':'Test Grades'}${gradesInfo.level?` <span class="badge other" style="font-size:12px;vertical-align:middle;">${esc(gradesInfo.level)}</span>`:''}</h3>
@@ -6408,6 +6674,12 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  attendanceMonthly,
+  hwMonthly,
+  pointsMonthly,
+  sigAttendance,
+  sigHomework,
+  sigGrades,
   htmlToPlain,
   sanitizePlanHtml,
   planDisplayHtml,
