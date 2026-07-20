@@ -420,6 +420,21 @@
   .trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
   .trend-block{border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
   .trend-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  /* Activities (A–F) */
+  .act-skill-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .act-skill-opt input{position:absolute;opacity:0;}
+  .act-skill-opt span{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;}
+  .act-skill-opt input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;}
+  .act-item{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);cursor:pointer;margin-bottom:6px;}
+  .act-item:hover{border-color:var(--accent);}
+  .act-grade-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .act-letter-seg{display:flex;gap:3px;}
+  .act-letter{width:32px;height:30px;border:1px solid var(--border);border-radius:7px;background:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);}
+  .act-letter.on{color:#fff;border-color:transparent;}
+  .act-letter.on.ga{background:#1c7c3c;}
+  .act-letter.on.gm{background:var(--accent);}
+  .act-letter.on.gf{background:#b3261e;}
+  @media (max-width:700px){ .act-letter{width:36px;height:34px;} }
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
   .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
@@ -770,6 +785,7 @@ let state = {
   homework: {},
   promises: {},
   pointsLog: [],
+  activities: [],
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -1490,7 +1506,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog','activities'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -2946,6 +2962,10 @@ function deleteClass(classId){
     state.pointsLog = state.pointsLog.filter(e=>e.classId!==classId);
     scheduleSave('pointsLog', state.pointsLog);
   }
+  if((state.activities||[]).some(a=>a.classId===classId)){
+    state.activities = state.activities.filter(a=>a.classId!==classId);
+    scheduleSave('activities', state.activities);
+  }
   if(state.grades[classId]){ delete state.grades[classId]; scheduleSave('grades', state.grades); }
   if(state.expandedClassId===classId) state.expandedClassId=null;
   scheduleSave('classes', state.classes);
@@ -3469,6 +3489,19 @@ function renderRollCall(){
           <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
         </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label style="${lbl}">Activities <span style="font-weight:400;">(graded A–F per student — grading stays open after class)</span></label>
+          ${activitiesFor(cls.id, date).map(a=>{
+            const g = Object.keys(a.grades||{}).length, avg = activityAvg(a), sk = skillMeta(a.skill);
+            return `
+            <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
+              <span>${sk.emoji}</span>
+              <span style="flex:1;text-align:left;">${esc(a.description)}</span>
+              <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${avg!=null?` · avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
+            </button>`;
+          }).join('')}
+          <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">🎯 New activity</button>
+        </div>
         ${nextDate && !isPast ? `
         <div style="border-top:1px dashed var(--border);padding-top:12px;">
           <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Next class \u2014 ${formatDateLong(nextDate)}</div>
@@ -3986,6 +4019,172 @@ function openTrendsModal(classId){
       ${perStudent}
     </div>`:''}
     <div class="modal-actions"><button class="btn-ghost" onclick="closeModal()">Close</button></div>
+  `, true);
+}
+/* ============ ACTIVITIES — A–F skill grades, any level ============
+   An activity = one in-class task (e.g. "write a text about your weekend"),
+   tied to a class+date, categorized by skill, graded A/B/C/D/F per student.
+   Independent of the numeric cycle-grade system, so it works for every
+   level. Records are created only when the teacher starts an activity —
+   never as a side effect of viewing (same lazy principle as sessions). */
+const ACTIVITY_SKILLS = [
+  { id:'speaking', label:'Speaking', pt:'Fala',      emoji:'🗣️' },
+  { id:'writing',  label:'Writing',  pt:'Escrita',   emoji:'✍️' },
+  { id:'grammar',  label:'Grammar',  pt:'Gramática', emoji:'📐' },
+  { id:'other',    label:'Other',    pt:'Outra',     emoji:'🎯' },
+];
+const ACTIVITY_LETTERS = ['A','B','C','D','F'];
+function skillMeta(id){ return ACTIVITY_SKILLS.find(s=>s.id===id) || ACTIVITY_SKILLS[ACTIVITY_SKILLS.length-1]; }
+function letterToNum(l){ const i = ACTIVITY_LETTERS.indexOf(l); return i<0 ? null : 4-i; }
+function numToLetter(n){
+  if(n==null || isNaN(n)) return null;
+  return ACTIVITY_LETTERS[4 - Math.min(4, Math.max(0, Math.round(n)))];
+}
+function activitiesFor(classId, date){
+  return (state.activities||[])
+    .filter(a=>a.classId===classId && (!date || a.date===date))
+    .sort((a,b)=> a.date<b.date?-1 : a.date>b.date?1 : (a.ts||0)-(b.ts||0));
+}
+function activityById(id){ return (state.activities||[]).find(a=>a.id===id); }
+function activityAvg(a){
+  const ns = Object.values(a.grades||{}).map(letterToNum).filter(n=>n!=null);
+  return ns.length ? ns.reduce((x,y)=>x+y,0)/ns.length : null;
+}
+function studentSkillAverages(studentId, classId){
+  const acc = {};
+  for(const a of (state.activities||[])){
+    if(a.classId!==classId) continue;
+    const n = letterToNum((a.grades||{})[studentId]);
+    if(n==null) continue;
+    acc[a.skill] = acc[a.skill] || {s:0,n:0};
+    acc[a.skill].s += n; acc[a.skill].n++;
+  }
+  const out = {};
+  for(const k of Object.keys(acc)) out[k] = { avg: acc[k].s/acc[k].n, letter: numToLetter(acc[k].s/acc[k].n), n: acc[k].n };
+  return out;
+}
+function studentActivityGrades(studentId, classId){
+  return (state.activities||[])
+    .filter(a=>a.classId===classId && (a.grades||{})[studentId])
+    .sort((a,b)=> b.date<a.date?-1 : b.date>a.date?1 : (b.ts||0)-(a.ts||0));
+}
+function saveActivitiesStore(){ scheduleSave('activities', state.activities); }
+function startActivity(classId, date){
+  const skill = document.querySelector('input[name="act-skill"]:checked')?.value || 'other';
+  const description = (document.getElementById('act-desc')?.value || '').trim();
+  if(!description){ alert('Give the activity a short description — it\u2019s how you\u2019ll recognize it later.'); return; }
+  if(!state.activities) state.activities = [];
+  const a = { id: uid(), classId, date, skill, description, grades: {}, ts: Date.now() };
+  state.activities.push(a);
+  saveActivitiesStore();
+  openActivityGrading(a.id);
+}
+function setActivityGrade(activityId, studentId, letter){
+  const a = activityById(activityId);
+  if(!a) return;
+  a.grades = a.grades || {};
+  if(a.grades[studentId] === letter) delete a.grades[studentId]; // tap again to clear
+  else a.grades[studentId] = letter;
+  saveActivitiesStore();
+  openActivityGrading(activityId);
+}
+function setActivityField(activityId, field, val){
+  const a = activityById(activityId);
+  if(!a) return;
+  a[field] = field==='description' ? val : val;
+  saveActivitiesStore();
+}
+function deleteActivity(activityId){
+  const idx = (state.activities||[]).findIndex(a=>a.id===activityId);
+  if(idx<0) return;
+  const snapshot = state.activities[idx];
+  const graded = Object.keys(snapshot.grades||{}).length;
+  if(graded && !confirm(`Delete "${snapshot.description}"? ${graded} grade${graded===1?'':'s'} will go with it.`)) return;
+  state.activities.splice(idx,1);
+  saveActivitiesStore();
+  closeModal();
+  showUndoToast(`Deleted activity "${snapshot.description}"`, ()=>{
+    state.activities.push(snapshot);
+    saveActivitiesStore();
+    refreshView();
+  });
+  refreshView();
+}
+/* Step 1 — describe the activity */
+function openActivityModal(classId, date){
+  const c = classById(classId);
+  if(!c) return;
+  showModal(`
+    <h3 style="margin-bottom:2px;">🎯 New activity</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${esc(c.name)} · ${formatDateLong(date)}</div>
+    <div class="field"><label>Skill</label>
+      <div class="act-skill-row">
+        ${ACTIVITY_SKILLS.map((sk,i)=>`
+          <label class="act-skill-opt">
+            <input type="radio" name="act-skill" value="${sk.id}" ${i===0?'checked':''}>
+            <span>${sk.emoji} ${sk.label}</span>
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Description</label>
+      <input id="act-desc" type="text" style="width:100%;" placeholder="e.g. write a text about your last weekend"
+        onkeydown="if(event.key==='Enter')startActivity('${classId}','${date}')">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="startActivity('${classId}','${date}')">Start activity →</button>
+    </div>
+  `, true);
+  setTimeout(()=>document.getElementById('act-desc')?.focus(), 50);
+}
+/* Step 2 — grade students (present first; absents collapsed but gradable) */
+function openActivityGrading(activityId){
+  const a = activityById(activityId);
+  if(!a) return;
+  const c = classById(a.classId);
+  const sk = skillMeta(a.skill);
+  const session = state.sessions[a.classId+'_'+a.date] || {};
+  const roster = studentsInClass(a.classId).sort((x,y)=>x.name.localeCompare(y.name));
+  const isAbsent = s => session[s.id]?.attendance==='absent';
+  const present = roster.filter(s=>!isAbsent(s));
+  const absent = roster.filter(isAbsent);
+  const row = (s, dim) => `
+    <div class="act-grade-row" style="${dim?'opacity:.55;':''}">
+      <span style="flex:1;font-size:14px;">${esc(s.name)}${dim?' <span style="font-size:11px;color:var(--muted);">(absent)</span>':''}</span>
+      <div class="act-letter-seg">
+        ${ACTIVITY_LETTERS.map(L=>`
+          <button type="button" class="act-letter ${a.grades?.[s.id]===L?'on '+(L==='A'?'ga':L==='F'?'gf':'gm'):''}"
+            onclick="setActivityGrade('${a.id}','${s.id}','${L}')">${L}</button>`).join('')}
+      </div>
+    </div>`;
+  const graded = Object.keys(a.grades||{}).length;
+  const avg = activityAvg(a);
+  showModal(`
+    <h3 style="margin-bottom:2px;">${sk.emoji} ${esc(a.description)}</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')} · ${formatDateLong(a.date)} · ${sk.label}</div>
+    <div class="field-row" style="margin-bottom:12px;">
+      <div class="field" style="flex:1;margin-bottom:0;"><label>Description</label>
+        <input type="text" value="${esc(a.description)}" style="width:100%;" oninput="setActivityField('${a.id}','description', this.value)"></div>
+      <div class="field" style="margin-bottom:0;"><label>Skill</label>
+        <select onchange="setActivityField('${a.id}','skill', this.value);openActivityGrading('${a.id}')">
+          ${ACTIVITY_SKILLS.map(x=>`<option value="${x.id}" ${a.skill===x.id?'selected':''}>${x.emoji} ${x.label}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;">STUDENTS ${a.date===todayStr()?'PRESENT TODAY':'PRESENT'} <span style="font-weight:400;">— tap a letter again to clear it</span></div>
+    ${present.length ? present.map(s=>row(s,false)).join('') : '<div class="empty" style="padding:8px 0;">Nobody marked present for this date.</div>'}
+    ${absent.length?`
+      <details style="margin-top:8px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${absent.length}) — grade if they hand it in later</summary>
+        ${absent.map(s=>row(s,true)).join('')}
+      </details>`:''}
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);">
+      <span>${graded}/${roster.length} graded</span>
+      ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
+      <button class="icon-btn danger" style="margin-left:auto;" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-accent" onclick="closeModal();refreshView();">Done</button>
+    </div>
   `, true);
 }
 function isSessionCompleted(classId, date){
@@ -4669,6 +4868,37 @@ function renderStudentProfile(){
         ${block((pt?'Média por ciclo':'Grade avg / cycle')+(gradeTarget?` <span style="font-weight:400;color:var(--muted);">(${pt?'meta':'target'} ${gradeTarget})</span>`:''), gradeS, {target:gradeTarget})}
         ${block(pt?'Pontos / mês':'Points / month (net)', ptsS, {})}
       </div>
+    </div>`;
+    })()}
+    ${(()=>{
+      const pt = state.reportLang==='pt';
+      if(!cls) return '';
+      const skillAvgs = studentSkillAverages(student.id, cls.id);
+      const recent = studentActivityGrades(student.id, cls.id);
+      if(!recent.length) return '';
+      return `
+    <div class="card section">
+      <h3>🎯 ${pt?'Atividades (A\u2013F)':'Activities (A\u2013F)'}</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">
+        ${ACTIVITY_SKILLS.filter(sk=>skillAvgs[sk.id]).map(sk=>{
+          const v = skillAvgs[sk.id];
+          return `<span style="border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;">
+            ${sk.emoji} ${pt?sk.pt:sk.label}: <b style="font-size:16px;color:var(--accent);">${v.letter}</b>
+            <span style="color:var(--muted);font-size:11px;">(${v.n} ${pt?(v.n===1?'atividade':'atividades'):(v.n===1?'activity':'activities')})</span>
+          </span>`;
+        }).join('')}
+      </div>
+      ${recent.slice(0,8).map(a=>{
+        const sk = skillMeta(a.skill), L = a.grades[student.id];
+        return `
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <span>${sk.emoji}</span>
+          <span style="flex:1;">${esc(a.description)}</span>
+          <span style="font-size:12px;color:var(--muted);">${formatDateShort(a.date)}</span>
+          <b style="width:24px;text-align:center;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};">${L}</b>
+        </div>`;
+      }).join('')}
+      ${recent.length>8?`<div style="font-size:12px;color:var(--muted);padding-top:6px;">…${pt?'e mais':'and'} ${recent.length-8} ${pt?'anteriores':'older'}</div>`:''}
     </div>`;
     })()}
     ${gradesInfo ? `
@@ -6759,6 +6989,10 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  letterToNum,
+  numToLetter,
+  activityAvg,
+  studentSkillAverages,
   attendanceMonthly,
   hwMonthly,
   pointsMonthly,
@@ -6836,6 +7070,7 @@ async function init(){
   state.homework = loadKey('homework', {});
   state.promises = loadKey('promises', {});
   state.pointsLog = loadKey('pointsLog', []);
+  state.activities = loadKey('activities', []);
   state.privateStudents = loadKey('privateStudents', []);
   state.privateLessons = loadKey('privateLessons', []);
   state.payments = loadKey('payments', []);
