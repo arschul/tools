@@ -435,6 +435,32 @@
   .act-letter.on.gm{background:var(--accent);}
   .act-letter.on.gf{background:#b3261e;}
   @media (max-width:700px){ .act-letter{width:36px;height:34px;} }
+  /* Roll Call view toggle + compact roster */
+  .view-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;}
+  .view-seg button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;color:var(--muted);}
+  .view-seg button.on{background:var(--accent);color:#fff;}
+  .compact-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .compact-roster{border-collapse:collapse;width:100%;font-size:13px;}
+  .compact-roster th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:2px solid var(--border);white-space:nowrap;}
+  .compact-roster td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+  .compact-roster tr:last-child td{border-bottom:none;}
+  .compact-roster .cr-name{position:sticky;left:0;background:var(--card, var(--surface));font-weight:600;min-width:120px;max-width:170px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+  .compact-roster tr.cr-absent td{opacity:.55;}
+  .compact-roster tr.cr-absent td.cr-name{opacity:1;color:var(--muted);}
+  .cr-pa{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .cr-pa button{width:30px;height:28px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;color:var(--muted);}
+  .cr-pa .cr-p.on{background:#1c7c3c;color:#fff;}
+  .cr-pa .cr-a.on{background:#b3261e;color:#fff;}
+  .cr-pa button:disabled{cursor:default;}
+  .cr-pts{display:inline-flex;align-items:center;gap:3px;}
+  .cr-pts .pts-btn{width:22px;height:22px;font-size:13px;}
+  .cr-pts .pts-chip{padding:2px 8px;font-size:11px;}
+  .cr-num{width:54px;padding:5px 4px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;text-align:center;}
+  .cr-sel{max-width:130px;padding:5px 4px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit;font-size:12px;}
+  .cr-notes{min-width:150px;}
+  .cr-note{width:100%;min-width:140px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;}
+  .cr-dim{color:var(--muted);}
+  .cr-num:disabled,.cr-sel:disabled,.cr-note:disabled{background:var(--gray-soft);color:var(--muted);}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
   .icon-btn.ec-on{color:var(--amber);border-color:var(--amber-soft);background:var(--amber-soft);}
@@ -1372,9 +1398,10 @@ function loadUi(){
     return {
       theme: THEME_FONTS[ui.theme] ? ui.theme : 'classic',
       scale: (ui.scale >= 0.9 && ui.scale <= 1.25) ? ui.scale : 1,
-      bg: BGS.some(b=>b.id===ui.bg) ? ui.bg : 'theme'
+      bg: BGS.some(b=>b.id===ui.bg) ? ui.bg : 'theme',
+      rollView: ui.rollView==='compact' ? 'compact' : 'full'
     };
-  }catch(e){ return { theme:'classic', scale:1, bg:'theme' }; }
+  }catch(e){ return { theme:'classic', scale:1, bg:'theme', rollView:'full' }; }
 }
 function saveUi(ui){
   try{ localStorage.setItem(UI_KEY, JSON.stringify(ui)); }catch(e){}
@@ -1400,6 +1427,17 @@ function applyBg(id){
 }
 function setTheme(id){ applyTheme(id); openSettingsModal(); }
 function setBg(id){ applyBg(id); openSettingsModal(); }
+function setRollView(v){
+  const ui = loadUi(); ui.rollView = v==='compact' ? 'compact' : 'full'; saveUi(ui);
+  refreshView();
+}
+// Non-toggling setter for compact-view <select>s (setField flips same-value taps,
+// which is right for pills but wrong for dropdowns).
+function setFieldDirect(studentId, field, val){
+  getCurrentRecord(studentId)[field] = val || null;
+  persistSessions();
+  refreshView();
+}
 function setScale(v){ applyScale(Number(v)); openSettingsModal(); }
 
 function openSettingsModal(){
@@ -3521,10 +3559,16 @@ function renderRollCall(){
       })()}
       <div class="rollcall-actions">
         ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>`}
+        <div class="view-seg" role="radiogroup" aria-label="Roster view">
+          <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
+          <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
+        </div>
         <span class="save-indicator" id="save-indicator"></span>
       </div>
       <div class="card roster-list ${locked?'locked-session':''}">
-        ${students.map(s=>renderRosterRow(s, recFor(s), absentPrevSession.has(s.id), locked)).join('')}
+        ${loadUi().rollView==='compact'
+          ? renderCompactRoster(cls, students, recFor, absentPrevSession, locked)
+          : students.map(s=>renderRosterRow(s, recFor(s), absentPrevSession.has(s.id), locked)).join('')}
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <button type="button" class="linkish" onclick="navigate('classes')">Classes &amp; Students</button>.</div>` : ''}
   `;
@@ -4200,6 +4244,79 @@ function toggleSessionCompleted(classId, date){
   state.sessionMeta[key].completed = !state.sessionMeta[key].completed;
   scheduleSave('sessionMeta', state.sessionMeta);
   refreshView();
+}
+/* Compact roster: one row per student, every session field editable inline.
+   Same setters as the Full view — only the layout differs. */
+function renderCompactRoster(cls, students, recFor, absentPrev, locked){
+  const pts = classPointsEnabled(cls.id);
+  const anyMissed = students.some(s=>absentPrev.has(s.id));
+  const dis = locked ? 'disabled' : '';
+  const head = `
+    <tr>
+      <th class="cr-name">Student</th>
+      <th title="Attendance">P/A</th>
+      ${pts?'<th title="Points">⭐</th>':''}
+      <th title="Minutes late">Late</th>
+      <th title="Minutes left early">Left</th>
+      <th title="Phone used (times)">📱</th>
+      <th title="Homework %">HW%</th>
+      <th title="English only">English</th>
+      <th title="Participation">Particip.</th>
+      ${anyMissed?'<th title="Homework missed while absent last class">Prev HW</th>':''}
+      <th class="cr-notes-h">Notes</th>
+      <th></th>
+    </tr>`;
+  const rows = students.map(s=>{
+    const rec = recFor(s);
+    const absent = rec?.attendance==='absent';
+    const missed = absentPrev.has(s.id);
+    const hwOutcome = rec?.lateHwOutcome || '';
+    return `
+    <tr class="${absent?'cr-absent':''}">
+      <td class="cr-name">${esc(s.name)}${missed && !hwOutcome?' <span title="Missed HW while absent last class">⚠</span>':''}</td>
+      <td>
+        <div class="cr-pa">
+          <button type="button" class="cr-p ${!absent?'on':''}" ${dis} title="Present" onclick="setAttendance('${s.id}','present')">P</button>
+          <button type="button" class="cr-a ${absent?'on':''}" ${dis} title="Absent" onclick="setAttendance('${s.id}','absent')">A</button>
+        </div>
+      </td>
+      ${pts?(()=>{const tot=pointsFor(s.id,s.classId);return `
+      <td>
+        <div class="cr-pts">
+          <button type="button" class="pts-btn minus" onclick="quickPoint('${s.classId}','${s.id}',-1)">−</button>
+          <button type="button" class="pts-chip ${tot<0?'neg':''}" onclick="openStudentPointsModal('${s.id}')">${tot>0?'+':''}${tot}</button>
+          <button type="button" class="pts-btn plus" onclick="quickPoint('${s.classId}','${s.id}',1)">+</button>
+        </div>
+      </td>`;})():''}
+      <td><input type="number" min="0" class="cr-num" value="${rec.lateMin||0}" ${dis} onchange="setNumField('${s.id}','lateMin',this.value)"></td>
+      <td><input type="number" min="0" class="cr-num" value="${rec.leftEarlyMin||0}" ${dis} onchange="setNumField('${s.id}','leftEarlyMin',this.value)"></td>
+      <td><input type="number" min="0" class="cr-num" value="${rec.phone||0}" ${dis} onchange="setNumField('${s.id}','phone',this.value)"></td>
+      <td><input type="number" min="0" max="100" step="10" class="cr-num" value="${rec.hw??100}" ${dis} onchange="setNumField('${s.id}','hw',this.value,0,100)"></td>
+      <td>
+        <select class="cr-sel" ${dis} onchange="setFieldDirect('${s.id}','english',this.value)">
+          <option value="excellent" ${rec.english==='excellent'?'selected':''}>Excellent</option>
+          <option value="improve" ${rec.english==='improve'?'selected':''}>Some reminders</option>
+          <option value="unacceptable" ${rec.english==='unacceptable'?'selected':''}>Consistent rem.</option>
+        </select>
+      </td>
+      <td>
+        <select class="cr-sel" ${dis} onchange="setFieldDirect('${s.id}','participation',this.value)">
+          <option value="great" ${rec.participation==='great'?'selected':''}>Great</option>
+          <option value="good" ${rec.participation==='good'?'selected':''}>Good</option>
+          <option value="low" ${rec.participation==='low'?'selected':''}>Low</option>
+        </select>
+      </td>
+      ${anyMissed?`<td>${missed?`
+        <select class="cr-sel" ${dis} onchange="setLateHwOutcome('${s.id}', this.value||null)">
+          <option value="" ${!hwOutcome?'selected':''}>—</option>
+          <option value="late" ${hwOutcome==='late'?'selected':''}>✓ Late</option>
+          <option value="no_hw" ${hwOutcome==='no_hw'?'selected':''}>✗ No HW</option>
+        </select>`:'<span class="cr-dim">—</span>'}</td>`:''}
+      <td class="cr-notes"><input type="text" class="cr-note" value="${esc(rec.notes||'')}" ${dis} placeholder="notes…" oninput="setNote('${s.id}', this.value)"></td>
+      <td><button type="button" class="icon-btn" style="padding:2px 8px;" title="Open full details for this student" onclick="state.openDrawer='${s.id}';setRollView('full')">⋯</button></td>
+    </tr>`;
+  }).join('');
+  return `<div class="compact-wrap"><table class="compact-roster"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
 }
 function renderRosterRow(s, rec, missedHw=false, locked=false){
   const open = state.openDrawer === s.id;
