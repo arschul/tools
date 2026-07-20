@@ -26,6 +26,8 @@
   }catch(e){}
   document.documentElement.setAttribute("data-theme", t);
   document.documentElement.style.setProperty("--ui-scale", s);
+  var B=["plain","grid","lines","dots","diag","weave","soft","confetti"];
+  try{ if(ui.bg && B.indexOf(ui.bg)>=0) document.documentElement.setAttribute("data-bg", ui.bg); }catch(e){}
   document.getElementById("theme-fonts").href =
     "https://fonts.googleapis.com/css2?" + F[t] + "&display=swap";
 })();
@@ -45,6 +47,7 @@
     --ui-scale:1;
 
     /* shell */
+    --pattern-ink:rgba(28,36,54,.08);
     --bg:#f4f6fb;
     --bg-image:
       radial-gradient(circle at 100% 0%, #eef1fd 0%, transparent 45%),
@@ -95,6 +98,7 @@
 
   /* ---- 1. Caderno — squared paper, ink, red pen ---- */
   [data-theme="caderno"]{
+    --pattern-ink:rgba(22,48,92,.12);
     --font-body:'Archivo',sans-serif;
     --font-head:'Archivo',sans-serif;
     --font-mono:'Space Mono',monospace;
@@ -130,6 +134,7 @@
 
   /* ---- 2. Risograph — flat overprint inks ---- */
   [data-theme="riso"]{
+    --pattern-ink:rgba(29,69,196,.11);
     --font-body:'Space Grotesk',sans-serif;
     --font-head:'Space Grotesk',sans-serif;
     --font-mono:'DM Mono',monospace;
@@ -163,6 +168,7 @@
 
   /* ---- 3. Estacao — Curitiba BRT signage ---- */
   [data-theme="estacao"]{
+    --pattern-ink:rgba(27,31,34,.09);
     --font-body:'Barlow',sans-serif;
     --font-head:'Barlow Condensed',sans-serif;
     --font-mono:'IBM Plex Mono',monospace;
@@ -196,6 +202,7 @@
 
   /* ---- 4. Noturno — evening desk lamp ---- */
   [data-theme="noturno"]{
+    --pattern-ink:rgba(242,244,248,.07);
     --font-body:'Karla',sans-serif;
     --font-head:'Fraunces',serif;
     --font-mono:'Karla',sans-serif;
@@ -228,6 +235,37 @@
     --radius:14px; --radius-sm:9px; --border-w:1px;
     color-scheme:dark;
   }
+  /* ================= BACKGROUNDS =================
+     A second, theme-independent axis. Each option overrides only the
+     pattern (--bg-image/--bg-size); the base color and inks come from the
+     active theme, so every background works with every theme. */
+  html[data-bg="plain"]{ --bg-image:none; --bg-size:auto; }
+  html[data-bg="grid"]{
+    --bg-image:linear-gradient(var(--pattern-ink) 1px, transparent 1px),
+               linear-gradient(90deg, var(--pattern-ink) 1px, transparent 1px);
+    --bg-size:22px 22px; }
+  html[data-bg="lines"]{
+    --bg-image:linear-gradient(var(--pattern-ink) 1px, transparent 1px);
+    --bg-size:100% 27px; }
+  html[data-bg="dots"]{
+    --bg-image:radial-gradient(var(--pattern-ink) 1.2px, transparent 1.3px);
+    --bg-size:18px 18px; }
+  html[data-bg="diag"]{
+    --bg-image:repeating-linear-gradient(45deg, var(--pattern-ink) 0 1px, transparent 1px 14px);
+    --bg-size:auto; }
+  html[data-bg="weave"]{
+    --bg-image:repeating-linear-gradient(45deg, var(--pattern-ink) 0 1px, transparent 1px 16px),
+               repeating-linear-gradient(-45deg, var(--pattern-ink) 0 1px, transparent 1px 16px);
+    --bg-size:auto; }
+  html[data-bg="soft"]{
+    --bg-image:radial-gradient(circle at 85% 8%, var(--accent-soft) 0%, transparent 52%),
+               radial-gradient(circle at 8% 92%, var(--accent-soft) 0%, transparent 46%);
+    --bg-size:auto; }
+  html[data-bg="confetti"]{
+    --bg-image:radial-gradient(var(--accent-glow) 1.5px, transparent 1.6px),
+               radial-gradient(var(--pattern-ink) 1.3px, transparent 1.4px);
+    --bg-size:47px 47px, 31px 31px;
+    --bg-pos:0 0, 14px 19px; }
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -235,6 +273,7 @@
     background-color:var(--bg);
     background-image:var(--bg-image);
     background-size:var(--bg-size, auto);
+    background-position:var(--bg-pos, 0 0);
     color:var(--text);
     display:flex;
     min-height:100vh;
@@ -1291,6 +1330,19 @@ const THEMES = [
   { id:'noturno', name:'Noturno',  note:'Evening desk lamp.',           swatch:['#0E1420','#F2B45A','#3FA79B'] }
 ];
 
+// Background options — preview mirrors the html[data-bg] CSS above.
+const BGS = [
+  { id:'theme',    name:'Theme default', note:'What the theme ships with.', preview:'background-image:var(--bg-image);background-size:var(--bg-size,auto);' },
+  { id:'plain',    name:'Plain',      note:'No pattern at all.',        preview:'background-image:none;' },
+  { id:'grid',     name:'Squared',    note:'Caderno-style grid paper.', preview:'background-image:linear-gradient(var(--pattern-ink) 1px, transparent 1px),linear-gradient(90deg,var(--pattern-ink) 1px, transparent 1px);background-size:14px 14px;' },
+  { id:'lines',    name:'Ruled',      note:'Notebook lines.',           preview:'background-image:linear-gradient(var(--pattern-ink) 1px, transparent 1px);background-size:100% 12px;' },
+  { id:'dots',     name:'Dots',       note:'Bullet-journal dot grid.',  preview:'background-image:radial-gradient(var(--pattern-ink) 1.2px, transparent 1.3px);background-size:12px 12px;' },
+  { id:'diag',     name:'Stripes',    note:'Fine diagonal stripes.',    preview:'background-image:repeating-linear-gradient(45deg,var(--pattern-ink) 0 1px, transparent 1px 9px);' },
+  { id:'weave',    name:'Crosshatch', note:'Woven diagonal texture.',   preview:'background-image:repeating-linear-gradient(45deg,var(--pattern-ink) 0 1px, transparent 1px 10px),repeating-linear-gradient(-45deg,var(--pattern-ink) 0 1px, transparent 1px 10px);' },
+  { id:'soft',     name:'Soft glow',  note:'Gentle accent washes.',     preview:'background-image:radial-gradient(circle at 80% 10%, var(--accent-soft) 0%, transparent 60%),radial-gradient(circle at 15% 90%, var(--accent-soft) 0%, transparent 55%);' },
+  { id:'confetti', name:'Confetti',   note:'Scattered accent dots.',    preview:'background-image:radial-gradient(var(--accent-glow) 1.5px, transparent 1.6px),radial-gradient(var(--pattern-ink) 1.3px, transparent 1.4px);background-size:26px 26px,18px 18px;background-position:0 0,8px 11px;' },
+];
+
 const SCALES = [
   { v:0.9,  label:'Small' },
   { v:1,    label:'Default' },
@@ -1303,9 +1355,10 @@ function loadUi(){
     const ui = JSON.parse(localStorage.getItem(UI_KEY) || '{}');
     return {
       theme: THEME_FONTS[ui.theme] ? ui.theme : 'classic',
-      scale: (ui.scale >= 0.9 && ui.scale <= 1.25) ? ui.scale : 1
+      scale: (ui.scale >= 0.9 && ui.scale <= 1.25) ? ui.scale : 1,
+      bg: BGS.some(b=>b.id===ui.bg) ? ui.bg : 'theme'
     };
-  }catch(e){ return { theme:'classic', scale:1 }; }
+  }catch(e){ return { theme:'classic', scale:1, bg:'theme' }; }
 }
 function saveUi(ui){
   try{ localStorage.setItem(UI_KEY, JSON.stringify(ui)); }catch(e){}
@@ -1323,7 +1376,14 @@ function applyScale(v){
   const ui = loadUi(); ui.scale = v; saveUi(ui);
 }
 
+function applyBg(id){
+  if(!BGS.some(b=>b.id===id)) id = 'theme';
+  if(id==='theme') document.documentElement.removeAttribute('data-bg');
+  else document.documentElement.setAttribute('data-bg', id);
+  const ui = loadUi(); ui.bg = id; saveUi(ui);
+}
 function setTheme(id){ applyTheme(id); openSettingsModal(); }
+function setBg(id){ applyBg(id); openSettingsModal(); }
 function setScale(v){ applyScale(Number(v)); openSettingsModal(); }
 
 function openSettingsModal(){
@@ -1354,6 +1414,22 @@ function openSettingsModal(){
             <span style="display:block;font-size:12px;color:var(--muted);">${t.note}</span>
           </span>
           ${ui.theme===t.id?'<span aria-hidden="true" style="color:var(--accent);font-weight:700;">✓</span>':''}
+        </button>`).join('')}
+    </div>
+
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Background</h3>
+    <div style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">Combine any background with any theme — the pattern picks up the theme's colors.</div>
+    <div role="radiogroup" aria-label="Background" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;">
+      ${BGS.map(b=>`
+        <button type="button" role="radio" aria-checked="${(ui.bg||'theme')===b.id}" title="${b.note}"
+          onclick="setBg('${b.id}')"
+          style="cursor:pointer;font-family:inherit;padding:0;overflow:hidden;text-align:center;
+                 border:${(ui.bg||'theme')===b.id?'2px solid var(--accent)':'1px solid var(--border)'};
+                 border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">
+          <span aria-hidden="true" style="display:block;height:46px;background-color:var(--bg);${b.preview}"></span>
+          <span style="display:block;font-size:11px;font-weight:600;padding:5px 4px;border-top:1px solid var(--border);">
+            ${b.name}${(ui.bg||'theme')===b.id?' <span style="color:var(--accent);">✓</span>':''}
+          </span>
         </button>`).join('')}
     </div>
 
