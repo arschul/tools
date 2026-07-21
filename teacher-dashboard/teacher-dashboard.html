@@ -2153,6 +2153,7 @@ function _renderDashboard(el){
       if(!getClassDays(c).includes(wd)) return;
       if(c.startDate && d < c.startDate) return;
       if(c.endDate && d > c.endDate) return;
+      if(isSessionCompleted(c.id, d)) return; // already marked done — not "upcoming"
       classOccurrences.push({kind:'class', date:d, time:c.time||'', c});
     });
   }
