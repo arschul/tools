@@ -243,9 +243,30 @@ function run(T, state){
   const byDate_ = Object.fromEntries(log_.map(r=>[r.date,r]));
   eq('log: union of session + content + homework dates', log_.length, 3);
   ok('log: roll-call date marked hasSession', byDate_['2026-07-20'].hasSession===true);
-  ok('log: content-only date marked no session', byDate_['2026-07-15'].hasSession===false);
-  ok('log: homework-ahead date marked no session', byDate_['2026-07-24'].hasSession===false);
-  eq('log: onlyTaken hides prepared-ahead rows', T.classLogRows('c1','','',true).length, 1);
+  ok('log: content-only date counts as held', byDate_['2026-07-15'].hasSession===true);
+  ok('log: off-schedule homework-ahead date not held', byDate_['2026-07-24'].hasSession===false);
+  eq('log: filter hides only not-yet-held rows', T.classLogRows('c1','','',true).length, 2);
+
+  // Default-present: Roll Call shows every student present until ticked, so a
+  // session where only some students were touched must not shrink the roster.
+  T._setState({
+    classes:[{id:'c1',name:'ADV1',days:[2,4],startDate:'2026-07-01'}],
+    students:[{id:'s1',name:'A',classId:'c1'},{id:'s2',name:'B',classId:'c1'}],
+    events:[], holidays:[], sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{},
+    sessions:{
+      'c1_2026-07-21':{ s1:{attendance:'present', hw:100} },                       // only 1 of 2 ticked
+      'c1_2026-07-16':{ s1:{attendance:'present'}, s2:{attendance:'absent'} }
+    }
+  });
+  const partial_ = T.sessionCounts('c1','2026-07-21');
+  ok('default-present: partial roll call still 2/2', partial_.present===2 && partial_.roster===2, partial_);
+  eq('default-present: records how many were ticked', partial_.recorded, 1);
+  const real_ = T.sessionCounts('c1','2026-07-16');
+  ok('default-present: explicit absence preserved', real_.present===1 && real_.absent===1, real_);
+  const bRecs_ = T.studentAttendanceRecords({id:'s2',name:'B',classId:'c1'});
+  const b21_ = bRecs_.find(r=>r.date==='2026-07-21');
+  ok('default-present: untouched student counted present', b21_ && b21_.attendance==='present', bRecs_.map(r=>r.date));
+  ok('default-present: assumed record invents no homework', b21_ && b21_.hw===null && b21_._assumed===true);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
