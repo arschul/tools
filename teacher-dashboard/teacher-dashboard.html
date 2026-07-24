@@ -2775,19 +2775,26 @@ function toggleClassExpand(classId){
 }
 
 /* ===== D1: Class Log — chronological teaching history for one class ===== */
-let clLogClassId = null, clLogFrom = '', clLogTo = '';
+let clLogClassId = null, clLogFrom = '', clLogTo = '', clLogOnlyTaken = false;
 function openClassLogModal(classId){
   clLogClassId = classId;
-  clLogFrom = ''; clLogTo = '';
+  clLogFrom = ''; clLogTo = ''; clLogOnlyTaken = false;
   renderClassLogModal();
 }
 function clSetRange(which, val){ if(which==='from') clLogFrom = val||''; else clLogTo = val||''; renderClassLogModal(); }
 function clResetRange(){ clLogFrom=''; clLogTo=''; renderClassLogModal(); }
+function clToggleOnlyTaken(){ clLogOnlyTaken = !clLogOnlyTaken; renderClassLogModal(); }
 
 // Gather every dated entry for a class: any date that has a session record,
 // lesson note, homework, or promise. Returns rows newest-first with an
 // attendance summary computed from completed sessions only.
-function classLogRows(classId, fromVal, toVal){
+/* The log's row set is the UNION of dates that have a session, lesson note,
+   homework or class plan — so a date prepared in advance (homework/plan set
+   from the previous class's "next class" section, or a focus point sent
+   forward) appears before any roll call exists for it. Those rows are real,
+   not missing data; hasSession distinguishes them so the UI can say so.
+   onlyTaken filters them out for a pure attendance history. */
+function classLogRows(classId, fromVal, toVal, onlyTaken){
   const dates = new Set();
   for(const key of Object.keys(state.sessions)){
     const [cid, date] = splitSessionKey(key);
@@ -2815,16 +2822,21 @@ function classLogRows(classId, fromVal, toVal){
         hw: getHomework(classId, date),
         promise: getPromise(classId, date),
         completed, present, absent, roster: ids.length,
+        hasSession: ids.length > 0,
+        future: date > todayStr(),
         holiday: isHoliday(date)
       };
-    });
+    })
+    .filter(r => !onlyTaken || r.hasSession);
   return rows;
 }
 
 function renderClassLogModal(){
   const c = classById(clLogClassId);
   if(!c) return;
-  const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
+  const allRows = classLogRows(clLogClassId, clLogFrom, clLogTo);
+  const rows = clLogOnlyTaken ? allRows.filter(r=>r.hasSession) : allRows;
+  const prepCount = allRows.filter(r=>!r.hasSession && !r.holiday).length;
   const body = rows.length ? `
     <div class="table-wrap" style="max-height:56vh;overflow:auto;">
       <table>
@@ -2836,16 +2848,29 @@ function renderClassLogModal(){
             <tr${r.holiday?' style="opacity:.6;"':''}>
               <td style="white-space:nowrap;font-weight:600;">
                 <button type="button" class="linkish" onclick="closeModal();goToRollCall('${clLogClassId}','${r.date}')">${formatDateShort(r.date)}</button>
-                ${r.holiday?' <span class="badge other">Holiday</span>':r.completed?'':' <span class="badge amber" title="Not marked complete">draft</span>'}
+                ${r.holiday
+                  ? ' <span class="badge other">Holiday</span>'
+                  : !r.hasSession
+                    ? (r.future
+                        ? ' <span class="badge hw" title="Prepared ahead — this class hasn\u2019t happened yet">planned</span>'
+                        : ' <span class="badge amber" title="Content was recorded but roll call was never taken for this date">no roll call</span>')
+                    : r.completed ? '' : ' <span class="badge amber" title="Not marked complete">draft</span>'}
               </td>
               <td>${r.content?esc(r.content):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.hw?esc(r.hw):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.promise?planDisplayHtml(r.promise):'<span style="color:var(--muted);">—</span>'}</td>
-              <td style="text-align:center;white-space:nowrap;">${r.roster?`${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`:'<span style="color:var(--muted);">—</span>'}</td>
+              <td style="text-align:center;white-space:nowrap;">${
+                r.hasSession
+                  ? `${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`
+                  : `<span style="color:var(--muted);font-size:12px;">${r.holiday?'—':r.future?'not yet':'not taken'}</span>`
+              }</td>
             </tr>`).join('')}
         </tbody>
       </table>
-    </div>` : `<div class="empty">No log entries in this period yet. Lesson content, homework and class plans recorded in Roll Call show up here.</div>`;
+    </div>
+    ${!clLogOnlyTaken && prepCount ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;">
+      ${prepCount} entr${prepCount===1?'y has':'ies have'} no roll call — dates prepared in advance (plan or homework set from the previous class) or where content was written but attendance was never taken. They aren’t counted in any report.
+    </div>` : ''}` : `<div class="empty">No log entries in this period yet. Lesson content, homework and class plans recorded in Roll Call show up here.</div>`;
 
   showModal(`
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -2859,6 +2884,10 @@ function renderClassLogModal(){
       <input type="date" value="${clLogTo}" onchange="clSetRange('to',this.value)">
       <button class="btn-ghost small" onclick="clResetRange()">All time</button>
       <button class="btn-ghost small" onclick="exportClassLogCsv()">⬇ Export CSV</button>
+      ${prepCount?`<button class="btn-ghost small ${clLogOnlyTaken?'':''}" aria-pressed="${clLogOnlyTaken}"
+        style="${clLogOnlyTaken?'border-color:var(--accent);color:var(--accent);':''}"
+        title="Hide dates that only have a plan, homework or content but no roll call"
+        onclick="clToggleOnlyTaken()">${clLogOnlyTaken?'✓ ':''}Only classes taken</button>`:''}
     </div>
     ${body}
     <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Done</button></div>
@@ -2868,10 +2897,13 @@ function renderClassLogModal(){
 function exportClassLogCsv(){
   const c = classById(clLogClassId);
   if(!c) return;
-  const rows = classLogRows(clLogClassId, clLogFrom, clLogTo);
-  const header = ['Date','What we did','Homework assigned','Class plan','Present','Absent','Roster','Completed','Holiday'];
+  const rows = classLogRows(clLogClassId, clLogFrom, clLogTo, clLogOnlyTaken);
+  const header = ['Date','What we did','Homework assigned','Class plan','Roll call taken','Present','Absent','Roster','Completed','Holiday'];
   const data = [header].concat(
-    rows.map(r=>[r.date, r.content, r.hw, htmlToPlain(planDisplayHtml(r.promise)), r.present, r.absent, r.roster, r.completed?'yes':'no', r.holiday?'yes':'no'])
+    rows.map(r=>[r.date, r.content, r.hw, htmlToPlain(planDisplayHtml(r.promise)),
+      r.hasSession?'yes':'no',
+      r.hasSession?r.present:'', r.hasSession?r.absent:'', r.hasSession?r.roster:'',
+      r.completed?'yes':'no', r.holiday?'yes':'no'])
   );
   downloadCsv(`class-log-${slugify(c.name)}-${todayStr()}.csv`, data);
 }
