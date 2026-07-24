@@ -461,6 +461,12 @@
   .cr-note{width:100%;min-width:140px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;}
   .cr-dim{color:var(--muted);}
   .late-hw-ref{display:block;font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;}
+  /* Roll Call session navigation */
+  .date-nav{display:inline-flex;align-items:center;gap:4px;}
+  .date-nav-btn{min-width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:15px;font-weight:700;line-height:1;cursor:pointer;}
+  .date-nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .date-nav-btn:disabled{opacity:.35;cursor:default;}
+  @media (max-width:700px){ .date-nav-btn{min-width:40px;height:38px;} }
   .cr-num:disabled,.cr-sel:disabled,.cr-note:disabled{background:var(--gray-soft);color:var(--muted);}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
@@ -2004,6 +2010,15 @@ function pickStudentSearch(i){
 }
 // "/" opens search (unless typing in a field)
 document.addEventListener('keydown', (e)=>{
+  if(e.key!=='ArrowLeft' && e.key!=='ArrowRight') return;
+  if(!e.altKey || e.metaKey || e.ctrlKey) return;
+  if(!dataReady || state.view!=='rollcall') return;
+  if(document.getElementById('modal-root')?.firstElementChild) return;
+  e.preventDefault();
+  navRollcallSession(e.key==='ArrowLeft' ? -1 : 1);
+});
+
+document.addEventListener('keydown', (e)=>{
   if(e.key!=='/' || e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target;
   const typing = t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable);
@@ -3459,6 +3474,8 @@ function renderRollCall(){
   // Only explicitly-completed sessions are read-only (per spec Q5 = option a)
   const locked = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
 
+  const nav = rollcallSessionNeighbors(cls, date);
+
   document.getElementById('view-rollcall').innerHTML = `
     <div class="topbar">
       <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
@@ -3474,7 +3491,15 @@ function renderRollCall(){
             return opts + (showAll ? '' : `<option value="__all__">+ Off-schedule class…</option>`);
           })()}
         </select>
-        <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
+        <div class="date-nav">
+          <button type="button" class="date-nav-btn" aria-label="Previous class" ${nav.prev?'':'disabled'}
+            title="${nav.prev?'Previous class \u2014 '+formatDateLong(nav.prev)+' (Alt+\u2190)':'No earlier class for '+esc(cls.name)}"
+            onclick="navRollcallSession(-1)">\u2190</button>
+          <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
+          <button type="button" class="date-nav-btn" aria-label="Next class" ${nav.next?'':'disabled'}
+            title="${nav.next?'Next class \u2014 '+formatDateLong(nav.next)+' (Alt+\u2192)':'No later class for '+esc(cls.name)}"
+            onclick="navRollcallSession(1)">\u2192</button>
+        </div>
         <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}')" title="Class log — full teaching history for this class">📋 Log</button>
         ${cls.pointsEnabled?`<button type="button" class="btn-ghost small" onclick="openPointsModal('${cls.id}')" title="Class points scoreboard">🏆 Points</button>`:''}
       </div>
@@ -4534,6 +4559,23 @@ function setRollcallClass(classId){
   state.rollcall.classId = classId;
   state.openDrawer = null;
   refreshView();
+}
+/* Previous / next scheduled session of a class, used by both the Roll Call
+   arrows and their disabled state so the button and the jump always agree.
+   getNextClassDate already stops at cls.endDate; the back direction has to
+   respect cls.startDate itself. Holidays are skipped by both helpers. */
+function rollcallSessionNeighbors(cls, date){
+  if(!cls || !date) return { prev:null, next:null };
+  let prev = getPreviousClassDate(cls, date);
+  if(prev && cls.startDate && prev < cls.startDate) prev = null;
+  return { prev, next: getNextClassDate(cls, date) };
+}
+function navRollcallSession(dir){
+  const cls = classById(state.rollcall.classId);
+  if(!cls) return;
+  const { prev, next } = rollcallSessionNeighbors(cls, state.rollcall.date);
+  const target = dir < 0 ? prev : next;
+  if(target) setRollcallDate(target);   // always a scheduled day, so the class stays selected
 }
 function setRollcallDate(date){
   state.rollcall.date = date;
@@ -7142,6 +7184,7 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  rollcallSessionNeighbors,
   prevHwPending,
   letterToNum,
   numToLetter,
