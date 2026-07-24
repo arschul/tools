@@ -5025,6 +5025,12 @@ function renderStudentProfile(){
   }
   const dedupedRecords = [...byDate.values()];
   dedupedRecords.sort((a,b)=>b.date.localeCompare(a.date));
+  // This view collects its own records rather than going through
+  // studentAttendanceRecords(), so the late-homework outcomes have to be resolved
+  // here too. Run it on the FULL history before any range filtering: an outcome
+  // recorded in September can refer to homework from August, and .filter() keeps
+  // the same object references so the annotation survives the narrowing below.
+  annotateLateHw(dedupedRecords);
 
   const fromVal = state.reportRange.from || cls?.startDate || '';
   const toVal = state.reportRange.to || cls?.endDate || '';
