@@ -872,6 +872,12 @@ const T = {
     absent: 'Absent',
     phoneUses: 'Phone uses (total)',
     homeworkDone: 'Homework done',
+    lateHomework: 'Late homework',
+    broughtLater: 'Brought in later',
+    neverBrought: 'Never brought',
+    noOutcomeRecorded: 'No outcome recorded',
+    recovered: 'brought later',
+    onTimeWas: pct => `on time: ${pct}%`,
     attendance: 'Attendance',
     attended: 'attended',
     attendedRecorded: 'of recorded',
@@ -950,6 +956,12 @@ const T = {
     absent: 'Ausente',
     phoneUses: 'Uso do celular (total)',
     homeworkDone: 'Dever feito',
+    lateHomework: 'Dever atrasado',
+    broughtLater: 'Entregue depois',
+    neverBrought: 'Nunca entregue',
+    noOutcomeRecorded: 'Sem registro',
+    recovered: 'entregues depois',
+    onTimeWas: pct => `no prazo: ${pct}%`,
     attendance: 'Presença',
     attended: 'de presença',
     attendedRecorded: 'de sessões',
@@ -1824,7 +1836,7 @@ function studentAttendanceRecords(student){
     if(!sessionHappened(classId, date)) continue;
     consider(classId, date, assumedRecord());
   }
-  return [...map.values()].sort((a,b)=>b.date.localeCompare(a.date));
+  return annotateLateHw([...map.values()].sort((a,b)=>b.date.localeCompare(a.date)));
 }
 
 function getPreviousClassDate(cls, fromDateStr){
@@ -4019,6 +4031,39 @@ function attendanceMonthly(records, maxMonths=8){
     .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(100*by[k].p/(by[k].p+by[k].a)), n: by[k].p+by[k].a }));
 }
 function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
+/* ===== Late homework =====
+   The stored percentage is never rewritten — it records what was handed in on
+   the day. But homework brought in late IS done, so every average reads through
+   hwEffOf(), which returns 100 for a record whose homework was later brought in.
+   annotateLateHw() walks the student's history and pushes each "brought late" /
+   "did not bring" outcome back onto the record it refers to (lateHwFor, or the
+   previous session in the same class for records saved before that reference
+   was snapshotted). Records with no percentage at all — homework missed through
+   absence — stay out of the average either way; they still show in the late
+   donut so the outcome isn't lost. */
+function hwEffOf(r){
+  if(r._hwEff != null) return r._hwEff;
+  return r.hw == null ? null : hwValueOf(r);
+}
+function annotateLateHw(sorted){
+  const byDate = new Map(sorted.map(r=>[r.date, r]));
+  sorted.forEach((r, i)=>{
+    if(!r.lateHwOutcome) return;
+    let targetDate = r.lateHwFor;
+    if(!targetDate){
+      for(let j=i+1; j<sorted.length; j++){          // newest-first: next entry is earlier
+        if(sorted[j]._classId === r._classId){ targetDate = sorted[j].date; break; }
+      }
+    }
+    const target = targetDate ? byDate.get(targetDate) : null;
+    if(!target || target === r) return;
+    if(target._hwLate === 'late') return;            // "brought late" wins a conflict
+    target._hwLate = r.lateHwOutcome;
+    target._hwLateOn = r.date;
+    if(r.lateHwOutcome === 'late' && target.hw != null) target._hwEff = 100;
+  });
+  return sorted;
+}
 /* Students who owe homework from the previous class session — either they were
    absent that day, or they were present and handed in less than 100%. Returns
    Map(studentId -> {reason:'absent'|'partial', pct, date}). A student with no
@@ -4044,10 +4089,12 @@ function pendingHwLabel(info){
 function hwMonthly(records, maxMonths=8){
   const by = {};
   for(const r of records){
-    if(r.hw==null || r.attendance==='absent') continue;
+    if(r.attendance==='absent') continue;
+    const v = hwEffOf(r);
+    if(v==null) continue;
     const k = monthKeyOf(r.date);
     by[k] = by[k] || {s:0,n:0};
-    by[k].s += hwValueOf(r); by[k].n++;
+    by[k].s += v; by[k].n++;
   }
   return Object.keys(by).sort().slice(-maxMonths)
     .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(by[k].s/by[k].n), n: by[k].n }));
@@ -4134,9 +4181,9 @@ function sigAttendance(records){
   return null;
 }
 function sigHomework(records){
-  const withHw = records.filter(r=>r.attendance!=='absent' && r.hw!=null).slice(0, RISK.RECENT_N);
+  const withHw = records.filter(r=>r.attendance!=='absent' && hwEffOf(r)!=null).slice(0, RISK.RECENT_N);
   if(withHw.length < RISK.HW_MIN_N) return null;
-  const avg = Math.round(withHw.reduce((s,r)=>s+hwValueOf(r),0)/withHw.length);
+  const avg = Math.round(withHw.reduce((s,r)=>s+hwEffOf(r),0)/withHw.length);
   if(avg < RISK.HW_LOW) return { kind:'homework', sev:2, avg, text:`Homework avg ${avg}% over the last ${withHw.length} classes` };
   if(avg < RISK.HW_WARN) return { kind:'homework', sev:1, avg, text:`Homework avg ${avg}%` };
   return null;
@@ -4995,11 +5042,15 @@ function renderStudentProfile(){
   const late = records.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
   const present = total - absent;   // attended = present, including those who arrived late
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
-  const hwRecords = records.filter(r=>r.hw!=null);
-  const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>{
-    const v = typeof r.hw==='number' ? r.hw : (r.hw==='done'?100:0);
-    return s+v;
-  },0)/hwRecords.length) : null;
+  const hwRecords = records.filter(r=>hwEffOf(r)!=null);
+  const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwEffOf(r),0)/hwRecords.length) : null;
+  // Same set, ignoring late deliveries — used to show what changed.
+  const hwAvgOnTime = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwValueOf(r),0)/hwRecords.length) : null;
+  // Homework that wasn't fully done on the day, split by what happened next.
+  const lateBase = records.filter(r=> r._hwLate || (r.hw!=null && hwValueOf(r) < 100));
+  const lateBrought = lateBase.filter(r=>r._hwLate==='late').length;
+  const lateNever   = lateBase.filter(r=>r._hwLate==='no_hw').length;
+  const lateUnknown = lateBase.length - lateBrought - lateNever;
 
   // Expected sessions: sum across every enrollment window overlapping the period
   const expected = (()=>{
@@ -5140,7 +5191,7 @@ function renderStudentProfile(){
       ${hwRecords.length ? `
       <div class="card chart-card">
         <h3>${t.homeworkDone}</h3>
-        <div class="chart-note">${t.basedOn(hwRecords.length)}</div>
+        <div class="chart-note">${t.basedOn(hwRecords.length)}${hwAvgOnTime!=null && hwAvgOnTime!==hwAvg?` · ${t.onTimeWas(hwAvgOnTime)}`:''}</div>
         ${(()=>{
           const avg = hwAvg??0;
           return renderDonut([
@@ -5148,6 +5199,16 @@ function renderStudentProfile(){
             {label:state.reportLang==='pt'?'Incompleto (média)':'Incomplete (avg)', value:100-avg, color:'var(--red)', unit:'%'}
           ], avg+'%', state.reportLang==='pt'?'média':'average');
         })()}
+      </div>` : ''}
+      ${lateBase.length ? `
+      <div class="card chart-card">
+        <h3>${t.lateHomework}</h3>
+        <div class="chart-note">${t.basedOn(lateBase.length)}</div>
+        ${renderDonut([
+          {label:t.broughtLater, value:lateBrought, color:'var(--green)'},
+          {label:t.neverBrought, value:lateNever, color:'var(--red)'},
+          {label:t.noOutcomeRecorded, value:lateUnknown, color:'var(--border)'}
+        ], String(lateBrought), t.recovered)}
       </div>` : ''}
       ${partRecords.length ? `
       <div class="card chart-card">
@@ -5620,8 +5681,8 @@ function renderGroupReport(){
     const attInfo   = attendanceRate(expected, absent, present, late);
     const attRate   = attInfo.rate;
     const attBasis  = attInfo.basis;
-    const hwRecs    = filtered.filter(r=>r.hw!=null);
-    const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>{ const v=typeof r.hw==='number'?r.hw:(r.hw==='done'?100:0); return s+v; },0)/hwRecs.length) : null;
+    const hwRecs    = filtered.filter(r=>hwEffOf(r)!=null);
+    const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>s+hwEffOf(r),0)/hwRecs.length) : null;
     const phone     = filtered.reduce((s,r)=>s+(r.phone||0),0);
     const partRecs  = filtered.filter(r=>r.attendance!=='absent'&&r.participation);
     const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>r.participation==='great').length + partRecs.filter(r=>r.participation==='good').length*0.5)/partRecs.length) : null;
@@ -7307,6 +7368,8 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  hwEffOf,
+  annotateLateHw,
   sessionHappened,
   sessionCounts,
   sessionRosterIds,
