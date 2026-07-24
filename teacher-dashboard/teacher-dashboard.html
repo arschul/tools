@@ -5003,42 +5003,27 @@ function renderStudentProfile(){
     return;
   }
   const cls = classById(student.classId);
-  const allRecords = [];
-  Object.keys(state.sessions).forEach(key=>{
-    const [classId, date] = splitSessionKey(key);
-    // Collect records from EVERY class this student has records in (survives transfers)
-    if(state.sessions[key][student.id]){
-      allRecords.push({date, _classId: classId, ...state.sessions[key][student.id]});
-    }
-  });
-
-  // A transfer can leave the student with a record under BOTH the old and new
-  // class for the same date, producing duplicate rows (and double-counted stats).
-  // Keep one record per date: prefer the class the student was enrolled in on that
-  // date, then a completed session. Dates with a single record are never dropped.
-  const byDate = new Map();
-  for(const r of allRecords){
-    const enrolledId = classForStudentOnDate(student, r.date)?.id;
-    const score = (r._classId===enrolledId ? 2 : 0) + (isSessionCompleted(r._classId, r.date) ? 1 : 0);
-    const prev = byDate.get(r.date);
-    if(!prev || score > prev._score){ byDate.set(r.date, Object.assign(r, {_score:score})); }
-  }
-  const dedupedRecords = [...byDate.values()];
-  dedupedRecords.sort((a,b)=>b.date.localeCompare(a.date));
-  // This view collects its own records rather than going through
-  // studentAttendanceRecords(), so the late-homework outcomes have to be resolved
-  // here too. Run it on the FULL history before any range filtering: an outcome
-  // recorded in September can refer to homework from August, and .filter() keeps
-  // the same object references so the annotation survives the narrowing below.
-  annotateLateHw(dedupedRecords);
+  // ONE source of truth for a student's history. This view used to duplicate the
+  // collection logic inline, which is how the late-homework outcomes went missing
+  // here and why the roster-based default-present resolution never reached this
+  // report. studentAttendanceRecords() does the collection across every class the
+  // student has records in (survives transfers), the per-date dedupe, the
+  // default-present fill for sessions where nobody ticked them, and the
+  // late-homework annotation — and it already drops holidays and sessions that
+  // don't count yet.
+  const dedupedRecords = studentAttendanceRecords(student);
 
   const fromVal = state.reportRange.from || cls?.startDate || '';
   const toVal = state.reportRange.to || cls?.endDate || '';
-  const allPeriodRecords = dedupedRecords.filter(r => (!fromVal || r.date>=fromVal) && (!toVal || r.date<=toVal));
-
-  // Separate holiday records from real records
-  const holidayDates = allPeriodRecords.filter(r=>isHoliday(r.date)).map(r=>r.date);
-  const records = allPeriodRecords.filter(r=>!isHoliday(r.date) && isSessionCompleted(r._classId, r.date));
+  const inRange = d => (!fromVal || d>=fromVal) && (!toVal || d<=toVal);
+  const records = dedupedRecords.filter(r=>inRange(r.date));
+  // Holidays no longer arrive as records, so they come from the calendar: a
+  // holiday that landed on one of this student's class days during the period.
+  const holidayDates = [...new Set((state.holidays||[]).map(h=>h.date))].filter(d=>{
+    if(!inRange(d)) return false;
+    const c = classForStudentOnDate(student, d);
+    return !!c && getClassDays(c).includes(new Date(d+'T00:00:00').getDay());
+  });
 
   // Duration for a record = the duration in effect for *its own class* on *its own date*
   const recDur = r => durationForDate(classById(r._classId) || cls, r.date);
@@ -5667,13 +5652,12 @@ function renderGroupReport(){
   const dur = d => durationForDate(cls, d);
 
   const rows = students.map(s=>{
-    const recs = [];
-    Object.keys(state.sessions).forEach(key=>{
-      const [cid, date] = splitSessionKey(key);
-      if(cid===cls.id && state.sessions[key][s.id])
-        recs.push({date, ...state.sessions[key][s.id]});
-    });
-    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal)&&!isHoliday(r.date)&&isSessionCompleted(cls.id, r.date));
+    // Same single source of truth as the individual report: default-present fill
+    // and late-homework annotation included. Narrowed to this class so a
+    // transferred student's history elsewhere doesn't leak into these figures.
+    // Holidays and sessions that don't count yet are already excluded upstream.
+    const recs = studentAttendanceRecords(s).filter(r=>r._classId===cls.id);
+    const filtered = recs.filter(r=>(!fromVal||r.date>=fromVal)&&(!toVal||r.date<=toVal));
     const total   = filtered.length;
     const absent  = filtered.filter(r=>r.attendance==='absent').length;
     const late    = filtered.filter(r=>r.attendance!=='absent'&&(r.lateMin||0)>0).length;
