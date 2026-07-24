@@ -1740,17 +1740,90 @@ function daysAgo(dateStr){ return (Date.now() - new Date(dateStr+'T00:00:00').ge
 
 // A student's completed, non-holiday attendance records, deduped by date
 // (prefer the enrolled class — same rule the report uses), newest first.
+/* ================= DEFAULT-PRESENT RESOLUTION =================
+   Roll Call DISPLAYS every student as Present by default (recFor falls back to
+   defaultRecord()), but it only SAVES a record once the teacher touches that
+   student. So "no saved record" means "present, nothing else noted" — NOT
+   "missing". Anything that counts attendance must therefore work from the
+   enrolled roster with saved records laid over the default, or a session where
+   only one student was touched reports 1/1 instead of 2/2.
+   All of this is read-side: no records are written, nothing is migrated. */
+function sessionHappened(classId, date){
+  if(date > todayStr()) return false;          // not yet — may be prepared ahead
+  if(isHoliday(date)) return false;
+  const sess = state.sessions[classId+'_'+date];
+  if(sess && Object.keys(sess).length) return true;                    // someone was ticked
+  if(state.sessionMeta && state.sessionMeta[classId+'_'+date]?.completed) return true;
+  if(getLessonNote(classId, date)) return true;                        // content proves it ran
+  // Otherwise: a past, in-term, scheduled class day ran even if nothing was
+  // recorded — the same assumption expectedSessionsForClass already makes for
+  // the attendance rate. Off-schedule dates need explicit evidence above.
+  const cls = classById(classId);
+  if(!cls) return false;
+  if(!getClassDays(cls).includes(new Date(date+'T00:00:00').getDay())) return false;
+  if(cls.startDate && date < cls.startDate) return false;
+  if(cls.endDate && date > cls.endDate) return false;
+  if(!cls.startDate){
+    const first = firstSessionDateOf(classId);   // don't count days before the class began
+    if(first && date < first) return false;
+  }
+  return true;
+}
+// Everyone enrolled in this class on this date, plus anyone with a saved record
+// (covers students who have since transferred out).
+function sessionRosterIds(classId, date){
+  const sess = state.sessions[classId+'_'+date] || {};
+  const ids = new Set(Object.keys(sess));
+  for(const s of state.students){
+    if(classForStudentOnDate(s, date)?.id === classId) ids.add(s.id);
+  }
+  return [...ids];
+}
+// What we know about a student on a date they weren't explicitly marked: they
+// were present (the app's default), and nothing else was observed. hw/english/
+// participation stay null so they can't inflate homework or behaviour averages.
+function assumedRecord(){
+  return { attendance:'present', lateMin:0, leftEarlyMin:0, phone:0,
+           hw:null, english:null, participation:null, notes:'', _assumed:true };
+}
+function sessionCounts(classId, date){
+  const sess = state.sessions[classId+'_'+date] || {};
+  const ids = sessionRosterIds(classId, date);
+  let absent = 0;
+  for(const id of ids) if(sess[id]?.attendance === 'absent') absent++;
+  return { roster: ids.length, absent, present: ids.length - absent,
+           recorded: Object.keys(sess).length };
+}
 function studentAttendanceRecords(student){
   const map = new Map();
-  Object.keys(state.sessions).forEach(key=>{
-    const [classId, date] = splitSessionKey(key);
-    const rec = state.sessions[key][student.id];
-    if(!rec || isHoliday(date) || !isSessionCompleted(classId, date)) return;
+  const consider = (classId, date, rec)=>{
+    if(isHoliday(date) || !isSessionCompleted(classId, date)) return;
     const enrolledId = classForStudentOnDate(student, date)?.id;
     const score = (classId===enrolledId ? 2 : 0) + 1;
     const prev = map.get(date);
     if(!prev || score > prev._score) map.set(date, {...rec, date, _classId:classId, _score:score});
+  };
+  // 1) Sessions where this student was explicitly recorded.
+  Object.keys(state.sessions).forEach(key=>{
+    const [classId, date] = splitSessionKey(key);
+    const rec = state.sessions[key][student.id];
+    if(rec) consider(classId, date, rec);
   });
+  // 2) Sessions that demonstrably happened for a class this student was enrolled
+  //    in, but where nobody ticked anything for them — default: present.
+  const pairs = new Set();
+  for(const key of Object.keys(state.sessions)) pairs.add(key);
+  if(state.sessionMeta) for(const key of Object.keys(state.sessionMeta)) pairs.add(key);
+  for(const store of [state.lessonNotes, state.homework, state.promises]){
+    if(store) for(const key of Object.keys(store)) pairs.add(key);
+  }
+  for(const key of pairs){
+    const [classId, date] = splitSessionKey(key);
+    if(state.sessions[key] && state.sessions[key][student.id]) continue;   // handled above
+    if(classForStudentOnDate(student, date)?.id !== classId) continue;
+    if(!sessionHappened(classId, date)) continue;
+    consider(classId, date, assumedRecord());
+  }
   return [...map.values()].sort((a,b)=>b.date.localeCompare(a.date));
 }
 
@@ -2811,18 +2884,21 @@ function classLogRows(classId, fromVal, toVal, onlyTaken){
     .filter(d => (!fromVal || d>=fromVal) && (!toVal || d<=toVal))
     .sort((a,b)=>b.localeCompare(a))
     .map(date=>{
-      const sess = state.sessions[classId+'_'+date] || {};
-      const ids = Object.keys(sess);
       const completed = isSessionCompleted(classId, date);
-      const present = ids.filter(id=>sess[id]?.attendance!=='absent').length;
-      const absent  = ids.filter(id=>sess[id]?.attendance==='absent').length;
+      const counts = sessionCounts(classId, date);
+      const happened = sessionHappened(classId, date);
       return {
         date,
         content: getLessonNote(classId, date),
         hw: getHomework(classId, date),
         promise: getPromise(classId, date),
-        completed, present, absent, roster: ids.length,
-        hasSession: ids.length > 0,
+        completed,
+        present: counts.present, absent: counts.absent, roster: counts.roster,
+        // hasSession = this class actually ran that day (so attendance applies),
+        // recorded = how many students were explicitly ticked. Untouched
+        // students count as present, matching what Roll Call shows.
+        hasSession: happened,
+        recorded: counts.recorded,
         future: date > todayStr(),
         holiday: isHoliday(date)
       };
@@ -2851,25 +2927,29 @@ function renderClassLogModal(){
                 ${r.holiday
                   ? ' <span class="badge other">Holiday</span>'
                   : !r.hasSession
-                    ? (r.future
-                        ? ' <span class="badge hw" title="Prepared ahead — this class hasn\u2019t happened yet">planned</span>'
-                        : ' <span class="badge amber" title="Content was recorded but roll call was never taken for this date">no roll call</span>')
-                    : r.completed ? '' : ' <span class="badge amber" title="Not marked complete">draft</span>'}
+                    ? ' <span class="badge hw" title="Prepared ahead \u2014 this class hasn\u2019t happened yet">planned</span>'
+                    : r.recorded===0
+                      ? ' <span class="badge amber" title="Roll call was never taken \u2014 everyone counts as present, which is the default">assumed</span>'
+                      : r.recorded < r.roster
+                        ? ` <span class="badge amber" title="${r.recorded} of ${r.roster} students were ticked \u2014 the rest count as present, which is the default">partial</span>`
+                        : r.completed ? '' : ' <span class="badge amber" title="Not marked complete">draft</span>'}
               </td>
               <td>${r.content?esc(r.content):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.hw?esc(r.hw):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.promise?planDisplayHtml(r.promise):'<span style="color:var(--muted);">—</span>'}</td>
               <td style="text-align:center;white-space:nowrap;">${
-                r.hasSession
-                  ? `${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`
-                  : `<span style="color:var(--muted);font-size:12px;">${r.holiday?'—':r.future?'not yet':'not taken'}</span>`
+                r.holiday
+                  ? '<span style="color:var(--muted);">—</span>'
+                  : r.hasSession
+                    ? `${r.present}/${r.roster}${r.absent?` <span class="badge red">${r.absent} abs</span>`:''}`
+                    : '<span style="color:var(--muted);font-size:12px;">not yet</span>'
               }</td>
             </tr>`).join('')}
         </tbody>
       </table>
     </div>
     ${!clLogOnlyTaken && prepCount ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;">
-      ${prepCount} entr${prepCount===1?'y has':'ies have'} no roll call — dates prepared in advance (plan or homework set from the previous class) or where content was written but attendance was never taken. They aren’t counted in any report.
+      ${prepCount} entr${prepCount===1?'y is':'ies are'} prepared ahead — a plan or homework set from the previous class, for a date that hasn’t happened yet. They aren’t counted in any report.
     </div>` : ''}` : `<div class="empty">No log entries in this period yet. Lesson content, homework and class plans recorded in Roll Call show up here.</div>`;
 
   showModal(`
@@ -2886,8 +2966,8 @@ function renderClassLogModal(){
       <button class="btn-ghost small" onclick="exportClassLogCsv()">⬇ Export CSV</button>
       ${prepCount?`<button class="btn-ghost small ${clLogOnlyTaken?'':''}" aria-pressed="${clLogOnlyTaken}"
         style="${clLogOnlyTaken?'border-color:var(--accent);color:var(--accent);':''}"
-        title="Hide dates that only have a plan, homework or content but no roll call"
-        onclick="clToggleOnlyTaken()">${clLogOnlyTaken?'✓ ':''}Only classes taken</button>`:''}
+        title="Hide dates that haven\u2019t happened yet (prepared ahead)"
+        onclick="clToggleOnlyTaken()">${clLogOnlyTaken?'✓ ':''}Hide planned</button>`:''}
     </div>
     ${body}
     <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Done</button></div>
@@ -2898,10 +2978,10 @@ function exportClassLogCsv(){
   const c = classById(clLogClassId);
   if(!c) return;
   const rows = classLogRows(clLogClassId, clLogFrom, clLogTo, clLogOnlyTaken);
-  const header = ['Date','What we did','Homework assigned','Class plan','Roll call taken','Present','Absent','Roster','Completed','Holiday'];
+  const header = ['Date','What we did','Homework assigned','Class plan','Class held','Students ticked','Present','Absent','Roster','Completed','Holiday'];
   const data = [header].concat(
     rows.map(r=>[r.date, r.content, r.hw, htmlToPlain(planDisplayHtml(r.promise)),
-      r.hasSession?'yes':'no',
+      r.hasSession?'yes':'no', r.hasSession?r.recorded:'',
       r.hasSession?r.present:'', r.hasSession?r.absent:'', r.hasSession?r.roster:'',
       r.completed?'yes':'no', r.holiday?'yes':'no'])
   );
@@ -4099,11 +4179,22 @@ function openTrendsModal(classId){
   const roster = studentsInClass(classId).sort((a,b)=>a.name.localeCompare(b.name));
   // All completed non-holiday records of THIS class, across all its students
   const classRecords = [];
-  Object.keys(state.sessions).forEach(key=>{
-    const [cid, date] = splitSessionKey(key);
-    if(cid!==classId || isHoliday(date) || !isSessionCompleted(cid, date)) return;
-    Object.values(state.sessions[key]).forEach(rec=> classRecords.push({...rec, date}));
-  });
+  (()=>{
+    const seen = new Set();
+    const stores = [state.sessions, state.sessionMeta, state.lessonNotes, state.homework, state.promises];
+    for(const store of stores){
+      if(!store) continue;
+      for(const key of Object.keys(store)){
+        const [cid, date] = splitSessionKey(key);
+        if(cid!==classId || seen.has(date)) continue;
+        seen.add(date);
+        if(isHoliday(date) || !isSessionCompleted(cid, date) || !sessionHappened(cid, date)) continue;
+        const sess = state.sessions[cid+'_'+date] || {};
+        // Untouched students count as present (the Roll Call default).
+        for(const id of sessionRosterIds(cid, date)) classRecords.push({...(sess[id] || assumedRecord()), date});
+      }
+    }
+  })();
   const att = attendanceMonthly(classRecords, 10);
   const hw = hwMonthly(classRecords, 10);
   const grades = classGradeSeries(c);
@@ -7216,6 +7307,10 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  sessionHappened,
+  sessionCounts,
+  sessionRosterIds,
+  studentAttendanceRecords,
   rollcallSessionNeighbors,
   prevHwPending,
   letterToNum,
