@@ -218,6 +218,19 @@ function run(T, state){
   ok('hw owed: legacy not_done flags', pend_.get('s4')?.pct===0);
   ok('hw owed: unrecorded hw not guessed', !pend_.has('s5'));
   eq('hw owed: flagged count', pend_.size, 3);
+
+  // Roll Call session navigation (prev/next scheduled meeting)
+  T._setState({ classes:[], students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[], holidays:[] });
+  const monWed_ = {days:[1,3]};
+  const nb1_ = T.rollcallSessionNeighbors(monWed_, '2026-07-24');   // a Friday
+  ok('nav: from off-schedule day finds both sides', nb1_.prev==='2026-07-22' && nb1_.next==='2026-07-27', nb1_);
+  const nb2_ = T.rollcallSessionNeighbors({days:[1,3], startDate:'2026-07-22'}, '2026-07-22');
+  ok('nav: startDate blocks going earlier', nb2_.prev===null, nb2_);
+  const nb3_ = T.rollcallSessionNeighbors({days:[1,3], endDate:'2026-07-24'}, '2026-07-22');
+  ok('nav: endDate blocks going later', nb3_.next===null, nb3_);
+  T._setState({ classes:[], students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[],
+                holidays:[{date:'2026-07-20', label:'Test holiday'}] });
+  ok('nav: skips holidays', T.rollcallSessionNeighbors(monWed_, '2026-07-22').prev==='2026-07-15');
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
