@@ -204,6 +204,20 @@ function run(T, state){
     ]});
   const sa_ = T.studentSkillAverages('s1','c1');
   ok('act: per-skill averages', sa_.writing.letter==='A' && sa_.writing.n===2 && sa_.speaking.letter==='F', sa_);
+
+  // Homework owed from the previous session (absent OR handed in under 100%)
+  const prevSess_ = {
+    s1:{attendance:'present', hw:100}, s2:{attendance:'present', hw:40},
+    s3:{attendance:'absent',  hw:100}, s4:{attendance:'present', hw:'not_done'},
+    s5:{attendance:'present'}
+  };
+  const pend_ = T.prevHwPending([1,2,3,4,5].map(i=>({id:'s'+i})), prevSess_, '2026-07-15');
+  ok('hw owed: 100% does not flag', !pend_.has('s1'));
+  ok('hw owed: partial flags with pct', pend_.get('s2')?.reason==='partial' && pend_.get('s2').pct===40, pend_.get('s2'));
+  ok('hw owed: absent still flags', pend_.get('s3')?.reason==='absent');
+  ok('hw owed: legacy not_done flags', pend_.get('s4')?.pct===0);
+  ok('hw owed: unrecorded hw not guessed', !pend_.has('s5'));
+  eq('hw owed: flagged count', pend_.size, 3);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
