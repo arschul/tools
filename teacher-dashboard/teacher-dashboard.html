@@ -875,7 +875,6 @@ const T = {
     lateHomework: 'Late homework',
     broughtLater: 'Brought in later',
     neverBrought: 'Never brought',
-    noOutcomeRecorded: 'No outcome recorded',
     recovered: 'brought later',
     onTimeWas: pct => `on time: ${pct}%`,
     attendance: 'Attendance',
@@ -959,7 +958,6 @@ const T = {
     lateHomework: 'Dever atrasado',
     broughtLater: 'Entregue depois',
     neverBrought: 'Nunca entregue',
-    noOutcomeRecorded: 'Sem registro',
     recovered: 'entregues depois',
     onTimeWas: pct => `no prazo: ${pct}%`,
     attendance: 'Presença',
@@ -5037,11 +5035,11 @@ function renderStudentProfile(){
   const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwEffOf(r),0)/hwRecords.length) : null;
   // Same set, ignoring late deliveries — used to show what changed.
   const hwAvgOnTime = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwValueOf(r),0)/hwRecords.length) : null;
-  // Homework that wasn't fully done on the day, split by what happened next.
-  const lateBase = records.filter(r=> r._hwLate || (r.hw!=null && hwValueOf(r) < 100));
+  // Homework that wasn't done on the day AND got a follow-up outcome. Homework
+  // that was never followed up on isn't a finding, so it stays off the chart.
+  const lateBase = records.filter(r=>r._hwLate);
   const lateBrought = lateBase.filter(r=>r._hwLate==='late').length;
   const lateNever   = lateBase.filter(r=>r._hwLate==='no_hw').length;
-  const lateUnknown = lateBase.length - lateBrought - lateNever;
 
   // Expected sessions: sum across every enrollment window overlapping the period
   const expected = (()=>{
@@ -5197,8 +5195,7 @@ function renderStudentProfile(){
         <div class="chart-note">${t.basedOn(lateBase.length)}</div>
         ${renderDonut([
           {label:t.broughtLater, value:lateBrought, color:'var(--green)'},
-          {label:t.neverBrought, value:lateNever, color:'var(--red)'},
-          {label:t.noOutcomeRecorded, value:lateUnknown, color:'var(--border)'}
+          {label:t.neverBrought, value:lateNever, color:'var(--red)'}
         ], String(lateBrought), t.recovered)}
       </div>` : ''}
       ${partRecords.length ? `
