@@ -219,6 +219,31 @@ function run(T, state){
   ok('hw owed: unrecorded hw not guessed', !pend_.has('s5'));
   eq('hw owed: flagged count', pend_.size, 3);
 
+  // Homework brought in late counts as done (stored percentage stays untouched)
+  const LR_ = (date,hw,extra={}) => ({date, attendance:'present', hw, _classId:'c1', ...extra});
+  const late_ = T.annotateLateHw([
+    LR_('2026-07-17', 100, {lateHwOutcome:'late', lateHwFor:'2026-07-15'}),
+    LR_('2026-07-15', 40)
+  ]);
+  eq('late hw: counts as done', T.hwEffOf(late_[1]), 100);
+  eq('late hw: stored percentage untouched', late_[1].hw, 40);
+  ok('late hw: tagged for the donut', late_[1]._hwLate==='late');
+  const never_ = T.annotateLateHw([
+    LR_('2026-07-17', 100, {lateHwOutcome:'no_hw', lateHwFor:'2026-07-15'}),
+    LR_('2026-07-15', 0)
+  ]);
+  eq('late hw: never brought stays at stored value', T.hwEffOf(never_[1]), 0);
+  const legacy_ = T.annotateLateHw([
+    LR_('2026-07-17', 100, {lateHwOutcome:'late'}),   // no lateHwFor reference
+    LR_('2026-07-15', 50)
+  ]);
+  eq('late hw: legacy record falls back to previous session', T.hwEffOf(legacy_[1]), 100);
+  const absent_ = T.annotateLateHw([
+    LR_('2026-07-17', 100, {lateHwOutcome:'late', lateHwFor:'2026-07-15'}),
+    {...LR_('2026-07-15', null), attendance:'absent'}
+  ]);
+  ok('late hw: no percentage stays out of the average', T.hwEffOf(absent_[1])===null && absent_[1]._hwLate==='late');
+
   // Roll Call session navigation (prev/next scheduled meeting)
   T._setState({ classes:[], students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[], holidays:[] });
   const monWed_ = {days:[1,3]};
