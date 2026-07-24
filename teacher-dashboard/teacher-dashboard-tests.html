@@ -231,6 +231,21 @@ function run(T, state){
   T._setState({ classes:[], students:[], sessions:{}, sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{}, events:[],
                 holidays:[{date:'2026-07-20', label:'Test holiday'}] });
   ok('nav: skips holidays', T.rollcallSessionNeighbors(monWed_, '2026-07-22').prev==='2026-07-15');
+
+  // Class Log: rows prepared in advance vs roll call actually taken
+  T._setState({
+    classes:[{id:'c1',name:'C1',days:[1,3]}], students:[], events:[], holidays:[],
+    sessions:{ 'c1_2026-07-20':{s1:{attendance:'present'},s2:{attendance:'absent'}} },
+    sessionMeta:{}, lessonNotes:{ 'c1_2026-07-15':'Unit 3' },
+    homework:{ 'c1_2026-07-24':'WB p.15' }, promises:{}
+  });
+  const log_ = T.classLogRows('c1','','');
+  const byDate_ = Object.fromEntries(log_.map(r=>[r.date,r]));
+  eq('log: union of session + content + homework dates', log_.length, 3);
+  ok('log: roll-call date marked hasSession', byDate_['2026-07-20'].hasSession===true);
+  ok('log: content-only date marked no session', byDate_['2026-07-15'].hasSession===false);
+  ok('log: homework-ahead date marked no session', byDate_['2026-07-24'].hasSession===false);
+  eq('log: onlyTaken hides prepared-ahead rows', T.classLogRows('c1','','',true).length, 1);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
