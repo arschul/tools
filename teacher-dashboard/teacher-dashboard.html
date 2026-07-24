@@ -460,6 +460,7 @@
   .cr-notes{min-width:150px;}
   .cr-note{width:100%;min-width:140px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-family:inherit;font-size:13px;}
   .cr-dim{color:var(--muted);}
+  .late-hw-ref{display:block;font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;}
   .cr-num:disabled,.cr-sel:disabled,.cr-note:disabled{background:var(--gray-soft);color:var(--muted);}
   .icon-btn.danger{color:var(--red);border-color:var(--red-soft);}
   .icon-btn.danger:hover{background:var(--red-soft);}
@@ -913,7 +914,7 @@ const T = {
     attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
     englishLabels: {excellent:'Excellent', improve:'Needs some reminders', unacceptable:'Needs consistent reminders'},
     missedHwFlag: '⚠ Missed HW',
-    lateHwSection: 'Previous session HW (was absent)',
+    lateHwSection: 'Previous session HW',
     lateHwLate: 'Brought late',
     lateHwNo: 'Did not bring',
     lateHwCol: 'Late HW',
@@ -991,7 +992,7 @@ const T = {
     attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
     englishLabels: {excellent:'Excelente', improve:'Precisa de alguns lembretes', unacceptable:'Precisa de lembretes constantes'},
     missedHwFlag: '⚠ Dever pendente',
-    lateHwSection: 'Dever da aula anterior (estava ausente)',
+    lateHwSection: 'Dever da aula anterior',
     lateHwLate: 'Trouxe atrasado',
     lateHwNo: 'Não trouxe',
     lateHwCol: 'Dever atrasado',
@@ -3449,13 +3450,11 @@ function renderRollCall(){
   const session = state.sessions[sessionKey] || {};
   const recFor = s => session[s.id] || defaultRecord();
 
-  // Find students absent in the immediately preceding non-holiday class session
+  // Find students who still owe homework from the immediately preceding session
   const prevDate = getPreviousClassDate(cls, date);
   const prevSessionKey = prevDate ? cls.id+'_'+prevDate : null;
   const prevSession = prevSessionKey ? (state.sessions[prevSessionKey]||{}) : {};
-  const absentPrevSession = new Set(
-    students.filter(s=>prevSession[s.id]?.attendance==='absent').map(s=>s.id)
-  );
+  const hwPending = prevHwPending(students, prevSession, prevDate);
 
   // Only explicitly-completed sessions are read-only (per spec Q5 = option a)
   const locked = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
@@ -3568,8 +3567,8 @@ function renderRollCall(){
       </div>
       <div class="card roster-list ${locked?'locked-session':''}">
         ${loadUi().rollView==='compact'
-          ? renderCompactRoster(cls, students, recFor, absentPrevSession, locked)
-          : students.map(s=>renderRosterRow(s, recFor(s), absentPrevSession.has(s.id), locked)).join('')}
+          ? renderCompactRoster(cls, students, recFor, hwPending, locked)
+          : students.map(s=>renderRosterRow(s, recFor(s), hwPending.get(s.id)||null, locked)).join('')}
       </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <button type="button" class="linkish" onclick="navigate('classes')">Classes &amp; Students</button>.</div>` : ''}
   `;
@@ -3883,6 +3882,28 @@ function attendanceMonthly(records, maxMonths=8){
     .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(100*by[k].p/(by[k].p+by[k].a)), n: by[k].p+by[k].a }));
 }
 function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
+/* Students who owe homework from the previous class session — either they were
+   absent that day, or they were present and handed in less than 100%. Returns
+   Map(studentId -> {reason:'absent'|'partial', pct, date}). A student with no
+   record at all in the previous session never counts as owing anything. */
+function prevHwPending(students, prevSession, prevDate){
+  const map = new Map();
+  for(const s of students){
+    const pr = prevSession[s.id];
+    if(!pr) continue;
+    if(pr.attendance === 'absent'){ map.set(s.id, {reason:'absent', pct:null, date:prevDate}); continue; }
+    if(pr.hw == null) continue;                 // nothing recorded — don't guess
+    const pct = hwValueOf(pr);
+    if(pct < 100) map.set(s.id, {reason:'partial', pct, date:prevDate});
+  }
+  return map;
+}
+function pendingHwLabel(info){
+  if(!info) return '';
+  return info.reason==='absent'
+    ? `was absent${info.date?' on '+formatDateShort(info.date):''}`
+    : `handed in ${info.pct}%${info.date?' on '+formatDateShort(info.date):''}`;
+}
 function hwMonthly(records, maxMonths=8){
   const by = {};
   for(const r of records){
@@ -4248,9 +4269,9 @@ function toggleSessionCompleted(classId, date){
 }
 /* Compact roster: one row per student, every session field editable inline.
    Same setters as the Full view — only the layout differs. */
-function renderCompactRoster(cls, students, recFor, absentPrev, locked){
+function renderCompactRoster(cls, students, recFor, hwPending, locked){
   const pts = classPointsEnabled(cls.id);
-  const anyMissed = students.some(s=>absentPrev.has(s.id));
+  const anyMissed = students.some(s=>hwPending.has(s.id));
   const dis = locked ? 'disabled' : '';
   const head = `
     <tr>
@@ -4263,18 +4284,19 @@ function renderCompactRoster(cls, students, recFor, absentPrev, locked){
       <th title="Homework %">HW%</th>
       <th title="English only">English</th>
       <th title="Participation">Particip.</th>
-      ${anyMissed?'<th title="Homework missed while absent last class">Prev HW</th>':''}
+      ${anyMissed?'<th title="Homework owed from last class (absent, or handed in under 100%)">Prev HW</th>':''}
       <th class="cr-notes-h">Notes</th>
       <th></th>
     </tr>`;
   const rows = students.map(s=>{
     const rec = recFor(s);
     const absent = rec?.attendance==='absent';
-    const missed = absentPrev.has(s.id);
+    const pend = hwPending.get(s.id) || null;
+    const missed = !!pend;
     const hwOutcome = rec?.lateHwOutcome || '';
     return `
     <tr class="${absent?'cr-absent':''}">
-      <td class="cr-name">${esc(s.name)}${missed && !hwOutcome?' <span title="Missed HW while absent last class">⚠</span>':''}</td>
+      <td class="cr-name">${esc(s.name)}${missed && !hwOutcome?` <span title="Homework owed — ${esc(pendingHwLabel(pend))}">⚠</span>`:''}</td>
       <td>
         <div class="cr-pa">
           <button type="button" class="cr-p ${!absent?'on':''}" ${dis} title="Present" onclick="setAttendance('${s.id}','present')">P</button>
@@ -4308,7 +4330,7 @@ function renderCompactRoster(cls, students, recFor, absentPrev, locked){
         </select>
       </td>
       ${anyMissed?`<td>${missed?`
-        <select class="cr-sel" ${dis} onchange="setLateHwOutcome('${s.id}', this.value||null)">
+        <select class="cr-sel" ${dis} title="${esc(pendingHwLabel(pend))}" onchange="setLateHwOutcome('${s.id}', this.value||null)">
           <option value="" ${!hwOutcome?'selected':''}>—</option>
           <option value="late" ${hwOutcome==='late'?'selected':''}>✓ Late</option>
           <option value="no_hw" ${hwOutcome==='no_hw'?'selected':''}>✗ No HW</option>
@@ -4319,15 +4341,16 @@ function renderCompactRoster(cls, students, recFor, absentPrev, locked){
   }).join('');
   return `<div class="compact-wrap"><table class="compact-roster"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
 }
-function renderRosterRow(s, rec, missedHw=false, locked=false){
+function renderRosterRow(s, rec, missedHw=null, locked=false){
   const open = state.openDrawer === s.id;
   const hwOutcome = rec?.lateHwOutcome || null;
   const showFlag = missedHw && !hwOutcome;
+  const why = pendingHwLabel(missedHw);
   return `
     <div class="roster-row ${open?'open':''}" onclick="toggleDrawer('${s.id}')">
       <div class="student-name">
         ${esc(s.name)}
-        ${showFlag ? `<span class="badge amber" style="margin-left:8px;font-size:11px;">⚠ Missed HW</span>` : ''}
+        ${showFlag ? `<span class="badge amber" style="margin-left:8px;font-size:11px;" title="Homework owed — ${esc(why)}">⚠ HW owed</span>` : ''}
         ${missedHw && hwOutcome==='late' ? `<span class="badge green" style="margin-left:8px;font-size:11px;">✓ Late HW</span>` : ''}
         ${missedHw && hwOutcome==='no_hw' ? `<span class="badge red" style="margin-left:8px;font-size:11px;">✗ No HW</span>` : ''}
       </div>
@@ -4346,7 +4369,7 @@ function renderRosterRow(s, rec, missedHw=false, locked=false){
     <div class="drawer">${open?renderDrawer(s, rec, missedHw, locked):''}</div>
   `;
 }
-function renderDrawer(s, rec, missedHw=false, locked=false){
+function renderDrawer(s, rec, missedHw=null, locked=false){
   const hwOutcome = rec?.lateHwOutcome || null;
   if(locked){
     // Read-only summary view
@@ -4363,7 +4386,7 @@ function renderDrawer(s, rec, missedHw=false, locked=false){
   return `
     ${missedHw ? `
     <div class="field full" style="grid-column:1/-1;background:var(--amber-soft);border-radius:10px;padding:12px 14px;">
-      <label style="color:var(--amber);">⚠ Previous session HW (was absent)</label>
+      <label style="color:var(--amber);">⚠ Previous session HW (${esc(pendingHwLabel(missedHw))})</label>
       <div class="pill-group" style="margin-top:8px;">
         <button type="button" class="pill green ${hwOutcome==='late'?'on':''}" aria-pressed="${hwOutcome==='late'}" onclick="setLateHwOutcome('${s.id}','late')">✓ Brought late</button>
         <button type="button" class="pill red ${hwOutcome==='no_hw'?'on':''}" aria-pressed="${hwOutcome==='no_hw'}" onclick="setLateHwOutcome('${s.id}','no_hw')">✗ Did not bring</button>
@@ -4467,6 +4490,18 @@ function setField(studentId, field, val){
 function setLateHwOutcome(studentId, val){
   const rec = getCurrentRecord(studentId);
   rec.lateHwOutcome = val;
+  if(val){
+    // Snapshot WHICH homework this refers to, so the report still makes sense
+    // months later even if the previous session is edited afterwards.
+    const cls = classById(state.rollcall.classId);
+    const prevDate = cls ? getPreviousClassDate(cls, state.rollcall.date) : null;
+    const prev = prevDate ? (state.sessions[cls.id+'_'+prevDate]||{})[studentId] : null;
+    rec.lateHwFor = prevDate || null;
+    rec.lateHwPrevPct = (prev && prev.attendance!=='absent' && prev.hw!=null) ? hwValueOf(prev) : null;
+  } else {
+    delete rec.lateHwFor;
+    delete rec.lateHwPrevPct;
+  }
   persistSessions();
   refreshView();
 }
@@ -5105,7 +5140,7 @@ function renderStudentProfile(){
                   <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
                   <td>${r.phone||'—'}</td>
                   <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
-                  <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>` : '—'}</td>
+                  <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>${r.lateHwFor?`<span class="late-hw-ref">${formatDateShort(r.lateHwFor)}${r.lateHwPrevPct!=null?` · ${r.lateHwPrevPct}%`:''}</span>`:''}` : '—'}</td>
                   <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
                   <td>${r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:'—'}</td>
                   <td>${r.notes?esc(r.notes):'—'}</td>
@@ -7107,6 +7142,7 @@ window.state = state;
 window.__testables = {
   attendanceRate,
   pointsFor,
+  prevHwPending,
   letterToNum,
   numToLetter,
   activityAvg,
