@@ -146,6 +146,22 @@
             margin-bottom: 24px;
         }
 
+        .dash-note {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #4a5568;
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 26px;
+        }
+
+        .dash-note a {
+            color: #5a67d8;
+            font-weight: 600;
+        }
+
         .step-title {
             color: #2d3748;
             font-size: 18px;
@@ -184,6 +200,10 @@
 <a class="back-link" href="../">← Tool Hub</a>
     <div class="container">
         <h1>TOEFL Score Calculator</h1>
+        <p class="dash-note">Quick one-off conversion. To record scores per student — with section
+        breakdowns, mock tests and progress graphs on the report — enter them in the
+        <a href="../teacher-dashboard/teacher-dashboard.html">Teacher Dashboard</a> under a class's
+        <b>Grades</b>.</p>
         
         <!-- Test Selection Step -->
         <div id="testSelection" class="step">
@@ -196,6 +216,7 @@
                     <option value="rtb">Advanced 2</option>
                     <option value="rtc">Advanced 3</option>
                     <option value="rtd">Advanced 4</option>
+                    <option value="itp1">ITP Practice</option>
                 </select>
             </div>
             <button onclick="selectTest()">Continue</button>
