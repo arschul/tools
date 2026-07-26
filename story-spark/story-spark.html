@@ -1,926 +1,1369 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StorySpark ✨</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #fdf6ee;
-      --card: #ffffff;
-      --accent1: #ff6b6b;
-      --accent2: #ffd93d;
-      --accent3: #6bcb77;
-      --accent4: #4d96ff;
-      --accent5: #c77dff;
-      --text: #2d2d2d;
-      --muted: #888;
-      --border: #e8e0d5;
-      --shadow: 0 4px 20px rgba(0,0,0,0.08);
-      --radius: 18px;
-    }
-
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 2rem 1rem 4rem;
-      background-image:
-        radial-gradient(circle at 10% 20%, rgba(255,107,107,0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(77,150,255,0.08) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(107,203,119,0.05) 0%, transparent 60%);
-    }
-
-    /* HEADER */
-    header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    header h1 {
-      font-family: 'Fredoka One', cursive;
-      font-size: clamp(2.4rem, 6vw, 3.6rem);
-      color: var(--text);
-      letter-spacing: 1px;
-      line-height: 1;
-    }
-    header h1 span { color: var(--accent1); }
-    header p {
-      margin-top: 0.5rem;
-      font-size: 1.05rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    /* LAYOUT */
-    .app-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    @media (min-width: 700px) {
-      .app-grid { grid-template-columns: 1fr 1fr; }
-      .full-width { grid-column: 1 / -1; }
-    }
-
-    /* CARDS */
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      box-shadow: var(--shadow);
-      border: 2px solid var(--border);
-    }
-    .card-title {
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    /* GENRE FILTER */
-    .genre-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.2rem;
-    }
-    .genre-btn {
-      padding: 0.3rem 0.9rem;
-      border-radius: 999px;
-      border: 2px solid transparent;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      background: #f0eae0;
-      color: var(--text);
-    }
-    .genre-btn:hover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
-    .genre-btn.active { color: white; border-color: transparent; }
-    .genre-btn[data-genre="all"].active  { background: var(--text); }
-    .genre-btn[data-genre="fantasy"].active  { background: var(--accent5); }
-    .genre-btn[data-genre="adventure"].active { background: var(--accent3); }
-    .genre-btn[data-genre="horror"].active    { background: var(--accent1); }
-    .genre-btn[data-genre="action"].active    { background: var(--accent4); }
-
-    /* INSPIRE BUTTON */
-    .inspire-btn {
-      display: block;
-      width: 100%;
-      padding: 1rem;
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-      color: white;
-      background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(255,107,107,0.35);
-      transition: transform 0.15s, box-shadow 0.15s;
-      position: relative;
-      overflow: hidden;
-    }
-    .inspire-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-    .inspire-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(255,107,107,0.45); }
-    .inspire-btn:hover::after { opacity: 1; }
-    .inspire-btn:active { transform: translateY(0); }
-
-    /* RESULT DISPLAY */
-    .result-box {
-      min-height: 90px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 1rem;
-      background: #fdf6ee;
-      border-radius: 12px;
-      border: 2px dashed var(--border);
-      text-align: center;
-      transition: all 0.3s;
-    }
-    .result-box.has-result {
-      background: white;
-      border-style: solid;
-      border-color: var(--accent2);
-    }
-    .result-main {
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.3rem;
-      color: var(--text);
-      margin-bottom: 0.3rem;
-    }
-    .result-desc {
-      font-size: 0.88rem;
-      color: var(--muted);
-      font-weight: 600;
-      line-height: 1.4;
-    }
-    .result-placeholder {
-      font-size: 0.95rem;
-      color: #bbb;
-      font-weight: 700;
-    }
-
-    /* WORD DISPLAY */
-    .word-badge {
-      display: inline-block;
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.6rem;
-      padding: 0.4rem 1.2rem;
-      border-radius: 999px;
-      margin-bottom: 0.4rem;
-      transition: all 0.3s;
-    }
-    .word-badge.fantasy   { background: #f3e8ff; color: var(--accent5); }
-    .word-badge.adventure { background: #e8fff0; color: #28a745; }
-    .word-badge.horror    { background: #fff0f0; color: var(--accent1); }
-    .word-badge.action    { background: #e8f0ff; color: var(--accent4); }
-    .word-badge.all       { background: #fff8e0; color: #c47900; }
-    .word-genre-label {
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--muted);
-    }
-
-    /* HISTORY */
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      max-height: 260px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .history-list::-webkit-scrollbar { width: 5px; }
-    .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.6rem 0.8rem;
-      background: #fdf6ee;
-      border-radius: 10px;
-      font-size: 0.88rem;
-      font-weight: 700;
-      animation: slideIn 0.3s ease;
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-10px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-    .history-item .h-num {
-      font-family: 'Fredoka One', cursive;
-      color: var(--muted);
-      min-width: 22px;
-    }
-    .history-item .h-element { flex: 1; color: var(--text); }
-    .history-item .h-word {
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 800;
-    }
-    .history-empty {
-      color: #bbb;
-      font-weight: 700;
-      font-size: 0.9rem;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    /* NOTEPAD */
-    .notepad {
-      width: 100%;
-      min-height: 180px;
-      padding: 1rem;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.98rem;
-      font-weight: 600;
-      color: var(--text);
-      background: #fffdf7;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      resize: vertical;
-      outline: none;
-      line-height: 1.8;
-      transition: border-color 0.2s;
-    }
-    .notepad:focus { border-color: var(--accent4); }
-    .notepad::placeholder { color: #ccc; }
-    .notepad-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.6rem;
-      margin-top: 0.7rem;
-    }
-    .btn-small {
-      padding: 0.4rem 1rem;
-      border-radius: 999px;
-      border: 2px solid var(--border);
-      background: white;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn-small:hover { background: var(--bg); transform: translateY(-1px); }
-    .btn-small.danger { border-color: var(--accent1); color: var(--accent1); }
-    .btn-small.danger:hover { background: #fff0f0; }
-
-    /* MODAL */
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-backdrop.show { display: flex; }
-    .modal {
-      background: white;
-      border-radius: var(--radius);
-      padding: 2rem;
-      max-width: 360px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-      animation: popIn 0.2s ease;
-    }
-    @keyframes popIn {
-      from { transform: scale(0.85); opacity: 0; }
-      to   { transform: scale(1); opacity: 1; }
-    }
-    .modal h2 { font-family: 'Fredoka One', cursive; font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .modal p { color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-bottom: 1.5rem; }
-    .modal-btns { display: flex; gap: 0.8rem; justify-content: center; }
-    .modal-btns button {
-      padding: 0.6rem 1.4rem;
-      border-radius: 999px;
-      border: 2px solid var(--border);
-      font-family: 'Nunito', sans-serif;
-      font-weight: 800;
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .modal-btns .confirm {
-      background: var(--accent1);
-      border-color: var(--accent1);
-      color: white;
-    }
-    .modal-btns .confirm:hover { background: #e55; }
-    .modal-btns .cancel:hover { background: var(--bg); }
-
-    /* COUNT BADGE */
-    .count-badge {
-      display: inline-block;
-      background: var(--accent2);
-      color: #7a5700;
-      font-size: 0.78rem;
-      font-weight: 800;
-      padding: 0.1rem 0.55rem;
-      border-radius: 999px;
-      margin-left: 0.4rem;
-      vertical-align: middle;
-    }
-
-    /* LEVEL TOGGLE */
-    .level-row {
-      display: flex;
-      gap: 0.6rem;
-      margin-bottom: 1.1rem;
-    }
-    .level-btn {
-      flex: 1;
-      padding: 0.55rem 0.5rem;
-      border-radius: 12px;
-      border: 2.5px solid var(--border);
-      background: #f7f2eb;
-      font-family: 'Fredoka One', cursive;
-      font-size: 1rem;
-      cursor: pointer;
-      color: var(--muted);
-      transition: all 0.18s;
-      text-align: center;
-      line-height: 1.2;
-    }
-    .level-btn small {
-      display: block;
-      font-family: 'Nunito', sans-serif;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-top: 1px;
-    }
-    .level-btn:hover { transform: translateY(-2px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
-    .level-btn.active[data-level="beginner"] {
-      background: #e8fff0; border-color: var(--accent3); color: #1a7a32;
-    }
-    .level-btn.active[data-level="intermediate"] {
-      background: #eef3ff; border-color: var(--accent4); color: #1a3a8a;
-    }
-
-    /* HISTORY level pill */
-    .h-level {
-      font-size: 0.7rem;
-      font-weight: 800;
-      padding: 0.1rem 0.45rem;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      flex-shrink: 0;
-    }
-    .h-level.beginner   { background: #e8fff0; color: #1a7a32; }
-    .h-level.intermediate { background: #eef3ff; color: #1a3a8a; }
-
-    /* HISTORY EMOJI */
-    .history-emoji-area {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 0 0.2rem;
-      min-height: 80px;
-    }
-    .history-emoji {
-      font-size: 3.6rem;
-      line-height: 1;
-      display: inline-block;
-      filter: drop-shadow(0 0 10px rgba(255,210,80,0.6)) drop-shadow(0 0 22px rgba(255,150,50,0.35));
-      animation: floatEmoji 3s ease-in-out infinite;
-      transition: opacity 0.4s, transform 0.4s;
-      opacity: 0;
-    }
-    .history-emoji.visible {
-      opacity: 1;
-    }
-    @keyframes floatEmoji {
-      0%   { transform: translateY(0px) scale(1); filter: drop-shadow(0 0 10px rgba(255,210,80,0.6)) drop-shadow(0 0 22px rgba(255,150,50,0.35)); }
-      50%  { transform: translateY(-10px) scale(1.07); filter: drop-shadow(0 0 18px rgba(255,220,80,0.9)) drop-shadow(0 0 36px rgba(255,160,60,0.55)); }
-      100% { transform: translateY(0px) scale(1); filter: drop-shadow(0 0 10px rgba(255,210,80,0.6)) drop-shadow(0 0 22px rgba(255,150,50,0.35)); }
-    }
-
-    /* SPARK ANIMATION */
-    @keyframes spark {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.06); }
-      100% { transform: scale(1); }
-    }
-    .sparking { animation: spark 0.35s ease; }
-  
-  .back-link {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 100000;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 999px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.18);
-    transition: background 0.2s ease, transform 0.2s ease;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StorySpark ✨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Karla:wght@400;500;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:   #F3EFF9;
+    --panel:   #FFFFFF;
+    --ink:     #241C3B;
+    --ink-soft:#6B6485;
+    --line:    #DDD5EC;
+    --pink:    #FF5D8F;
+    --teal:    #10A99B;
+    --yellow:  #FFC846;
+    --blue:    #4C6EF5;
+    --shadow:  rgba(36,28,59,0.14);
+    --hard:    #241C3B;
   }
-  .back-link:hover {
-    background: rgba(0,0,0,0.78);
-    transform: translateX(-2px);
+  [data-theme="dark"] {
+    --paper:   #17122B;
+    --panel:   #241C3B;
+    --ink:     #F1EDFA;
+    --ink-soft:#A79FC4;
+    --line:    #3B3159;
+    --pink:    #FF7BA4;
+    --teal:    #2ED3C2;
+    --yellow:  #FFD166;
+    --blue:    #7C93FF;
+    --shadow:  rgba(0,0,0,0.5);
+    --hard:    #0C0918;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 4.5rem 1.1rem 3rem;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(255,93,143,0.10), transparent 42%),
+      radial-gradient(circle at 88% 18%, rgba(76,110,245,0.10), transparent 45%);
+    color: var(--ink);
+    font-family: 'Karla', system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+    transition: background-color .25s ease, color .25s ease;
+  }
+
+  h1, h2, h3, .display { font-family: 'Bricolage Grotesque', system-ui, sans-serif; }
+  .mono { font-family: 'Space Mono', monospace; }
+
+  /* Top bar */
+  .back-link {
+    position: fixed; top: 14px; left: 14px; z-index: 60;
+    padding: 8px 16px;
+    background: var(--hard); color: #fff;
+    text-decoration: none; border-radius: 999px;
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    border: 2px solid var(--hard);
+    transition: transform .18s ease;
+  }
+  .back-link:hover { transform: translateX(-3px); }
+
+  .topright {
+    position: fixed; top: 14px; right: 14px; z-index: 60;
+    display: flex; gap: 8px;
+  }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--panel); color: var(--ink);
+    font-size: 16px; cursor: pointer;
+    display: grid; place-items: center;
+    transition: transform .18s ease, background .18s ease;
+  }
+  .icon-btn:hover { transform: translateY(-2px); background: var(--yellow); }
+  .icon-btn.on { background: var(--yellow); }
+
+  /* Header */
+  header { text-align: center; max-width: 1180px; margin: 0 auto 1.4rem; }
+  header h1 {
+    font-size: clamp(2.4rem, 7vw, 3.6rem);
+    font-weight: 800; margin: 0; letter-spacing: -0.03em;
+  }
+  header h1 em { font-style: normal; color: var(--pink); }
+  header p { margin: .35rem 0 0; color: var(--ink-soft); font-size: .98rem; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  /* Panels */
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--ink);
+    border-radius: 18px;
+    box-shadow: 5px 5px 0 var(--shadow);
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1.1rem;
+  }
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 .8rem;
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  }
+
+  /* Controls */
+  .chip-row { display: flex; flex-wrap: wrap; gap: .45rem; }
+  .chip {
+    font-family: 'Karla', sans-serif; font-weight: 700; font-size: .86rem;
+    padding: .42rem .85rem;
+    border: 2px solid var(--line);
+    background: transparent; color: var(--ink-soft);
+    border-radius: 999px; cursor: pointer;
+    transition: all .16s ease;
+  }
+  .chip:hover { border-color: var(--ink); color: var(--ink); }
+  .chip.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .chip.lvl.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .control-split { display: grid; gap: .9rem; grid-template-columns: 1fr; }
+  @media (min-width: 780px) { .control-split { grid-template-columns: auto 1fr; align-items: start; } }
+  .ctl-label {
+    font-family: 'Space Mono', monospace; font-size: .68rem;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft);
+    margin-bottom: .4rem;
+  }
+
+  .roll-btn {
+    width: 100%; margin-top: 1rem;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800; font-size: clamp(1.1rem, 3vw, 1.5rem);
+    letter-spacing: -0.01em;
+    padding: .85rem 1rem;
+    color: #fff; background: var(--pink);
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 4px 4px 0 var(--ink);
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .roll-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+  .roll-btn:active { transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* The machine */
+  .machine { display: flex; flex-direction: column; gap: .55rem; }
+  .reel {
+    display: grid;
+    grid-template-columns: 74px 1fr auto;
+    align-items: stretch;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .reel-tag {
+    font-family: 'Space Mono', monospace; font-size: .62rem;
+    letter-spacing: .08em;
+    display: grid; place-items: center; text-align: center;
+    color: #fff; padding: .3rem;
+  }
+  .reel[data-slot="who"]   .reel-tag { background: var(--pink); }
+  .reel[data-slot="wants"] .reel-tag { background: var(--blue); }
+  .reel[data-slot="but"]   .reel-tag { background: var(--teal); }
+  .reel[data-slot="twist"] .reel-tag { background: var(--ink); }
+
+  .reel-text {
+    padding: .7rem .85rem;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 600;
+    font-size: clamp(1.02rem, 2.3vw, 1.32rem);
+    line-height: 1.3;
+    display: flex; align-items: center;
+    min-height: 3.2rem;
+    transition: opacity .12s linear, filter .12s linear;
+  }
+  .reel-ctl { display: flex; align-items: center; gap: 2px; padding-right: .4rem; }
+  .mini {
+    width: 32px; height: 32px; border-radius: 9px;
+    border: none; background: transparent; cursor: pointer;
+    font-size: 15px; opacity: .5;
+    transition: opacity .15s ease, transform .15s ease;
+  }
+  .mini:hover { opacity: 1; transform: scale(1.15); }
+  .reel.locked { background: color-mix(in srgb, var(--yellow) 22%, var(--panel)); }
+  .reel.locked .mini.lock { opacity: 1; }
+  .rolling .reel-text { opacity: .35; filter: blur(1.5px); }
+
+  /* Title + bonus words */
+  .strip {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .55rem;
+    margin-top: .85rem; padding-top: .85rem;
+    border-top: 2px dashed var(--line);
+  }
+  .strip-label {
+    font-family: 'Space Mono', monospace; font-size: .64rem;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .story-title {
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
+    font-size: clamp(1rem, 2.4vw, 1.25rem);
+  }
+  .wordchip {
+    font-weight: 700; font-size: .9rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: var(--yellow); color: #241C3B;
+    border: 2px solid var(--ink);
+  }
+
+  /* Spine */
+  .layout { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
+  @media (min-width: 940px) { .layout { grid-template-columns: 1.55fr 1fr; align-items: start; } }
+
+  .connectors { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .9rem; }
+  .conn {
+    font-family: 'Space Mono', monospace; font-size: .74rem;
+    padding: .3rem .6rem; border-radius: 8px;
+    border: 2px solid var(--line); background: transparent;
+    color: var(--ink-soft); cursor: pointer;
+    transition: all .15s ease;
+  }
+  .conn:hover { border-color: var(--teal); color: var(--teal); }
+
+  .beat { margin-bottom: .9rem; }
+  .beat-head { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .3rem; flex-wrap: wrap; }
+  .beat-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.02rem; }
+  .beat-q { font-size: .82rem; color: var(--ink-soft); }
+  .beat textarea {
+    width: 100%; min-height: 92px; resize: vertical;
+    padding: .7rem .8rem;
+    font-family: 'Karla', sans-serif; font-size: 1.02rem; line-height: 1.55;
+    color: var(--ink); background: var(--paper);
+    border: 2px solid var(--line); border-radius: 12px;
+    transition: border-color .15s ease;
+  }
+  .beat textarea:focus { outline: none; border-color: var(--blue); }
+  .beat textarea::placeholder { color: var(--ink-soft); opacity: .65; }
+
+  .twist-btn {
+    width: 100%;
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800;
+    font-size: 1.05rem; padding: .7rem;
+    background: var(--teal); color: #fff;
+    border: 2px solid var(--ink); border-radius: 12px;
+    box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .twist-btn:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--ink); }
+  .twist-card {
+    margin-top: .7rem; padding: .8rem .9rem;
+    border: 2px dashed var(--teal); border-radius: 12px;
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 600;
+    font-size: 1.1rem;
+    display: none;
+  }
+  .twist-card.show { display: block; animation: pop .3s ease; }
+  @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* Spark box */
+  .sparkbox { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: .5rem; }
+  .spark-item {
+    border: 2px solid var(--line); border-radius: 11px;
+    padding: .55rem .65rem; cursor: pointer;
+    font-size: .87rem; line-height: 1.35;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .spark-item:hover { border-color: var(--pink); transform: translateX(3px); }
+  .si-top { display: flex; justify-content: space-between; gap: .5rem; align-items: flex-start; margin-bottom: .25rem; }
+  .si-lvl {
+    font-family: 'Space Mono', monospace; font-size: .62rem;
+    color: #fff; background: var(--blue); padding: 1px 6px; border-radius: 5px;
+  }
+  .star { background: none; border: none; cursor: pointer; font-size: .95rem; opacity: .35; padding: 0 2px; color: var(--ink); }
+  .star.on { opacity: 1; color: var(--yellow); }
+  .empty-note { color: var(--ink-soft); font-size: .88rem; }
+
+  .btn-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .9rem; }
+  .btn-sm {
+    font-family: 'Karla', sans-serif; font-weight: 700; font-size: .84rem;
+    padding: .42rem .8rem; border-radius: 9px;
+    border: 2px solid var(--ink); background: var(--panel); color: var(--ink);
+    cursor: pointer; transition: all .15s ease;
+  }
+  .btn-sm:hover { background: var(--ink); color: var(--paper); }
+
+  /* Big screen mode */
+  body.bigscreen .hide-on-big { display: none !important; }
+  body.bigscreen .reel-text { font-size: clamp(1.5rem, 4.2vw, 3rem); min-height: 4.6rem; }
+  body.bigscreen .reel-tag  { font-size: .78rem; }
+  body.bigscreen .reel { grid-template-columns: 108px 1fr auto; }
+  body.bigscreen .story-title { font-size: clamp(1.3rem, 3.4vw, 2.1rem); }
+  body.bigscreen .wordchip { font-size: 1.2rem; padding: .4rem 1rem; }
+  body.bigscreen header h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
+
+  /* Print */
+  #printSheet { display: none; }
+  @media print {
+    body { padding: 0; background: #fff; color: #000; }
+    body > *:not(#printSheet) { display: none !important; }
+    #printSheet { display: block; font-family: 'Karla', sans-serif; }
+    #printSheet h2 { font-size: 20pt; margin: 0 0 4pt; }
+    #printSheet .p-spark { font-size: 13pt; line-height: 1.5; margin-bottom: 10pt; border-bottom: 2px solid #000; padding-bottom: 8pt; }
+    #printSheet .p-beat { margin-bottom: 10pt; page-break-inside: avoid; }
+    #printSheet .p-beat b { font-size: 12pt; }
+    #printSheet .p-beat span { font-size: 10pt; color: #444; }
+    #printSheet .rule { border-bottom: 1px solid #999; height: 20pt; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .rolling .reel-text { opacity: 1; filter: none; }
   }
 </style>
 </head>
 <body>
+
 <a class="back-link" href="../">← Tool Hub</a>
+<div class="topright">
+  <button class="icon-btn" id="bigBtn" onclick="toggleBig()" title="Big screen mode">⛶</button>
+  <button class="icon-btn" onclick="toggleTheme()" title="Light or dark">◐</button>
+</div>
 
 <header>
-  <h1>Story<span>Spark</span> ✨</h1>
-  <p>Get inspired. Build your story. Have fun!</p>
+  <h1>Story<em>Spark</em></h1>
+  <p class="hide-on-big">Roll a story. Lock the bits you like. Write the rest.</p>
 </header>
 
-<div class="app-grid">
+<div class="wrap">
 
-  <!-- LEFT: Generator -->
-  <div class="card">
-    <div class="card-title">🎲 Your Spark</div>
+  <div class="panel hide-on-big">
+    <div class="control-split">
+      <div>
+        <div class="ctl-label">Level</div>
+        <div class="chip-row" id="levelRow"></div>
+      </div>
+      <div>
+        <div class="ctl-label">Flavour</div>
+        <div class="chip-row" id="genreRow"></div>
+      </div>
+    </div>
+    <button class="roll-btn" onclick="rollAll()">🎲 Roll a story</button>
+  </div>
 
-    <!-- Level Toggle -->
-    <div class="level-row">
-      <button class="level-btn active" data-level="beginner" onclick="setLevel('beginner')">
-        🌱 Beginner <small>Simple words &amp; ideas</small>
-      </button>
-      <button class="level-btn" data-level="intermediate" onclick="setLevel('intermediate')">
-        🚀 Intermediate <small>Richer story elements</small>
-      </button>
+  <div class="panel">
+    <div class="panel-title hide-on-big">Your spark <span class="mono" style="opacity:.65">🔒 keeps a line &nbsp;·&nbsp; 🎲 swaps it</span></div>
+    <div class="machine" id="machine"></div>
+
+    <div class="strip">
+      <span class="strip-label">Title</span>
+      <span class="story-title" id="titleOut">—</span>
+      <button class="mini" onclick="rollTitle()" title="New title">🎲</button>
     </div>
 
-    <!-- Genre Filter -->
-    <div class="genre-row">
-      <button class="genre-btn active" data-genre="all">All</button>
-      <button class="genre-btn" data-genre="fantasy">🧙 Fantasy</button>
-      <button class="genre-btn" data-genre="adventure">🗺️ Adventure</button>
-      <button class="genre-btn" data-genre="horror">👻 Horror</button>
-      <button class="genre-btn" data-genre="action">⚔️ Action</button>
+    <div class="strip">
+      <span class="strip-label">Bonus words</span>
+      <span id="wordsOut" style="display:flex;gap:.4rem;flex-wrap:wrap;"></span>
+      <button class="mini" onclick="rollWords()" title="New words">🎲</button>
+      <span class="strip-label" style="opacity:.7">style points if you use them</span>
     </div>
+  </div>
 
-    <button class="inspire-btn" onclick="inspire()">✨ Inspire Me!</button>
+  <div class="layout hide-on-big">
 
-    <div style="margin-top:1.2rem;">
-      <div style="font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Story Element</div>
-      <div class="result-box" id="elementBox">
-        <span class="result-placeholder">Hit Inspire Me to get started!</span>
+    <div>
+      <div class="panel">
+        <div class="panel-title">Your story · four beats</div>
+        <div class="connectors" id="connectors"></div>
+        <div id="beats"></div>
+        <div class="btn-row">
+          <button class="btn-sm" onclick="copyStory()" id="copyBtn">Copy story</button>
+          <button class="btn-sm" onclick="printSheet()">Print a sheet</button>
+          <button class="btn-sm" onclick="clearBeats()">Clear writing</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <button class="twist-btn" onclick="plotTwist()">🌀 Plot twist!</button>
+        <div class="twist-card" id="twistCard"></div>
       </div>
     </div>
 
-    <div style="margin-top:1rem; text-align:center;">
-      <div style="font-size:0.8rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">Spark Word</div>
-      <div class="result-box" id="wordBox" style="align-items:center;">
-        <span class="result-placeholder">—</span>
+    <div class="panel">
+      <div class="panel-title">Spark box <span class="mono" id="boxCount" style="opacity:.65"></span></div>
+      <div class="sparkbox" id="sparkbox"></div>
+      <div class="btn-row">
+        <button class="btn-sm" onclick="clearBox()">Empty the box</button>
       </div>
     </div>
-  </div>
 
-  <!-- RIGHT: History -->
-  <div class="card">
-    <div class="card-title">
-      📜 History
-      <span class="count-badge" id="historyCount">0</span>
-    </div>
-    <div class="history-list" id="historyList">
-      <div class="history-empty">No sparks yet — hit Inspire Me!</div>
-    </div>
-    <div class="history-emoji-area">
-      <span class="history-emoji" id="historyEmoji"></span>
-    </div>
-    <div style="margin-top:0.6rem;text-align:right;">
-      <button class="btn-small danger" onclick="showResetModal()">🗑️ Reset All</button>
-    </div>
-  </div>
-
-  <!-- BOTTOM: Notepad -->
-  <div class="card full-width">
-    <div class="card-title">📝 My Story Notes</div>
-    <textarea class="notepad" id="notepad" placeholder="Use your sparks to start writing! Jot down characters, plot ideas, or anything that comes to mind..."></textarea>
-    <div class="notepad-actions">
-      <button class="btn-small" onclick="copyNotes()">📋 Copy</button>
-      <button class="btn-small danger" onclick="clearNotes()">Clear</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- Reset Modal -->
-<div class="modal-backdrop" id="resetModal">
-  <div class="modal">
-    <h2>Reset everything?</h2>
-    <p>This will clear your history and all used elements. Your story notes will stay safe!</p>
-    <div class="modal-btns">
-      <button class="cancel" onclick="hideResetModal()">Keep it</button>
-      <button class="confirm" onclick="confirmReset()">Yes, reset!</button>
-    </div>
   </div>
 </div>
+
+<div id="printSheet"></div>
 
 <script>
-// ── DATA ────────────────────────────────────────────────────────────────────
+/* ===========================================================
+   StorySpark 2.0 - data
+   Grammar contract, so every combination reads correctly:
+     who   = noun phrase starting "A / An ..."
+     wants = "wants to " + bare infinitive
+     but   = "but ..." (the character is always "they")
+     twist = a complete sentence
+   =========================================================== */
 
-const storyElements = {
-  "Cursed object": "An item with supernatural powers that brings misfortune to its possessor.",
-  "Hidden royal identity": "A character unaware they are of royal blood, often leading to a larger destiny.",
-  "Time-travel paradox": "A situation where traveling through time causes logical contradictions or loops.",
-  "AI rebellion": "Artificial intelligence revolts against its creators, questioning control and freedom.",
-  "Talking animal companion": "A sentient animal who assists or guides the protagonist.",
-  "Serial killer on the loose": "A series of murders committed by the same elusive individual.",
-  "Haunted house": "A location plagued by spirits or unexplained supernatural events.",
-  "Undercover cop": "A police officer infiltrates criminal operations while concealing their true identity.",
-  "Dystopian government": "An oppressive regime controls the population under the guise of order.",
-  "Betrayal by a loved one": "A trusted friend or family member turns against the protagonist.",
-  "Secret society": "A hidden group with its own agenda, influencing events from the shadows.",
-  "Child with mysterious powers": "A young character displays unusual abilities that defy explanation.",
-  "Ancient prophecy": "A foretold event that predicts the rise or fall of key characters.",
-  "Stolen identity": "A character assumes another's identity, leading to conflict and danger.",
-  "Murder in a locked room": "A crime committed in seemingly impossible circumstances.",
-  "Virtual reality trap": "Characters are stuck in a simulated world and must find a way out.",
-  "Lost magical artifact": "A powerful relic goes missing and must be recovered before it causes havoc.",
-  "Ghost seeking revenge": "A spirit returns to right a wrong or punish their murderer.",
-  "Clones with individuality": "Genetically identical people struggle with personal identity and purpose.",
-  "Family secrets": "Long-hidden truths about a family's past are uncovered with dramatic consequences.",
-  "Heist gone wrong": "A theft plan collapses, forcing improvisation and escape.",
-  "Hero with amnesia": "The protagonist doesn't remember their past and must rediscover their identity.",
-  "Alien invasion": "Extraterrestrial forces threaten the world or civilization.",
-  "Love triangle": "Three individuals are entangled in a romantic dilemma.",
-  "Disguised villain": "An enemy hides in plain sight, pretending to be an ally.",
-  "Forbidden romance": "Two lovers are kept apart by societal, familial, or magical barriers.",
-  "Blackmail plot": "Someone is forced into action under threat of revealing secrets.",
-  "Interdimensional travel": "Characters move between parallel worlds with different rules.",
-  "Possessed doll": "A toy becomes the vessel for a malevolent spirit.",
-  "Rags to riches": "A character rises from poverty to power, often facing moral tests.",
-  "Cult manipulation": "A charismatic leader controls followers through fear or ideology.",
-  "Post-apocalyptic survival": "Life after a global catastrophe, where survival is a daily challenge.",
-  "Corrupt police force": "The law is used for personal gain by those meant to uphold it.",
-  "Psychic visions": "Characters receive glimpses of future or hidden events.",
-  "Doppelgänger mystery": "An identical person appears, raising suspicion and confusion.",
-  "Underground resistance": "A hidden group opposes an oppressive system from within.",
-  "Body-swapping": "Two or more characters switch bodies, causing chaos and insight.",
-  "Vigilante justice": "A character takes the law into their own hands to punish wrongdoers.",
-  "Power-hungry monarch": "A ruler craves more control, endangering the realm.",
-  "Reality-bending drug": "A substance alters perception, revealing or distorting truth.",
-  "Tragic backstory": "A traumatic past shapes the hero's current path and decisions.",
-  "Immortal antagonist": "An unaging villain returns across time, hard to defeat.",
-  "Reckless inventor": "A genius creates something dangerous without understanding the consequences.",
-  "Prophetic dreams": "Nighttime visions foretell events that later come to pass.",
-  "Genetic experimentation": "Science tampers with DNA to create enhanced or monstrous beings.",
-  "Quest for redemption": "A character seeks to make amends for past sins.",
-  "Accidental murder": "A character kills someone unintentionally and must face the fallout.",
-  "Secret lab discovery": "An unknown facility harbors dark experiments or inventions.",
-  "Deal with a demon": "A pact made with dark forces leads to terrible consequences.",
-  "Hidden world within our own": "A magical or alternate reality exists just out of sight of the mundane world.",
-  "Seductive spy": "A charismatic agent uses charm and deception to gather intelligence.",
-  "Supernatural illness": "A disease with mystical origins spreads, defying science.",
-  "Lost civilization": "An ancient culture is rediscovered, often with lingering threats.",
-  "Telepathic connection": "Characters can communicate or feel each other's thoughts and emotions.",
-  "Revenge from the grave": "The dead return to punish the living for past crimes.",
-  "Framed for a crime": "A character is falsely accused and must clear their name.",
-  "Escape from captivity": "The protagonist must break free from physical or psychological confinement.",
-  "Undead army": "A legion of the dead rises to conquer or defend.",
-  "Small town with dark secrets": "A seemingly peaceful place hides sinister truths.",
-  "Cybernetic enhancements": "Humans are augmented with technology, raising ethical dilemmas.",
-  "Shapeshifter deception": "Someone can change form, blurring identity and trust.",
-  "Abandoned asylum": "A former mental hospital now houses horror or mystery.",
-  "Time loop": "A day or event repeats endlessly until broken.",
-  "Forbidden technology": "A banned invention could change or destroy the world.",
-  "Inherited curse": "A family suffers across generations from a magical affliction.",
-  "Political conspiracy": "A hidden network manipulates power behind the scenes.",
-  "Magical forest": "A woodland filled with enchantment, danger, or ancient beings.",
-  "Experimental weapon": "A new kind of weapon threatens to change warfare forever.",
-  "Found footage mystery": "Clues to a disappearance or crime are discovered in recorded media.",
-  "Alien artifact": "An object of otherworldly origin with great power or danger.",
-  "Double agent": "A spy works for two sides, hiding their true loyalty.",
-  "Urban legend come to life": "A myth or story becomes horrifying reality.",
-  "War-torn romance": "Love struggles to survive amidst violent conflict.",
-  "Chosen one trope": "A person is destined to fulfill a world-changing prophecy.",
-  "Reluctant hero": "A protagonist is forced into action despite personal hesitation.",
-  "Corrupt corporation": "A powerful company prioritizes profit over morality or human life.",
-  "Eternal youth spell": "A person remains young through magical means—but at a cost.",
-  "Paranormal investigation": "A team explores supernatural occurrences using science or magic.",
-  "Ritual sacrifice": "A dark ceremony requires the offering of life to summon or appease forces.",
-  "Kidnapping and rescue": "Someone is taken and must be found or escape with help.",
-  "Supernatural detective": "An investigator deals with cases involving unearthly phenomena.",
-  "False utopia": "A seemingly perfect society hides deep flaws or oppression.",
-  "Ghost in the machine": "A spirit or consciousness haunts or lives in technology.",
-  "Secret sibling": "A family member thought lost or unknown changes the story.",
-  "Disappearing town": "A place vanishes or reappears mysteriously over time.",
-  "Ancient gods return": "Old deities awaken and disrupt the modern world.",
-  "Final girl trope": "The last surviving female character faces the antagonist in horror stories."
+var GENRES = [
+  { id: "all",      label: "Everything", icon: "🎲" },
+  { id: "everyday", label: "Everyday",   icon: "🏠" },
+  { id: "school",   label: "School",     icon: "🎒" },
+  { id: "fantasy",  label: "Fantasy",    icon: "🐉" },
+  { id: "mystery",  label: "Mystery",    icon: "🔍" },
+  { id: "scifi",    label: "Sci-fi",     icon: "🛸" },
+  { id: "spooky",   label: "Spooky",     icon: "👻" }
+];
+
+var LEVELS = ["A1", "A2", "B1", "B2"];
+
+function e(t, g) { return { t: t, g: g }; }
+
+var DATA = {};
+
+/* ---- A1 -------------------------------------------------- */
+DATA.A1 = {
+  who: [
+    e("A very hungry dragon", ["fantasy"]),
+    e("A cat who hates water", ["everyday","fantasy"]),
+    e("A robot who wants to be funny", ["scifi"]),
+    e("A boy with very big shoes", ["everyday","school"]),
+    e("A girl who is always late", ["school","everyday"]),
+    e("A dog with a superpower", ["everyday","fantasy"]),
+    e("A very sleepy ghost", ["spooky"]),
+    e("A very small giant", ["fantasy"]),
+    e("A pizza chef with no cheese", ["everyday"]),
+    e("A parrot who says everything", ["everyday","mystery"]),
+    e("An alien who loves cake", ["scifi"]),
+    e("A teacher who is scared of the board", ["school"]),
+    e("A footballer who cannot run fast", ["school","everyday"]),
+    e("A witch with a broken hat", ["fantasy","spooky"]),
+    e("A bus driver who is lost", ["everyday","mystery"]),
+    e("A monster who is afraid of the dark", ["spooky"]),
+    e("A singer with no voice today", ["school","everyday"]),
+    e("A detective who loses everything", ["mystery"]),
+    e("A snowman in a hot country", ["fantasy"]),
+    e("A student with a very strange bag", ["school","mystery"]),
+    e("A grandmother on a big motorbike", ["everyday"]),
+    e("A vampire who only drinks orange juice", ["spooky"]),
+    e("A pilot who is scared of clouds", ["everyday","scifi"]),
+    e("A fish who wants to walk", ["fantasy"]),
+    e("A phone that talks too much", ["scifi","everyday"]),
+    e("A clown who is not funny", ["everyday"])
+  ],
+  wants: [
+    e("wants to win a big prize", ["everyday","school"]),
+    e("wants to find a lost friend", ["everyday","mystery"]),
+    e("wants to make one new friend", ["everyday","school"]),
+    e("wants to eat the biggest cake in town", ["everyday"]),
+    e("wants to go to the moon", ["scifi"]),
+    e("wants to open a secret door", ["mystery","fantasy"]),
+    e("wants to sing in front of the class", ["school"]),
+    e("wants to catch a very fast thief", ["mystery"]),
+    e("wants to fly for one day", ["fantasy","scifi"]),
+    e("wants to sleep for ten hours", ["everyday","spooky"]),
+    e("wants to pass a difficult test", ["school"]),
+    e("wants to get home before dark", ["everyday","spooky"]),
+    e("wants to find treasure in the garden", ["fantasy","mystery"]),
+    e("wants to build a giant machine", ["scifi"]),
+    e("wants to win the school football game", ["school"]),
+    e("wants to talk to a ghost", ["spooky"]),
+    e("wants to learn one magic trick", ["fantasy","school"]),
+    e("wants to save a very small animal", ["everyday","fantasy"]),
+    e("wants to become famous on the internet", ["everyday","school"]),
+    e("wants to escape from a dark room", ["spooky","mystery"]),
+    e("wants to buy new shoes", ["everyday"]),
+    e("wants to make everyone laugh", ["everyday","school"]),
+    e("wants to visit a strange planet", ["scifi"]),
+    e("wants to find out who took the cookies", ["mystery","school"]),
+    e("wants to break a world record", ["everyday","school"]),
+    e("wants to fix a broken robot", ["scifi"])
+  ],
+  but: [
+    e("but the door is locked", ["mystery","everyday"]),
+    e("but they have no money", ["everyday"]),
+    e("but it is already very late", ["everyday","school"]),
+    e("but they are afraid of the dark", ["spooky"]),
+    e("but nobody believes them", ["mystery","school"]),
+    e("but the map is wrong", ["mystery","fantasy"]),
+    e("but it starts to rain", ["everyday"]),
+    e("but they cannot stop laughing", ["everyday","school"]),
+    e("but the bus never comes", ["everyday"]),
+    e("but they forget everything", ["school","mystery"]),
+    e("but their best friend says no", ["everyday","school"]),
+    e("but the machine does not work", ["scifi"]),
+    e("but there is a big hole in the road", ["everyday","fantasy"]),
+    e("but they only have five minutes", ["school","everyday"]),
+    e("but a dog eats the important paper", ["school","everyday"]),
+    e("but all the lights go out", ["spooky","scifi"]),
+    e("but they cannot swim", ["everyday","fantasy"]),
+    e("but the magic word is a secret", ["fantasy"]),
+    e("but everyone is watching them", ["school","everyday"]),
+    e("but the phone has no battery", ["everyday","scifi"]),
+    e("but the window is too small", ["mystery","spooky"]),
+    e("but they lose one shoe", ["everyday"]),
+    e("but the food is horrible", ["everyday"]),
+    e("but a very big cat is in the way", ["fantasy","everyday"]),
+    e("but they are allergic to flowers", ["everyday"]),
+    e("but the key is at the bottom of a lake", ["fantasy","mystery"])
+  ],
+  twist: [
+    e("Someone films the whole thing.", ["everyday","school"]),
+    e("All the lights go out.", ["spooky"]),
+    e("A big dog runs into the room.", ["everyday"]),
+    e("It starts to snow in July.", ["fantasy"]),
+    e("Their phone rings at the worst moment.", ["everyday"]),
+    e("A door opens by itself.", ["spooky","mystery"]),
+    e("Everybody starts singing.", ["school","everyday"]),
+    e("A robot walks in and says hello.", ["scifi"]),
+    e("They find a letter with their name on it.", ["mystery"]),
+    e("The teacher is watching.", ["school"]),
+    e("A window breaks.", ["mystery","spooky"]),
+    e("They wake up in a different place.", ["scifi","fantasy"]),
+    e("Their little brother knows the secret.", ["everyday","mystery"]),
+    e("The floor is suddenly very wet.", ["everyday"]),
+    e("A strange bird lands on their head.", ["fantasy","everyday"]),
+    e("Every clock stops.", ["spooky","scifi"]),
+    e("Somebody is already there.", ["mystery","spooky"]),
+    e("The bag is completely empty.", ["mystery","everyday"]),
+    e("They hear a very loud noise outside.", ["spooky","everyday"]),
+    e("Everything turns green.", ["scifi","fantasy"])
+  ],
+  words: {
+    everyday: ["late","noisy","hungry","lucky","street","money","secret","friend","tired","loud","empty","shoe"],
+    school:   ["homework","test","bell","desk","teacher","break","team","prize","notebook","gym","project","group"],
+    fantasy:  ["magic","dragon","castle","wish","spell","crown","forest","golden","giant","potion","star","cave"],
+    mystery:  ["clue","key","hidden","strange","note","missing","dark","door","question","watch","follow","truth"],
+    scifi:    ["robot","planet","space","machine","button","future","alien","screen","metal","engine","signal","fly"],
+    spooky:   ["ghost","dark","cold","shadow","noise","alone","moon","scream","empty","old","whisper","creak"]
+  },
+  connectors: ["One day,", "Then", "After that,", "Suddenly,", "But", "So", "Because", "In the end,"],
+  prefill: { start: "One day, ", problem: "But then, ", worst: "Now ", ending: "In the end, " }
 };
 
-const wordsByGenre = {
-  fantasy:   ["magic","kingdom","princess","wizard","enchanted","spell","castle","fairy","potion","goblin","dragon","unicorn","mysterious","golden","forest","glowing","ancient","prophecy","rune","amulet"],
-  adventure: ["journey","explorer","treasure","dangerous","quest","map","island","jungle","cave","daring","compass","voyage","rival","mission","target","wilderness","ruins","legend","escape","horizon"],
-  horror:    ["haunted","shadow","ghost","eerie","whisper","darkness","scream","nightmare","monster","vampire","cursed","dread","hollow","omen","blood","wail","crypt","sinister","creeping","void"],
-  action:    ["battle","sword","fight","chase","speed","powerful","warrior","mission","target","clash","ambush","shield","armor","siege","raid","rival","unstoppable","charge","explosive","stealth"]
+/* ---- A2 -------------------------------------------------- */
+DATA.A2 = {
+  who: [
+    e("A nervous magician with sweaty hands", ["fantasy","everyday"]),
+    e("A skateboarder who is scared of hills", ["everyday","school"]),
+    e("An android who is learning to lie", ["scifi"]),
+    e("A ghost who cannot scare anybody", ["spooky"]),
+    e("A student who never does homework", ["school"]),
+    e("A chef who is allergic to garlic", ["everyday"]),
+    e("A dragon who is a vegetarian", ["fantasy"]),
+    e("A YouTuber with only three followers", ["everyday","school"]),
+    e("A detective who is scared of dogs", ["mystery"]),
+    e("A goalkeeper who wears thick glasses", ["school","everyday"]),
+    e("A witch who is very bad at spelling", ["fantasy","school"]),
+    e("A tourist who cannot read the signs", ["everyday","mystery"]),
+    e("A werewolf who loves gardening", ["spooky"]),
+    e("A scientist who breaks everything", ["scifi"]),
+    e("A twin who pretends to be the other twin", ["mystery","school"]),
+    e("A grandfather with a secret past", ["mystery","everyday"]),
+    e("A talking cat with expensive taste", ["fantasy","everyday"]),
+    e("A drummer who cannot count to four", ["school","everyday"]),
+    e("A pilot who has never left the ground", ["scifi","everyday"]),
+    e("A librarian who hates silence", ["school","mystery"]),
+    e("A knight who is terrible at riding horses", ["fantasy"]),
+    e("A boy who dreams the future every Tuesday", ["mystery","spooky"]),
+    e("A vlogger who films everything, even breakfast", ["everyday","school"]),
+    e("A spy with a very loud laugh", ["mystery"]),
+    e("A robot dog that only listens on Fridays", ["scifi","everyday"]),
+    e("A girl who collects other people's lost keys", ["mystery","everyday"])
+  ],
+  wants: [
+    e("wants to win the school talent show", ["school"]),
+    e("wants to find out who broke the window", ["school","mystery"]),
+    e("wants to survive one week without a phone", ["everyday","school"]),
+    e("wants to build the fastest bike in town", ["everyday","scifi"]),
+    e("wants to visit a place that is not on any map", ["mystery","fantasy"]),
+    e("wants to prove that ghosts are real", ["spooky"]),
+    e("wants to make a thousand people laugh", ["everyday","school"]),
+    e("wants to return a very strange lost dog", ["everyday","mystery"]),
+    e("wants to escape from a house with no doors", ["spooky","mystery"]),
+    e("wants to bake a cake for somebody important", ["everyday"]),
+    e("wants to get a message to another planet", ["scifi"]),
+    e("wants to become the class president", ["school"]),
+    e("wants to find the last book in a series", ["school","mystery"]),
+    e("wants to break a curse before midnight", ["fantasy","spooky"]),
+    e("wants to say sorry to an old friend", ["everyday","school"]),
+    e("wants to catch the thing that lives in the basement", ["spooky"]),
+    e("wants to win a bet with their brother", ["everyday","school"]),
+    e("wants to fix a time machine before Monday", ["scifi"]),
+    e("wants to sell one very unusual painting", ["mystery","everyday"]),
+    e("wants to climb a mountain nobody has climbed", ["fantasy","everyday"]),
+    e("wants to teach a dragon good manners", ["fantasy"]),
+    e("wants to find the owner of a mysterious ring", ["mystery","fantasy"]),
+    e("wants to survive the school camping trip", ["school","everyday"]),
+    e("wants to become invisible for one day", ["fantasy","scifi"]),
+    e("wants to stop a robot from telling the truth", ["scifi"]),
+    e("wants to get the last ticket to a sold-out concert", ["everyday","school"])
+  ],
+  but: [
+    e("but they are terrified of the dark", ["spooky"]),
+    e("but nobody in town will help them", ["everyday","mystery"]),
+    e("but they have exactly four hours", ["everyday","school"]),
+    e("but the plan needs a key they do not have", ["mystery"]),
+    e("but the only witness is a parrot", ["mystery","fantasy"]),
+    e("but their little sister wants to come too", ["everyday","school"]),
+    e("but they are terrible at keeping secrets", ["school","mystery"]),
+    e("but the rules say it is impossible", ["school","scifi"]),
+    e("but somebody is following them", ["mystery","spooky"]),
+    e("but they are allergic to the one thing they need", ["everyday","fantasy"]),
+    e("but the internet is down everywhere", ["scifi","everyday"]),
+    e("but they already promised to be somewhere else", ["everyday","school"]),
+    e("but their best friend wants exactly the same thing", ["school","everyday"]),
+    e("but the last bus leaves in ten minutes", ["everyday"]),
+    e("but the machine only works when nobody is looking", ["scifi","mystery"]),
+    e("but they lost the instructions last summer", ["scifi","everyday"]),
+    e("but everyone thinks they are lying", ["mystery","school"]),
+    e("but the door only opens from the other side", ["spooky","mystery"]),
+    e("but they cannot remember Tuesday at all", ["spooky","mystery"]),
+    e("but the map is written backwards", ["fantasy","mystery"]),
+    e("but a big storm is coming very fast", ["everyday","fantasy"]),
+    e("but the magic stops working after sunset", ["fantasy","spooky"]),
+    e("but they are extremely bad at running", ["everyday","school"]),
+    e("but they promised their mother they would stay home", ["everyday","spooky"]),
+    e("but the price is something they cannot pay", ["fantasy","everyday"]),
+    e("but their phone keeps sending messages by itself", ["scifi","spooky"])
+  ],
+  twist: [
+    e("Somebody films it and puts it online.", ["everyday","school"]),
+    e("The power goes out in the whole street.", ["spooky","everyday"]),
+    e("An old woman says she has been waiting for them.", ["mystery","fantasy"]),
+    e("Their name is already written on the list.", ["mystery","spooky"]),
+    e("The dog runs away with the only evidence.", ["mystery","everyday"]),
+    e("It turns out to be the wrong house.", ["everyday","mystery"]),
+    e("A stranger knows their nickname.", ["mystery","spooky"]),
+    e("The machine switches itself on.", ["scifi","spooky"]),
+    e("Their teacher is standing in the doorway.", ["school"]),
+    e("There is a second door behind the first one.", ["mystery","fantasy"]),
+    e("The photograph shows somebody who is not there.", ["spooky","mystery"]),
+    e("Everything in the room is exactly the same as yesterday.", ["scifi","spooky"]),
+    e("Their best friend has been lying all week.", ["school","everyday"]),
+    e("The lift stops between two floors.", ["everyday","spooky"]),
+    e("A voice on the radio says their address.", ["scifi","spooky"]),
+    e("The keys were in their pocket the whole time.", ["everyday","mystery"]),
+    e("Somebody has cleaned the room.", ["mystery","spooky"]),
+    e("It starts snowing indoors.", ["fantasy"]),
+    e("The cat has been listening to everything.", ["fantasy","mystery"]),
+    e("The clock says it is yesterday.", ["scifi","spooky"])
+  ],
+  words: {
+    everyday: ["awkward","embarrassing","promise","argument","neighbour","excuse","delivery","stubborn","crowd","borrow","complain","luckily"],
+    school:   ["deadline","rehearsal","detention","classmate","project","canteen","uniform","presentation","rumour","locker","trophy","group"],
+    fantasy:  ["curse","enchanted","quest","kingdom","wizard","glowing","ancient","beast","riddle","sword","hidden","legend"],
+    mystery:  ["suspect","evidence","alibi","disappear","clue","witness","locked","secret","footprints","stranger","warning","truth"],
+    scifi:    ["experiment","invention","signal","orbit","android","circuit","laboratory","glitch","satellite","upgrade","portal","sensor"],
+    spooky:   ["creaking","haunted","shiver","basement","midnight","whisper","fog","graveyard","candle","echo","chill","abandoned"]
+  },
+  connectors: ["It all started when", "A few minutes later,", "Suddenly,", "Because of this,", "Luckily,", "Unluckily,", "While", "Finally,"],
+  prefill: { start: "It all started when ", problem: "Then something went wrong. ", worst: "", ending: "In the end, " }
 };
 
-// ── BEGINNER DATA ────────────────────────────────────────────────────────────
-
-const beginnerElements = {
-  "A puppy is lost in a big forest.": "The puppy must find its way home before it gets dark.",
-  "A child finds a magic door in their bedroom.": "The door leads to a world full of surprises.",
-  "A friendly giant lives alone on a tall mountain.": "He wants to make friends but everyone is scared of him.",
-  "A little dragon cannot make fire.": "All the other dragons can, and he feels left out.",
-  "A girl wakes up and can talk to animals.": "She is very surprised — and so are the animals!",
-  "A boy finds a map in an old book.": "The map shows the way to a secret treasure.",
-  "A witch has lost her magic hat.": "Without it, her spells go wrong in funny ways.",
-  "A small robot wants to learn how to dance.": "He practises every day but always falls over.",
-  "Two children get on the wrong school bus.": "The bus takes them somewhere very unexpected.",
-  "A cat can suddenly fly.": "It is amazing — but also a little bit dangerous.",
-  "A snowman comes to life at midnight.": "He only has until morning before the sun comes up.",
-  "A mermaid wants to visit the city.": "She has never seen cars, shops, or pizza before.",
-  "A ghost lives in the school library.": "She just wants someone to read books with her.",
-  "A boy plants a magic seed in his garden.": "The next morning, a giant plant reaches up to the clouds.",
-  "A princess is very bored in her castle.": "She decides to go on an adventure — alone!",
-  "A young wizard makes a spell go wrong.": "Now everything in the house is upside down.",
-  "A talking parrot knows a big secret.": "But he will only tell it to the right person.",
-  "A shy monster lives under the bridge.": "He is not mean — he is just very lonely.",
-  "A group of friends find a hidden cave.": "Inside the cave, there is a beautiful glowing light.",
-  "A fairy loses her wings in a storm.": "She must find them before she forgets how to fly.",
-  "A boy gets a letter from his future self.": "The letter says: 'Do NOT open the red box.'",
-  "A little alien crash-lands in a school playground.": "She needs help getting back to her planet.",
-  "A magic paintbrush draws things that come to life.": "The girl using it must be very careful what she draws.",
-  "A dog learns to read.": "Now he reads every sign, every label, and every book he can find.",
-  "A lighthouse starts sending strange signals.": "A child living nearby decides to find out why.",
-  "A kingdom has no colour — everything is grey.": "One small girl sets out to bring colour back.",
-  "A boy's shadow starts doing different things.": "It waves when he doesn't. It points at things. It is trying to tell him something.",
-  "A tree in the park can grant one wish.": "But everyone in town wants a different thing.",
-  "A girl discovers her grandmother is a superhero.": "Grandma has been hiding it for a very long time.",
-  "A toy comes to life when no one is watching.": "All the toys in the room have their own secret world."
+/* ---- B1 -------------------------------------------------- */
+DATA.B1 = {
+  who: [
+    e("A ridiculously overconfident magician", ["fantasy","everyday"]),
+    e("A vampire who has gone completely vegan", ["spooky"]),
+    e("An exchange student who has told one enormous lie", ["school"]),
+    e("A retired superhero working in a supermarket", ["everyday","scifi"]),
+    e("A conspiracy theorist who is right this time", ["mystery","scifi"]),
+    e("A goalkeeper who has never once touched the ball", ["school","everyday"]),
+    e("An AI assistant developing a sense of humour", ["scifi"]),
+    e("A ghost who is embarrassed about how they died", ["spooky"]),
+    e("A prize-winning liar with a guilty conscience", ["mystery","school"]),
+    e("A knight with severe stage fright", ["fantasy"]),
+    e("An influencer whose followers are all bots", ["everyday","scifi"]),
+    e("A substitute teacher who knows far too much", ["school","mystery"]),
+    e("A time traveller who keeps arriving three minutes late", ["scifi"]),
+    e("A locksmith who cannot get into their own flat", ["mystery","everyday"]),
+    e("A witch who is afraid of her own cat", ["fantasy","spooky"]),
+    e("A brilliant student who cheats at everything except exams", ["school"]),
+    e("A sailor who gets seasick", ["everyday","fantasy"]),
+    e("A bodyguard smaller than everyone they protect", ["everyday","mystery"]),
+    e("A dragon running a small hotel", ["fantasy"]),
+    e("A twin who has been covering for the other for years", ["mystery","school"]),
+    e("A weather forecaster whose predictions come true a bit too exactly", ["scifi","spooky"]),
+    e("A museum guard who talks to the paintings", ["mystery","spooky"]),
+    e("An astronaut who is afraid of silence", ["scifi"]),
+    e("A comedian who has completely run out of jokes", ["everyday","school"]),
+    e("A collector of things nobody else wants", ["mystery","everyday"]),
+    e("A translator who has started improving what people say", ["everyday","mystery"])
+  ],
+  wants: [
+    e("wants to win a bet that has got completely out of hand", ["everyday","school"]),
+    e("wants to find out why the town has no photographs from 1998", ["mystery","spooky"]),
+    e("wants to give a speech without mentioning the accident", ["school","everyday"]),
+    e("wants to return something they should never have taken", ["mystery","fantasy"]),
+    e("wants to survive a family dinner while hiding a huge secret", ["everyday","school"]),
+    e("wants to shut down a machine that is being far too helpful", ["scifi"]),
+    e("wants to organise the perfect surprise party", ["everyday","school"]),
+    e("wants to break a curse that only affects Wednesdays", ["fantasy","spooky"]),
+    e("wants to convince everyone that the message is real", ["scifi","mystery"]),
+    e("wants to get through one week without telling a single lie", ["school","everyday"]),
+    e("wants to find the one person who remembers what happened", ["mystery","spooky"]),
+    e("wants to win back a friendship they ruined", ["everyday","school"]),
+    e("wants to prove the new student is not who they say they are", ["school","mystery"]),
+    e("wants to escape a town that will not let anyone leave", ["spooky","scifi"]),
+    e("wants to finish the painting their grandmother left unfinished", ["everyday","mystery"]),
+    e("wants to deliver a package without opening it", ["mystery","everyday"]),
+    e("wants to teach a very stubborn dragon to fly", ["fantasy"]),
+    e("wants to fix the timeline before anybody notices", ["scifi"]),
+    e("wants to sell the family house before the buyers hear the noises", ["spooky","mystery"]),
+    e("wants to beat their older sister at something, anything", ["everyday","school"]),
+    e("wants to disappear completely for exactly one day", ["mystery","everyday"]),
+    e("wants to translate a book that nobody is supposed to read", ["fantasy","mystery"]),
+    e("wants to get an apology out of somebody impossible", ["everyday","school"]),
+    e("wants to keep a promise made to somebody who is no longer around", ["spooky","everyday"]),
+    e("wants to win the competition without cheating this time", ["school","everyday"]),
+    e("wants to find out what the neighbours do at three in the morning", ["mystery","spooky"])
+  ],
+  but: [
+    e("but they have completely lost their nerve", ["everyday","school"]),
+    e("but the only person who can help them hates them", ["everyday","mystery"]),
+    e("but every clue leads back to their own family", ["mystery","spooky"]),
+    e("but they have already told everyone the opposite", ["school","everyday"]),
+    e("but there are only nine hours left", ["everyday","scifi"]),
+    e("but they cannot swim, and this involves a lake", ["everyday","fantasy"]),
+    e("but somebody has been reading their messages", ["mystery","scifi"]),
+    e("but the truth would destroy somebody they love", ["everyday","mystery"]),
+    e("but the rules changed overnight and nobody explained why", ["school","scifi"]),
+    e("but their memory of that night is completely blank", ["spooky","mystery"]),
+    e("but the machine has started making its own decisions", ["scifi"]),
+    e("but the whole town is pretending nothing happened", ["spooky","mystery"]),
+    e("but they promised to keep out of it", ["everyday","school"]),
+    e("but the evidence disappears every time they look away", ["mystery","spooky"]),
+    e("but they are running out of excuses, fast", ["school","everyday"]),
+    e("but the magic only works if they genuinely mean it", ["fantasy"]),
+    e("but the only route goes past the one place they avoid", ["spooky","everyday"]),
+    e("but they have exactly one chance and no plan at all", ["everyday","school"]),
+    e("but their partner in this is a spectacularly bad liar", ["mystery","school"]),
+    e("but the phone in their pocket is not theirs", ["mystery","scifi"]),
+    e("but everybody keeps calling them by the wrong name", ["spooky","mystery"]),
+    e("but doing it means admitting they were wrong", ["everyday","school"]),
+    e("but the door they need is on a map that no longer exists", ["fantasy","mystery"]),
+    e("but they have been asleep for much longer than they thought", ["scifi","spooky"]),
+    e("but the deadline is the same day as the wedding", ["everyday","school"]),
+    e("but somebody is doing exactly the same thing, one step ahead", ["mystery","scifi"])
+  ],
+  twist: [
+    e("Somebody films the entire thing and posts it before midnight.", ["everyday","school"]),
+    e("The handwriting on the note is unmistakably their own.", ["mystery","spooky"]),
+    e("Everyone in the room already knew.", ["school","mystery"]),
+    e("The lights come back on and one person is missing.", ["spooky","mystery"]),
+    e("The machine answers a question nobody asked.", ["scifi"]),
+    e("A parcel arrives addressed to somebody who died years ago.", ["spooky","mystery"]),
+    e("Their oldest friend takes the other side.", ["everyday","school"]),
+    e("The photograph was taken from inside the house.", ["spooky","mystery"]),
+    e("It turns out the deadline was yesterday.", ["school","everyday"]),
+    e("The dog will not go into that room.", ["spooky","everyday"]),
+    e("Somebody offers them exactly what they want, for a price.", ["fantasy","mystery"]),
+    e("The recording contains a second voice.", ["scifi","spooky"]),
+    e("Their little brother has been keeping notes all along.", ["everyday","mystery"]),
+    e("The door locks behind them.", ["spooky","mystery"]),
+    e("Half the town suddenly remembers it differently.", ["scifi","spooky"]),
+    e("The person they have been looking for has been looking for them.", ["mystery","fantasy"]),
+    e("The clock in the hall is running backwards.", ["scifi","spooky"]),
+    e("A message arrives from an account that was deleted.", ["scifi","spooky"]),
+    e("It works, and that is exactly the problem.", ["fantasy","scifi"]),
+    e("Nobody else can see it.", ["spooky","fantasy"])
+  ],
+  words: {
+    everyday: ["reluctantly","apparently","betrayal","apology","reputation","overwhelmed","confess","sarcastic","relieved","interfere","exhausted","admit"],
+    school:   ["deadline","rehearsal","scholarship","rumour","expectation","pressure","assembly","cheating","rival","achievement","exclude","impress"],
+    fantasy:  ["prophecy","enchantment","banished","realm","summon","forbidden","bargain","mortal","guardian","ancient","fate","vanish"],
+    mystery:  ["motive","testimony","coincidence","deception","unravel","confession","anonymous","suspicion","forgery","alibi","conceal","trace"],
+    scifi:    ["prototype","malfunction","simulation","autonomous","transmission","artificial","anomaly","obsolete","protocol","circuit","override","drift"],
+    spooky:   ["dread","apparition","flicker","silhouette","unsettling","lurk","restless","decay","murmur","chill","abandoned","eerie"]
+  },
+  connectors: ["At first,", "Meanwhile,", "As soon as", "Even though", "To make things worse,", "Just when", "Somehow,", "In the end,"],
+  prefill: { start: "", problem: "", worst: "", ending: "" }
 };
 
-const beginnerWordsByGenre = {
-  fantasy:   ["castle","dragon","fairy","magic","spell","witch","wizard","potion","unicorn","giant","wand","crown","forest","star","moon","golden","enchanted","goblin","wish","kingdom"],
-  adventure: ["map","treasure","cave","island","journey","boat","jungle","bridge","secret","explore","lost","find","danger","river","mountain","compass","clue","escape","brave","rope"],
-  horror:    ["ghost","monster","dark","shadow","scream","haunted","night","scary","spider","lost","door","strange","noise","alone","fog","cold","old house","candle","silent","eyes"],
-  action:    ["run","chase","jump","fight","fast","catch","climb","rescue","sword","shield","hit","strong","brave","crash","throw","fall","win","battle","team","hero"]
+/* ---- B2 -------------------------------------------------- */
+DATA.B2 = {
+  who: [
+    e("A pathologically honest diplomat", ["everyday","mystery"]),
+    e("An immortal who is thoroughly bored of it", ["fantasy","spooky"]),
+    e("A ghostwriter haunted by an actual ghost", ["spooky","mystery"]),
+    e("A motivational speaker in the middle of a personal collapse", ["everyday","school"]),
+    e("An algorithm with strong opinions about art", ["scifi"]),
+    e("A professional sceptic confronted with the inexplicable", ["mystery","spooky"]),
+    e("A retired con artist trying to go straight, badly", ["mystery","everyday"]),
+    e("An overachiever who has just failed for the first time", ["school"]),
+    e("A folklorist who has started appearing in the folklore", ["fantasy","spooky"]),
+    e("A translator quietly rewriting history one sentence at a time", ["mystery","everyday"]),
+    e("A prodigy who peaked at fourteen", ["school","everyday"]),
+    e("A courier who has never once asked what is in the box", ["mystery","scifi"]),
+    e("An archivist protecting a document that should not exist", ["mystery","fantasy"]),
+    e("A stand-up comedian working a room that will not laugh", ["everyday","school"]),
+    e("An astronaut who has begun receiving replies", ["scifi","spooky"]),
+    e("A dragon negotiating planning permission", ["fantasy"]),
+    e("A referee with an unfortunate loyalty", ["school","everyday"]),
+    e("A therapist with exactly the same problem as their client", ["everyday","mystery"]),
+    e("A witness who genuinely cannot decide what they saw", ["mystery","spooky"]),
+    e("A chef cooking for somebody who cannot taste anything", ["everyday","fantasy"]),
+    e("A climate scientist whose models have started predicting personal events", ["scifi","spooky"]),
+    e("An understudy who has been waiting eleven years", ["school","everyday"]),
+    e("A locksmith with a very selective conscience", ["mystery","everyday"]),
+    e("A time traveller under strict instructions to change nothing", ["scifi"]),
+    e("A biographer who has fallen out with their subject", ["mystery","everyday"]),
+    e("A perfectionist forced to improvise", ["everyday","school"])
+  ],
+  wants: [
+    e("wants to deliver an apology eleven years overdue", ["everyday","school"]),
+    e("wants to withdraw a story before it goes to print", ["mystery","everyday"]),
+    e("wants to establish what actually happened on the last night of the trip", ["mystery","spooky"]),
+    e("wants to shut down an experiment that has just started working", ["scifi"]),
+    e("wants to sit through the reunion without anyone raising the subject", ["everyday","school"]),
+    e("wants to persuade a room of strangers of something implausible but true", ["mystery","school"]),
+    e("wants to break an agreement made by somebody else entirely", ["fantasy","mystery"]),
+    e("wants to get through the ceremony without the truth surfacing", ["everyday","school"]),
+    e("wants to find the one recording that was never erased", ["scifi","mystery"]),
+    e("wants to hand back a gift that came with conditions", ["fantasy","everyday"]),
+    e("wants to return to a place that no longer appears on any map", ["fantasy","scifi"]),
+    e("wants to lose convincingly without anybody noticing", ["school","everyday"]),
+    e("wants to finish somebody else's work exactly as they would have", ["everyday","mystery"]),
+    e("wants to be believed, for once, about something enormous", ["mystery","spooky"]),
+    e("wants to leave the town before the anniversary", ["spooky","mystery"]),
+    e("wants to buy back a letter they should never have sold", ["mystery","everyday"]),
+    e("wants to keep a secret that three other people already know", ["school","mystery"]),
+    e("wants to sabotage their own extremely successful plan", ["everyday","scifi"]),
+    e("wants to explain the noises without mentioning the basement", ["spooky"]),
+    e("wants to disappear from the record entirely", ["mystery","scifi"]),
+    e("wants to teach something they have never actually understood", ["school","everyday"]),
+    e("wants to close a door that has been open since 1974", ["spooky","fantasy"]),
+    e("wants to win an argument that stopped mattering years ago", ["everyday","school"]),
+    e("wants to identify the person in the photograph before anyone else does", ["mystery","spooky"]),
+    e("wants to make the machine admit that it was wrong", ["scifi"]),
+    e("wants to hold the family together for one more evening", ["everyday","mystery"])
+  ],
+  but: [
+    e("but they have staked their reputation on the opposite position", ["school","mystery"]),
+    e("but the only reliable witness is nine years old", ["mystery","everyday"]),
+    e("but every version of the story contradicts the last", ["mystery","spooky"]),
+    e("but the person they need to convince stopped listening years ago", ["everyday","school"]),
+    e("but they are constitutionally incapable of asking for help", ["everyday","school"]),
+    e("but the evidence would incriminate entirely the wrong person", ["mystery"]),
+    e("but the deadline and their sister's wedding fall on the same afternoon", ["everyday","school"]),
+    e("but the system has already logged their intention", ["scifi"]),
+    e("but they have been remembering it wrong for a decade", ["spooky","mystery"]),
+    e("but somebody has been anticipating every move", ["mystery","scifi"]),
+    e("but the truth is considerably less interesting than the rumour", ["everyday","school"]),
+    e("but there is no version of this where everybody forgives them", ["everyday","mystery"]),
+    e("but the arrangement expires at sunset and nobody will say why", ["fantasy","spooky"]),
+    e("but the file has been edited, and recently", ["scifi","mystery"]),
+    e("but the only route runs through a conversation they have avoided for years", ["everyday","spooky"]),
+    e("but they are being extremely well paid to fail", ["mystery","everyday"]),
+    e("but the room is full of people who were there", ["school","mystery"]),
+    e("but the thing they promised is not theirs to give", ["fantasy","everyday"]),
+    e("but their own handwriting appears in the margins", ["spooky","mystery"]),
+    e("but success would prove their worst critic right", ["school","everyday"]),
+    e("but the recording cuts out at the crucial moment", ["scifi","mystery"]),
+    e("but they are the last person anybody would believe", ["mystery","spooky"]),
+    e("but the cost is paid by somebody who never agreed to it", ["fantasy","scifi"]),
+    e("but the town has decided, collectively, to move on", ["spooky","everyday"]),
+    e("but doing it well and doing it right are no longer the same thing", ["everyday","school"]),
+    e("but somebody has already published the ending", ["scifi","mystery"])
+  ],
+  twist: [
+    e("The footage exists, and it has been online since Tuesday.", ["everyday","scifi"]),
+    e("The signature at the bottom is theirs, dated next year.", ["scifi","spooky"]),
+    e("Everyone in the room stands up at the same moment.", ["spooky","school"]),
+    e("The apology arrives before it is given.", ["scifi","fantasy"]),
+    e("The house was sold three months ago.", ["mystery","everyday"]),
+    e("The second envelope was never meant to be opened.", ["mystery","fantasy"]),
+    e("Their oldest ally has been briefing the other side all along.", ["mystery","school"]),
+    e("The machine declines.", ["scifi"]),
+    e("A name is missing from the list, and it should not be.", ["mystery","spooky"]),
+    e("The photograph was taken from a window that does not exist.", ["spooky","mystery"]),
+    e("Somebody quietly returns the object, cleaned.", ["mystery","spooky"]),
+    e("The dog has been going down to the basement every night.", ["spooky","everyday"]),
+    e("It emerges that they were never the one being tested.", ["scifi","school"]),
+    e("The offer is repeated, and this time it is generous.", ["fantasy","mystery"]),
+    e("Everyone remembers the evening differently, and all of them are certain.", ["spooky","mystery"]),
+    e("The last page has been torn out, and burned recently.", ["mystery","fantasy"]),
+    e("Their phone rings from a number that belongs to them.", ["scifi","spooky"]),
+    e("The other person has been rehearsing this conversation too.", ["everyday","school"]),
+    e("Nothing happens at all, which is far worse.", ["spooky","scifi"]),
+    e("Somebody says thank you, and means it.", ["everyday","fantasy"])
+  ],
+  words: {
+    everyday: ["reluctance","ambivalent","pretext","fraught","inadvertently","reticent","candour","complicit","contrition","estranged","gracious","concede"],
+    school:   ["accolade","plagiarism","cohort","aptitude","dissent","exemplary","reprimand","curriculum","scrutiny","precocious","meritocracy","peer"],
+    fantasy:  ["covenant","invocation","liminal","dominion","emissary","hallowed","reckoning","transmute","arcane","threshold","binding","wane"],
+    mystery:  ["corroborate","discrepancy","implicate","obfuscate","provenance","circumstantial","recant","incriminate","forensic","complicity","pretext","testify"],
+    scifi:    ["singularity","redundancy","emergent","calibrate","sentience","contingency","obsolescence","telemetry","proliferate","autonomy","aberration","substrate"],
+    spooky:   ["portent","malaise","spectral","desolate","inexorable","uncanny","vestige","linger","disquiet","revenant","threshold","hush"]
+  },
+  connectors: ["What nobody realised was", "Despite everything,", "By the time", "Against all odds,", "It turned out that", "In hindsight,", "For the first time,", "And that was how"],
+  prefill: { start: "", problem: "", worst: "", ending: "" }
 };
 
+/* ---- Shared pools ---------------------------------------- */
+var CURVEBALLS = [
+  "Somebody starts crying, and it is not who you expect.",
+  "The power goes out.",
+  "A dog gets involved.",
+  "Somebody's phone rings at the worst possible moment.",
+  "It starts raining. Hard.",
+  "Somebody tells a lie to protect another person.",
+  "A stranger claims they know what happened.",
+  "The door will not open.",
+  "Somebody arrives who was not invited.",
+  "Two characters swap sides.",
+  "A very old photograph turns up.",
+  "Everyone starts laughing at completely the wrong moment.",
+  "Somebody faints.",
+  "The plan works. Too well.",
+  "A message arrives in the wrong language.",
+  "Somebody's little brother has been listening at the door.",
+  "The clock is wrong.",
+  "Something breaks that cannot be replaced.",
+  "Somebody apologises and nobody accepts it.",
+  "A window opens by itself.",
+  "The food is ruined.",
+  "Somebody finds a key and has no idea what it opens.",
+  "The lights come back on and something has moved.",
+  "Somebody says the wrong name."
+];
 
+var TITLE_ADJ = ["Last","Secret","Silent","Impossible","Missing","Golden","Forgotten","Terrible","Curious","Unlucky","Strange","Perfect","Broken","Endless","Quiet","Furious","Borrowed","Wrong"];
+var TITLE_NOUN = ["Letter","Promise","Key","Machine","Sunday","Neighbour","Mistake","Photograph","Door","Song","Bet","Detective","Storm","Guest","Recipe","Passenger","Rehearsal","Shortcut"];
+var TITLE_PLACE = ["Room 12","Hollow Street","the Old Pier","Green Hill","the Night Bus","the Back Garden","Flat 4B","the Lighthouse","the School Roof","Winter","the Last Train","the Blue House","Platform 3","the Long Weekend"];
 
-// ── STATE ────────────────────────────────────────────────────────────────────
+var BEATS = [
+  { id: "start",   name: "Start",        q: "Where are we? Who is there? What is normal?" },
+  { id: "problem", name: "Problem",      q: "What goes wrong first?" },
+  { id: "worst",   name: "Worst moment", q: "When does it look hopeless?" },
+  { id: "ending",  name: "Ending",       q: "How does it finish? Happy, sad or weird, your call." }
+];
 
-let currentLevel = 'beginner';
-let currentGenre = 'all';
+var SLOTS = [
+  { id: "who",   tag: "WHO" },
+  { id: "wants", tag: "WANTS" },
+  { id: "but",   tag: "BUT" },
+  { id: "twist", tag: "AND THEN" }
+];
 
-function activeElements()     { return currentLevel === 'beginner' ? beginnerElements : storyElements; }
-function activeWordsByGenre() { return currentLevel === 'beginner' ? beginnerWordsByGenre : wordsByGenre; }
+/* ===========================================================
+   State
+   =========================================================== */
 
-function buildWordPool(src) {
-  return Object.fromEntries(Object.keys(src).map(g => [g, [...src[g]]]));
+var KEY = "storySpark.v2";
+
+var state = {
+  level: "A2",
+  genre: "all",
+  spark: { who: "", wants: "", but: "", twist: "" },
+  locks: { who: false, wants: false, but: false, twist: false },
+  title: "",
+  words: [],
+  beats: { start: "", problem: "", worst: "", ending: "" },
+  box: [],
+  big: false
+};
+
+var lastBeat = "start";
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (err) {}
 }
 
-let remainingElements = Object.keys(beginnerElements);
-let remainingWords    = buildWordPool(beginnerWordsByGenre);
-let historyItems = [];
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (!raw) return false;
+    var s = JSON.parse(raw);
+    if (!s || !s.spark) return false;
+    if (LEVELS.indexOf(s.level) === -1) s.level = "A2";
+    state.level = s.level;
+    state.genre = s.genre || "all";
+    state.spark = s.spark;
+    state.locks = s.locks || { who: false, wants: false, but: false, twist: false };
+    state.title = s.title || "";
+    state.words = s.words || [];
+    state.beats = s.beats || { start: "", problem: "", worst: "", ending: "" };
+    state.box = s.box || [];
+    state.big = !!s.big;
+    return !!state.spark.who;
+  } catch (err) { return false; }
+}
 
-// ── LEVEL TOGGLE ─────────────────────────────────────────────────────────────
+/* ===========================================================
+   Picking
+   =========================================================== */
 
-function setLevel(level) {
-  if (level === currentLevel) return;
-  currentLevel = level;
-  document.querySelectorAll('.level-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.level === level);
+function pool(slot) {
+  var all = DATA[state.level][slot];
+  if (state.genre === "all") return all;
+  var filtered = all.filter(function (item) { return item.g.indexOf(state.genre) !== -1; });
+  return filtered.length >= 3 ? filtered : all;
+}
+
+function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+
+function pickSlot(slot) {
+  var list = pool(slot);
+  var current = state.spark[slot];
+  var choice = pick(list).t;
+  var guard = 0;
+  while (choice === current && list.length > 1 && guard < 12) { choice = pick(list).t; guard++; }
+  return choice;
+}
+
+function wordPool() {
+  var w = DATA[state.level].words;
+  if (state.genre !== "all" && w[state.genre]) return w[state.genre].slice();
+  var merged = [];
+  for (var k in w) { if (w.hasOwnProperty(k)) merged = merged.concat(w[k]); }
+  return merged;
+}
+
+/* ===========================================================
+   Actions
+   =========================================================== */
+
+var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function spin(done) {
+  var m = document.getElementById("machine");
+  if (reduceMotion) { done(); return; }
+  m.classList.add("rolling");
+  setTimeout(function () { m.classList.remove("rolling"); done(); }, 190);
+}
+
+function rollAll() {
+  spin(function () {
+    SLOTS.forEach(function (s) {
+      if (!state.locks[s.id]) state.spark[s.id] = pickSlot(s.id);
+    });
+    rollTitle(true);
+    rollWords(true);
+    addToBox();
+    renderMachine();
+    save();
   });
-  remainingElements = Object.keys(activeElements());
-  remainingWords    = buildWordPool(activeWordsByGenre());
-  const eBox = document.getElementById('elementBox');
-  eBox.classList.remove('has-result');
-  eBox.innerHTML = '<span class="result-placeholder">Hit Inspire Me to get started!</span>';
-  const wBox = document.getElementById('wordBox');
-  wBox.classList.remove('has-result');
-  wBox.innerHTML = '<span class="result-placeholder">—</span>';
 }
 
-// ── GENRE FILTER ─────────────────────────────────────────────────────────────
-
-document.querySelectorAll('.genre-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentGenre = btn.dataset.genre;
+function rollSlot(slot) {
+  state.locks[slot] = false;
+  spin(function () {
+    state.spark[slot] = pickSlot(slot);
+    renderMachine();
+    save();
   });
-});
-
-// ── CORE LOGIC ───────────────────────────────────────────────────────────────
-
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function getWord() {
-  const src    = activeWordsByGenre();
-  const genres = currentGenre === 'all' ? Object.keys(src) : [currentGenre];
-  const available = genres.filter(g => remainingWords[g] && remainingWords[g].length > 0);
-  if (available.length === 0) {
-    genres.forEach(g => { remainingWords[g] = [...src[g]]; });
-    return getWord();
+function toggleLock(slot) {
+  state.locks[slot] = !state.locks[slot];
+  renderMachine();
+  save();
+}
+
+function rollTitle(quiet) {
+  state.title = "The " + pick(TITLE_ADJ) + " " + pick(TITLE_NOUN) + " of " + pick(TITLE_PLACE);
+  if (!quiet) { renderMachine(); save(); }
+}
+
+function rollWords(quiet) {
+  var p = wordPool();
+  var out = [];
+  var guard = 0;
+  while (out.length < 3 && guard < 90) {
+    var w = pick(p);
+    if (out.indexOf(w) === -1) out.push(w);
+    guard++;
   }
-  const genre = pickRandom(available);
-  const pool  = remainingWords[genre];
-  const idx   = Math.floor(Math.random() * pool.length);
-  const word  = pool.splice(idx, 1)[0];
-  return { word, genre };
+  state.words = out;
+  if (!quiet) { renderMachine(); save(); }
 }
 
-function inspire() {
-  const elems = activeElements();
-  if (remainingElements.length === 0) remainingElements = Object.keys(elems);
-  const eIdx    = Math.floor(Math.random() * remainingElements.length);
-  const element = remainingElements.splice(eIdx, 1)[0];
-  const desc    = elems[element];
-
-  // Pick word
-  const { word, genre } = getWord();
-
-  // Update element box
-  const eBox = document.getElementById('elementBox');
-  eBox.classList.add('has-result');
-  eBox.innerHTML = `<div class="result-main">${element}</div><div class="result-desc">${desc}</div>`;
-  eBox.classList.remove('sparking');
-  void eBox.offsetWidth;
-  eBox.classList.add('sparking');
-
-  // Update word box
-  const wBox = document.getElementById('wordBox');
-  wBox.classList.add('has-result');
-  wBox.innerHTML = `<span class="word-badge ${genre}">${word}</span><div class="word-genre-label">${genre === 'all' ? 'word' : genre}</div>`;
-  wBox.classList.remove('sparking');
-  void wBox.offsetWidth;
-  wBox.classList.add('sparking');
-
-  // Add to history
-  addHistory(element, word, genre, currentLevel);
+function setLevel(lv) {
+  if (lv === state.level) return;
+  var oldPre = DATA[state.level].prefill;
+  var newPre = DATA[lv].prefill;
+  state.level = lv;
+  BEATS.forEach(function (b) {
+    var v = state.beats[b.id];
+    if (v === "" || v === oldPre[b.id]) state.beats[b.id] = newPre[b.id];
+  });
+  state.locks = { who: false, wants: false, but: false, twist: false };
+  rollAll();
+  renderControls();
+  renderConnectors();
+  renderBeats();
 }
 
-function addHistory(element, word, genre, level) {
-  historyItems.unshift({ element, word, genre, level });
-  renderHistory();
-  updateHistoryEmoji(word, element);
+function setGenre(g) {
+  state.genre = g;
+  rollAll();
+  renderControls();
 }
 
-// ── WORD → EMOJI MAP ─────────────────────────────────────────────────────────
-
-const wordEmojiMap = {
-  // fantasy
-  magic:'🪄', kingdom:'👑', princess:'👸', wizard:'🧙', enchanted:'✨', spell:'🔮',
-  castle:'🏰', fairy:'🧚', potion:'🧪', goblin:'👺', dragon:'🐉', unicorn:'🦄',
-  mysterious:'🌀', golden:'🌟', forest:'🌲', glowing:'💡', ancient:'📜', prophecy:'🔭',
-  rune:'🔯', amulet:'📿', wish:'🌠', wand:'🪄', crown:'👑', star:'⭐', moon:'🌙',
-  // adventure
-  journey:'🗺️', explorer:'🧭', treasure:'💎', dangerous:'⚠️', quest:'⚔️', map:'🗺️',
-  island:'🏝️', jungle:'🌴', cave:'🪨', daring:'🎯', compass:'🧭', voyage:'⛵',
-  rival:'🤺', mission:'🎯', target:'🎯', wilderness:'🏔️', ruins:'🏚️', legend:'📖',
-  escape:'🏃', horizon:'🌅', boat:'⛵', bridge:'🌉', secret:'🔐', river:'🌊',
-  mountain:'⛰️', clue:'🔍', brave:'🦁', rope:'🪢',
-  // horror
-  haunted:'👻', shadow:'🌑', ghost:'👻', eerie:'🕯️', whisper:'🤫', darkness:'🌑',
-  scream:'😱', nightmare:'😨', monster:'👾', vampire:'🧛', cursed:'💀', dread:'😰',
-  hollow:'🕳️', omen:'🦅', blood:'🩸', wail:'😭', crypt:'⚰️', sinister:'😈',
-  creeping:'🕷️', void:'🕳️', dark:'🌑', scary:'😱', spider:'🕷️', door:'🚪',
-  strange:'❓', noise:'📢', alone:'🙁', fog:'🌫️', cold:'🥶', candle:'🕯️', silent:'🤫', eyes:'👀',
-  // action
-  battle:'⚔️', sword:'🗡️', fight:'🥊', chase:'🏃', speed:'⚡', powerful:'💪',
-  warrior:'🛡️', clash:'💥', ambush:'🎭', shield:'🛡️', armor:'🦺', siege:'🏹',
-  raid:'⚡', unstoppable:'🔥', charge:'⚡', explosive:'💣', stealth:'🥷',
-  run:'🏃', jump:'🦘', fast:'⚡', catch:'🤲', climb:'🧗', rescue:'🚨',
-  hit:'👊', strong:'💪', crash:'💥', throw:'🎯', fall:'🍂', win:'🏆', team:'🤝', hero:'🦸',
-  // story element keywords → emojis
-  puppy:'🐶', dog:'🐶', cat:'🐱', dragon2:'🐉', fairy2:'🧚', giant:'🏔️',
-  robot:'🤖', mermaid:'🧜', snowman:'⛄', parrot:'🦜', alien:'👽', paintbrush:'🎨',
-  ghost2:'👻', princess2:'👸', wizard2:'🧙', witch:'🧙‍♀️', treasure2:'💎',
-  map2:'🗺️', cave2:'🪨', seed:'🌱', lighthouse:'🗼', ship:'⛵', kingdom2:'👑'
-};
-
-const genreDefaultEmoji = {
-  fantasy: '🧙', adventure: '🗺️', horror: '👻', action: '⚔️', all: '✨'
-};
-
-function emojiForWord(word, element, genre) {
-  const w = (word || '').toLowerCase();
-  if (wordEmojiMap[w]) return wordEmojiMap[w];
-  // try partial match in element text
-  const el = (element || '').toLowerCase();
-  for (const [key, emoji] of Object.entries(wordEmojiMap)) {
-    if (el.includes(key)) return emoji;
-  }
-  return genreDefaultEmoji[genre] || '✨';
+function plotTwist() {
+  var card = document.getElementById("twistCard");
+  card.textContent = "🌀 " + pick(CURVEBALLS);
+  card.classList.remove("show");
+  void card.offsetWidth;
+  card.classList.add("show");
 }
 
-function updateHistoryEmoji(word, element) {
-  const el = document.getElementById('historyEmoji');
-  const genre = historyItems[0]?.genre || 'all';
-  const emoji = emojiForWord(word, element, genre);
-  el.classList.remove('visible');
-  setTimeout(() => {
-    el.textContent = emoji;
-    el.classList.add('visible');
-  }, 120);
+function insertConnector(text) {
+  var ta = document.getElementById("ta-" + lastBeat);
+  if (!ta) return;
+  var start = ta.selectionStart, end = ta.selectionEnd;
+  var before = ta.value.slice(0, start);
+  var after = ta.value.slice(end);
+  var glue = (before.length && !/\s$/.test(before)) ? " " : "";
+  var chunk = glue + text + " ";
+  ta.value = before + chunk + after;
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = start + chunk.length;
+  state.beats[lastBeat] = ta.value;
+  save();
 }
 
+function clearBeats() {
+  if (!confirm("Clear your writing? The spark stays.")) return;
+  var pre = DATA[state.level].prefill;
+  BEATS.forEach(function (b) { state.beats[b.id] = pre[b.id]; });
+  renderBeats();
+  save();
+}
 
+function sparkSentence() {
+  var s = state.spark;
+  return s.who + " " + s.wants + ", " + s.but + ". And then: " + s.twist;
+}
 
-function renderHistory() {
-  const list = document.getElementById('historyList');
-  document.getElementById('historyCount').textContent = historyItems.length;
+function storyText() {
+  var out = state.title + "\n\n" + sparkSentence() + "\n\n";
+  BEATS.forEach(function (b) {
+    var v = (state.beats[b.id] || "").trim();
+    if (v) out += v + "\n\n";
+  });
+  return out.replace(/\s+$/, "");
+}
 
-  if (historyItems.length === 0) {
-    list.innerHTML = '<div class="history-empty">No sparks yet — hit Inspire Me!</div>';
+function copyStory() {
+  var btn = document.getElementById("copyBtn");
+  navigator.clipboard.writeText(storyText()).then(function () {
+    btn.textContent = "Copied";
+    setTimeout(function () { btn.textContent = "Copy story"; }, 1400);
+  }, function () {
+    btn.textContent = "Copy failed";
+    setTimeout(function () { btn.textContent = "Copy story"; }, 1400);
+  });
+}
+
+function esc(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function printSheet() {
+  var rules = "";
+  for (var i = 0; i < 4; i++) { rules += '<div class="rule"></div>'; }
+  var html = '<h2>' + esc(state.title) + '</h2>';
+  html += '<div class="p-spark">' + esc(sparkSentence()) +
+          '<br><b>Bonus words:</b> ' + esc(state.words.join("  ·  ")) + '</div>';
+  BEATS.forEach(function (b) {
+    html += '<div class="p-beat"><b>' + b.name + '</b> &nbsp;<span>' + esc(b.q) + '</span>' + rules + '</div>';
+  });
+  document.getElementById("printSheet").innerHTML = html;
+  window.print();
+}
+
+/* ---- Spark box ------------------------------------------- */
+
+function addToBox() {
+  var entry = {
+    level: state.level,
+    text: sparkSentence(),
+    spark: { who: state.spark.who, wants: state.spark.wants, but: state.spark.but, twist: state.spark.twist },
+    title: state.title,
+    fav: false
+  };
+  var kept = state.box.filter(function (b) { return b.text !== entry.text; });
+  kept.unshift(entry);
+  var favs = kept.filter(function (b) { return b.fav; });
+  var rest = kept.filter(function (b) { return !b.fav; }).slice(0, 12);
+  state.box = favs.concat(rest);
+  renderBox();
+}
+
+function restoreSpark(i) {
+  var b = state.box[i];
+  if (!b) return;
+  state.spark = { who: b.spark.who, wants: b.spark.wants, but: b.spark.but, twist: b.spark.twist };
+  state.title = b.title;
+  renderMachine();
+  save();
+  window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
+function toggleFav(i, ev) {
+  ev.stopPropagation();
+  state.box[i].fav = !state.box[i].fav;
+  renderBox();
+  save();
+}
+
+function clearBox() {
+  if (!confirm("Empty the spark box? Starred sparks go too.")) return;
+  state.box = [];
+  renderBox();
+  save();
+}
+
+/* ===========================================================
+   Rendering
+   =========================================================== */
+
+function renderControls() {
+  document.getElementById("levelRow").innerHTML = LEVELS.map(function (lv) {
+    return '<button class="chip lvl' + (lv === state.level ? " active" : "") +
+           '" onclick="setLevel(\'' + lv + '\')">' + lv + '</button>';
+  }).join("");
+
+  document.getElementById("genreRow").innerHTML = GENRES.map(function (g) {
+    return '<button class="chip' + (g.id === state.genre ? " active" : "") +
+           '" onclick="setGenre(\'' + g.id + '\')">' + g.icon + " " + g.label + '</button>';
+  }).join("");
+}
+
+function renderMachine() {
+  document.getElementById("machine").innerHTML = SLOTS.map(function (s) {
+    var locked = state.locks[s.id];
+    return '<div class="reel' + (locked ? " locked" : "") + '" data-slot="' + s.id + '">' +
+             '<div class="reel-tag">' + s.tag + '</div>' +
+             '<div class="reel-text">' + esc(state.spark[s.id]) + '</div>' +
+             '<div class="reel-ctl">' +
+               '<button class="mini lock" onclick="toggleLock(\'' + s.id + '\')" title="Keep this line">' +
+                 (locked ? "🔒" : "🔓") + '</button>' +
+               '<button class="mini" onclick="rollSlot(\'' + s.id + '\')" title="Swap this line">🎲</button>' +
+             '</div>' +
+           '</div>';
+  }).join("");
+
+  document.getElementById("titleOut").textContent = state.title || "—";
+  document.getElementById("wordsOut").innerHTML = state.words.map(function (w) {
+    return '<span class="wordchip">' + esc(w) + '</span>';
+  }).join("");
+}
+
+function renderConnectors() {
+  document.getElementById("connectors").innerHTML = DATA[state.level].connectors.map(function (t, i) {
+    return '<button class="conn" data-conn="' + i + '">' + esc(t) + '</button>';
+  }).join("");
+  var conns = DATA[state.level].connectors;
+  Array.prototype.forEach.call(document.querySelectorAll("#connectors .conn"), function (btn) {
+    btn.addEventListener("click", function () { insertConnector(conns[Number(btn.dataset.conn)]); });
+  });
+}
+
+function renderBeats() {
+  document.getElementById("beats").innerHTML = BEATS.map(function (b) {
+    return '<div class="beat">' +
+             '<div class="beat-head"><span class="beat-name">' + b.name + '</span>' +
+             '<span class="beat-q">' + esc(b.q) + '</span></div>' +
+             '<textarea id="ta-' + b.id + '" placeholder="' + esc(b.q) + '"></textarea>' +
+           '</div>';
+  }).join("");
+
+  BEATS.forEach(function (b) {
+    var ta = document.getElementById("ta-" + b.id);
+    ta.value = state.beats[b.id] || "";
+    ta.addEventListener("input", function () { state.beats[b.id] = ta.value; save(); });
+    ta.addEventListener("focus", function () { lastBeat = b.id; });
+  });
+}
+
+function renderBox() {
+  var host = document.getElementById("sparkbox");
+  document.getElementById("boxCount").textContent = state.box.length ? "(" + state.box.length + ")" : "";
+  if (!state.box.length) {
+    host.innerHTML = '<div class="empty-note">Every story you roll lands here. Click one to bring it back, star one to keep it.</div>';
     return;
   }
-
-  const genreColors = {
-    fantasy:   '#c77dff',
-    adventure: '#28a745',
-    horror:    '#ff6b6b',
-    action:    '#4d96ff'
-  };
-
-  list.innerHTML = historyItems.map((item, i) => `
-    <div class="history-item">
-      <span class="h-num">#${historyItems.length - i}</span>
-      <span class="h-level ${item.level}">${item.level === 'beginner' ? '🌱' : '🚀'}</span>
-      <span class="h-element">${item.element}</span>
-      <span class="h-word" style="background:${genreColors[item.genre] || '#ffd93d'}22; color:${genreColors[item.genre] || '#c47900'};">${item.word}</span>
-    </div>
-  `).join('');
+  host.innerHTML = state.box.map(function (b, i) {
+    return '<div class="spark-item" onclick="restoreSpark(' + i + ')">' +
+             '<div class="si-top"><span class="si-lvl">' + esc(b.level) + '</span>' +
+             '<button class="star' + (b.fav ? " on" : "") + '" onclick="toggleFav(' + i + ', event)" title="Keep this one">★</button></div>' +
+             esc(b.text) +
+           '</div>';
+  }).join("");
 }
 
-// ── NOTES ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderControls();
+  renderMachine();
+  renderConnectors();
+  renderBeats();
+  renderBox();
+}
 
-function copyNotes() {
-  const text = document.getElementById('notepad').value;
-  if (!text.trim()) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = event.target;
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => btn.textContent = '📋 Copy', 1500);
+/* ---- Chrome ---------------------------------------------- */
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  html.setAttribute("data-theme", next);
+  localStorage.setItem("theme", next);
+}
+
+function toggleBig() {
+  state.big = !state.big;
+  document.body.classList.toggle("bigscreen", state.big);
+  document.getElementById("bigBtn").classList.toggle("on", state.big);
+  save();
+}
+
+(function () {
+  var saved = localStorage.getItem("theme");
+  if (saved) { document.documentElement.setAttribute("data-theme", saved); }
+})();
+
+document.addEventListener("keydown", function (ev) {
+  if (ev.target && (ev.target.tagName === "TEXTAREA" || ev.target.tagName === "INPUT")) return;
+  if (ev.code === "Space") { ev.preventDefault(); rollAll(); }
+  if (ev.key === "t" || ev.key === "T") { plotTwist(); }
+});
+
+/* ---- Boot: never a blank state --------------------------- */
+(function init() {
+  var restored = load();
+  if (state.big) {
+    document.body.classList.add("bigscreen");
+    document.getElementById("bigBtn").classList.add("on");
+  }
+  if (!restored) {
+    var pre = DATA[state.level].prefill;
+    BEATS.forEach(function (b) { state.beats[b.id] = pre[b.id]; });
+    SLOTS.forEach(function (s) { state.spark[s.id] = pickSlot(s.id); });
+    rollTitle(true);
+    rollWords(true);
+    addToBoxInit();
+  }
+  renderAll();
+  save();
+})();
+
+function addToBoxInit() {
+  state.box.unshift({
+    level: state.level,
+    text: sparkSentence(),
+    spark: { who: state.spark.who, wants: state.spark.wants, but: state.spark.but, twist: state.spark.twist },
+    title: state.title,
+    fav: false
   });
 }
-
-function clearNotes() {
-  if (document.getElementById('notepad').value.trim()) {
-    if (confirm('Clear your story notes?')) document.getElementById('notepad').value = '';
-  }
-}
-
-// ── RESET MODAL ───────────────────────────────────────────────────────────────
-
-function showResetModal() { document.getElementById('resetModal').classList.add('show'); }
-function hideResetModal() { document.getElementById('resetModal').classList.remove('show'); }
-
-function confirmReset() {
-  remainingElements = Object.keys(activeElements());
-  remainingWords    = buildWordPool(activeWordsByGenre());
-  historyItems = [];
-  renderHistory();
-  const he = document.getElementById('historyEmoji');
-  he.classList.remove('visible');
-  he.textContent = '';
-  document.getElementById('elementBox').classList.remove('has-result');
-  document.getElementById('elementBox').innerHTML = '<span class="result-placeholder">Hit Inspire Me to get started!</span>';
-  document.getElementById('wordBox').classList.remove('has-result');
-  document.getElementById('wordBox').innerHTML = '<span class="result-placeholder">—</span>';
-  hideResetModal();
-}
-
-// Close modal on backdrop click
-document.getElementById('resetModal').addEventListener('click', function(e) {
-  if (e.target === this) hideResetModal();
-});
 </script>
 </body>
 </html>
