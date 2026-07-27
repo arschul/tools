@@ -783,6 +783,24 @@
   }
   @media (max-width: 700px) { .pr-hint { display: none; } }
 
+
+  /* Stretched link: whole card is clickable, but only real anchors are focusable */
+  .card-title { margin: 0; }
+  .card-link { color: inherit; text-decoration: none; outline: none; }
+  .card-link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius); }
+  .card-subtitle { margin: 0; }
+  .card-footer a.tag { position: relative; z-index: 2; text-decoration: none; }
+  .card:focus-within { border-color: var(--card-accent, var(--accent)); transform: translateY(-3px); }
+  .card:focus-within::before { transform: scaleX(1); }
+  .card:has(.card-link:focus-visible) { outline: 2px solid var(--card-accent, var(--accent)); outline-offset: 3px; }
+  .card-footer a.tag:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .dw-close:focus-visible, .dw-act:focus-visible, .seg-btn:focus-visible,
+  .cat-btn:focus-visible, .dice-btn:focus-visible, .theme-toggle:focus-visible,
+  .pr-btn:focus-visible, .pr-tset:focus-visible, .pr-exit:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .drawer:focus, .present:focus { outline: none; }
+
   /* NO RESULTS */
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -874,9 +892,9 @@
 </div>
 
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
-<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Activity details"></aside>
+<aside class="drawer" id="drawer" tabindex="-1" role="dialog" aria-modal="true" aria-label="Activity details"></aside>
 
-<div class="present" id="present" role="dialog" aria-modal="true" aria-label="Present mode"></div>
+<div class="present" id="present" tabindex="-1" role="dialog" aria-modal="true" aria-label="Present mode"></div>
 
 <script>
 // BACKLOG - drafted titles, not yet authored into DATA. Move into a category when written:
@@ -2290,7 +2308,22 @@ let currentLevel = (function () {
   catch (e) { return 'beg'; }
 })();
 let drawerOpen = false;
-let pushedHash = false;   // true when this session pushed the drawer's hash entry
+let lastFocus = null;     // element to hand focus back to when a dialog closes
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function trapTab(e, root) {
+  const items = Array.from(root.querySelectorAll(FOCUSABLE));
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+function restoreFocus() {
+  if (lastFocus && lastFocus.isConnected) { try { lastFocus.focus(); } catch (e) {} }
+  lastFocus = null;
+}
 
 function getCat(title) { return itemToCategory[title] || 'Other'; }
 function getColor(title) { return itemToColor[title] || '#a0a0c0'; }
@@ -2352,24 +2385,23 @@ function renderCards() {
   filtered.forEach((d, i) => {
     const cat = getCat(d.title);
     const color = getColor(d.title);
-    const card = document.createElement('div');
+    const card = document.createElement('article');
     card.className = 'card';
     card.style.setProperty('--card-accent', color);
     card.style.animationDelay = (i * 30) + 'ms';
     const sl = slug(d.title);
     card.innerHTML = `
-      <div class="card-icon">${d.icon}</div>
-      <div class="card-title">${d.title}</div>
-      <div class="card-subtitle">${d.tagline}</div>
+      <div class="card-icon" aria-hidden="true">${d.icon}</div>
+      <h3 class="card-title"><a class="card-link" href="#${sl}">${d.title}</a></h3>
+      <p class="card-subtitle">${d.tagline}</p>
       <div class="card-footer">
         <span class="tag tag-cat">${cat}</span>
-        <span class="tag tag-beg" title="Open at A1–A2" onclick="go(event,'${sl}','')">A1–A2</span>
-        <span class="tag tag-int" title="Open at B1" onclick="go(event,'${sl}','b1')">B1</span>
-        <span class="tag tag-adv" title="Open at B2" onclick="go(event,'${sl}','b2')">B2</span>
+        <a class="tag tag-beg" href="#${sl}" title="Open ${d.title} at A1–A2">A1–A2</a>
+        <a class="tag tag-int" href="#${sl}=b1" title="Open ${d.title} at B1">B1</a>
+        <a class="tag tag-adv" href="#${sl}=b2" title="Open ${d.title} at B2">B2</a>
       </div>
-      <div class="card-open"><span>Open activity</span><span class="arr">→</span></div>
+      <div class="card-open" aria-hidden="true"><span>Open activity</span><span class="arr">→</span></div>
     `;
-    card.onclick = () => { pushedHash = true; location.hash = sl; };
     grid.appendChild(card);
   });
 }
@@ -2405,7 +2437,6 @@ function slug(t) {
 // Level tag on a card → open drawer straight into that level
 function go(e, sl, code) {
   if (e) e.stopPropagation();
-  pushedHash = true;
   location.hash = sl + (code ? '=' + code : '');
 }
 
@@ -2436,6 +2467,10 @@ function openDrawer(d, level) {
   document.getElementById('drawer').classList.add('show');
   document.body.style.overflow = 'hidden';
   setLevel(d, level);
+  if (!lastFocus) lastFocus = document.activeElement;
+  const dw = document.getElementById('drawer');
+  dw.setAttribute('aria-label', d.title + ' — activity details');
+  dw.focus();
 }
 
 // Render segmented switcher + the selected level's steps (fills the drawer)
@@ -2527,7 +2562,8 @@ function openPresent() {
   presentOn = true;
   document.body.style.overflow = 'hidden';
   prRender();
-  el.focus && el.focus();
+  if (!lastFocus) lastFocus = document.activeElement;
+  el.focus();
 }
 
 function prRender() {
@@ -2582,6 +2618,8 @@ function closePresent() {
   prTimerStop();
   document.getElementById('present').classList.remove('show');
   document.body.style.overflow = drawerOpen ? 'hidden' : '';
+  const dw = document.getElementById('drawer');
+  if (drawerOpen && dw) dw.focus();
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
 }
 
@@ -2660,12 +2698,12 @@ function closeDrawer(fromRoute) {
   document.getElementById('scrim').classList.remove('show');
   document.getElementById('drawer').classList.remove('show');
   document.body.style.overflow = '';
+  restoreFocus();
   if (!fromRoute && location.hash) {
-    // Consume the entry we pushed, so Back doesn't reopen what was just closed.
-    if (pushedHash) { pushedHash = false; history.back(); return; }
+    // Overwrites the '#slug' entry rather than stacking a new one, so Back never
+    // lands back on the activity the teacher just closed.
     history.replaceState(null, '', location.pathname + location.search);
   }
-  pushedHash = false;
 }
 
 // Single source of truth: the URL hash drives the drawer (Back / refresh / share all work)
@@ -2680,8 +2718,20 @@ function route() {
   else openDrawer(d, level);
 }
 
+document.getElementById('grid').addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#"]');
+  if (!a) return;
+  lastFocus = a;
+  // Re-open when the target hash is already current (nothing else would fire).
+  if (location.hash === a.getAttribute('href')) { e.preventDefault(); route(); }
+});
+
 window.addEventListener('hashchange', route);
 document.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    if (presentOn) return trapTab(e, document.getElementById('present'));
+    if (drawerOpen) return trapTab(e, document.getElementById('drawer'));
+  }
   if (presentOn) {
     if (e.key === 'Escape') { closePresent(); return; }
     if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter') { e.preventDefault(); prGo(1); return; }
