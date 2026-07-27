@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IdeaDeck</title>
+<script>(function(){try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -21,7 +22,7 @@
     --header-bg-start: #16161f;
   }
 
-  body.light {
+  [data-theme="light"] {
     --bg: #f4f4f0;
     --surface: #ffffff;
     --surface2: #ededea;
@@ -35,17 +36,17 @@
     --header-bg-start: #e8e8e2;
   }
 
-  body.light header {
+  [data-theme="light"] header {
     background: linear-gradient(180deg, var(--header-bg-start) 0%, var(--bg) 100%);
   }
 
-  body.light .card:hover {
+  [data-theme="light"] .card:hover {
     box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   }
 
-  body.light .step-content strong { color: var(--text); }
-  body.light .title-block h1 { color: var(--text); }
-  body.light .detail-title { color: var(--text); }
+  [data-theme="light"] .step-content strong { color: var(--text); }
+  [data-theme="light"] .title-block h1 { color: var(--text); }
+  [data-theme="light"] .detail-title { color: var(--text); }
 
   /* THEME TOGGLE */
   .theme-toggle {
@@ -277,8 +278,8 @@
   .tag-int { background: rgba(240,192,64,0.15); color: var(--accent); border: 1px solid rgba(240,192,64,0.3); }
   .tag-adv { background: rgba(192,120,240,0.15); color: var(--accent3); border: 1px solid rgba(192,120,240,0.3); }
 
-  body.light .detail-title { color: var(--text); }
-  body.light .card-title { color: var(--text); }
+  [data-theme="light"] .detail-title { color: var(--text); }
+  [data-theme="light"] .card-title { color: var(--text); }
 
   /* CARD CTA */
   .card-open {
@@ -301,6 +302,53 @@
   .card-footer .tag:hover { filter: brightness(1.35); transform: translateY(-1px); }
   .card-footer .tag-cat { cursor: default; }
   .card-footer .tag-cat:hover { filter: none; transform: none; }
+
+
+  /* DICE + DRAWER ACTION BUTTONS */
+  .dice-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 17px;
+    height: 36px;
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .dice-btn:hover { border-color: var(--accent3); transform: rotate(-18deg) scale(1.06); }
+  .dice-btn:active { transform: rotate(-40deg) scale(0.94); }
+
+  .dw-actions {
+    position: absolute;
+    top: 18px;
+    right: 62px;
+    display: flex;
+    gap: 8px;
+  }
+  .dw-act {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .dw-act:hover { border-color: var(--accent); color: var(--text); }
+  @media (max-width: 600px) { .dw-act span { display: none; } .dw-actions { right: 56px; } }
 
   /* SCRIM + DRAWER */
   .scrim {
@@ -476,7 +524,109 @@
     .lvl-body { padding: 4px 20px 40px; }
   }
 
+
+  /* ================= PRINT: one-page group handout ================= */
+  @media print {
+    @page { size: A4 portrait; margin: 14mm 15mm; }
+
+    html, body {
+      background: #fff !important;
+      color: #000 !important;
+      font-family: 'DM Sans', Arial, sans-serif;
+      font-size: 11pt;
+    }
+
+    header, .count-bar, #view-grid, .scrim, .back-link,
+    .dw-close, .theme-toggle, .dice-btn, .seg-btn:not(.active),
+    .print-btn, .present-btn { display: none !important; }
+
+    .drawer {
+      position: static !important;
+      transform: none !important;
+      width: 100% !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: #fff !important;
+      display: block !important;
+    }
+
+    .dw-head { padding: 0 0 10pt !important; border-bottom: 1.5pt solid #000 !important; }
+    .dw-icon { font-size: 24pt !important; }
+    .dw-eyebrow { color: #444 !important; font-size: 8pt !important; }
+    .dw-title { font-size: 22pt !important; color: #000 !important; }
+    .dw-tagline { color: #333 !important; font-size: 10.5pt !important; }
+
+    .seg { padding: 8pt 0 !important; border-bottom: none !important; display: block !important; }
+    .seg-btn.active {
+      background: none !important;
+      border: none !important;
+      color: #000 !important;
+      padding: 0 !important;
+      font-weight: 700 !important;
+      text-align: left !important;
+    }
+    .seg-btn.active .seg-name { display: inline !important; font-size: 11pt !important; }
+    .seg-btn.active .seg-cefr {
+      display: inline !important;
+      margin: 0 0 0 8pt !important;
+      border: 1pt solid #000; border-radius: 3pt; padding: 1pt 5pt; font-size: 9pt !important;
+    }
+
+    .lvl-body { padding: 0 !important; overflow: visible !important; }
+
+    .step {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      padding: 7pt 0 !important;
+      border-bottom: 0.5pt solid #bbb !important;
+      gap: 10pt !important;
+    }
+    .step-num {
+      background: #fff !important;
+      color: #000 !important;
+      border: 1.2pt solid #000;
+      height: 20pt !important; min-width: 20pt !important;
+      font-size: 10pt !important;
+    }
+    .step h4 { font-size: 11.5pt !important; color: #000 !important; font-weight: 700 !important; }
+    .step p  { font-size: 10.5pt !important; color: #222 !important; line-height: 1.45 !important; }
+
+    .lvl-tip {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-top: 12pt !important;
+      background: #fff !important;
+      border: 1pt solid #000 !important;
+      border-left: 3pt solid #000 !important;
+      border-radius: 0 !important;
+      color: #000 !important;
+      font-size: 10pt !important;
+    }
+    .lvl-tip::before { color: #000 !important; }
+  }
+
   /* NO RESULTS */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  .cat-btn .cnt {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.09);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    vertical-align: 1px;
+  }
+  [data-theme="light"] .cat-btn .cnt { background: rgba(0,0,0,0.08); }
+
   .no-results {
     grid-column: 1/-1;
     text-align: center;
@@ -532,15 +682,17 @@
     <div class="controls">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="search" placeholder="Search activities…" oninput="filterCards()">
+        <label class="sr-only" for="search">Search activities</label>
+        <input type="text" id="search" placeholder="Search titles, steps, tips…" oninput="filterCards()">
       </div>
+      <button class="dice-btn" id="diceBtn" onclick="dealRandom()" title="Deal a random activity from the current filter" aria-label="Deal a random activity">🎲</button>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
       <div class="cat-filters" id="catFilters"></div>
     </div>
   </div>
 </header>
 
-<div class="count-bar" id="countBar"></div>
+<div class="count-bar" id="countBar" aria-live="polite"></div>
 
 <div id="view-grid">
   <div class="grid" id="grid"></div>
@@ -550,14 +702,17 @@
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Activity details"></aside>
 
 <script>
+// BACKLOG - drafted titles, not yet authored into DATA. Move into a category when written:
+// Culinary Journey | Food Fusion Revolution | Global Garden | Educational Time Travel | Unseen Artwork | Futuristic Fashion | Design a Robot | Design a Theme Park | Alien Planet | Digital Art Gallery | Sustainable Fashion Show | Virtual Reality Museum | Innovative Technology | Alternate Universe | Digital Democracy | Future of Education | Futuristic City | Underwater Adventure | Time Travel Trip | Virtual Concert | Celebrity Interview | Dream Concert | Olympic Games | Plan a Music Festival | Create a Board Game | Wildlife Conservation | Invent a Language | Global News Network | Digital Time Capsule | Story World
+
 const CATEGORIES = {
-  'World & Culture': { icon: '🌍', color: '#60c4a0', items: ['New Country','Festivals Around the World','Historical Era','Myths and Legends','Culinary Journey','Food Fusion Revolution','Global Garden','Educational Time Travel','Cultural Exchange'] },
-  'Creative & Design': { icon: '🎨', color: '#f0c040', items: ['Unseen Artwork','Futuristic Fashion','Design a Robot','Design a Theme Park','Eco-Friendly City','Alien Planet','Digital Art Gallery','Sustainable Fashion Show','Virtual Reality Museum','Street Art Project','Architect for a Day'] },
-  'Science & Future': { icon: '🔬', color: '#c078f0', items: ['Future Predictions','Innovative Technology','Space Colony','Alternate Universe','Digital Democracy','Future of Education','Futuristic City','Climate Change Solutions','Medical Breakthrough','Endangered Animal'] },
-  'Survival & Adventure': { icon: '🏕️', color: '#f07060', items: ['Deserted Island','Pandemic Survival Plan','Underwater Adventure','Time Travel Trip','Alien Encounter','Prison System','Extreme Expedition'] },
-  'Entertainment': { icon: '🎬', color: '#60a0f0', items: ['Famous Figure','Book','Movie','Virtual Concert','Celebrity Interview','Dream Concert','Virtual Reality','Olympic Games','Plan a Music Festival','Escape Room Challenge','Create a Board Game','Talk Show Host'] },
-  'Personal & Social': { icon: '👤', color: '#f08040', items: ['Who Am I?','Roommates','Bucket List','Lottery Winners','Money Countdown','What\'s on the news?','Perfect School','Wildlife Conservation','Life Coach','Debate Club'] },
-  'Innovation & Business': { icon: '💡', color: '#a0e040', items: ['Invention','Entrepreneurial Venture','Invent a Language','Global News Network','Digital Time Capsule','Story World','Crowdfunding Campaign','Social Media Campaign'] },
+  'World & Culture': { icon: '🌍', color: '#60c4a0', items: ['New Country','Festivals Around the World','Historical Era','Myths and Legends','Cultural Exchange'] },
+  'Creative & Design': { icon: '🎨', color: '#f0c040', items: ['Eco-Friendly City','Street Art Project','Architect for a Day'] },
+  'Science & Future': { icon: '🔬', color: '#c078f0', items: ['Future Predictions','Space Colony','Climate Change Solutions','Medical Breakthrough','Endangered Animal'] },
+  'Survival & Adventure': { icon: '🏕️', color: '#f07060', items: ['Deserted Island','Pandemic Survival Plan','Alien Encounter','Prison System','Extreme Expedition'] },
+  'Entertainment': { icon: '🎬', color: '#60a0f0', items: ['Famous Figure','Book','Movie','Virtual Reality','Escape Room Challenge','Talk Show Host'] },
+  'Personal & Social': { icon: '👤', color: '#f08040', items: ['Who Am I?','Roommates','Bucket List','Lottery Winners','Money Countdown','What\'s on the News?','Perfect School','Life Coach','Debate Club'] },
+  'Innovation & Business': { icon: '💡', color: '#a0e040', items: ['Invention','Entrepreneurial Venture','Crowdfunding Campaign','Social Media Campaign'] },
   'Fantasy & Sci-Fi': { icon: '🚀', color: '#e040a0', items: ['Superheroes and Villains','A New Place in Town','Travel Credits'] },
 };
 
@@ -566,7 +721,6 @@ const DATA = [
     title: 'New Country',
     icon: '🌍',
     tagline: 'Combine the best of six real countries into one imaginary nation.',
-    steps: ['Name six random countries','Choose one aspect per country: Geography, Language, Culture, Government, Weather, Food','Describe how these aspects combine in your new country','Name your new country','Share the results'],
     beg: {
       steps: [
         { title: 'Pick 6 countries', desc: 'Each student or pair names one country they know. Write them on the board.' },
@@ -601,7 +755,6 @@ const DATA = [
     title: 'Endangered Animal',
     icon: '🦏',
     tagline: 'Explore the story of a species fighting for survival.',
-    steps: ['Origin','Characteristics','Curiosities','Current situation','Future'],
     beg: {
       steps: [
         { title: 'Pick an animal', desc: 'Choose a well-known endangered animal (e.g. panda, tiger, whale). Teacher can provide a list with pictures.' },
@@ -636,7 +789,6 @@ const DATA = [
     title: 'Invention',
     icon: '💡',
     tagline: 'Design a never-before-seen product to solve a real problem.',
-    steps: ['Choose a modern day problem','Set the rules (realistic, magic, etc.)','Create an innovative product','Share the results'],
     beg: {
       steps: [
         { title: 'Name a problem', desc: 'What is something that bothers people daily? (e.g. forgetting your keys, being late, feeling tired)' },
@@ -671,7 +823,6 @@ const DATA = [
     title: 'Travel Credits',
     icon: '✈️',
     tagline: 'Budget your way around the world on a limited credit allowance.',
-    steps: ['Students start with 5–10 credits','Each credit lets them go to a different place','Plan the trip','Share the results'],
     beg: {
       steps: [
         { title: 'Set the credits', desc: 'Each student has 5 credits. Each credit = one destination.' },
@@ -706,7 +857,6 @@ const DATA = [
     title: 'Perfect School',
     icon: '🏫',
     tagline: 'Redesign education from the ground up.',
-    steps: ['Routine','Food','Classes','Extra Activities'],
     beg: {
       steps: [
         { title: 'Dream routine', desc: 'What time do classes start? How long are breaks? Describe a simple daily schedule.' },
@@ -741,7 +891,6 @@ const DATA = [
     title: 'A New Place in Town',
     icon: '🏙️',
     tagline: 'Create a brand new venue for your community.',
-    steps: ['Where is it?','What activities can you do there?','Schedule','Share the results'],
     beg: {
       steps: [
         { title: 'Choose a place', desc: 'Pick a type: park, café, sports center, library, etc.' },
@@ -776,7 +925,6 @@ const DATA = [
     title: 'Roommates',
     icon: '🛋️',
     tagline: 'Negotiate and design your perfect shared living space.',
-    steps: ['Draw the room','What items do you have?','Perfect temperature?','Decoration'],
     beg: {
       steps: [
         { title: 'Draw the room', desc: 'Simple floor plan. Where are the beds, desk, wardrobe?' },
@@ -811,7 +959,6 @@ const DATA = [
     title: 'Festivals Around the World',
     icon: '🎉',
     tagline: 'Bring a cultural celebration to life through research and storytelling.',
-    steps: ['Name the festival','Cultural aspect','Describe the celebration','Curiosities'],
     beg: {
       steps: [
         { title: 'Pick a festival', desc: 'Choose a well-known festival: Carnival, Halloween, Chinese New Year, Diwali, etc.' },
@@ -846,7 +993,6 @@ const DATA = [
     title: 'Famous Figure',
     icon: '⭐',
     tagline: 'Research and present a remarkable person from history or today.',
-    steps: ['Who?','Where?','When?','What?','Why?'],
     beg: {
       steps: [
         { title: 'Choose someone', desc: 'Pick a famous person you know: an athlete, singer, historical figure.' },
@@ -881,7 +1027,6 @@ const DATA = [
     title: 'Book',
     icon: '📚',
     tagline: 'Share the story of a book that left a mark on you.',
-    steps: ['Who?','Where?','When?','What?','Why?'],
     beg: {
       steps: [
         { title: 'Choose a book', desc: 'It can be a book, comic, or story they know.' },
@@ -916,7 +1061,6 @@ const DATA = [
     title: 'Movie',
     icon: '🎬',
     tagline: 'Review and present a film that captured your imagination.',
-    steps: ['Who?','Where?','When?','What?','Why?'],
     beg: {
       steps: [
         { title: 'Choose a movie', desc: 'A film they love or know well.' },
@@ -951,7 +1095,6 @@ const DATA = [
     title: 'Virtual Reality',
     icon: '🥽',
     tagline: 'Design the ultimate immersive VR experience.',
-    steps: ['Main idea','Target audience','Duration','Describe the experience','Price'],
     beg: {
       steps: [
         { title: 'Choose a VR world', desc: 'Where does your VR take you? Underwater? Space? Jungle?' },
@@ -986,7 +1129,6 @@ const DATA = [
     title: 'Prison System',
     icon: '🔒',
     tagline: 'Redesign incarceration with rehabilitation at its core.',
-    steps: ['What does it look like?','Routine','Objectives','Food','Activities'],
     beg: {
       steps: [
         { title: 'Basic concept', desc: 'Is your prison focused on punishment or rehabilitation? Why?' },
@@ -1021,7 +1163,6 @@ const DATA = [
     title: 'Lottery Winners',
     icon: '💰',
     tagline: 'Spend $10 million as a team — wisely or wildly.',
-    steps: ['Who would you tell?','Where would you go first?','What would you buy first?','Plans for the future?'],
     beg: {
       steps: [
         { title: 'You won!', desc: 'Tell students they just won $10 million. What is the first thing they say or do?' },
@@ -1056,7 +1197,6 @@ const DATA = [
     title: 'Money Countdown',
     icon: '⏱️',
     tagline: '3 hours. R$100k. A ticking clock. Spend it or lose it.',
-    steps: ['Where do you go first? How do you get there?','What do you buy?','Share the results'],
     beg: {
       steps: [
         { title: 'Set the scene', desc: 'You have R$100,000 and 3 hours. After that, the money disappears.' },
@@ -1090,7 +1230,6 @@ const DATA = [
     title: 'Deserted Island',
     icon: '🏝️',
     tagline: 'Boat sinking. 3 items. Island survival. Go.',
-    steps: ['List 3 items','Why are they important?','Priority steps','3-day survival routine'],
     beg: {
       steps: [
         { title: 'The scenario', desc: 'Your boat is sinking. You can grab exactly 3 items before swimming to a nearby island.' },
@@ -1125,7 +1264,6 @@ const DATA = [
     title: 'Who Am I?',
     icon: '🪞',
     tagline: 'Introduce yourself in a way your classmates will never forget.',
-    steps: ['Family','Favorite activities','Favorite places','Future'],
     beg: {
       steps: [
         { title: 'My family', desc: 'Who do you live with? Name and relationship.' },
@@ -1160,7 +1298,6 @@ const DATA = [
     title: "What's on the News?",
     icon: '📰',
     tagline: 'Find a real news story and tell it without reading.',
-    steps: ['Sports','Entertainment','Business','Crime','Technology'],
     beg: {
       steps: [
         { title: 'Pick a topic', desc: 'Choose one: sports, entertainment, or technology. Find one news story.' },
@@ -1195,7 +1332,6 @@ const DATA = [
     title: 'Bucket List',
     icon: '📋',
     tagline: 'Map out a lifetime of goals worth chasing.',
-    steps: ['3 short-term goals','3 medium-term goals','3 long-term goals','How to achieve them + why they matter'],
     beg: {
       steps: [
         { title: 'What is a bucket list?', desc: 'Explain the concept. Show examples.' },
@@ -1230,7 +1366,6 @@ const DATA = [
     title: 'Myths and Legends',
     icon: '🐉',
     tagline: 'Unpack a story that has been told for generations.',
-    steps: ['Pick a myth or legend','Origin','Characters','Moral / Lesson'],
     beg: {
       steps: [
         { title: 'Choose a legend', desc: 'One that students already know, e.g. Saci, the Headless Mule, or a local legend.' },
@@ -1265,7 +1400,6 @@ const DATA = [
     title: 'Pandemic Survival Plan',
     icon: '🦠',
     tagline: 'Plan for the unthinkable as a team.',
-    steps: ['Top 5 stockpile items','Safe location','Roles & responsibilities','Daily routine'],
     beg: {
       steps: [
         { title: 'What do you need?', desc: 'List 5 things to have at home during a pandemic: food, water, medicine, etc.' },
@@ -1300,7 +1434,6 @@ const DATA = [
     title: 'Alien Encounter',
     icon: '👽',
     tagline: 'First contact: describe the alien, the place, and what you learn from each other.',
-    steps: ['Describe the alien','Location of encounter','Communication','What you learn from each other'],
     beg: {
       steps: [
         { title: 'Draw the alien', desc: 'Quick sketch. How many eyes, arms, legs? What color?' },
@@ -1335,7 +1468,6 @@ const DATA = [
     title: 'Historical Era',
     icon: '🏛️',
     tagline: 'Dive deep into another time and bring it to life.',
-    steps: ['Choose an era','Significant events & figures','Culture & lifestyle','Share the results'],
     beg: {
       steps: [
         { title: 'Pick an era', desc: 'Ancient Egypt, Middle Ages, Wild West, etc. Teacher can give options with pictures.' },
@@ -1370,7 +1502,6 @@ const DATA = [
     title: 'Future Predictions',
     icon: '🔮',
     tagline: 'What will the world look like in 50 years?',
-    steps: ['Technological advancements','Changes in society & culture','Challenges & solutions'],
     beg: {
       steps: [
         { title: 'Technology', desc: '"In the future, I think ___."' },
@@ -1404,7 +1535,6 @@ const DATA = [
     title: 'Entrepreneurial Venture',
     icon: '🚀',
     tagline: 'Identify a problem, build a startup, and pitch it.',
-    steps: ['Identify a problem','Discuss solutions','Outline a business model'],
     beg: {
       steps: [
         { title: 'The problem', desc: '"Something that annoys me is ___."' },
@@ -1439,7 +1569,6 @@ const DATA = [
     title: 'Superheroes and Villains',
     icon: '🦸',
     tagline: 'Build a hero or villain from scratch — powers, backstory, look, and conflicts.',
-    steps: ['Name & powers','Backstory','Costume & appearance','Interactions with others'],
     beg: {
       steps: [
         { title: 'Create a character', desc: 'Hero or villain? What is the name? What is one superpower?' },
@@ -1474,7 +1603,6 @@ const DATA = [
     title: 'Escape Room Challenge',
     icon: '🔐',
     tagline: 'Design puzzles, clues, and a story for an unforgettable escape room.',
-    steps: ['Theme & setting','Puzzles & clues','Storyline & objective'],
     beg: {
       steps: [
         { title: 'Choose a theme', desc: 'Haunted house, jungle, space, spy — pick one.' },
@@ -1509,7 +1637,6 @@ const DATA = [
     title: 'Climate Change Solutions',
     icon: '🌱',
     tagline: 'Identify the causes and engineer solutions to save the planet.',
-    steps: ['Main causes','Possible solutions & impact','Implementation plan'],
     beg: {
       steps: [
         { title: 'What is it?', desc: 'In 1 sentence: "Climate change means ___."' },
@@ -1544,7 +1671,6 @@ const DATA = [
     title: 'Eco-Friendly City',
     icon: '🏙️',
     tagline: 'Design a city where humans and nature coexist.',
-    steps: ['Location & climate','Transport, energy & waste','Green spaces & wildlife','Resident lifestyle'],
     beg: {
       steps: [
         { title: 'Where is it?', desc: 'Choose a country or type of landscape: coast, mountain, forest, etc.' },
@@ -1579,7 +1705,6 @@ const DATA = [
     title: 'Space Colony',
     icon: '🌕',
     tagline: 'Establish humanity\'s first permanent home beyond Earth.',
-    steps: ['Choose a location','Living conditions & facilities','Challenges & solutions'],
     beg: {
       steps: [
         { title: 'Where?', desc: 'Moon, Mars, or another planet? Why?' },
@@ -1614,7 +1739,6 @@ const DATA = [
     title: 'Talk Show Host',
     icon: '🎙️',
     tagline: 'Run your own live talk show — host, guests, and audience all included.',
-    steps: ['Choose a show name & format','Select guests (real or fictional)','Prepare interview questions','Run the show live'],
     beg: {
       steps: [
         { title: 'Pick a topic', desc: 'Choose a simple theme: animals, food, sports, school.' },
@@ -1649,7 +1773,6 @@ const DATA = [
     title: 'Cultural Exchange',
     icon: '🤝',
     tagline: 'Compare two cultures on the same topic and find what unites and divides them.',
-    steps: ['Choose two cultures','Select a comparison theme','Research both sides','Present findings'],
     beg: {
       steps: [
         { title: 'Pick two countries', desc: 'Brazil and one other. Or any two countries students know.' },
@@ -1684,7 +1807,6 @@ const DATA = [
     title: 'Life Coach',
     icon: '🧭',
     tagline: 'Give real advice, set goals, and coach a classmate through a challenge.',
-    steps: ['Identify the challenge','Listen actively','Give structured advice','Create an action plan'],
     beg: {
       steps: [
         { title: 'The problem', desc: 'One student shares a simple problem: "I can\'t wake up early / I forget my homework."' },
@@ -1719,7 +1841,6 @@ const DATA = [
     title: 'Street Art Project',
     icon: '🖌️',
     tagline: 'Design a mural or installation for a public space — and defend it.',
-    steps: ['Choose a location','Select a message or theme','Design the artwork','Present to the "city council"'],
     beg: {
       steps: [
         { title: 'Location', desc: 'Choose a wall, park, or public space in your city.' },
@@ -1754,7 +1875,6 @@ const DATA = [
     title: 'Crowdfunding Campaign',
     icon: '💸',
     tagline: 'Pitch a project, set a goal, and persuade backers to fund your vision.',
-    steps: ['Choose a project','Set a funding goal','Create reward tiers','Record the pitch'],
     beg: {
       steps: [
         { title: 'What is crowdfunding?', desc: 'Explain briefly. Show a simple Kickstarter example.' },
@@ -1789,7 +1909,6 @@ const DATA = [
     title: 'Medical Breakthrough',
     icon: '🧬',
     tagline: 'Design and present a fictional medical discovery that could change the world.',
-    steps: ['Choose a disease or health problem','Describe the discovery','Explain the science','Discuss impact & ethics'],
     beg: {
       steps: [
         { title: 'Choose a problem', desc: 'Pick a common illness or health issue: cancer, diabetes, allergies, mental health.' },
@@ -1824,7 +1943,6 @@ const DATA = [
     title: 'Extreme Expedition',
     icon: '🧗',
     tagline: 'Plan and survive a journey to one of the world\'s most hostile environments.',
-    steps: ['Choose the destination','Plan equipment & team roles','Describe the route & challenges','Report back'],
     beg: {
       steps: [
         { title: 'Choose a place', desc: 'Amazon jungle, Arctic, Sahara, Mount Everest, deep ocean.' },
@@ -1859,7 +1977,6 @@ const DATA = [
     title: 'Debate Club',
     icon: '⚖️',
     tagline: 'Take a side, build your argument, and win the room.',
-    steps: ['Choose a motion','Assign sides','Prepare arguments & rebuttals','Debate'],
     beg: {
       steps: [
         { title: 'Simple motion', desc: 'E.g. "Homework should be banned" or "Cats are better than dogs."' },
@@ -1894,7 +2011,6 @@ const DATA = [
     title: 'Architect for a Day',
     icon: '🏗️',
     tagline: 'Design a building from concept to blueprint — then defend every decision.',
-    steps: ['Choose the building type','Define the purpose & users','Design the layout','Present the concept'],
     beg: {
       steps: [
         { title: 'What are you building?', desc: 'School, hospital, house, library, stadium — one type.' },
@@ -1929,7 +2045,6 @@ const DATA = [
     title: 'Social Media Campaign',
     icon: '📱',
     tagline: 'Build a campaign from scratch — message, platform, audience, and content.',
-    steps: ['Choose a cause or brand','Define the audience','Create the content strategy','Present the campaign'],
     beg: {
       steps: [
         { title: 'What is the campaign for?', desc: 'A cause (save the ocean, read more), a product, or an event.' },
@@ -1972,13 +2087,33 @@ Object.entries(CATEGORIES).forEach(([cat, { items, color }]) => {
   });
 });
 
-// All unique categories in data
-const allCats = [...new Set(DATA.map(d => itemToCategory[d.title] || 'Other'))];
+function normText(t) {
+  return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Flat searchable blob per activity so teachers can find "conditionals", "debate",
+// "comparatives" etc. even when the word only appears inside a step or a teacher tip.
+const SEARCH_INDEX = {};
+const CAT_COUNT = {};
+DATA.forEach(d => {
+  const cat = itemToCategory[d.title] || 'Other';
+  CAT_COUNT[cat] = (CAT_COUNT[cat] || 0) + 1;
+  const parts = [d.title, d.tagline, cat];
+  ['beg', 'int', 'adv'].forEach(L => {
+    ((d[L] && d[L].steps) || []).forEach(st => { parts.push(st.title, st.desc); });
+    if (d[L] && d[L].tip) parts.push(d[L].tip);
+  });
+  SEARCH_INDEX[d.title] = normText(parts.join(' '));
+});
 
 let activeFilter = 'All';
 let currentSlug = null;
-let currentLevel = 'beg';
+let currentLevel = (function () {
+  try { const v = localStorage.getItem('ideadeck-level'); return ['beg','int','adv'].includes(v) ? v : 'beg'; }
+  catch (e) { return 'beg'; }
+})();
 let drawerOpen = false;
+let pushedHash = false;   // true when this session pushed the drawer's hash entry
 
 function getCat(title) { return itemToCategory[title] || 'Other'; }
 function getColor(title) { return itemToColor[title] || '#a0a0c0'; }
@@ -1987,14 +2122,14 @@ function buildFilters() {
   const wrap = document.getElementById('catFilters');
   const allBtn = document.createElement('button');
   allBtn.className = 'cat-btn active';
-  allBtn.textContent = 'All';
+  allBtn.innerHTML = 'All <b class="cnt">' + DATA.length + '</b>';
   allBtn.onclick = () => setFilter('All', allBtn);
   wrap.appendChild(allBtn);
 
   Object.entries(CATEGORIES).forEach(([cat, { icon }]) => {
     const btn = document.createElement('button');
     btn.className = 'cat-btn';
-    btn.textContent = icon + ' ' + cat;
+    btn.innerHTML = icon + ' ' + cat + ' <b class="cnt">' + (CAT_COUNT[cat] || 0) + '</b>';
     btn.onclick = () => setFilter(cat, btn);
     wrap.appendChild(btn);
   });
@@ -2011,18 +2146,21 @@ function filterCards() {
   renderCards();
 }
 
+function getFiltered() {
+  const query = normText(document.getElementById('search').value.trim());
+  return DATA.filter(d => {
+    const matchCat = activeFilter === 'All' || getCat(d.title) === activeFilter;
+    const matchQuery = !query || (SEARCH_INDEX[d.title] || '').includes(query);
+    return matchCat && matchQuery;
+  });
+}
+
 function renderCards() {
-  const query = document.getElementById('search').value.toLowerCase();
   const grid = document.getElementById('grid');
   const bar = document.getElementById('countBar');
   grid.innerHTML = '';
 
-  const filtered = DATA.filter(d => {
-    const cat = getCat(d.title);
-    const matchCat = activeFilter === 'All' || cat === activeFilter;
-    const matchQuery = !query || d.title.toLowerCase().includes(query) || d.tagline.toLowerCase().includes(query);
-    return matchCat && matchQuery;
-  });
+  const filtered = getFiltered();
 
   bar.textContent = filtered.length + ' activit' + (filtered.length === 1 ? 'y' : 'ies');
 
@@ -2054,9 +2192,24 @@ function renderCards() {
       </div>
       <div class="card-open"><span>Open activity</span><span class="arr">→</span></div>
     `;
-    card.onclick = () => { location.hash = sl; };
+    card.onclick = () => { pushedHash = true; location.hash = sl; };
     grid.appendChild(card);
   });
+}
+
+// ---- Randomizer: deals from the current filter, no repeats until the pool empties ----
+const drawn = new Set();
+
+function dealRandom() {
+  const pool = getFiltered();
+  if (!pool.length) return;
+  let candidates = pool.filter(d => !drawn.has(slug(d.title)));
+  if (!candidates.length) { drawn.clear(); candidates = pool; }
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  drawn.add(slug(pick.title));
+  const btn = document.getElementById('diceBtn');
+  if (btn && btn.animate) btn.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 380, easing: 'ease-out' });
+  go(null, slug(pick.title), LEVEL2CODE[currentLevel]);
 }
 
 // ---- Deep-linkable drawer ----
@@ -2074,7 +2227,8 @@ function slug(t) {
 
 // Level tag on a card → open drawer straight into that level
 function go(e, sl, code) {
-  e.stopPropagation();
+  if (e) e.stopPropagation();
+  pushedHash = true;
   location.hash = sl + (code ? '=' + code : '');
 }
 
@@ -2085,6 +2239,9 @@ function openDrawer(d, level) {
   document.getElementById('drawer').innerHTML = `
     <div class="dw-head">
       <button class="dw-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+      <div class="dw-actions">
+        <button class="dw-act" onclick="window.print()" title="Print this level as a group handout">🖨️<span>Print</span></button>
+      </div>
       <div class="dw-hero">
         <div class="dw-icon">${d.icon}</div>
         <div>
@@ -2106,6 +2263,7 @@ function openDrawer(d, level) {
 // Render segmented switcher + the selected level's steps (fills the drawer)
 function setLevel(d, level) {
   currentLevel = level;
+  try { localStorage.setItem('ideadeck-level', level); } catch (e) {}
   const sl = slug(d.title);
   document.getElementById('seg').innerHTML = LEVELS.map(L => `
     <button class="seg-btn ${L.key} ${L.key === level ? 'active' : ''}"
@@ -2143,8 +2301,11 @@ function closeDrawer(fromRoute) {
   document.getElementById('drawer').classList.remove('show');
   document.body.style.overflow = '';
   if (!fromRoute && location.hash) {
+    // Consume the entry we pushed, so Back doesn't reopen what was just closed.
+    if (pushedHash) { pushedHash = false; history.back(); return; }
     history.replaceState(null, '', location.pathname + location.search);
   }
+  pushedHash = false;
 }
 
 // Single source of truth: the URL hash drives the drawer (Back / refresh / share all work)
@@ -2169,16 +2330,20 @@ renderCards();
 route(); // honor deep links on load
 
 function toggleTheme() {
-  const isLight = document.body.classList.toggle('light');
-  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
-  localStorage.setItem('phTheme', isLight ? 'light' : 'dark');
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  try { localStorage.setItem('theme', next); } catch (e) {}
+  syncThemeIcon();
 }
 
-// Restore saved theme
-if (localStorage.getItem('phTheme') === 'light') {
-  document.body.classList.add('light');
-  document.getElementById('themeToggle').textContent = '☀️';
+function syncThemeIcon() {
+  const light = document.documentElement.getAttribute('data-theme') === 'light';
+  document.getElementById('themeToggle').textContent = light ? '☀️' : '🌙';
+  document.getElementById('themeToggle').setAttribute('aria-label',
+    light ? 'Switch to dark mode' : 'Switch to light mode');
 }
+syncThemeIcon();
 </script>
 </body>
 </html>
