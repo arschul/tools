@@ -376,6 +376,11 @@
   .btn-ghost{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);font-family:inherit;}
   .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
   .btn-ghost.small{padding:6px 12px;font-size:12px;}
+  /* Manual save: quiet when everything is already on the server, loud when not. */
+  .save-btn.needs-save{border-color:var(--amber);background:var(--amber-soft);color:var(--amber);}
+  .save-btn.blocked{border-color:var(--red);background:var(--red-soft);color:var(--red);}
+  .save-btn:disabled{opacity:.6;cursor:default;}
+  .save-msg{font-size:12px;font-weight:600;}
   .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;}
   /* Class-plan rich editor */
   .plan-toolbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--gray-soft);border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;}
@@ -1285,9 +1290,125 @@ async function retryNow(){
   for(const [k,v] of entries) await saveKey(k, v);
 }
 
+function isPlainObject(v){ return v && typeof v === 'object' && !Array.isArray(v); }
+/* Combine this device's unsaved edits with whatever the server now holds,
+   rather than one side winning wholesale. Nothing is ever dropped: on a
+   genuine collision the edit made HERE wins, because that's the one the
+   teacher is looking at.
+     · sessions      -> merged per class+date, then per student record
+     · other objects -> merged per top-level key
+     · arrays of {id} -> merged per record id, local overriding
+     · anything else -> this device's copy                                   */
+function mergeBlob(key, serverVal, localVal){
+  if(serverVal == null) return localVal;
+  if(localVal == null) return serverVal;
+  if(Array.isArray(localVal) && Array.isArray(serverVal)){
+    const idd = arr => arr.every(x => x && typeof x === 'object' && x.id);
+    if(!idd(localVal) || !idd(serverVal)) return localVal;
+    const byId = new Map();
+    serverVal.forEach(x => byId.set(x.id, x));
+    localVal.forEach(x => byId.set(x.id, x));
+    return [...byId.values()];
+  }
+  if(isPlainObject(localVal) && isPlainObject(serverVal)){
+    const out = Object.assign({}, serverVal);
+    Object.keys(localVal).forEach(k=>{
+      const l = localVal[k], sv = serverVal[k];
+      // Attendance is two levels deep, so merge student-by-student too: the
+      // phone marking Ana and the laptop marking Bruno both survive.
+      out[k] = (key==='sessions' && isPlainObject(l) && isPlainObject(sv)) ? Object.assign({}, sv, l) : l;
+    });
+    return out;
+  }
+  return localVal;
+}
+
+/* Recover from "changed on another device" WITHOUT losing this device's work:
+   re-read the server (which also refreshes the concurrency guards), merge, and
+   write the merged result back. */
+async function resolveAndSave(){
+  const entries = [...pendingSaves.entries()];
+  const server = await loadAllKeys();      // also resets knownUpdatedAt to server truth
+  loadedBlobs = server;
+  const merged = entries.map(([k,v]) => [k, mergeBlob(k, server[k], v)]);
+  const touched = new Set(merged.map(m=>m[0]));
+  // Adopt the other device's work on everything we weren't editing.
+  BACKUP_KEYS.forEach(k=>{
+    if(!touched.has(k) && Object.prototype.hasOwnProperty.call(server, k)) state[k] = server[k];
+  });
+  merged.forEach(([k,v])=>{ if(BACKUP_KEYS.includes(k)) state[k] = v; pendingSaves.set(k, v); });
+  staleConflict = false;                   // guards are current again, so writes are safe
+  let allOk = true;
+  for(const [k,v] of merged){ if(!await saveKey(k, v)) allOk = false; }
+  refreshView();
+  renderSaveState();
+  return allOk;
+}
+
+/* Manual save. Complements the autosave — it never replaces it. Returns a
+   short status string the caller can turn into a message. */
+async function saveNow(){
+  if(!dataReady) return 'notready';
+  if(authExpired){ renderSaveState(); return 'auth'; }
+  // Skip the debounce and any backoff wait: the teacher asked for it NOW.
+  Object.keys(saveTimers).forEach(k=>{ clearTimeout(saveTimers[k]); delete saveTimers[k]; });
+  if(retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
+  retryDelay = 2000;
+  try{
+    if(staleConflict) return (await resolveAndSave()) ? 'saved' : 'failed';
+    if(!pendingSaves.size){
+      // Nothing queued — verify what's on screen really is what's on the server.
+      const server = await fetchServerTimestamps();
+      const drifted = Object.keys(server).some(k => server[k] !== knownUpdatedAt[k]);
+      if(drifted){ await checkFreshnessOnFocus(); return 'refreshed'; }
+      renderSaveState();
+      return 'clean';
+    }
+    const entries = [...pendingSaves.entries()];
+    for(const [k,v] of entries) await saveKey(k, v);
+    if(staleConflict) return (await resolveAndSave()) ? 'saved' : 'failed';
+    if(pendingSaves.size){ scheduleRetry(); return 'failed'; }
+    return 'saved';
+  }catch(e){
+    console.error('Manual save failed', e);
+    if(pendingSaves.size) scheduleRetry();
+    return 'offline';
+  }
+}
+
+const SAVE_NOW_MESSAGES = {
+  saved:     ['✓ Saved',                              'var(--green)'],
+  clean:     ['✓ Everything is saved',                'var(--green)'],
+  refreshed: ['✓ Up to date',                         'var(--green)'],
+  failed:    ['⚠ Still not saved — keep this tab open and try again', 'var(--red)'],
+  offline:   ['⚠ No connection — try again in a moment',              'var(--red)'],
+  auth:      ['⚠ Sign in again using the banner above',               'var(--red)'],
+  notready:  ['Still loading…',                       'var(--muted)']
+};
+// Shared by the Roll Call button and the warning banner.
+async function saveNowClicked(btnId, msgId){
+  const btn = document.getElementById(btnId), msg = document.getElementById(msgId);
+  if(btn){ btn.dataset.busy = '1'; btn.disabled = true; btn.textContent = 'Saving…'; }
+  if(msg){ msg.textContent = ''; }
+  const res = await saveNow();
+  const [text, color] = SAVE_NOW_MESSAGES[res] || SAVE_NOW_MESSAGES.failed;
+  const live = document.getElementById(msgId);
+  if(live){
+    live.textContent = text;
+    live.style.color = color;
+    clearTimeout(live._clearTimer);
+    live._clearTimer = setTimeout(()=>{ const m = document.getElementById(msgId); if(m) m.textContent=''; }, 6000);
+  }
+  const liveBtn = document.getElementById(btnId);
+  if(liveBtn){ delete liveBtn.dataset.busy; liveBtn.disabled = false; }
+  renderSaveState();
+  return res;
+}
+
 function renderSaveState(){
   const banner = document.getElementById('save-banner');
   const el = document.getElementById('save-indicator');
+  paintSaveButtons();
   if(authExpired){
     if(el){ el.textContent = '⚠ Signed out'; el.style.color = 'var(--red)'; }
     if(banner){
@@ -1306,7 +1427,13 @@ function renderSaveState(){
     if(el){ el.textContent = '⚠ Out of date'; el.style.color = 'var(--red)'; }
     if(banner){
       banner.style.display = 'block';
-      banner.innerHTML = `⚠ <b>This data was changed on another device.</b> To avoid overwriting that newer work, saving is paused. Your unsaved change is still on screen — copy anything you need, then <button type="button" class="linkish" onclick="location.reload()" style="text-decoration:underline;">reload to get the latest</button>.`;
+      banner.innerHTML = `⚠ <b>This data was changed on another device.</b> Autosaving is paused so the other device's work isn't overwritten. Nothing on screen is lost.
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+          <button type="button" id="conflict-save-btn" class="btn-ghost small save-btn blocked" onclick="saveNowClicked('conflict-save-btn','conflict-save-msg')">💾 Save again</button>
+          <span id="conflict-save-msg" class="save-msg"></span>
+          <span style="font-size:12px;color:var(--muted);">Merges your changes with the other device's, keeping both — then saves.</span>
+          <button type="button" class="linkish" onclick="location.reload()" style="text-decoration:underline;font-size:12px;">Discard mine and reload</button>
+        </div>`;
     }
     return;
   }
@@ -1320,6 +1447,21 @@ function renderSaveState(){
     if(el){ el.textContent = pendingSaves.size ? 'Saving…' : 'Saved at ' + nowTime(); el.style.color = ''; }
     if(banner) banner.style.display = 'none';
   }
+}
+
+// The manual Save button sits quiet until there is genuinely something to do.
+function paintSaveButtons(){
+  document.querySelectorAll('.save-btn').forEach(btn=>{
+    if(btn.dataset.busy) return;
+    const blocked = staleConflict || authExpired || failedSaves.size > 0;
+    const waiting = pendingSaves.size > 0;
+    btn.classList.toggle('needs-save', !blocked && waiting);
+    btn.classList.toggle('blocked', !!blocked);
+    btn.textContent = blocked ? '💾 Save again' : (waiting ? '💾 Save now' : '💾 Save');
+    btn.title = blocked
+      ? 'This change has not reached the server. Press to merge with the server copy and save again.'
+      : (waiting ? 'Saving automatically — press to save straight away.' : 'Everything is saved. Press to check again.');
+  });
 }
 
 const saveTimers = {};
@@ -2553,6 +2695,7 @@ function refreshView(){
   else if(v==='private') renderPrivate();
   else if(v==='priv-student') renderPrivStudent();
   updatePrivAlertDot();
+  paintSaveButtons();   // the Roll Call save button is re-created by every render
 }
 function goToRollCall(classId, date){
   state.rollcall.classId = classId;
@@ -4454,6 +4597,9 @@ function renderRollCall(){
           <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
           <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
         </div>
+        <button type="button" id="rc-save-btn" class="btn-ghost small save-btn"
+          onclick="saveNowClicked('rc-save-btn','rc-save-msg')">💾 Save</button>
+        <span id="rc-save-msg" class="save-msg"></span>
         <span class="save-indicator" id="save-indicator"></span>
       </div>
       <div class="card roster-list ${locked?'locked-session':''}">
