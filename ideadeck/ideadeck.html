@@ -538,7 +538,7 @@
 
     header, .count-bar, #view-grid, .scrim, .back-link,
     .dw-close, .theme-toggle, .dice-btn, .seg-btn:not(.active),
-    .print-btn, .present-btn { display: none !important; }
+    .print-btn, .present-btn, .refine-bar, .fav, .card-meta { display: none !important; }
 
     .drawer {
       position: static !important;
@@ -558,6 +558,8 @@
     .dw-eyebrow { color: #444 !important; font-size: 8pt !important; }
     .dw-title { font-size: 22pt !important; color: #000 !important; }
     .dw-tagline { color: #333 !important; font-size: 10.5pt !important; }
+    .dw-meta { color: #333 !important; font-size: 9pt !important; margin-top: 6pt !important; }
+    .dw-meta .sk { border-color: #666 !important; }
 
     .seg { padding: 8pt 0 !important; border-bottom: none !important; display: block !important; }
     .seg-btn.active {
@@ -801,6 +803,82 @@
   }
   .drawer:focus, .present:focus { outline: none; }
 
+
+  /* Favourite star */
+  .fav {
+    position: absolute;
+    top: 12px; right: 12px;
+    z-index: 3;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s, transform 0.15s;
+  }
+  .fav:hover { color: var(--accent); transform: scale(1.18); }
+  .fav.on { color: var(--accent); }
+
+  /* Card meta chips */
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2px;
+  }
+
+  /* Quick refinement bar */
+  .refine-bar {
+    max-width: 1200px;
+    margin: 16px auto 0;
+    padding: 0 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ref-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ref-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ref-btn.active {
+    border-style: solid;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  @media (max-width: 600px) { .refine-bar { padding: 0 16px; } }
+
+  /* Drawer meta strip */
+  .dw-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dw-meta .sk {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 9px;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+
   /* NO RESULTS */
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -885,6 +963,7 @@
   </div>
 </header>
 
+<div class="refine-bar" id="refineBar" role="group" aria-label="Quick filters"></div>
 <div class="count-bar" id="countBar" aria-live="polite"></div>
 
 <div id="view-grid">
@@ -916,6 +995,7 @@ const DATA = [
     title: 'New Country',
     icon: '🌍',
     tagline: 'Combine the best of six real countries into one imaginary nation.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Presenting', 'Vocabulary'] },
     beg: {
       steps: [
         { title: 'Pick 6 countries', desc: 'Each student or pair names one country they know. Write them on the board.' },
@@ -950,6 +1030,7 @@ const DATA = [
     title: 'Endangered Animal',
     icon: '🦏',
     tagline: 'Explore the story of a species fighting for survival.',
+    meta: { mins: 40, group: 'groups', prep: 'none', skills: ['Presenting', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Pick an animal', desc: 'Choose a well-known endangered animal (e.g. panda, tiger, whale). Teacher can provide a list with pictures.' },
@@ -984,6 +1065,7 @@ const DATA = [
     title: 'Invention',
     icon: '💡',
     tagline: 'Design a never-before-seen product to solve a real problem.',
+    meta: { mins: 40, group: 'groups', prep: 'board', skills: ['Presenting', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Name a problem', desc: 'What is something that bothers people daily? (e.g. forgetting your keys, being late, feeling tired)' },
@@ -1018,6 +1100,7 @@ const DATA = [
     title: 'Travel Credits',
     icon: '✈️',
     tagline: 'Budget your way around the world on a limited credit allowance.',
+    meta: { mins: 30, group: 'pairs', prep: 'board', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Set the credits', desc: 'Each student has 5 credits. Each credit = one destination.' },
@@ -1052,6 +1135,7 @@ const DATA = [
     title: 'Perfect School',
     icon: '🏫',
     tagline: 'Redesign education from the ground up.',
+    meta: { mins: 40, group: 'groups', prep: 'board', skills: ['Debate', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Dream routine', desc: 'What time do classes start? How long are breaks? Describe a simple daily schedule.' },
@@ -1086,6 +1170,7 @@ const DATA = [
     title: 'A New Place in Town',
     icon: '🏙️',
     tagline: 'Create a brand new venue for your community.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Presenting', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Choose a place', desc: 'Pick a type: park, café, sports center, library, etc.' },
@@ -1120,6 +1205,7 @@ const DATA = [
     title: 'Roommates',
     icon: '🛋️',
     tagline: 'Negotiate and design your perfect shared living space.',
+    meta: { mins: 30, group: 'groups', prep: 'none', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Draw the room', desc: 'Simple floor plan. Where are the beds, desk, wardrobe?' },
@@ -1154,6 +1240,7 @@ const DATA = [
     title: 'Festivals Around the World',
     icon: '🎉',
     tagline: 'Bring a cultural celebration to life through research and storytelling.',
+    meta: { mins: 40, group: 'groups', prep: 'none', skills: ['Presenting', 'Vocabulary'] },
     beg: {
       steps: [
         { title: 'Pick a festival', desc: 'Choose a well-known festival: Carnival, Halloween, Chinese New Year, Diwali, etc.' },
@@ -1188,6 +1275,7 @@ const DATA = [
     title: 'Famous Figure',
     icon: '⭐',
     tagline: 'Research and present a remarkable person from history or today.',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Speaking', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Choose someone', desc: 'Pick a famous person you know: an athlete, singer, historical figure.' },
@@ -1222,6 +1310,7 @@ const DATA = [
     title: 'Book',
     icon: '📚',
     tagline: 'Share the story of a book that left a mark on you.',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Storytelling', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Choose a book', desc: 'It can be a book, comic, or story they know.' },
@@ -1256,6 +1345,7 @@ const DATA = [
     title: 'Movie',
     icon: '🎬',
     tagline: 'Review and present a film that captured your imagination.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Storytelling', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Choose a movie', desc: 'A film they love or know well.' },
@@ -1290,6 +1380,7 @@ const DATA = [
     title: 'Virtual Reality',
     icon: '🥽',
     tagline: 'Design the ultimate immersive VR experience.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Presenting', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Choose a VR world', desc: 'Where does your VR take you? Underwater? Space? Jungle?' },
@@ -1324,6 +1415,7 @@ const DATA = [
     title: 'Prison System',
     icon: '🔒',
     tagline: 'Redesign incarceration with rehabilitation at its core.',
+    meta: { mins: 45, group: 'class', prep: 'board', skills: ['Debate', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Basic concept', desc: 'Is your prison focused on punishment or rehabilitation? Why?' },
@@ -1358,6 +1450,7 @@ const DATA = [
     title: 'Lottery Winners',
     icon: '💰',
     tagline: 'Spend $10 million as a team — wisely or wildly.',
+    meta: { mins: 30, group: 'groups', prep: 'none', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'You won!', desc: 'Tell students they just won $10 million. What is the first thing they say or do?' },
@@ -1392,6 +1485,7 @@ const DATA = [
     title: 'Money Countdown',
     icon: '⏱️',
     tagline: '3 hours. R$100k. A ticking clock. Spend it or lose it.',
+    meta: { mins: 30, group: 'groups', prep: 'board', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Set the scene', desc: 'You have R$100,000 and 3 hours. After that, the money disappears.' },
@@ -1425,6 +1519,7 @@ const DATA = [
     title: 'Deserted Island',
     icon: '🏝️',
     tagline: 'Boat sinking. 3 items. Island survival. Go.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'The scenario', desc: 'Your boat is sinking. You can grab exactly 3 items before swimming to a nearby island.' },
@@ -1459,6 +1554,7 @@ const DATA = [
     title: 'Who Am I?',
     icon: '🪞',
     tagline: 'Introduce yourself in a way your classmates will never forget.',
+    meta: { mins: 20, group: 'class', prep: 'print', skills: ['Speaking', 'Vocabulary'] },
     beg: {
       steps: [
         { title: 'My family', desc: 'Who do you live with? Name and relationship.' },
@@ -1493,6 +1589,7 @@ const DATA = [
     title: "What's on the News?",
     icon: '📰',
     tagline: 'Find a real news story and tell it without reading.',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Speaking', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Pick a topic', desc: 'Choose one: sports, entertainment, or technology. Find one news story.' },
@@ -1527,6 +1624,7 @@ const DATA = [
     title: 'Bucket List',
     icon: '📋',
     tagline: 'Map out a lifetime of goals worth chasing.',
+    meta: { mins: 25, group: 'pairs', prep: 'none', skills: ['Speaking', 'Storytelling'] },
     beg: {
       steps: [
         { title: 'What is a bucket list?', desc: 'Explain the concept. Show examples.' },
@@ -1561,6 +1659,7 @@ const DATA = [
     title: 'Myths and Legends',
     icon: '🐉',
     tagline: 'Unpack a story that has been told for generations.',
+    meta: { mins: 40, group: 'groups', prep: 'none', skills: ['Storytelling', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Choose a legend', desc: 'One that students already know, e.g. Saci, the Headless Mule, or a local legend.' },
@@ -1595,6 +1694,7 @@ const DATA = [
     title: 'Pandemic Survival Plan',
     icon: '🦠',
     tagline: 'Plan for the unthinkable as a team.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Debate', 'Negotiation'] },
     beg: {
       steps: [
         { title: 'What do you need?', desc: 'List 5 things to have at home during a pandemic: food, water, medicine, etc.' },
@@ -1629,6 +1729,7 @@ const DATA = [
     title: 'Alien Encounter',
     icon: '👽',
     tagline: 'First contact: describe the alien, the place, and what you learn from each other.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Storytelling', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Draw the alien', desc: 'Quick sketch. How many eyes, arms, legs? What color?' },
@@ -1663,6 +1764,7 @@ const DATA = [
     title: 'Historical Era',
     icon: '🏛️',
     tagline: 'Dive deep into another time and bring it to life.',
+    meta: { mins: 40, group: 'groups', prep: 'none', skills: ['Presenting', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Pick an era', desc: 'Ancient Egypt, Middle Ages, Wild West, etc. Teacher can give options with pictures.' },
@@ -1697,6 +1799,7 @@ const DATA = [
     title: 'Future Predictions',
     icon: '🔮',
     tagline: 'What will the world look like in 50 years?',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Speaking', 'Debate'] },
     beg: {
       steps: [
         { title: 'Technology', desc: '"In the future, I think ___."' },
@@ -1730,6 +1833,7 @@ const DATA = [
     title: 'Entrepreneurial Venture',
     icon: '🚀',
     tagline: 'Identify a problem, build a startup, and pitch it.',
+    meta: { mins: 50, group: 'groups', prep: 'board', skills: ['Presenting', 'Negotiation'] },
     beg: {
       steps: [
         { title: 'The problem', desc: '"Something that annoys me is ___."' },
@@ -1764,6 +1868,7 @@ const DATA = [
     title: 'Superheroes and Villains',
     icon: '🦸',
     tagline: 'Build a hero or villain from scratch — powers, backstory, look, and conflicts.',
+    meta: { mins: 35, group: 'groups', prep: 'none', skills: ['Storytelling', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Create a character', desc: 'Hero or villain? What is the name? What is one superpower?' },
@@ -1798,6 +1903,7 @@ const DATA = [
     title: 'Escape Room Challenge',
     icon: '🔐',
     tagline: 'Design puzzles, clues, and a story for an unforgettable escape room.',
+    meta: { mins: 45, group: 'groups', prep: 'print', skills: ['Speaking', 'Writing'] },
     beg: {
       steps: [
         { title: 'Choose a theme', desc: 'Haunted house, jungle, space, spy — pick one.' },
@@ -1832,6 +1938,7 @@ const DATA = [
     title: 'Climate Change Solutions',
     icon: '🌱',
     tagline: 'Identify the causes and engineer solutions to save the planet.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Debate', 'Presenting'] },
     beg: {
       steps: [
         { title: 'What is it?', desc: 'In 1 sentence: "Climate change means ___."' },
@@ -1866,6 +1973,7 @@ const DATA = [
     title: 'Eco-Friendly City',
     icon: '🏙️',
     tagline: 'Design a city where humans and nature coexist.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Presenting', 'Debate'] },
     beg: {
       steps: [
         { title: 'Where is it?', desc: 'Choose a country or type of landscape: coast, mountain, forest, etc.' },
@@ -1900,6 +2008,7 @@ const DATA = [
     title: 'Space Colony',
     icon: '🌕',
     tagline: 'Establish humanity\'s first permanent home beyond Earth.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Presenting', 'Negotiation'] },
     beg: {
       steps: [
         { title: 'Where?', desc: 'Moon, Mars, or another planet? Why?' },
@@ -1934,6 +2043,7 @@ const DATA = [
     title: 'Talk Show Host',
     icon: '🎙️',
     tagline: 'Run your own live talk show — host, guests, and audience all included.',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Speaking', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Pick a topic', desc: 'Choose a simple theme: animals, food, sports, school.' },
@@ -1968,6 +2078,7 @@ const DATA = [
     title: 'Cultural Exchange',
     icon: '🤝',
     tagline: 'Compare two cultures on the same topic and find what unites and divides them.',
+    meta: { mins: 40, group: 'groups', prep: 'none', skills: ['Speaking', 'Presenting'] },
     beg: {
       steps: [
         { title: 'Pick two countries', desc: 'Brazil and one other. Or any two countries students know.' },
@@ -2002,6 +2113,7 @@ const DATA = [
     title: 'Life Coach',
     icon: '🧭',
     tagline: 'Give real advice, set goals, and coach a classmate through a challenge.',
+    meta: { mins: 30, group: 'pairs', prep: 'none', skills: ['Speaking', 'Negotiation'] },
     beg: {
       steps: [
         { title: 'The problem', desc: 'One student shares a simple problem: "I can\'t wake up early / I forget my homework."' },
@@ -2036,6 +2148,7 @@ const DATA = [
     title: 'Street Art Project',
     icon: '🖌️',
     tagline: 'Design a mural or installation for a public space — and defend it.',
+    meta: { mins: 40, group: 'groups', prep: 'board', skills: ['Presenting', 'Debate'] },
     beg: {
       steps: [
         { title: 'Location', desc: 'Choose a wall, park, or public space in your city.' },
@@ -2070,6 +2183,7 @@ const DATA = [
     title: 'Crowdfunding Campaign',
     icon: '💸',
     tagline: 'Pitch a project, set a goal, and persuade backers to fund your vision.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Presenting', 'Negotiation'] },
     beg: {
       steps: [
         { title: 'What is crowdfunding?', desc: 'Explain briefly. Show a simple Kickstarter example.' },
@@ -2104,6 +2218,7 @@ const DATA = [
     title: 'Medical Breakthrough',
     icon: '🧬',
     tagline: 'Design and present a fictional medical discovery that could change the world.',
+    meta: { mins: 45, group: 'groups', prep: 'none', skills: ['Presenting', 'Debate'] },
     beg: {
       steps: [
         { title: 'Choose a problem', desc: 'Pick a common illness or health issue: cancer, diabetes, allergies, mental health.' },
@@ -2138,6 +2253,7 @@ const DATA = [
     title: 'Extreme Expedition',
     icon: '🧗',
     tagline: 'Plan and survive a journey to one of the world\'s most hostile environments.',
+    meta: { mins: 40, group: 'groups', prep: 'board', skills: ['Negotiation', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Choose a place', desc: 'Amazon jungle, Arctic, Sahara, Mount Everest, deep ocean.' },
@@ -2172,6 +2288,7 @@ const DATA = [
     title: 'Debate Club',
     icon: '⚖️',
     tagline: 'Take a side, build your argument, and win the room.',
+    meta: { mins: 45, group: 'class', prep: 'board', skills: ['Debate', 'Speaking'] },
     beg: {
       steps: [
         { title: 'Simple motion', desc: 'E.g. "Homework should be banned" or "Cats are better than dogs."' },
@@ -2206,6 +2323,7 @@ const DATA = [
     title: 'Architect for a Day',
     icon: '🏗️',
     tagline: 'Design a building from concept to blueprint — then defend every decision.',
+    meta: { mins: 45, group: 'groups', prep: 'board', skills: ['Presenting', 'Writing'] },
     beg: {
       steps: [
         { title: 'What are you building?', desc: 'School, hospital, house, library, stadium — one type.' },
@@ -2240,6 +2358,7 @@ const DATA = [
     title: 'Social Media Campaign',
     icon: '📱',
     tagline: 'Build a campaign from scratch — message, platform, audience, and content.',
+    meta: { mins: 40, group: 'groups', prep: 'board', skills: ['Presenting', 'Writing'] },
     beg: {
       steps: [
         { title: 'What is the campaign for?', desc: 'A cause (save the ocean, read more), a product, or an event.' },
@@ -2282,6 +2401,20 @@ Object.entries(CATEGORIES).forEach(([cat, { items, color }]) => {
   });
 });
 
+const GROUP_LABEL = { pairs: 'Pairs', groups: 'Small groups', class: 'Whole class' };
+const PREP_LABEL  = { none: 'No prep', board: 'Board', print: 'Printout' };
+const PREP_ICON   = { none: '✅', board: '🖊️', print: '📄' };
+
+function metaChips(d) {
+  const m = d.meta;
+  if (!m) return '';
+  return '<div class="card-meta">' +
+    '<span title="Typical running time">⏱ ' + m.mins + ' min</span>' +
+    '<span title="Grouping">👥 ' + GROUP_LABEL[m.group] + '</span>' +
+    '<span title="Preparation">' + PREP_ICON[m.prep] + ' ' + PREP_LABEL[m.prep] + '</span>' +
+  '</div>';
+}
+
 function normText(t) {
   return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -2294,12 +2427,56 @@ DATA.forEach(d => {
   const cat = itemToCategory[d.title] || 'Other';
   CAT_COUNT[cat] = (CAT_COUNT[cat] || 0) + 1;
   const parts = [d.title, d.tagline, cat];
+  if (d.meta) parts.push(d.meta.mins + ' min', GROUP_LABEL[d.meta.group], PREP_LABEL[d.meta.prep], d.meta.skills.join(' '));
   ['beg', 'int', 'adv'].forEach(L => {
     ((d[L] && d[L].steps) || []).forEach(st => { parts.push(st.title, st.desc); });
     if (d[L] && d[L].tip) parts.push(d[L].tip);
   });
   SEARCH_INDEX[d.title] = normText(parts.join(' '));
 });
+
+const FAV_KEY = 'ideadeck-favs';
+let favs = (function () {
+  try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); }
+  catch (e) { return new Set(); }
+})();
+function saveFavs() { try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch (e) {} }
+
+function toggleFav(e, sl) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (favs.has(sl)) favs.delete(sl); else favs.add(sl);
+  saveFavs();
+  renderCards();
+  const btn = document.querySelector('.fav[data-sl="' + sl + '"]');
+  if (btn) btn.focus();
+}
+
+// Quick refinements a teacher actually needs mid-lesson
+const REFINE = {
+  fav:   { label: '★ Favourites', test: d => favs.has(slug(d.title)) },
+  quick: { label: '⏱ 30 min or less', test: d => d.meta && d.meta.mins <= 30 },
+  pairs: { label: '👥 Pairs', test: d => d.meta && d.meta.group === 'pairs' },
+  noprep:{ label: '✅ No prep', test: d => d.meta && d.meta.prep === 'none' },
+};
+const activeRefine = new Set();
+
+function buildRefine() {
+  const wrap = document.getElementById('refineBar');
+  wrap.innerHTML = Object.entries(REFINE).map(([k, r]) =>
+    '<button class="ref-btn" data-k="' + k + '" onclick="toggleRefine(\'' + k + '\')" aria-pressed="false">' + r.label + '</button>'
+  ).join('');
+}
+
+function toggleRefine(k) {
+  if (activeRefine.has(k)) activeRefine.delete(k); else activeRefine.add(k);
+  document.querySelectorAll('.ref-btn').forEach(b => {
+    const on = activeRefine.has(b.dataset.k);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  renderCards();
+}
 
 let activeFilter = 'All';
 let currentSlug = null;
@@ -2361,7 +2538,8 @@ function getFiltered() {
   return DATA.filter(d => {
     const matchCat = activeFilter === 'All' || getCat(d.title) === activeFilter;
     const matchQuery = !query || (SEARCH_INDEX[d.title] || '').includes(query);
-    return matchCat && matchQuery;
+    const matchRefine = [...activeRefine].every(k => REFINE[k].test(d));
+    return matchCat && matchQuery && matchRefine;
   });
 }
 
@@ -2391,9 +2569,13 @@ function renderCards() {
     card.style.animationDelay = (i * 30) + 'ms';
     const sl = slug(d.title);
     card.innerHTML = `
+      <button class="fav ${favs.has(sl) ? 'on' : ''}" data-sl="${sl}" onclick="toggleFav(event,'${sl}')"
+              aria-label="${favs.has(sl) ? 'Remove' : 'Add'} ${d.title} ${favs.has(sl) ? 'from' : 'to'} favourites"
+              aria-pressed="${favs.has(sl)}" title="Favourite">${favs.has(sl) ? '★' : '☆'}</button>
       <div class="card-icon" aria-hidden="true">${d.icon}</div>
       <h3 class="card-title"><a class="card-link" href="#${sl}">${d.title}</a></h3>
       <p class="card-subtitle">${d.tagline}</p>
+      ${metaChips(d)}
       <div class="card-footer">
         <span class="tag tag-cat">${cat}</span>
         <a class="tag tag-beg" href="#${sl}" title="Open ${d.title} at A1–A2">A1–A2</a>
@@ -2424,8 +2606,8 @@ function dealRandom() {
 // ---- Deep-linkable drawer ----
 const LEVELS = [
   { key: 'beg', code: '',   name: '🌱 Beginner',   cefr: 'A1–A2' },
-  { key: 'int', code: 'b1', name: '📗 Pre-Int',    cefr: 'B1' },
-  { key: 'adv', code: 'b2', name: '🚀 Upper-Int',  cefr: 'B2' },
+  { key: 'int', code: 'b1', name: '📗 Intermediate', cefr: 'B1' },
+  { key: 'adv', code: 'b2', name: '🚀 Upper-Int',    cefr: 'B2' },
 ];
 const CODE2LEVEL = { '': 'beg', 'b1': 'int', 'b2': 'adv' };
 const LEVEL2CODE = { beg: '', int: 'b1', adv: 'b2' };
@@ -2457,6 +2639,12 @@ function openDrawer(d, level) {
           <div class="dw-eyebrow">${cat}</div>
           <div class="dw-title">${d.title}</div>
           <div class="dw-tagline">${d.tagline}</div>
+          ${d.meta ? `<div class="dw-meta">
+            <span>⏱ ${d.meta.mins} min</span>
+            <span>👥 ${GROUP_LABEL[d.meta.group]}</span>
+            <span>${PREP_ICON[d.meta.prep]} ${PREP_LABEL[d.meta.prep]}</span>
+            ${d.meta.skills.map(x => `<span class="sk">${x}</span>`).join('')}
+          </div>` : ''}
         </div>
       </div>
     </div>
@@ -2749,6 +2937,7 @@ document.addEventListener('keydown', e => {
 });
 
 buildFilters();
+buildRefine();
 renderCards();
 route(); // honor deep links on load
 
