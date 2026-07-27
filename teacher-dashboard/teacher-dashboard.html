@@ -427,7 +427,16 @@
   .act-skill-opt input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;}
   .act-item{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--surface);padding:8px 10px;font-family:inherit;font-size:13px;color:var(--text);cursor:pointer;margin-bottom:6px;}
   .act-item:hover{border-color:var(--accent);}
-  .act-grade-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .act-grade-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  /* Per-student observation box. Compact until focused so a full roster still
+     fits on screen, then grows to give room for a real comment. */
+  .act-note{flex:1 1 100%;box-sizing:border-box;margin:2px 0 2px;padding:5px 9px;border:1px solid transparent;
+    border-bottom:1px dashed var(--border);border-radius:7px;background:none;color:var(--text);
+    font-family:inherit;font-size:12.5px;line-height:1.45;resize:vertical;min-height:29px;
+    transition:min-height .12s ease,border-color .12s ease,background .12s ease;}
+  .act-note::placeholder{color:var(--muted);opacity:.75;}
+  .act-note:focus{outline:none;min-height:66px;border-color:var(--accent);background:var(--surface-alt,rgba(0,0,0,.04));}
+  .act-note.has-note{border-bottom-style:solid;border-bottom-color:var(--accent);}
   .act-letter-seg{display:flex;gap:3px;}
   .act-letter{width:32px;height:30px;border:1px solid var(--border);border-radius:7px;background:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);}
   .act-letter.on{color:#fff;border-color:transparent;}
@@ -4340,11 +4349,12 @@ function renderRollCall(){
           <label style="${lbl}">Activities <span style="font-weight:400;">(graded A–F per student — grading stays open after class)</span></label>
           ${activitiesFor(cls.id, date).map(a=>{
             const g = Object.keys(a.grades||{}).length, avg = activityAvg(a), sk = skillMeta(a.skill);
+            const nNotes = Object.values(a.notes||{}).filter(v=>(v||'').trim()).length;
             return `
             <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
               <span>${sk.emoji}</span>
               <span style="flex:1;text-align:left;">${esc(a.description)}</span>
-              <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${avg!=null?` · avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
+              <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${nNotes?` · ✎ ${nNotes}`:''}${avg!=null?` · avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
             </button>`;
           }).join('')}
           <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">🎯 New activity</button>
@@ -4984,9 +4994,10 @@ function studentSkillAverages(studentId, classId){
   for(const k of Object.keys(acc)) out[k] = { avg: acc[k].s/acc[k].n, letter: numToLetter(acc[k].s/acc[k].n), n: acc[k].n };
   return out;
 }
+// Anything the student has a grade OR a written observation on.
 function studentActivityGrades(studentId, classId){
   return (state.activities||[])
-    .filter(a=>a.classId===classId && (a.grades||{})[studentId])
+    .filter(a=>a.classId===classId && ((a.grades||{})[studentId] || ((a.notes||{})[studentId]||'').trim()))
     .sort((a,b)=> b.date<a.date?-1 : b.date>a.date?1 : (b.ts||0)-(a.ts||0));
 }
 function saveActivitiesStore(){ scheduleSave('activities', state.activities); }
@@ -5007,7 +5018,36 @@ function setActivityGrade(activityId, studentId, letter){
   if(a.grades[studentId] === letter) delete a.grades[studentId]; // tap again to clear
   else a.grades[studentId] = letter;
   saveActivitiesStore();
-  openActivityGrading(activityId);
+  refreshActivityRow(a, studentId);
+}
+/* Repaint one row + the footer rather than the whole modal, so a half-typed
+   observation elsewhere on screen keeps its text AND the caret. */
+function refreshActivityRow(a, studentId){
+  const seg = document.getElementById('actseg-'+a.id+'-'+studentId);
+  if(!seg){ openActivityGrading(a.id); return; }
+  const cur = (a.grades||{})[studentId];
+  seg.querySelectorAll('.act-letter').forEach(btn=>{
+    const L = btn.getAttribute('data-letter');
+    btn.className = 'act-letter' + (cur===L ? ' on '+(L==='A'?'ga':L==='F'?'gf':'gm') : '');
+  });
+  const foot = document.getElementById('actfoot-'+a.id);
+  if(foot){
+    const graded = Object.keys(a.grades||{}).length;
+    const avg = activityAvg(a);
+    foot.innerHTML = `<span>${graded}/${studentsInClass(a.classId).length} graded</span>`
+      + (avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:'');
+  }
+}
+// Observations are free text per student — saved as you type, never required.
+function setActivityNote(activityId, studentId, val){
+  const a = activityById(activityId);
+  if(!a) return;
+  if(!a.notes) a.notes = {};
+  const trimmed = (val||'').trim();
+  if(trimmed) a.notes[studentId] = val; else delete a.notes[studentId];
+  const el = document.getElementById('actnote-'+activityId+'-'+studentId);
+  if(el) el.classList.toggle('has-note', !!trimmed);
+  saveActivitiesStore();
 }
 function setActivityField(activityId, field, val){
   const a = activityById(activityId);
@@ -5069,15 +5109,21 @@ function openActivityGrading(activityId){
   const isAbsent = s => session[s.id]?.attendance==='absent';
   const present = roster.filter(s=>!isAbsent(s));
   const absent = roster.filter(isAbsent);
-  const row = (s, dim) => `
+  const row = (s, dim) => {
+    const note = (a.notes||{})[s.id] || '';
+    return `
     <div class="act-grade-row" style="${dim?'opacity:.55;':''}">
       <span style="flex:1;font-size:14px;">${esc(s.name)}${dim?' <span style="font-size:11px;color:var(--muted);">(absent)</span>':''}</span>
-      <div class="act-letter-seg">
+      <div class="act-letter-seg" id="actseg-${a.id}-${s.id}">
         ${ACTIVITY_LETTERS.map(L=>`
-          <button type="button" class="act-letter ${a.grades?.[s.id]===L?'on '+(L==='A'?'ga':L==='F'?'gf':'gm'):''}"
+          <button type="button" data-letter="${L}" class="act-letter ${a.grades?.[s.id]===L?'on '+(L==='A'?'ga':L==='F'?'gf':'gm'):''}"
             onclick="setActivityGrade('${a.id}','${s.id}','${L}')">${L}</button>`).join('')}
       </div>
+      <textarea id="actnote-${a.id}-${s.id}" class="act-note ${note.trim()?'has-note':''}" rows="1"
+        placeholder="Observations on ${esc(s.name.split(' ')[0])}\u2019s performance (optional \u2014 appears on the report)"
+        oninput="setActivityNote('${a.id}','${s.id}', this.value)">${esc(note)}</textarea>
     </div>`;
+  };
   const graded = Object.keys(a.grades||{}).length;
   const avg = activityAvg(a);
   showModal(`
@@ -5099,8 +5145,10 @@ function openActivityGrading(activityId){
         ${absent.map(s=>row(s,true)).join('')}
       </details>`:''}
     <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);">
-      <span>${graded}/${roster.length} graded</span>
-      ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
+      <span id="actfoot-${a.id}" style="display:flex;gap:10px;">
+        <span>${graded}/${roster.length} graded</span>
+        ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
+      </span>
       <button class="icon-btn danger" style="margin-left:auto;" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
     </div>
     <div class="modal-actions">
@@ -5561,6 +5609,17 @@ function buildReportText(s, lang){
     }
   }
 
+  // --- per-activity observations written during grading ---
+  if(s.activityNotes && s.activityNotes.length){
+    out.push('');
+    out.push(isPt ? 'OBSERVAÇÕES DAS ATIVIDADES' : 'ACTIVITY OBSERVATIONS');
+    s.activityNotes.forEach(a=>{
+      const sk = skillMeta(a.skill);
+      out.push(`- ${formatDateShort(a.date)} · ${isPt?sk.pt:sk.label} — ${a.description}${a.letter?` (${a.letter})`:''}`);
+      out.push(`    ${a.note}`);
+    });
+  }
+
   // --- classes missed detail ---
   if(s.missed && s.missed.length){
     out.push('');
@@ -5791,6 +5850,10 @@ function renderStudentProfile(){
     name: student.name, className: cls?cls.name:null,
     grades: gradesInfo,
     toefl: toeflInfo,
+    activityNotes: cls ? studentActivityGrades(student.id, cls.id)
+      .filter(a=>((a.notes||{})[student.id]||'').trim())
+      .map(a=>({ date:a.date, description:a.description, skill:a.skill,
+                 letter:(a.grades||{})[student.id]||null, note:(a.notes[student.id]||'').trim() })) : [],
     fromVal, toVal,
     total, present, late, absent, totalPhone,
     hwAvg, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
@@ -5948,17 +6011,28 @@ function renderStudentProfile(){
           </span>`;
         }).join('')}
       </div>
-      ${recent.slice(0,8).map(a=>{
-        const sk = skillMeta(a.skill), L = a.grades[student.id];
-        return `
-        <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;">
-          <span>${sk.emoji}</span>
-          <span style="flex:1;">${esc(a.description)}</span>
-          <span style="font-size:12px;color:var(--muted);">${formatDateShort(a.date)}</span>
-          <b style="width:24px;text-align:center;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};">${L}</b>
+      ${(()=>{
+        // Keep the 8 most recent, but never hide an older activity that carries
+        // a written observation — those are the point of the section.
+        const noteOf = a => ((a.notes||{})[student.id]||'').trim();
+        const shown = recent.filter((a,i)=> i<8 || noteOf(a));
+        const hidden = recent.length - shown.length;
+        return shown.map(a=>{
+          const sk = skillMeta(a.skill), L = (a.grades||{})[student.id] || null;
+          const note = noteOf(a);
+          return `
+        <div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span>${sk.emoji}</span>
+            <span style="flex:1;">${esc(a.description)}</span>
+            <span style="font-size:12px;color:var(--muted);">${formatDateShort(a.date)}</span>
+            <b style="width:24px;text-align:center;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};">${L||'—'}</b>
+          </div>
+          ${note?`<div style="margin:5px 0 1px 26px;padding:6px 10px;border-left:3px solid var(--accent);background:var(--surface-alt,rgba(0,0,0,.035));border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.5;">${esc(note)}</div>`:''}
         </div>`;
-      }).join('')}
-      ${recent.length>8?`<div style="font-size:12px;color:var(--muted);padding-top:6px;">…${pt?'e mais':'and'} ${recent.length-8} ${pt?'anteriores':'older'}</div>`:''}
+        }).join('')
+        + (hidden>0?`<div style="font-size:12px;color:var(--muted);padding-top:6px;">…${pt?'e mais':'and'} ${hidden} ${pt?'anteriores':'older'}</div>`:'');
+      })()}
     </div>`;
     })()}
     ${gradesInfo ? `
