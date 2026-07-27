@@ -608,6 +608,181 @@
     .lvl-tip::before { color: #000 !important; }
   }
 
+
+  /* ================= PRESENT MODE (projection) ================= */
+  .present {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    padding: clamp(20px, 3vh, 44px) clamp(24px, 5vw, 90px);
+  }
+  .present.show { display: flex; }
+
+  .pr-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    padding-bottom: clamp(10px, 2vh, 22px);
+    border-bottom: 1px solid var(--border);
+  }
+  .pr-icon { font-size: clamp(22px, 2.6vw, 34px); line-height: 1; }
+  .pr-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(16px, 2vw, 26px);
+    color: var(--text);
+  }
+  .pr-badge {
+    margin-left: auto;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: clamp(11px, 1.1vw, 15px);
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    background: color-mix(in srgb, var(--lvl) 18%, transparent);
+    color: var(--lvl);
+    border: 1px solid color-mix(in srgb, var(--lvl) 40%, transparent);
+    white-space: nowrap;
+  }
+  .pr-exit {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 50%;
+    width: 38px; height: 38px;
+    font-size: 18px; line-height: 1;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pr-exit:hover { border-color: var(--danger); color: var(--danger); }
+
+  .pr-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(14px, 2.4vh, 30px);
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .pr-num {
+    font-size: clamp(13px, 1.3vw, 18px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--lvl);
+  }
+  .pr-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 64px);
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .pr-desc {
+    font-size: clamp(20px, 2.5vw, 30px);
+    line-height: 1.5;
+    font-weight: 300;
+    color: var(--text);
+    opacity: 0.88;
+    max-width: 46ch;
+  }
+  .pr-tagline { font-size: clamp(18px, 2.2vw, 28px); color: var(--muted); font-weight: 300; line-height: 1.5; max-width: 40ch; }
+
+  .pr-tip {
+    margin-top: clamp(10px, 2vh, 20px);
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--lvl);
+    font-size: clamp(15px, 1.5vw, 20px);
+    line-height: 1.55;
+    max-width: 60ch;
+  }
+  .pr-tip::before { content: '💡 Teacher tip'; display: block; font-weight: 700; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--lvl); margin-bottom: 6px; }
+  .pr-tip[hidden] { display: none; }
+
+  .pr-foot {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: clamp(10px, 2vh, 20px);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .pr-dots { display: flex; gap: 7px; }
+  .pr-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .pr-dot.on { background: var(--lvl); transform: scale(1.35); }
+  .pr-count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .pr-nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .pr-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pr-btn:hover:not(:disabled) { border-color: var(--lvl); color: var(--lvl); }
+  .pr-btn:disabled { opacity: 0.3; cursor: default; }
+  .pr-btn.ghost { background: none; font-size: 12.5px; padding: 7px 13px; color: var(--muted); }
+
+  /* Classroom timer */
+  .pr-timer { display: flex; align-items: center; gap: 6px; }
+  .pr-tset {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 7px;
+    width: 34px; height: 32px;
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+  }
+  .pr-tset:hover { border-color: var(--lvl); color: var(--lvl); }
+  .pr-clock {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: clamp(18px, 1.9vw, 26px);
+    letter-spacing: 1px;
+    color: var(--lvl);
+    cursor: pointer;
+    padding: 0 6px;
+    min-width: 76px;
+    text-align: center;
+  }
+  .pr-clock.paused { opacity: 0.45; }
+  .pr-clock.done { color: var(--danger); animation: flash 0.9s steps(1) infinite; }
+  @keyframes flash { 50% { opacity: 0.25; } }
+  .pr-clock[hidden], .pr-tclear[hidden] { display: none; }
+
+  .pr-hint {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.5;
+    letter-spacing: 0.4px;
+    pointer-events: none;
+  }
+  @media (max-width: 700px) { .pr-hint { display: none; } }
+
   /* NO RESULTS */
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -700,6 +875,8 @@
 
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Activity details"></aside>
+
+<div class="present" id="present" role="dialog" aria-modal="true" aria-label="Present mode"></div>
 
 <script>
 // BACKLOG - drafted titles, not yet authored into DATA. Move into a category when written:
@@ -2240,6 +2417,7 @@ function openDrawer(d, level) {
     <div class="dw-head">
       <button class="dw-close" onclick="closeDrawer()" aria-label="Close">✕</button>
       <div class="dw-actions">
+        <button class="dw-act" onclick="openPresent()" title="Full-screen present mode for projection">⛶<span>Present</span></button>
         <button class="dw-act" onclick="window.print()" title="Print this level as a group handout">🖨️<span>Print</span></button>
       </div>
       <div class="dw-hero">
@@ -2294,7 +2472,189 @@ function selectLevel(sl, level) {
   if (d) setLevel(d, level);
 }
 
+
+// ================= PRESENT MODE =================
+// Teacher-driven only: never auto-advances. Arrows / Space / click to move.
+let presentOn = false;
+let prIndex = 0;
+let prSlides = [];
+let prTipShown = false;
+
+const LVLVAR = { beg: '--accent2', int: '--accent', adv: '--accent3' };
+
+function openPresent() {
+  const d = DATA.find(x => slug(x.title) === currentSlug);
+  if (!d) return;
+  const ld = d[currentLevel];
+  const L = LEVELS.find(x => x.key === currentLevel);
+
+  // Slide 0 is the title card, then one slide per step.
+  prSlides = [{ kind: 'title', title: d.title, desc: d.tagline, icon: d.icon }]
+    .concat(ld.steps.map((st, i) => ({ kind: 'step', n: i + 1, of: ld.steps.length, title: st.title, desc: st.desc })));
+  prIndex = 0;
+  prTipShown = false;
+
+  const el = document.getElementById('present');
+  el.style.setProperty('--lvl', 'var(' + LVLVAR[currentLevel] + ')');
+  el.innerHTML =
+    '<div class="pr-top">' +
+      '<div class="pr-icon">' + d.icon + '</div>' +
+      '<div class="pr-name">' + d.title + '</div>' +
+      '<div class="pr-badge">' + L.cefr + '</div>' +
+      '<button class="pr-exit" onclick="closePresent()" aria-label="Exit present mode">✕</button>' +
+    '</div>' +
+    '<div class="pr-stage" id="prStage" onclick="prAdvanceFromClick(event)"></div>' +
+    '<div class="pr-foot">' +
+      '<div class="pr-dots" id="prDots"></div>' +
+      '<div class="pr-count" id="prCount"></div>' +
+      '<div class="pr-timer">' +
+        '<button class="pr-tset" onclick="prTimer(1)" title="1 minute">1′</button>' +
+        '<button class="pr-tset" onclick="prTimer(3)" title="3 minutes">3′</button>' +
+        '<button class="pr-tset" onclick="prTimer(5)" title="5 minutes">5′</button>' +
+        '<button class="pr-tset" onclick="prTimer(10)" title="10 minutes">10′</button>' +
+        '<div class="pr-clock" id="prClock" hidden onclick="prTimerToggle()" title="Click to pause / resume"></div>' +
+        '<button class="pr-tset pr-tclear" id="prClear" hidden onclick="prTimerStop()" title="Clear timer">✕</button>' +
+      '</div>' +
+      '<div class="pr-nav">' +
+        '<button class="pr-btn ghost" onclick="prToggleTip()" title="Show / hide the teacher tip (T)">💡 Tip</button>' +
+        '<button class="pr-btn" id="prPrev" onclick="prGo(-1)">←</button>' +
+        '<button class="pr-btn" id="prNext" onclick="prGo(1)">Next →</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pr-hint">← → or Space to move · T for tip · F fullscreen · Esc to exit</div>';
+
+  el.classList.add('show');
+  presentOn = true;
+  document.body.style.overflow = 'hidden';
+  prRender();
+  el.focus && el.focus();
+}
+
+function prRender() {
+  const sl = prSlides[prIndex];
+  const d = DATA.find(x => slug(x.title) === currentSlug);
+  const tip = d && d[currentLevel] ? d[currentLevel].tip : '';
+  const stage = document.getElementById('prStage');
+  if (!stage) return;
+
+  stage.innerHTML = sl.kind === 'title'
+    ? '<div class="pr-title">' + sl.title + '</div>' +
+      '<div class="pr-tagline">' + sl.desc + '</div>' +
+      '<div class="pr-tip" id="prTip"' + (prTipShown ? '' : ' hidden') + '>' + tip + '</div>'
+    : '<div class="pr-num">Step ' + sl.n + ' of ' + sl.of + '</div>' +
+      '<div class="pr-title">' + sl.title + '</div>' +
+      '<div class="pr-desc">' + sl.desc + '</div>' +
+      '<div class="pr-tip" id="prTip"' + (prTipShown ? '' : ' hidden') + '>' + tip + '</div>';
+
+  document.getElementById('prDots').innerHTML = prSlides
+    .map((_, i) => '<div class="pr-dot ' + (i === prIndex ? 'on' : '') + '" onclick="prJump(event,' + i + ')"></div>').join('');
+  document.getElementById('prCount').textContent = (prIndex + 1) + ' / ' + prSlides.length;
+  document.getElementById('prPrev').disabled = prIndex === 0;
+  const next = document.getElementById('prNext');
+  next.disabled = prIndex === prSlides.length - 1;
+  next.textContent = prIndex === prSlides.length - 1 ? 'End' : 'Next →';
+  stage.scrollTop = 0;
+}
+
+function prGo(delta) {
+  const i = prIndex + delta;
+  if (i < 0 || i >= prSlides.length) return;
+  prIndex = i;
+  prRender();
+}
+
+function prJump(e, i) { e.stopPropagation(); prIndex = i; prRender(); }
+
+function prAdvanceFromClick(e) {
+  if (e.target.closest('.pr-tip')) return;
+  const mid = window.innerWidth / 2;
+  prGo(e.clientX < mid * 0.4 ? -1 : 1);
+}
+
+function prToggleTip() {
+  prTipShown = !prTipShown;
+  const t = document.getElementById('prTip');
+  if (t) t.hidden = !prTipShown;
+}
+
+function closePresent() {
+  presentOn = false;
+  prTimerStop();
+  document.getElementById('present').classList.remove('show');
+  document.body.style.overflow = drawerOpen ? 'hidden' : '';
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+
+function prFullscreen() {
+  const el = document.documentElement;
+  if (document.fullscreenElement) { document.exitFullscreen && document.exitFullscreen().catch(() => {}); }
+  else if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); }
+}
+
+// ---- Classroom timer (Web Audio, no external files) ----
+let tEnd = null, tInt = null, tLeft = 0, tPaused = false;
+
+function prBeep() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ac = new AC();
+    [0, 0.35, 0.7].forEach(off => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type = 'sine';
+      o.frequency.value = 880;
+      const t0 = ac.currentTime + off;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+      o.start(t0); o.stop(t0 + 0.3);
+    });
+  } catch (e) {}
+}
+
+function prTimerPaint() {
+  const c = document.getElementById('prClock');
+  if (!c) return;
+  const m = Math.floor(Math.max(tLeft, 0) / 60), sec = Math.max(tLeft, 0) % 60;
+  c.textContent = m + ':' + String(sec).padStart(2, '0');
+  c.classList.toggle('paused', tPaused);
+  c.classList.toggle('done', tLeft <= 0);
+}
+
+function prTimer(mins) {
+  prTimerStop();
+  tLeft = mins * 60;
+  tPaused = false;
+  tEnd = Date.now() + tLeft * 1000;
+  document.getElementById('prClock').hidden = false;
+  document.getElementById('prClear').hidden = false;
+  prTimerPaint();
+  tInt = setInterval(() => {
+    if (tPaused) return;
+    tLeft = Math.round((tEnd - Date.now()) / 1000);
+    prTimerPaint();
+    if (tLeft <= 0) { clearInterval(tInt); tInt = null; prBeep(); }
+  }, 250);
+}
+
+function prTimerToggle() {
+  if (!tInt) return;
+  tPaused = !tPaused;
+  if (!tPaused) tEnd = Date.now() + tLeft * 1000;
+  prTimerPaint();
+}
+
+function prTimerStop() {
+  if (tInt) { clearInterval(tInt); tInt = null; }
+  tEnd = null; tLeft = 0; tPaused = false;
+  const c = document.getElementById('prClock'), x = document.getElementById('prClear');
+  if (c) { c.hidden = true; c.classList.remove('done', 'paused'); }
+  if (x) x.hidden = true;
+}
+
 function closeDrawer(fromRoute) {
+  if (presentOn) closePresent();
   drawerOpen = false;
   currentSlug = null;
   document.getElementById('scrim').classList.remove('show');
@@ -2322,7 +2682,20 @@ function route() {
 
 window.addEventListener('hashchange', route);
 document.addEventListener('keydown', e => {
+  if (presentOn) {
+    if (e.key === 'Escape') { closePresent(); return; }
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'Enter') { e.preventDefault(); prGo(1); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') { e.preventDefault(); prGo(-1); return; }
+    if (e.key === 'Home') { e.preventDefault(); prIndex = 0; prRender(); return; }
+    if (e.key === 'End') { e.preventDefault(); prIndex = prSlides.length - 1; prRender(); return; }
+    if (e.key === 't' || e.key === 'T') { prToggleTip(); return; }
+    if (e.key === 'f' || e.key === 'F') { prFullscreen(); return; }
+    return;
+  }
+  if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
   if (e.key === 'Escape' && drawerOpen) closeDrawer();
+  if ((e.key === 'r' || e.key === 'R') && !drawerOpen) dealRandom();
+  if (e.key === '/' && !drawerOpen) { e.preventDefault(); document.getElementById('search').focus(); }
 });
 
 buildFilters();
