@@ -1743,14 +1743,20 @@ function toeflSectionScore(form, col, raw){
   return Math.round(tbl[i][col]*10);
 }
 // All three sections are required — a partial test has no meaningful total.
+/* Sections are scored independently — a test sat one section at a time is a
+   perfectly normal classroom situation. `total` only exists once all three
+   are in, but every entered section always has its converted score. */
 function toeflCompute(form, L, S, R){
   const src = {L:L, S:S, R:R}, sec = {};
+  let filled = 0;
   for(const s of TOEFL_SECTIONS){
     const v = toeflSectionScore(form, s.col, src[s.k]);
-    if(v==null) return null;
     sec[s.k] = v;
+    if(v!=null) filled++;
   }
-  return { sec: sec, total: Math.round((sec.L + sec.S + sec.R)/3) };
+  const complete = filled===3;
+  return { sec: sec, filled: filled, complete: complete,
+           total: complete ? Math.round((sec.L + sec.S + sec.R)/3) : null };
 }
 /* A score cell holds EITHER a plain number (typed straight in, or data from
    before section entry existed) OR a detail object {form,L,S,R,v,sec}.
@@ -1759,7 +1765,7 @@ function toeflCompute(form, L, S, R){
 function scoreValue(entry){
   if(entry==null || entry==='') return null;
   if(typeof entry==='object'){
-    if(entry.v==null || entry.v==='') return null;   // a part-entered test has no score yet
+    if(entry.v==null || entry.v==='') return null;   // a part-entered test has no final score yet
     const n = Number(entry.v); return isNaN(n)?null:n;
   }
   const n = Number(entry); return isNaN(n)?null:n;
@@ -1767,18 +1773,21 @@ function scoreValue(entry){
 function scoreDetail(entry){
   return (entry && typeof entry==='object' && entry.form) ? entry : null;
 }
+// Converted score per section — null for sections not sat yet.
 function scoreSections(entry){
   const d = scoreDetail(entry);
   if(!d) return null;
-  if(d.sec && d.sec.L!=null && d.sec.S!=null && d.sec.R!=null) return d.sec;
   const c = toeflCompute(d.form, d.L, d.S, d.R);
-  return c ? c.sec : null;
+  return c.filled ? c.sec : null;
 }
-// Build a complete detail object from raw section counts (null if incomplete).
+function sectionsFilled(sec){ return sec ? TOEFL_SECTIONS.filter(s=>sec[s.k]!=null).length : 0; }
+function missingSectionNames(sec){ return TOEFL_SECTIONS.filter(s=>!sec || sec[s.k]==null).map(s=>s.en); }
+// Build a detail object from raw section counts. Null only if nothing is entered.
 function makeToeflEntry(form, L, S, R){
+  const norm = v => (v===''||v==null||isNaN(Number(v))) ? null : Math.round(Number(v));
   const c = toeflCompute(form, L, S, R);
-  if(!c) return null;
-  return { form:form, L:Number(L), S:Number(S), R:Number(R), v:c.total, sec:c.sec };
+  if(!c.filled) return null;
+  return { form:form, L:norm(L), S:norm(S), R:norm(R), v:c.total, sec:c.sec, partial:!c.complete };
 }
 /* ---- mock tests (simulations) ----
    A mock sits inside a cycle next to the official tests but NEVER counts
@@ -1792,8 +1801,10 @@ function toeflFormOfSlot(cycle, slot, cls){
   }
   return (cycle.testForms||[])[slot ? slot.idx : 0] || toeflFormFor(cls);
 }
-// Every TOEFL attempt on record for one student, oldest first, across all
-// cycles. Officials and mocks are interleaved by test date where known.
+/* Every TOEFL attempt on record for one student, oldest first, across all
+   cycles. Officials and mocks are interleaved by test date where known.
+   Part-scored attempts are included — their sections count, their total is
+   simply null until the remaining sections are sat. */
 function toeflAttempts(cls, studentId){
   const g = state.grades[cls.id];
   if(!g || !g.cycles) return [];
@@ -1810,36 +1821,58 @@ function toeflAttempts(cls, studentId){
     items.sort((a,b)=> (a.date||'9999-99-99').localeCompare(b.date||'9999-99-99') || a.seq-b.seq);
     items.forEach(it=>{
       const v = scoreValue(it.entry);
-      if(v==null) return;
+      const sec = scoreSections(it.entry);
+      if(v==null && !sec) return;               // nothing entered at all
       const d = scoreDetail(it.entry);
       out.push({ key:it.key, label:it.label, cycleLabel:cy.label, kind:it.kind, date:it.date, total:v,
                  form: d ? d.form : null,
                  raw:  d ? {L:d.L, S:d.S, R:d.R} : null,
-                 sec:  scoreSections(it.entry) });
+                 sec:  sec,
+                 filled: sectionsFilled(sec),
+                 complete: v!=null });
     });
   });
   return out;
 }
-// Section-by-section change between the last two attempts that both have
-// section data. Percentages are on raw correct answers — the figure a student
-// actually feels ("4 more right out of 50").
+/* Section-by-section change. Each section is compared against the most recent
+   EARLIER attempt that also has that section — so a Listening-only day still
+   compares against the last time Listening was sat, not against a test that
+   skipped it. Percentages are on raw correct answers: the figure a student
+   actually feels ("4 more right out of 50"). */
 function toeflProgress(attempts){
-  const withSec = attempts.filter(a=>a.raw && a.sec);
-  if(withSec.length < 2) return null;
-  const cur = withSec[withSec.length-1], prev = withSec[withSec.length-2];
-  const sections = TOEFL_SECTIONS.map(s=>{
-    const c = cur.raw[s.k], p = prev.raw[s.k];
-    const pct = (p>0) ? Math.round(((c-p)/p)*100) : null;
-    return { k:s.k, en:s.en, max:s.max, cur:c, prev:p, delta:c-p, pct:pct,
-             curScore:cur.sec[s.k], prevScore:prev.sec[s.k], scoreDelta:cur.sec[s.k]-prev.sec[s.k] };
-  });
-  return { cur:cur, prev:prev, sections:sections, totalDelta: cur.total - prev.total };
+  const list = attempts || [];
+  if(list.length < 2) return null;
+  const cur = list[list.length-1];
+  const sections = [];
+  if(cur.raw && cur.sec){
+    TOEFL_SECTIONS.forEach(s=>{
+      if(cur.raw[s.k]==null) return;
+      let prev = null;
+      for(let i=list.length-2; i>=0; i--){ const a = list[i]; if(a.raw && a.raw[s.k]!=null){ prev = a; break; } }
+      if(!prev) return;
+      const c = cur.raw[s.k], p = prev.raw[s.k];
+      sections.push({ k:s.k, en:s.en, max:s.max, cur:c, prev:p, delta:c-p,
+                      pct: p>0 ? Math.round(((c-p)/p)*100) : null,
+                      curScore:cur.sec[s.k], prevScore:prev.sec[s.k],
+                      scoreDelta:cur.sec[s.k]-prev.sec[s.k],
+                      prevLabel:prev.label, prevDate:prev.date });
+    });
+  }
+  let totalPrev = null, totalDelta = null;
+  if(cur.total!=null){
+    for(let i=list.length-2; i>=0; i--){ if(list[i].total!=null){ totalPrev = list[i]; break; } }
+    if(totalPrev) totalDelta = cur.total - totalPrev.total;
+  }
+  if(!sections.length && totalDelta==null) return null;
+  return { cur:cur, sections:sections, totalPrev:totalPrev, totalDelta:totalDelta };
 }
-/* --- multi-line TOEFL chart: dependency-free inline SVG, prints cleanly --- */
+/* --- multi-line TOEFL chart: dependency-free inline SVG, prints cleanly.
+       Gaps are fine: each line simply skips attempts where that section
+       wasn't sat. --- */
 function toeflChartSvg(attempts, opts){
   const o = opts || {};
   const w = o.w || 620, h = o.h || 210, target = o.target!=null ? o.target : null, pt = !!o.pt;
-  const pts = (attempts||[]).filter(a=>a.total!=null);
+  const pts = (attempts||[]).filter(a=>a.total!=null || sectionsFilled(a.sec)>0);
   if(pts.length < 1) return `<div class="spark-empty">${pt?'sem dados ainda':'no data yet'}</div>`;
   const series = [
     { k:'T', name:pt?'Nota final':'Total score', color:TOEFL_SECTION_COLORS.T, width:2.6, get:a=>a.total },
@@ -1850,6 +1883,7 @@ function toeflChartSvg(attempts, opts){
   const all = [];
   series.forEach(s=>pts.forEach(a=>{ const v=s.get(a); if(v!=null) all.push(v); }));
   if(target!=null) all.push(target);
+  if(!all.length) return `<div class="spark-empty">${pt?'sem dados ainda':'no data yet'}</div>`;
   let lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
   if(lo===hi){ lo -= 10; hi += 10; }
   const span = hi-lo; lo -= span*0.14; hi += span*0.14;
@@ -1882,20 +1916,23 @@ function toeflChartSvg(attempts, opts){
   </svg>
   <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:2px;">${legend}</div>`;
 }
+
 /* --- TOEFL block for the individual student report (screen + print) --- */
 function toeflReportCardHtml(info, pt){
   const atts = info.attempts, target = info.target;
   const last = atts[atts.length-1];
   const prog = toeflProgress(atts);
-  const withSec = atts.filter(a=>a.sec);
   const officials = atts.filter(a=>a.kind==='official').length;
   const mocks = atts.filter(a=>a.kind==='mock').length;
+  const partials = atts.filter(a=>!a.complete).length;
 
   const headNote = `${pt?'Nota final = média das três seções convertidas.':'Final score = the mean of the three converted section scores.'} `
     + `${atts.length} ${pt?'prova(s) registrada(s)':'test(s) on record'}${mocks?` (${officials} ${pt?'oficial(is)':'official'} · ${mocks} ${pt?'simulado(s)':'mock'})`:''}.`
+    + (partials?` ${partials} ${pt?'com seções ainda pendentes.':(partials===1?'still has sections outstanding.':'still have sections outstanding.')}`:'')
     + (target?` ${pt?'Meta por prova':'Target per test'}: <b>${target}</b>.`:'');
 
-  const bigCol = (target!=null && last.total<target) ? 'var(--red)' : 'var(--green)';
+  const missing = missingSectionNames(last.sec);
+  const bigCol = last.total==null ? 'var(--muted)' : ((target!=null && last.total<target) ? 'var(--red)' : 'var(--green)');
   const latest = `
     <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--surface-alt,rgba(0,0,0,.03));border-radius:10px;margin-bottom:12px;">
       <div>
@@ -1904,14 +1941,18 @@ function toeflReportCardHtml(info, pt){
         <div style="font-size:11.5px;color:var(--muted);">${esc(last.cycleLabel||'')}${last.date?` · ${formatDateShort(last.date)}`:''}</div>
       </div>
       <div style="text-align:center;">
-        <div style="font-size:32px;font-weight:900;line-height:1.05;color:${bigCol};">${last.total}</div>
-        <div style="font-size:11.5px;color:var(--muted);">${target!=null?(last.total>=target?(pt?'meta atingida':'target met'):`${target-last.total} ${pt?'abaixo da meta':'below target'}`):(pt?'nota final':'final score')}</div>
+        <div style="font-size:32px;font-weight:900;line-height:1.05;color:${bigCol};">${last.total==null?'—':last.total}</div>
+        <div style="font-size:11.5px;color:var(--muted);max-width:150px;">${
+          last.total==null
+            ? (pt?`falta: ${missing.join(', ')}`:`still to sit: ${missing.join(', ')}`)
+            : (target!=null ? (last.total>=target?(pt?'meta atingida':'target met'):`${target-last.total} ${pt?'abaixo da meta':'below target'}`) : (pt?'nota final':'final score'))
+        }</div>
       </div>
       ${last.sec?`<div style="display:flex;gap:14px;flex-wrap:wrap;">
-        ${TOEFL_SECTIONS.map(x=>`<div style="text-align:center;min-width:78px;">
+        ${TOEFL_SECTIONS.map(x=>`<div style="text-align:center;min-width:78px;${last.sec[x.k]==null?'opacity:.45;':''}">
           <div style="font-size:11px;font-weight:700;color:${TOEFL_SECTION_COLORS[x.k]};">${x.en}</div>
-          <div style="font-size:19px;font-weight:800;">${last.sec[x.k]}</div>
-          <div style="font-size:11px;color:var(--muted);">${last.raw?`${last.raw[x.k]}/${x.max} ${pt?'certas':'correct'}`:''}</div>
+          <div style="font-size:19px;font-weight:800;">${last.sec[x.k]==null?'—':last.sec[x.k]}</div>
+          <div style="font-size:11px;color:var(--muted);">${last.raw&&last.raw[x.k]!=null?`${last.raw[x.k]}/${x.max} ${pt?'certas':'correct'}`:(pt?'não feita':'not sat')}</div>
         </div>`).join('')}
       </div>`:''}
     </div>`;
@@ -1919,7 +1960,7 @@ function toeflReportCardHtml(info, pt){
   const change = prog ? `
     <div style="margin-bottom:12px;">
       <div style="font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">
-        ${pt?'Comparação com':'Change since'} ${esc(prog.prev.label)}${prog.prev.date?` (${formatDateShort(prog.prev.date)})`:''}
+        ${pt?'Comparação com a prova anterior de cada seção':'Change since the previous time each section was sat'}
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         ${prog.sections.map(x=>{
@@ -1928,14 +1969,17 @@ function toeflReportCardHtml(info, pt){
           return `<div style="flex:1 1 150px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;">
             <div style="font-size:11.5px;font-weight:700;color:${TOEFL_SECTION_COLORS[x.k]};">${x.en}</div>
             <div style="font-size:17px;font-weight:800;color:${col};">${flat?'–':(up?'▲ +':'▼ −')}${x.pct==null?'':Math.abs(x.pct)+'%'}</div>
-            <div style="font-size:11px;color:var(--muted);">${x.prev}→${x.cur} ${pt?'certas':'correct'} · ${x.prevScore}→${x.curScore} ${pt?'pts':'pts'}</div>
+            <div style="font-size:11px;color:var(--muted);">${x.prev}→${x.cur} ${pt?'certas':'correct'} · ${x.prevScore}→${x.curScore} pts</div>
+            <div style="font-size:10.5px;color:var(--muted);">vs ${esc(x.prevLabel)}</div>
           </div>`;
         }).join('')}
+        ${prog.totalDelta!=null?`
         <div style="flex:1 1 150px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--surface-alt,rgba(0,0,0,.03));">
           <div style="font-size:11.5px;font-weight:700;">${pt?'Nota final':'Final score'}</div>
           <div style="font-size:17px;font-weight:800;color:${prog.totalDelta===0?'var(--muted)':(prog.totalDelta>0?'var(--green)':'var(--red)')};">${prog.totalDelta===0?'–':(prog.totalDelta>0?'▲ +':'▼ −')}${Math.abs(prog.totalDelta)}</div>
-          <div style="font-size:11px;color:var(--muted);">${prog.prev.total} → ${prog.cur.total}</div>
-        </div>
+          <div style="font-size:11px;color:var(--muted);">${prog.totalPrev.total} → ${prog.cur.total}</div>
+          <div style="font-size:10.5px;color:var(--muted);">vs ${esc(prog.totalPrev.label)}</div>
+        </div>`:''}
       </div>
     </div>` : (atts.length>1 ? '' : `<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">${pt?'Adicione um simulado ou uma segunda prova para ver a comparação por seção.':'Add a mock test or a second test to see section-by-section change.'}</div>`);
 
@@ -1949,13 +1993,18 @@ function toeflReportCardHtml(info, pt){
         </tr></thead>
         <tbody>
           ${atts.map((a,i)=>{
-            const prev = i>0 ? atts[i-1] : null;
-            const d = prev ? a.total - prev.total : null;
+            let prev = null;
+            for(let j=i-1;j>=0;j--){ if(atts[j].total!=null){ prev = atts[j]; break; } }
+            const d = (a.total!=null && prev) ? a.total - prev.total : null;
             return `<tr>
               <td>${esc(a.label)}${a.kind==='mock'?` <span class="badge other" style="font-size:10.5px;">${pt?'simulado':'mock'}</span>`:''}<div style="font-size:11px;color:var(--muted);">${esc(a.cycleLabel||'')}</div></td>
               <td>${a.date?formatDateShort(a.date):'—'}</td>
-              ${TOEFL_SECTIONS.map(x=>`<td style="text-align:center;">${a.sec?`<b>${a.sec[x.k]}</b>${a.raw?`<div style="font-size:11px;color:var(--muted);">${a.raw[x.k]}/${x.max}</div>`:''}`:'—'}</td>`).join('')}
-              <td style="text-align:center;font-weight:800;${target!=null&&a.total<target?'color:var(--red);':''}">${a.total}${d!=null?`<div style="font-size:11px;font-weight:600;color:${d>0?'var(--green)':d<0?'var(--red)':'var(--muted)'};">${d>0?'+':d<0?'−':'±'}${Math.abs(d)}</div>`:''}</td>
+              ${TOEFL_SECTIONS.map(x=>`<td style="text-align:center;">${a.sec&&a.sec[x.k]!=null?`<b>${a.sec[x.k]}</b>${a.raw&&a.raw[x.k]!=null?`<div style="font-size:11px;color:var(--muted);">${a.raw[x.k]}/${x.max}</div>`:''}`:'<span style="color:var(--muted);">—</span>'}</td>`).join('')}
+              <td style="text-align:center;font-weight:800;${target!=null&&a.total!=null&&a.total<target?'color:var(--red);':''}">${
+                a.total==null
+                  ? `<span style="color:var(--muted);font-weight:600;font-size:12px;">${pt?'parcial':'partial'}</span><div style="font-size:10.5px;font-weight:400;color:var(--muted);">${a.filled}/3 ${pt?'seções':'sections'}</div>`
+                  : `${a.total}${d!=null?`<div style="font-size:11px;font-weight:600;color:${d>0?'var(--green)':d<0?'var(--red)':'var(--muted)'};">${d>0?'+':d<0?'−':'±'}${Math.abs(d)}</div>`:''}`
+              }</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -1968,7 +2017,7 @@ function toeflReportCardHtml(info, pt){
       <div class="chart-note" style="margin-bottom:10px;">${headNote}</div>
       ${latest}
       ${change}
-      ${withSec.length||atts.length>1 ? `<div style="margin:6px 0 14px;">${toeflChartSvg(atts, {target:target, pt:pt})}</div>` : ''}
+      ${atts.length>1 || sectionsFilled(last.sec)>0 ? `<div style="margin:6px 0 14px;">${toeflChartSvg(atts, {target:target, pt:pt})}</div>` : ''}
       ${table}
     </div>`;
 }
@@ -1992,13 +2041,14 @@ function toeflGroupTableHtml(cls, students, pt){
           <tbody>
             ${rows.map(r=>{
               const a = r.atts[r.atts.length-1];
-              const prev = r.atts.length>1 ? r.atts[r.atts.length-2] : null;
-              const d = prev ? a.total - prev.total : null;
+              let prev = null;
+              for(let j=r.atts.length-2;j>=0;j--){ if(r.atts[j].total!=null){ prev = r.atts[j]; break; } }
+              const d = (a.total!=null && prev) ? a.total - prev.total : null;
               return `<tr>
                 <td style="font-weight:600;">${esc(r.s.name)}</td>
                 <td>${esc(a.label)}${a.kind==='mock'?` <span class="badge other" style="font-size:10.5px;">${pt?'simulado':'mock'}</span>`:''}${a.date?`<div style="font-size:11px;color:var(--muted);">${formatDateShort(a.date)}</div>`:''}</td>
-                ${TOEFL_SECTIONS.map(x=>`<td style="text-align:center;">${a.sec?`<b>${a.sec[x.k]}</b><div style="font-size:11px;color:var(--muted);">${a.raw?a.raw[x.k]+'/'+x.max:''}</div>`:'—'}</td>`).join('')}
-                <td style="text-align:center;font-weight:800;${target!=null&&a.total<target?'color:var(--red);':''}">${a.total}</td>
+                ${TOEFL_SECTIONS.map(x=>`<td style="text-align:center;">${a.sec&&a.sec[x.k]!=null?`<b>${a.sec[x.k]}</b><div style="font-size:11px;color:var(--muted);">${a.raw&&a.raw[x.k]!=null?a.raw[x.k]+'/'+x.max:''}</div>`:'<span style="color:var(--muted);">—</span>'}</td>`).join('')}
+                <td style="text-align:center;font-weight:800;${target!=null&&a.total!=null&&a.total<target?'color:var(--red);':''}">${a.total==null?`<span style="color:var(--muted);font-weight:600;font-size:12px;">${a.filled}/3</span>`:a.total}</td>
                 <td style="text-align:center;">${d==null?'<span style="color:var(--muted);">—</span>':`<span style="font-weight:700;color:${d>0?'var(--green)':d<0?'var(--red)':'var(--muted)'};">${d>0?'+':d<0?'−':'±'}${Math.abs(d)}</span><div style="font-size:11px;color:var(--muted);">vs ${esc(prev.label)}</div>`}</td>
               </tr>`;
             }).join('')}
@@ -2007,8 +2057,6 @@ function toeflGroupTableHtml(cls, students, pt){
       </div>
     </div>`;
 }
-
-// Ensures a grades record with at least one cycle exists for a class. Mutates state — never call during a pure render loop.
 function classGrades(classId){
   if(!state.grades[classId]) state.grades[classId] = { cycles: [] };
   const g = state.grades[classId];
@@ -3814,8 +3862,9 @@ function gmSummaryTable(c, cycle, students, n, target){
   const cellFor = (entry) => {
     const v = scoreValue(entry);
     const sec = scoreSections(entry);
-    if(v==null) return `<span style="color:var(--muted);">—</span>`;
-    return `<b>${v}</b>${sec?`<div style="font-size:10.5px;font-weight:400;color:var(--muted);white-space:nowrap;">${sec.L} / ${sec.S} / ${sec.R}</div>`:''}`;
+    if(v==null && !sec) return `<span style="color:var(--muted);">—</span>`;
+    const line = sec ? `<div style="font-size:10.5px;font-weight:400;color:var(--muted);white-space:nowrap;">${TOEFL_SECTIONS.map(x=>sec[x.k]==null?'—':sec[x.k]).join(' / ')}</div>` : '';
+    return (v==null ? `<span style="color:var(--muted);font-weight:700;font-size:12.5px;">${sectionsFilled(sec)}/3</span>` : `<b>${v}</b>`) + line;
   };
   const official = `
     <div class="table-wrap" style="max-height:44vh;overflow:auto;">
@@ -3841,7 +3890,7 @@ function gmSummaryTable(c, cycle, students, n, target){
         </tbody>
       </table>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">Sub-figures are Listening / Structure / Reading converted scores. Open a test tab to enter section answers.</div>`;
+    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">Sub-figures are Listening / Structure / Reading converted scores; <b>n/3</b> means that test is only part-scored so far. Open a test tab to enter section answers.</div>`;
 
   const mockTable = !mocks.length ? '' : `
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin:16px 0 6px;">🧪 MOCK TESTS — practice only, never counted towards status</div>
@@ -3899,18 +3948,16 @@ function gmTestEntry(c, cycle, students, n, target){
     const d = scoreDetail(entry);
     const rawOf = k => d && d[k]!=null ? d[k] : '';
     const sec = scoreSections(entry);
-    const total = scoreValue(entry);
     const atts = attemptsByStudent[s.id];
     const idx = atts.findIndex(a=>a.key===slotKeyOf);
-    const prev = idx>0 ? atts[idx-1] : null;
     return `<tr>
       <td style="font-weight:600;">${esc(s.name)}</td>
       ${TOEFL_SECTIONS.map(sec2=>`<td style="text-align:center;">
         <input type="number" min="0" max="${sec2.max}" value="${rawOf(sec2.k)}" style="width:64px;text-align:center;" placeholder="/${sec2.max}" onchange="gmSetSection(window._gmIds[${si}], '${sec2.k}', this.value)">
-        <div id="gsec-${s.id}-${sec2.k}" style="font-size:10.5px;color:var(--muted);">${sec?sec[sec2.k]:'—'}</div>
+        <div id="gsec-${s.id}-${sec2.k}" style="font-size:12.5px;font-weight:800;color:${TOEFL_SECTION_COLORS[sec2.k]};">${sec&&sec[sec2.k]!=null?sec[sec2.k]:'<span style="color:var(--muted);font-weight:400;">—</span>'}</div>
       </td>`).join('')}
-      <td style="text-align:center;font-weight:800;font-size:16px;" id="gtot-${s.id}">${total==null?'—':total}</td>
-      <td style="text-align:center;" id="gdelta-${s.id}">${gmDeltaHtml(total, prev, target)}</td>
+      <td style="text-align:center;font-weight:800;font-size:16px;" id="gtot-${s.id}">${gmTotalCellHtml(entry)}</td>
+      <td style="text-align:center;" id="gdelta-${s.id}">${gmDeltaHtml(atts, idx, target)}</td>
     </tr>`;
   }).join('');
 
@@ -3921,21 +3968,53 @@ function gmTestEntry(c, cycle, students, n, target){
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">The small grey figure under each box is that section's converted score.${target?` Target for this level: <b>${target}</b>.`:''}</div>`;
+    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">The coloured figure under each box is that section's converted score — it appears as soon as you enter that section, on its own. The final score needs all three.${target?` Target for this level: <b>${target}</b>.`:''}</div>`;
 }
 
-function gmDeltaHtml(total, prev, target){
-  if(total==null) return '<span style="color:var(--muted);">—</span>';
-  let out = '';
-  if(prev){
-    const d = total - prev.total;
-    const col = d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';
-    out += `<span style="font-weight:700;color:${col};">${d>0?'▲ +':d<0?'▼ −':'– '}${Math.abs(d)}</span><div style="font-size:10.5px;color:var(--muted);">vs ${esc(prev.label)}</div>`;
-  }else{
-    out += '<span style="color:var(--muted);font-size:12px;">first attempt</span>';
+// Final score cell: a real score once all three sections are in, otherwise an
+// honest "2/3 sections" with what is still outstanding.
+function gmTotalCellHtml(entry){
+  const total = scoreValue(entry);
+  if(total!=null) return String(total);
+  const sec = scoreSections(entry);
+  const filled = sectionsFilled(sec);
+  if(!filled) return '<span style="color:var(--muted);font-weight:600;">—</span>';
+  return `<span style="color:var(--muted);font-size:13px;">${filled}/3</span>`
+    + `<div style="font-size:10.5px;font-weight:400;color:var(--muted);white-space:normal;">needs ${missingSectionNames(sec).join(' + ')}</div>`;
+}
+/* "vs previous" for one student. A complete test compares final scores; a
+   part-scored one compares each section it does have against the last time
+   that section was sat. */
+function gmDeltaHtml(atts, idx, target){
+  if(idx<0) return '<span style="color:var(--muted);">—</span>';
+  const cur = atts[idx];
+  if(cur.total!=null){
+    let prev = null;
+    for(let j=idx-1;j>=0;j--){ if(atts[j].total!=null){ prev = atts[j]; break; } }
+    let out = '';
+    if(prev){
+      const d = cur.total - prev.total;
+      const col = d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';
+      out += `<span style="font-weight:700;color:${col};">${d>0?'▲ +':d<0?'▼ −':'– '}${Math.abs(d)}</span><div style="font-size:10.5px;color:var(--muted);">vs ${esc(prev.label)}</div>`;
+    }else{
+      out += '<span style="color:var(--muted);font-size:12px;">first attempt</span>';
+    }
+    if(target!=null && cur.total < target) out += `<div style="font-size:10.5px;color:var(--red);font-weight:700;">${target-cur.total} below target</div>`;
+    return out;
   }
-  if(target!=null && total < target) out += `<div style="font-size:10.5px;color:var(--red);font-weight:700;">${target-total} below target</div>`;
-  return out;
+  const bits = [];
+  TOEFL_SECTIONS.forEach(x=>{
+    if(!cur.sec || cur.sec[x.k]==null) return;
+    let prev = null;
+    for(let j=idx-1;j>=0;j--){ const a = atts[j]; if(a.sec && a.sec[x.k]!=null){ prev = a; break; } }
+    if(!prev) return;
+    const d = cur.sec[x.k] - prev.sec[x.k];
+    const col = d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';
+    bits.push(`<span style="color:${col};font-weight:700;">${x.k} ${d>0?'+':d<0?'−':'±'}${Math.abs(d)}</span>`);
+  });
+  return bits.length
+    ? `<div style="font-size:11.5px;display:flex;gap:7px;justify-content:center;flex-wrap:wrap;">${bits.join('')}</div>`
+    : '<span style="color:var(--muted);font-size:12px;">—</span>';
 }
 
 /* --- read / write one score cell, official or mock --- */
@@ -3979,11 +4058,9 @@ function gmSetSection(studentId, sectionKey, value){
   if(v!=null && isNaN(v)) v = null;
   if(v!=null) v = Math.max(0, Math.min(meta.max, v));
   raw[sectionKey] = v;
-  const complete = raw.L!=null && raw.S!=null && raw.R!=null;
-  const empty = raw.L==null && raw.S==null && raw.R==null;
-  const entry = complete ? makeToeflEntry(form, raw.L, raw.S, raw.R)
-              : empty ? null
-              : { form:form, L:raw.L, S:raw.S, R:raw.R, v:null };
+  // Sections stand on their own — makeToeflEntry returns null only when the
+  // whole row has been cleared, and fills in the final score once all three are in.
+  const entry = makeToeflEntry(form, raw.L, raw.S, raw.R);
   gmWriteScoreCell(cycle, slot, studentId, n, entry);
   scheduleSave('grades', state.grades);
   gmRefreshRow(studentId);
@@ -4001,19 +4078,17 @@ function gmRefreshRow(studentId){
   const target = isAdvancedLevel(c.level) ? TOEFL_TARGETS[c.level] : null;
   const entry = gmScoreCell(cycle, slot, studentId, n);
   const sec = scoreSections(entry);
-  const total = scoreValue(entry);
-  TOEFL_SECTIONS.forEach(s=>{
-    const el = document.getElementById('gsec-'+studentId+'-'+s.k);
-    if(el) el.textContent = sec ? sec[s.k] : '—';
+  TOEFL_SECTIONS.forEach(x=>{
+    const el = document.getElementById('gsec-'+studentId+'-'+x.k);
+    if(el) el.innerHTML = (sec && sec[x.k]!=null) ? String(sec[x.k]) : '<span style="color:var(--muted);font-weight:400;">—</span>';
   });
   const tot = document.getElementById('gtot-'+studentId);
-  if(tot) tot.textContent = total==null ? '—' : total;
+  if(tot) tot.innerHTML = gmTotalCellHtml(entry);
   const del = document.getElementById('gdelta-'+studentId);
   if(del){
     const atts = toeflAttempts(c, studentId);
     const key = cycle.id + '|' + (slot.kind==='mock' ? 'm'+slot.id : 'o'+slot.idx);
-    const idx = atts.findIndex(a=>a.key===key);
-    del.innerHTML = gmDeltaHtml(total, idx>0?atts[idx-1]:null, target);
+    del.innerHTML = gmDeltaHtml(atts, atts.findIndex(a=>a.key===key), target);
   }
 }
 
@@ -4038,10 +4113,7 @@ function gmSetForm(formId){
     const cur = gmScoreCell(cycle, slot, s.id, n);
     const d = scoreDetail(cur);
     if(!d) return;
-    const rebuilt = (d.L!=null && d.S!=null && d.R!=null)
-      ? makeToeflEntry(formId, d.L, d.S, d.R)
-      : { form:formId, L:d.L, S:d.S, R:d.R, v:null };
-    gmWriteScoreCell(cycle, slot, s.id, n, rebuilt);
+    gmWriteScoreCell(cycle, slot, s.id, n, makeToeflEntry(formId, d.L, d.S, d.R));
   });
   scheduleSave('grades', state.grades);
   renderGradesModal();
@@ -5594,18 +5666,25 @@ function buildReportText(s, lang){
     if(s.toefl.target) out.push(`${isPt?'Meta por prova':'Target per test'}: ${s.toefl.target}`);
     A.forEach(a=>{
       const sec = a.sec
-        ? TOEFL_SECTIONS.map(x=>`${x.en} ${a.sec[x.k]}${a.raw?` (${a.raw[x.k]}/${x.max})`:''}`).join(' · ')
+        ? TOEFL_SECTIONS.map(x=>a.sec[x.k]==null
+            ? `${x.en} ${isPt?'não feita':'not sat'}`
+            : `${x.en} ${a.sec[x.k]}${a.raw&&a.raw[x.k]!=null?` (${a.raw[x.k]}/${x.max})`:''}`).join(' · ')
         : (isPt?'sem detalhe por seção':'no section detail');
-      out.push(`- ${a.label}${a.kind==='mock'?(isPt?' [simulado]':' [mock]'):''}${a.date?` ${formatDateShort(a.date)}`:''}: ${a.total} — ${sec}`);
+      const score = a.total==null
+        ? (isPt?`parcial, ${a.filled}/3 seções`:`partial, ${a.filled}/3 sections`)
+        : a.total;
+      out.push(`- ${a.label}${a.kind==='mock'?(isPt?' [simulado]':' [mock]'):''}${a.date?` ${formatDateShort(a.date)}`:''}: ${score} — ${sec}`);
     });
     const prog = toeflProgress(A);
     if(prog){
-      out.push(isPt ? `Comparado com ${prog.prev.label}:` : `Compared with ${prog.prev.label}:`);
+      out.push(isPt ? 'Comparação por seção:' : 'Section-by-section change:');
       prog.sections.forEach(x=>{
         const dir = x.delta>0 ? (isPt?'melhor':'better') : x.delta<0 ? (isPt?'pior':'lower') : (isPt?'igual':'unchanged');
-        out.push(`    ${x.en}: ${x.pct==null?'—':(x.pct>0?'+':'')+x.pct+'%'} ${dir} (${x.prev} → ${x.cur} ${isPt?'certas':'correct'})`);
+        out.push(`    ${x.en}: ${x.pct==null?'—':(x.pct>0?'+':'')+x.pct+'%'} ${dir} (${x.prev} → ${x.cur} ${isPt?'certas':'correct'}, vs ${x.prevLabel})`);
       });
-      out.push(`    ${isPt?'Nota final':'Final score'}: ${prog.totalDelta>0?'+':''}${prog.totalDelta} (${prog.prev.total} → ${prog.cur.total})`);
+      if(prog.totalDelta!=null){
+        out.push(`    ${isPt?'Nota final':'Final score'}: ${prog.totalDelta>0?'+':''}${prog.totalDelta} (${prog.totalPrev.total} → ${prog.cur.total}, vs ${prog.totalPrev.label})`);
+      }
     }
   }
 
