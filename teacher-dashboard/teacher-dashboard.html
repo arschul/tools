@@ -381,6 +381,12 @@
   .save-btn.blocked{border-color:var(--red);background:var(--red-soft);color:var(--red);}
   .save-btn:disabled{opacity:.6;cursor:default;}
   .save-msg{font-size:12px;font-weight:600;}
+  .sidebar-save{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:4px 4px 10px;flex-shrink:0;}
+  .sidebar-save .save-btn{width:100%;justify-content:center;}
+  @media(max-width:760px){
+    .sidebar-save{flex-direction:row;align-items:center;gap:8px;margin:0 8px;}
+    .sidebar-save .save-btn{width:auto;}
+  }
   .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;}
   /* Class-plan rich editor */
   .plan-toolbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--gray-soft);border-radius:inherit;border-bottom-left-radius:0;border-bottom-right-radius:0;}
@@ -805,6 +811,12 @@
     <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
   </button>
   <div class="sidebar-divider"></div>
+  <div class="sidebar-save no-print">
+    <button type="button" id="global-save-btn" class="btn-ghost small save-btn"
+      onclick="saveNowClicked('global-save-btn','global-save-msg')">💾 Save</button>
+    <span id="global-save-msg" class="save-msg"></span>
+    <span class="save-indicator"></span>
+  </div>
   <button type="button" class="nav-item" onclick="openSettingsModal()">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
     Settings
@@ -1164,7 +1176,49 @@ function loadKey(key, fallback){
   return Object.prototype.hasOwnProperty.call(loadedBlobs, key) ? loadedBlobs[key] : fallback;
 }
 
+/* Every timestamp this tab has successfully written, per key. When a write is
+   rejected by the concurrency guard we check this first: if the row now carries
+   one of OUR stamps, the "conflict" was our own earlier write landing late —
+   not another device — so we adopt it and carry on instead of halting autosave. */
+const myStamps = {};
+function noteStamp(key, ts){ if(!ts) return; (myStamps[key] = myStamps[key] || new Set()).add(ts); }
+function isMyStamp(key, ts){ return !!(myStamps[key] && myStamps[key].has(ts)); }
+
+/* Only one write per key may be in flight. Values are live references to state,
+   so an in-flight write always serialises the newest data anyway; letting two
+   overlap only ever produced false conflicts. */
+const savingNow = new Set();
 async function saveKey(key, value){
+  pendingSaves.set(key, value);
+  if(savingNow.has(key)) return false;      // in-flight write covers this change
+  savingNow.add(key);
+  try{
+    let ok = await writeKey(key, value);
+    // A change that arrived mid-write is still queued — write it now.
+    if(ok && pendingSaves.has(key)) ok = await writeKey(key, pendingSaves.get(key));
+    return ok;
+  }finally{
+    savingNow.delete(key);
+  }
+}
+
+// The row read that decides whether a guard failure was us or another device.
+async function guardWasSelf(key){
+  try{
+    const { data, error } = await sb
+      .from('dashboard_data')
+      .select('updated_at')
+      .eq('user_id', currentUser.id).eq('key', key).limit(1);
+    if(error || !data || !data.length) return false;
+    if(!isMyStamp(key, data[0].updated_at)) return false;
+    knownUpdatedAt[key] = data[0].updated_at;   // re-arm the guard on our own row
+    return true;
+  }catch(_){ return false; }
+}
+
+async function writeKey(key, value, depth){
+  depth = depth || 0;
+  if(depth > 2){ pendingSaves.set(key, value); await handleConflict(key); return false; }
   if(!dataReady){
     console.warn('Blocked save before data was loaded:', key);
     return false;
@@ -1194,10 +1248,16 @@ async function saveKey(key, value){
         .insert({ user_id: currentUser.id, key, value, updated_at: stamp })
         .select('updated_at');
       if(error){
-        if(error.code === '23505'){ pendingSaves.set(key, value); await handleConflict(key); return false; }
+        // Duplicate key: the row already exists. That is nearly always this tab
+        // inserting twice; re-arm the guard from the server and write properly.
+        if(error.code === '23505'){
+          if(await guardWasSelf(key)) return await writeKey(key, value, depth+1);
+          pendingSaves.set(key, value); await handleConflict(key); return false;
+        }
         throw error;
       }
       knownUpdatedAt[key] = (data && data[0]?.updated_at) || stamp;
+      noteStamp(key, knownUpdatedAt[key]);
     } else {
       const { data, error } = await sb
         .from('dashboard_data')
@@ -1206,12 +1266,14 @@ async function saveKey(key, value){
         .select('updated_at');
       if(error) throw error;
       if(!data || data.length === 0){
-        // 0 rows updated => the guard failed => the row changed under us.
+        // 0 rows updated => the guard failed. Was it us, or another device?
+        if(await guardWasSelf(key)) return await writeKey(key, value, depth+1);
         pendingSaves.set(key, value);
         await handleConflict(key);
         return false;
       }
       knownUpdatedAt[key] = data[0].updated_at;
+      noteStamp(key, knownUpdatedAt[key]);
     }
     pendingSaves.delete(key);
     failedSaves.delete(key);
@@ -1372,6 +1434,9 @@ async function saveNow(){
   Object.keys(saveTimers).forEach(k=>{ clearTimeout(saveTimers[k]); delete saveTimers[k]; });
   if(retryTimer){ clearTimeout(retryTimer); retryTimer = null; }
   retryDelay = 2000;
+  // Let any autosave already in flight finish, or we'd report "not saved" for
+  // work that is a few hundred milliseconds from landing.
+  for(let i=0; savingNow.size && i<100; i++) await new Promise(r=>setTimeout(r, 50));
   try{
     if(staleConflict) return (await resolveAndSave()) ? 'saved' : 'failed';
     if(!pendingSaves.size){
@@ -1423,12 +1488,16 @@ async function saveNowClicked(btnId, msgId){
   return res;
 }
 
+function setIndicator(text, color){
+  document.querySelectorAll('.save-indicator').forEach(el=>{
+    el.textContent = text; el.style.color = color || '';
+  });
+}
 function renderSaveState(){
   const banner = document.getElementById('save-banner');
-  const el = document.getElementById('save-indicator');
   paintSaveButtons();
   if(authExpired){
-    if(el){ el.textContent = '⚠ Signed out'; el.style.color = 'var(--red)'; }
+    setIndicator('⚠ Signed out', 'var(--red)');
     if(banner){
       banner.style.display = 'block';
       banner.innerHTML = `⚠ <b>Your session expired.</b> Sign in again to save your work — nothing on screen is lost, and your ${pendingSaves.size} pending change(s) will save as soon as you're back in.
@@ -1442,7 +1511,7 @@ function renderSaveState(){
     return;
   }
   if(staleConflict){
-    if(el){ el.textContent = '⚠ Out of date'; el.style.color = 'var(--red)'; }
+    setIndicator('⚠ Out of date', 'var(--red)');
     if(banner){
       banner.style.display = 'block';
       banner.innerHTML = `⚠ <b>This data was changed on another device.</b> Autosaving is paused so the other device's work isn't overwritten. Nothing on screen is lost.
@@ -1456,13 +1525,13 @@ function renderSaveState(){
     return;
   }
   if(failedSaves.size){
-    if(el){ el.textContent = '⚠ Not saved'; el.style.color = 'var(--red)'; }
+    setIndicator('⚠ Not saved', 'var(--red)');
     if(banner){
       banner.style.display = 'block';
       banner.innerHTML = `⚠ <b>Changes not saved.</b> Your work is still on screen but has not reached the server (${failedSaves.size} pending). Keep this tab open. <button type="button" class="linkish" onclick="retryNow()" style="text-decoration:underline;">Retry now</button>`;
     }
   }else{
-    if(el){ el.textContent = pendingSaves.size ? 'Saving…' : 'Saved at ' + nowTime(); el.style.color = ''; }
+    setIndicator(pendingSaves.size ? 'Saving…' : 'Saved at ' + nowTime(), '');
     if(banner) banner.style.display = 'none';
   }
 }
@@ -1482,11 +1551,20 @@ function paintSaveButtons(){
   });
 }
 
+/* Write everything queued right now, skipping the debounce. Used at natural
+   commit points — closing a modal, hiding the tab — so a change can never sit
+   in a timer when the teacher walks away. Fire-and-forget by design. */
+function flushSaves(){
+  if(!dataReady || !pendingSaves.size) return;
+  Object.keys(saveTimers).forEach(k=>{ clearTimeout(saveTimers[k]); delete saveTimers[k]; });
+  [...pendingSaves.entries()].forEach(([k,v])=>{ saveKey(k, v); });
+}
+
 const saveTimers = {};
 function scheduleSave(key, value){
   pendingSaves.set(key, value);
-  const el = document.getElementById('save-indicator');
-  if(el && !failedSaves.size){ el.textContent = 'Saving…'; el.style.color = ''; }
+  if(!failedSaves.size) setIndicator('Saving…', '');
+  paintSaveButtons();
   if(saveTimers[key]) clearTimeout(saveTimers[key]);
   saveTimers[key] = setTimeout(()=>{ saveKey(key, value); }, 450);
 }
@@ -1506,10 +1584,12 @@ window.addEventListener('beforeunload', (e)=>{
 let checkingFreshness = false;
 async function checkFreshnessOnFocus(){
   if(!dataReady || staleConflict || checkingFreshness) return;
+  if(savingNow.size) return;            // a write of ours is mid-flight; its stamp isn't recorded yet
   checkingFreshness = true;
   try{
     const server = await fetchServerTimestamps();
-    const changedKeys = Object.keys(server).filter(k => server[k] !== knownUpdatedAt[k]);
+    // A row carrying one of our own stamps is not "changed on another device".
+    const changedKeys = Object.keys(server).filter(k => server[k] !== knownUpdatedAt[k] && !isMyStamp(k, server[k]));
     if(!changedKeys.length) return;
     const pendingChanged = changedKeys.some(k => pendingSaves.has(k));
     if(pendingChanged){
@@ -1532,7 +1612,11 @@ async function checkFreshnessOnFocus(){
     checkingFreshness = false;
   }
 }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkFreshnessOnFocus(); });
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible') checkFreshnessOnFocus();
+  else flushSaves();     // switching tabs / locking the phone commits pending work
+});
+window.addEventListener('pagehide', flushSaves);
 window.addEventListener('focus', checkFreshnessOnFocus);
 
 /* ---------- appearance: themes + interface size ----------
@@ -2677,10 +2761,40 @@ function showModal(html, persistent, size){
     modal.setAttribute('aria-labelledby', heading.id);
   }
 
+  ensureModalSaveButton(modal, !!persistent);
+
   // Focus an explicitly-marked field if there is one, otherwise the dialog
   // itself — so screen readers announce the title instead of a stray input.
   const auto = modal.querySelector('[autofocus]');
   (auto || modal).focus();
+}
+
+/* Every modal gets its own Save button and status line. The warning banner
+   lives on the page behind the overlay, so without this a failed save is
+   invisible for as long as a modal is open — which is exactly when most
+   editing happens. */
+let modalSaveSeq = 0;
+function ensureModalSaveButton(modal, persistent){
+  if(!modal || modal.hasAttribute('data-nosave')) return;
+  if(modal.querySelector('.save-btn')) return;
+  let bar = modal.querySelector('.modal-actions');
+  if(!bar){
+    if(persistent) return;              // e.g. the "Restoring…" screen: no controls on purpose
+    bar = document.createElement('div');
+    bar.className = 'modal-actions';
+    modal.appendChild(bar);
+  }
+  if(bar.hasAttribute('data-nosave')) return;
+  const n = ++modalSaveSeq;
+  const wrap = document.createElement('span');
+  wrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-right:auto;';
+  wrap.innerHTML =
+    `<button type="button" id="msave-b${n}" class="btn-ghost small save-btn" `
+    + `onclick="saveNowClicked('msave-b${n}','msave-m${n}')">💾 Save</button>`
+    + `<span id="msave-m${n}" class="save-msg"></span>`
+    + `<span class="save-indicator"></span>`;
+  bar.insertBefore(wrap, bar.firstChild);
+  renderSaveState();
 }
 
 /* ===== C6: undo toast — recover the last destructive action ===== */
@@ -2773,6 +2887,7 @@ document.addEventListener('keydown', (e)=>{
 function closeModal(){
   const root = document.getElementById('modal-root');
   if(!root.firstElementChild) return;
+  flushSaves();          // never let an edit sit in the debounce after the modal shuts
   root.innerHTML = '';
   modalPersistent = false;
   const target = modalLastFocus;
@@ -4920,7 +5035,7 @@ function renderRollCall(){
         <button type="button" id="rc-save-btn" class="btn-ghost small save-btn"
           onclick="saveNowClicked('rc-save-btn','rc-save-msg')">💾 Save</button>
         <span id="rc-save-msg" class="save-msg"></span>
-        <span class="save-indicator" id="save-indicator"></span>
+        <span class="save-indicator"></span>
       </div>
       <div class="card roster-list ${locked?'locked-session':''}">
         ${loadUi().rollView==='compact'
@@ -8824,6 +8939,7 @@ async function init(){
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   dataReady = true;   // writes unlocked only now
+  renderSaveState();  // paint the Save buttons / indicators from the moment writing is possible
 
   cleanupEmptySessions();   // drop empty sessions left by older view-creates-data behaviour
 
