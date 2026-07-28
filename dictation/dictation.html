@@ -10,14 +10,51 @@
   :root{
     --teal:#0f766e;
     --teal-dark:#0a4f4a;
+    --teal-soft:#e2f2ef;
+    --on-accent:#ffffff;
     --yellow:#eef200;
+    --on-yellow:#0b1a17;
     --ink:#0b1a17;
+    --muted:#4b6b65;
     --paper:#f4faf8;
+    --card:#ffffff;
+    --surface:#f4faf8;
     --line:#c9ddd8;
     --err:#d64545;
+    --err-bg:#fbdada;
+    --warn-bg:#fdeeb0;
+    --warn-ink:#7a5b00;
+    --warn-line:#b58900;
+    --gold-bg:#fdf6d0;
+    --gold-line:#e8d97a;
     --ok:#0f766e;
+    --shadow:0 1px 2px rgba(11,26,23,.04);
+  }
+  [data-theme="dark"]{
+    --teal:#14b8a6;
+    --teal-dark:#0d9488;
+    --teal-soft:#123c37;
+    --on-accent:#04211d;
+    --yellow:#eef200;
+    --on-yellow:#0b1a17;
+    --ink:#e8f4f1;
+    --muted:#8fb3ac;
+    --paper:#07100e;
+    --card:#0f1f1c;
+    --surface:#132824;
+    --line:#26433d;
+    --err:#ff8a8a;
+    --err-bg:#4a1d1d;
+    --warn-bg:#463a12;
+    --warn-ink:#f5d97a;
+    --warn-line:#c9a227;
+    --gold-bg:#3d3413;
+    --gold-line:#8a7524;
+    --ok:#2dd4bf;
+    --shadow:none;
   }
   *{box-sizing:border-box;}
+  html,body{background:var(--paper);}
   body{
     margin:0;
     font-family:'Bricolage Grotesque',sans-serif;
@@ -26,7 +63,8 @@
     min-height:100vh;
     display:flex;
     justify-content:center;
-    padding:32px 16px;
+    padding:64px 16px 40px;
+    transition:background .15s ease,color .15s ease;
   }
   .wrap{width:100%;max-width:640px;}
   header{margin-bottom:24px;}
@@ -44,14 +82,36 @@
     margin:4px 0 6px;
     letter-spacing:-0.01em;
   }
-  .sub{color:#4b6b65;font-size:14px;}
+  .sub{color:var(--muted);font-size:14px;}
+
+  .back-link{
+    position:fixed;top:16px;left:16px;z-index:100000;
+    background:var(--teal);color:var(--on-accent);
+    padding:8px 16px;border-radius:999px;
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;font-size:13px;text-decoration:none;
+  }
+  .top-toggles{
+    position:fixed;top:16px;right:16px;z-index:100000;
+    display:flex;gap:8px;
+  }
+  .toggle-pill{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:700;font-size:13px;
+    padding:8px 14px;border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--card);color:var(--ink);
+    cursor:pointer;
+  }
+  .toggle-pill.on{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
   .card{
-    background:#fff;
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:14px;
     padding:24px;
     margin-bottom:16px;
+    box-shadow:var(--shadow);
   }
 
   .setup-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
@@ -61,10 +121,16 @@
     padding:9px 12px;
     border-radius:8px;
     border:1px solid var(--line);
-    background:var(--paper);
+    background:var(--surface);
     color:var(--ink);
   }
-  select{max-width:220px;}
+  select{max-width:230px;}
+  label.opt{
+    font-size:13px;color:var(--muted);
+    display:flex;align-items:center;gap:6px;
+    cursor:pointer;
+  }
+  label.opt input{accent-color:var(--teal);width:16px;height:16px;}
 
   .mode-tabs{display:flex;gap:8px;margin-bottom:16px;}
   .tab-btn{
@@ -74,16 +140,16 @@
     padding:10px 18px;
     border-radius:8px;
     border:1px solid var(--line);
-    background:#fff;
-    color:var(--teal-dark);
+    background:var(--card);
+    color:var(--ink);
     cursor:pointer;
   }
-  .tab-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .tab-btn.active{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
   .progress{
     font-family:'JetBrains Mono',monospace;
     font-size:12px;
-    color:#4b6b65;
+    color:var(--muted);
     margin-bottom:14px;
   }
   .progress-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
@@ -93,7 +159,7 @@
     width:56px;height:56px;border-radius:50%;
     background:var(--teal);
     border:none;
-    color:#fff;
+    color:var(--on-accent);
     font-size:22px;
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;
@@ -103,8 +169,13 @@
   .play-btn:hover{background:var(--teal-dark);}
   .play-btn:active{transform:scale(.94);}
   .play-btn:disabled{opacity:.4;cursor:default;}
-  .play-hint{font-size:13px;color:#4b6b65;}
+  .play-hint{font-size:13px;color:var(--muted);}
   .play-hint b{color:var(--ink);}
+  .play-hint kbd{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+    background:var(--surface);
+  }
 
   textarea{
     width:100%;
@@ -115,13 +186,13 @@
     padding:14px;
     border-radius:10px;
     border:1.5px solid var(--line);
-    background:var(--paper);
+    background:var(--surface);
     resize:vertical;
     color:var(--ink);
   }
   textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
 
-  .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center;}
   button.primary{
     font-family:inherit;
     font-weight:700;
@@ -130,7 +201,7 @@
     border-radius:8px;
     border:none;
     background:var(--yellow);
-    color:var(--ink);
+    color:var(--on-yellow);
     cursor:pointer;
   }
   button.primary:hover{filter:brightness(0.95);}
@@ -141,22 +212,23 @@
     padding:11px 18px;
     border-radius:8px;
     border:1px solid var(--line);
-    background:#fff;
-    color:var(--teal-dark);
+    background:var(--card);
+    color:var(--ink);
     cursor:pointer;
   }
-  button.ghost:hover{background:var(--paper);}
+  button.ghost:hover{background:var(--surface);}
   button:disabled{opacity:.45;cursor:default;}
+  .inline-warn{font-size:13px;color:var(--err);font-weight:600;}
 
   .result{
     margin-top:18px;
     padding:16px;
     border-radius:10px;
-    background:var(--paper);
+    background:var(--surface);
     border:1px solid var(--line);
     font-family:'JetBrains Mono',monospace;
     font-size:15px;
-    line-height:1.7;
+    line-height:1.9;
     display:none;
   }
   .result.show{display:block;}
@@ -166,15 +238,32 @@
     font-size:20px;
     margin-bottom:10px;
   }
-  mark.miss{background:#fbdada;color:var(--err);text-decoration:line-through;border-radius:3px;padding:0 2px;}
-  mark.close{background:#fdeeb0;color:#7a5b00;border-bottom:2px dotted #b58900;border-radius:3px;padding:0 2px;cursor:help;}
+  .punct-line{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-size:13px;
+    color:var(--muted);
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px dashed var(--line);
+    line-height:1.5;
+  }
+  .punct-line b{color:var(--ink);}
+  .legend{
+    font-family:'Bricolage Grotesque',sans-serif;
+    font-size:12px;color:var(--muted);
+    margin-top:10px;display:flex;gap:14px;flex-wrap:wrap;
+  }
+  mark.miss{background:var(--err-bg);color:var(--err);text-decoration:line-through;border-radius:3px;padding:0 3px;}
+  mark.close{background:var(--warn-bg);color:var(--warn-ink);border-bottom:2px dotted var(--warn-line);border-radius:3px;padding:0 3px;}
+  mark.extra{background:transparent;color:var(--muted);text-decoration:line-through;border:1px dashed var(--line);border-radius:3px;padding:0 3px;opacity:.85;}
   span.hit{color:var(--ok);}
+  .typed-note{font-size:.78em;opacity:.85;}
 
   .score-strip{
-    display:flex;justify-content:space-between;align-items:center;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
     font-family:'JetBrains Mono',monospace;
     font-size:12px;
-    color:#4b6b65;
+    color:var(--muted);
     padding-top:14px;
     margin-top:14px;
     border-top:1px dashed var(--line);
@@ -187,43 +276,79 @@
   .team-name-row .swatch{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
   .team-name-row input{flex:1;}
 
+  .pool-note{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--muted);
+    margin:4px 0 16px;
+  }
+
   .mini-scoreboard{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
   .team-chip{
     font-family:'JetBrains Mono',monospace;
     font-size:12px;
     padding:6px 10px;
     border-radius:20px;
-    background:var(--paper);
+    background:var(--surface);
     border:1px solid var(--line);
     display:flex;align-items:center;gap:6px;
   }
   .team-chip .dot{width:8px;height:8px;border-radius:50%;}
-  .team-chip.current{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .team-chip.current{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
   .leaderboard-row{
     display:flex;align-items:center;gap:12px;
     padding:12px 14px;
     border-radius:10px;
-    background:var(--paper);
+    background:var(--surface);
     border:1px solid var(--line);
     margin-bottom:8px;
   }
-  .leaderboard-row.first{background:#fdf6d0;border-color:#e8d97a;}
+  .leaderboard-row.first{background:var(--gold-bg);border-color:var(--gold-line);}
   .rank-badge{
     font-family:'JetBrains Mono',monospace;
     font-weight:700;
     font-size:14px;
     width:28px;height:28px;border-radius:50%;
-    background:#fff;border:1px solid var(--line);
+    background:var(--card);border:1px solid var(--line);
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;
   }
   .lb-name{font-weight:700;flex:1;}
-  .lb-score{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal-dark);}
+  .lb-score{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal);}
+
+  /* ---------- Board mode: projection-scale type ---------- */
+  [data-size="board"] .wrap{max-width:1000px;}
+  [data-size="board"] h1{font-size:48px;}
+  [data-size="board"] .sub{font-size:18px;}
+  [data-size="board"] .progress{font-size:17px;}
+  [data-size="board"] textarea{font-size:30px;min-height:150px;line-height:1.45;}
+  [data-size="board"] .result{font-size:30px;line-height:1.8;}
+  [data-size="board"] .result .score{font-size:34px;}
+  [data-size="board"] .punct-line{font-size:19px;}
+  [data-size="board"] .legend{font-size:16px;}
+  [data-size="board"] .play-hint{font-size:19px;}
+  [data-size="board"] .play-btn{width:76px;height:76px;font-size:30px;}
+  [data-size="board"] .team-chip{font-size:19px;padding:9px 15px;}
+  [data-size="board"] .score-strip{font-size:17px;}
+  [data-size="board"] .score-strip b{font-size:21px;}
+  [data-size="board"] button.primary,[data-size="board"] button.ghost,[data-size="board"] .tab-btn{font-size:19px;padding:14px 24px;}
+  [data-size="board"] .lb-name{font-size:26px;}
+  [data-size="board"] .lb-score{font-size:26px;}
+  [data-size="board"] .rank-badge{width:38px;height:38px;font-size:19px;}
+  [data-size="board"] .setup-card{display:none;}
+
+  @media print{
+    .back-link,.top-toggles,.mode-tabs,.setup-card,.actions,textarea,.play-row{display:none !important;}
+  }
 </style>
 </head>
 <body>
-<a class="back-link" href="../" style="position:fixed;top:16px;left:16px;z-index:100000;background:rgba(15,118,110,0.92);color:#fff;padding:8px 16px;border-radius:999px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:13px;text-decoration:none;">← Tool Hub</a>
+<a class="back-link" href="../">← Tool Hub</a>
+<div class="top-toggles">
+  <button class="toggle-pill" id="boardToggle" title="Large type for projection">Board</button>
+  <button class="toggle-pill" id="themeToggle" title="Light / dark">Theme</button>
+</div>
+
 <div class="wrap">
   <header>
     <div class="eyebrow">EFL / Listening</div>
@@ -231,20 +356,24 @@
     <div class="sub">Play the sentence, type what you hear, check it.</div>
   </header>
 
-  <div class="card">
+  <div class="card setup-card">
     <div class="setup-row">
       <select id="levelSelect">
-        <option value="A1">A1 · short & simple</option>
+        <option value="A1">A1 · short &amp; simple</option>
         <option value="A2" selected>A2 · everyday</option>
         <option value="B1">B1 · connected</option>
         <option value="B2">B2 · complex</option>
       </select>
       <select id="rateSelect">
+        <option value="0.6">Speed: very slow</option>
         <option value="0.75">Speed: slow</option>
+        <option value="0.85">Speed: slightly slow</option>
         <option value="1" selected>Speed: normal</option>
-        <option value="0.9">Speed: slightly slow</option>
       </select>
       <select id="voiceSelect"></select>
+      <label class="opt" title="Also report capital letters and punctuation">
+        <input type="checkbox" id="strictToggle" checked> Grade punctuation &amp; capitals
+      </label>
     </div>
   </div>
 
@@ -264,8 +393,8 @@
     </div>
 
     <div class="play-row">
-      <button class="play-btn" id="playBtn" title="Play sentence">▶</button>
-      <div class="play-hint">Click <b>play</b> to hear it. You can replay as many times as you like.</div>
+      <button class="play-btn" id="playBtn" title="Play sentence" aria-label="Play sentence">▶</button>
+      <div class="play-hint">Click <b>play</b> to hear it — replay as often as you like. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> replays, <kbd>Enter</kbd> checks.</div>
     </div>
 
     <textarea id="answerInput" placeholder="Type exactly what you hear..." autocomplete="off" spellcheck="false"></textarea>
@@ -273,15 +402,24 @@
     <div class="actions">
       <button class="primary" id="checkBtn">Check</button>
       <button class="ghost" id="nextBtn" disabled>Next sentence →</button>
+      <span class="inline-warn" id="practiceWarn"></span>
     </div>
 
     <div class="result" id="resultBox">
       <div class="score" id="scoreLine"></div>
       <div id="diffLine"></div>
+      <div class="punct-line" id="punctLine" style="display:none;"></div>
+      <div class="legend">
+        <span><span class="hit">correct</span></span>
+        <span><mark class="close">near miss</mark></span>
+        <span><mark class="miss">missed</mark></span>
+        <span><mark class="extra">extra word</mark></span>
+      </div>
     </div>
 
     <div class="score-strip">
-      <span>Set score: <b id="setScore">0 / 0</b></span>
+      <span>Perfect: <b id="setScore">0 / 0</b></span>
+      <span>Average: <b id="setAvg">—</b></span>
       <span id="speechWarning" style="color:var(--err);"></span>
     </div>
   </div>
@@ -289,10 +427,10 @@
   <!-- TEAM SETUP -->
   <div class="card" id="teamSetupView" style="display:none;">
     <h2 class="panel-title">Set up teams</h2>
-    <div class="sub" style="margin-bottom:16px;">Each team gets its own random sentences — nobody hears another team's set.</div>
+    <div class="sub" style="margin-bottom:16px;">Each team gets its own sentences, drawn from the same level.</div>
 
-    <div class="setup-row" style="margin-bottom:16px;">
-      <label style="font-size:13px;color:#4b6b65;">Teams
+    <div class="setup-row" style="margin-bottom:6px;">
+      <label class="opt">Teams
         <select id="teamCountSelect">
           <option value="2">2</option>
           <option value="3" selected>3</option>
@@ -301,15 +439,11 @@
           <option value="6">6</option>
         </select>
       </label>
-      <label style="font-size:13px;color:#4b6b65;">Rounds per team
-        <select id="roundsSelect">
-          <option value="3">3</option>
-          <option value="5" selected>5</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-        </select>
+      <label class="opt">Rounds per team
+        <select id="roundsSelect"></select>
       </label>
     </div>
+    <div class="pool-note" id="poolNote"></div>
 
     <div id="teamNameInputs"></div>
 
@@ -322,7 +456,7 @@
     <div class="progress" id="teamTurnLabel">Team 1's turn — Round 1 of 5</div>
 
     <div class="play-row">
-      <button class="play-btn" id="teamPlayBtn" title="Play sentence">▶</button>
+      <button class="play-btn" id="teamPlayBtn" title="Play sentence" aria-label="Play sentence">▶</button>
       <div class="play-hint">Pass the device to <b id="currentTeamName">Team 1</b>, then play.</div>
     </div>
 
@@ -331,11 +465,13 @@
     <div class="actions">
       <button class="primary" id="teamCheckBtn">Check</button>
       <button class="ghost" id="teamNextBtn" disabled>Next turn →</button>
+      <span class="inline-warn" id="teamWarn"></span>
     </div>
 
     <div class="result" id="teamResultBox">
       <div class="score" id="teamScoreLine"></div>
       <div id="teamDiffLine"></div>
+      <div class="punct-line" id="teamPunctLine" style="display:none;"></div>
     </div>
   </div>
 
@@ -351,8 +487,7 @@
 <script>
 // ---- Sentence generation: fixed grammatical frames + filler word lists.
 // Subject/verb agreement is baked into each frame, so only vocabulary varies —
-// every combination stays grammatically correct. This yields hundreds of
-// unique, level-appropriate sentences per CEFR level without hand-writing each one.
+// every combination stays grammatically correct.
 
 function buildFrom(frames, fillerSets){
   const out = new Set();
@@ -363,7 +498,23 @@ function buildFrom(frames, fillerSets){
     let attempts = 0;
     while(seen.size < target && attempts < target * 25){
       attempts++;
-      const picks = sets.map(arr => arr[Math.floor(Math.random()*arr.length)]);
+      const picks = [];
+      let ok = true;
+      for(let i=0;i<sets.length;i++){
+        const arr = sets[i];
+        let pick = arr[Math.floor(Math.random()*arr.length)];
+        if(frame.distinct){
+          // resample so repeated slot types never produce the same filler twice
+          let guard = 0;
+          while(picks.includes(pick) && guard < 40){
+            pick = arr[Math.floor(Math.random()*arr.length)];
+            guard++;
+          }
+          if(picks.includes(pick)){ ok = false; break; }
+        }
+        picks.push(pick);
+      }
+      if(!ok) continue;
       let sentence = frame.template;
       picks.forEach((p,i) => { sentence = sentence.replace(`{${i}}`, p); });
       seen.add(sentence);
@@ -431,7 +582,7 @@ const B1_FRAMES = [
   { template:"Although {0}, they decided to {1}.", slots:["cond1","action1"], count:15 },
   { template:"I would have called you if {0}.", slots:["cond2"], count:6 },
   { template:"The company announced that {0}.", slots:["claim"], count:8 },
-  { template:"She's not only {0} but also incredibly {1}.", slots:["trait","trait"], count:15 },
+  { template:"She's not only {0} but also incredibly {1}.", slots:["trait","trait"], count:15, distinct:true },
   { template:"By the time we arrived, {0}.", slots:["event"], count:6 },
   { template:"He suggested that we should {0}.", slots:["suggestion"], count:8 },
   { template:"Despite {0}, the team managed to finish on time.", slots:["difficulty"], count:8 },
@@ -444,7 +595,8 @@ const B2_FILLERS = {
   belief: ["remote work has reshaped urban economies","automation is accelerating faster than predicted","consumer habits have shifted permanently","trust in institutions has declined"],
   argument: ["such a compelling argument against the proposal","such a well-supported counterpoint","such a persuasive case for reform","such a rigorous piece of analysis"],
   correlation: ["a strong correlation between the two variables","an unexpected link between the datasets","a measurable effect on retention","little evidence for the original hypothesis"],
-  condition: ["the funding comes through","the board grants approval","negotiations conclude successfully","the pilot program succeeds"]
+  condition: ["the funding comes through","the board grants approval","negotiations conclude successfully","the pilot program succeeds"],
+  objection: ["the obvious cost implications","the tight timeline","the lack of precedent","the objections raised in committee"]
 };
 const B2_FRAMES = [
   { template:"Had the government intervened earlier, {0}.", slots:["claim"], count:6 },
@@ -453,7 +605,10 @@ const B2_FRAMES = [
   { template:"Rarely have I encountered {0}.", slots:["argument"], count:8 },
   { template:"The findings, while preliminary, suggest {0}.", slots:["correlation"], count:8 },
   { template:"Provided that {0}, construction will begin in spring.", slots:["condition"], count:6 },
-  { template:"So convincing was the case that the board approved it unanimously, despite {0}.", slots:["finding"], count:6 }
+  { template:"So convincing was the case that the board approved it unanimously, despite {0}.", slots:["objection"], count:6 },
+  { template:"Not until the review was complete did anyone notice {0}.", slots:["finding"], count:6 },
+  { template:"What the committee failed to consider was {0}.", slots:["correlation"], count:6 },
+  { template:"Were the board to reject the proposal, {0}.", slots:["claim"], count:6 }
 ];
 
 const BANK = {
@@ -472,11 +627,54 @@ function shuffle(arr){
   return a;
 }
 
-// ---------------- Shared: voices, speech, spelling-tolerant scoring ----------------
+// ---------------- Preferences ----------------
+
+const LS = {
+  theme: 'theme',                    // shared across the ecosystem
+  level: 'dictation.level',
+  rate:  'dictation.rate',
+  voice: 'dictation.voiceURI',
+  strict:'dictation.strict',
+  board: 'dictation.board'
+};
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+(function(){
+  const saved = lsGet(LS.theme);
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+  if(lsGet(LS.board) === '1') document.documentElement.setAttribute('data-size','board');
+})();
+
+const themeToggle = document.getElementById('themeToggle');
+const boardToggle = document.getElementById('boardToggle');
+
+function syncToggles(){
+  themeToggle.classList.toggle('on', document.documentElement.getAttribute('data-theme') === 'dark');
+  boardToggle.classList.toggle('on', document.documentElement.getAttribute('data-size') === 'board');
+}
+themeToggle.addEventListener('click', () => {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  lsSet(LS.theme, next);
+  syncToggles();
+});
+boardToggle.addEventListener('click', () => {
+  const html = document.documentElement;
+  const on = html.getAttribute('data-size') === 'board';
+  if(on){ html.removeAttribute('data-size'); lsSet(LS.board,'0'); }
+  else { html.setAttribute('data-size','board'); lsSet(LS.board,'1'); }
+  syncToggles();
+});
+syncToggles();
+
+// ---------------- Voices & speech ----------------
 
 const levelSelect = document.getElementById('levelSelect');
 const rateSelect = document.getElementById('rateSelect');
 const voiceSelect = document.getElementById('voiceSelect');
+const strictToggle = document.getElementById('strictToggle');
 
 let voices = [];
 
@@ -496,6 +694,9 @@ function voiceQualityScore(v){
 function loadVoices(){
   const all = window.speechSynthesis.getVoices();
   if(!all.length) return;
+  const wanted = voiceSelect.value ? (voices[parseInt(voiceSelect.value,10)] || null) : null;
+  const wantedURI = (wanted && wanted.voiceURI) || lsGet(LS.voice);
+
   voices = all
     .filter(v => v.lang.toLowerCase().startsWith('en'))
     .sort((a,b) => voiceQualityScore(b) - voiceQualityScore(a));
@@ -508,6 +709,12 @@ function loadVoices(){
     opt.textContent = `${v.name} (${v.lang})`;
     voiceSelect.appendChild(opt);
   });
+
+  // restore the teacher's choice by voiceURI — onvoiceschanged can fire repeatedly
+  if(wantedURI){
+    const idx = voices.findIndex(v => v.voiceURI === wantedURI);
+    if(idx >= 0) voiceSelect.value = String(idx);
+  }
 }
 
 if('speechSynthesis' in window){
@@ -515,11 +722,18 @@ if('speechSynthesis' in window){
   window.speechSynthesis.onvoiceschanged = loadVoices;
 }
 
+voiceSelect.addEventListener('change', () => {
+  const v = voices[parseInt(voiceSelect.value,10)];
+  if(v && v.voiceURI) lsSet(LS.voice, v.voiceURI);
+});
+rateSelect.addEventListener('change', () => lsSet(LS.rate, rateSelect.value));
+strictToggle.addEventListener('change', () => lsSet(LS.strict, strictToggle.checked ? '1' : '0'));
+
 function speak(text){
-  if(!('speechSynthesis' in window)) return;
+  if(!('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = parseFloat(rateSelect.value);
+  utter.rate = parseFloat(rateSelect.value) || 1;
   const chosen = voices[parseInt(voiceSelect.value, 10)];
   if(chosen){
     utter.voice = chosen;
@@ -530,88 +744,235 @@ function speak(text){
   window.speechSynthesis.speak(utter);
 }
 
-function normalize(s){
-  return s.toLowerCase().trim().replace(/[.,!?;:'"]/g,'').replace(/\s+/g,' ');
+// ---------------- Scoring ----------------
+// Tokens are compared on a canonical form (lower-case, apostrophes removed,
+// contractions expanded, number words folded to digits). Display keeps the
+// original word so feedback shows the real spelling and capitalisation.
+
+const CONTRACTIONS = {
+  "i'm":["i","am"], "i've":["i","have"], "i'll":["i","will"], "i'd":["i","would|had"],
+  "you're":["you","are"], "you've":["you","have"], "you'll":["you","will"], "you'd":["you","would|had"],
+  "he's":["he","is|has"], "he'll":["he","will"], "he'd":["he","would|had"],
+  "she's":["she","is|has"], "she'll":["she","will"], "she'd":["she","would|had"],
+  "it's":["it","is|has"], "it'll":["it","will"],
+  "we're":["we","are"], "we've":["we","have"], "we'll":["we","will"], "we'd":["we","would|had"],
+  "they're":["they","are"], "they've":["they","have"], "they'll":["they","will"], "they'd":["they","would|had"],
+  "that's":["that","is|has"], "there's":["there","is|has"], "here's":["here","is"],
+  "who's":["who","is|has"], "what's":["what","is"], "let's":["let","us"],
+  "don't":["do","not"], "doesn't":["does","not"], "didn't":["did","not"],
+  "isn't":["is","not"], "aren't":["are","not"], "wasn't":["was","not"], "weren't":["were","not"],
+  "haven't":["have","not"], "hasn't":["has","not"], "hadn't":["had","not"],
+  "won't":["will","not"], "wouldn't":["would","not"], "shan't":["shall","not"],
+  "can't":["can","not"], "cannot":["can","not"], "couldn't":["could","not"],
+  "shouldn't":["should","not"], "mustn't":["must","not"], "mightn't":["might","not"]
+};
+
+const NUM_WORDS = {
+  zero:"0", one:"1", two:"2", three:"3", four:"4", five:"5", six:"6", seven:"7",
+  eight:"8", nine:"9", ten:"10", eleven:"11", twelve:"12", thirteen:"13",
+  fourteen:"14", fifteen:"15", sixteen:"16", seventeen:"17", eighteen:"18",
+  nineteen:"19", twenty:"20", thirty:"30", forty:"40", fifty:"50", sixty:"60",
+  seventy:"70", eighty:"80", ninety:"90", hundred:"100"
+};
+
+function canonOne(word){
+  const bare = word.toLowerCase().replace(/'/g,'');
+  return NUM_WORDS[bare] || bare;
+}
+function canon(word){
+  if(word.indexOf('|') >= 0) return word.split('|').map(canonOne).join('|');
+  return canonOne(word);
 }
 
-// Character-level Levenshtein distance between two words.
+// -> [{ src, display, cmp }]  (src = index of the visible word it came from)
+function tokenize(raw){
+  const words = String(raw)
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[-\u2013\u2014]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  const toks = [];
+  words.forEach((w, si) => {
+    const core = w.replace(/[^A-Za-z0-9']/g, '');
+    if(!core) return;
+    const lower = core.toLowerCase();
+    const expansion = CONTRACTIONS[lower] || [core];
+    expansion.forEach(part => {
+      toks.push({ src: si, display: w, cmp: canon(part) });
+    });
+  });
+  return { words, toks };
+}
+
+function tokensEqual(a, b){
+  if(a === b) return true;
+  if(a.indexOf('|') < 0 && b.indexOf('|') < 0) return false;
+  const A = a.split('|'), B = b.split('|');
+  return A.some(x => B.indexOf(x) >= 0);
+}
+
 function levenshtein(a, b){
   const m = a.length, n = b.length;
   if(m === 0) return n;
   if(n === 0) return m;
-  const dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
-  for(let i=0;i<=m;i++) dp[i][0] = i;
-  for(let j=0;j<=n;j++) dp[0][j] = j;
+  let prev = new Array(n+1), cur = new Array(n+1);
+  for(let j=0;j<=n;j++) prev[j] = j;
   for(let i=1;i<=m;i++){
+    cur[0] = i;
     for(let j=1;j<=n;j++){
       const cost = a[i-1] === b[j-1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i-1][j] + 1,
-        dp[i][j-1] + 1,
-        dp[i-1][j-1] + cost
-      );
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + cost);
     }
+    const t = prev; prev = cur; cur = t;
   }
-  return dp[m][n];
+  return prev[n];
 }
 
+// Discrete similarity: 1 = correct, 0.5 = near miss, 0 = wrong.
+// Short words get no fuzzy credit — "she" must not half-count as "the".
 function wordSimilarity(a, b){
-  if(a === b) return 1;
-  const maxLen = Math.max(a.length, b.length);
-  if(maxLen === 0) return 1;
-  return 1 - (levenshtein(a, b) / maxLen);
+  if(tokensEqual(a, b)) return 1;
+  const x = a.split('|')[0], y = b.split('|')[0];
+  const len = Math.max(x.length, y.length);
+  const allowed = len >= 8 ? 2 : (len >= 4 ? 1 : 0);
+  if(allowed === 0) return 0;
+  return levenshtein(x, y) <= allowed ? 0.5 : 0;
 }
 
-// Align target words against what was typed using edit-distance alignment where
-// substitution cost is based on Levenshtein word similarity (near-miss spelling
-// counts as "close" rather than a hard miss); insertion/deletion cost is a full word.
+const EPS = 1e-9;
+
+// Needleman–Wunsch style alignment. Deletions (missed words) and insertions
+// (extra typed words) both cost a full word, so padding the answer with extra
+// words can no longer reach 100%.
 function alignWords(target, given){
-  const t = normalize(target).split(' ').filter(w=>w.length);
-  const g = normalize(given).split(' ').filter(w=>w.length);
+  const T = tokenize(target), G = tokenize(given);
+  const t = T.toks, g = G.toks;
   const m = t.length, n = g.length;
+
   const dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
   for(let i=0;i<=m;i++) dp[i][0] = i;
   for(let j=0;j<=n;j++) dp[0][j] = j;
   for(let i=1;i<=m;i++){
     for(let j=1;j<=n;j++){
-      const subCost = 1 - wordSimilarity(t[i-1], g[j-1]);
-      dp[i][j] = Math.min(
-        dp[i-1][j] + 1,
-        dp[i][j-1] + 1,
-        dp[i-1][j-1] + subCost
-      );
+      const subCost = 1 - wordSimilarity(t[i-1].cmp, g[j-1].cmp);
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + subCost);
     }
   }
-  let i=m, j=n;
-  const outT = [];
-  while(i>0 && j>0){
-    const subCost = 1 - wordSimilarity(t[i-1], g[j-1]);
-    if(dp[i][j] === dp[i-1][j-1] + subCost){
-      const sim = wordSimilarity(t[i-1], g[j-1]);
-      outT.unshift({ w:t[i-1], typed:g[j-1], sim, type: sim >= 0.99 ? 'hit' : (sim >= 0.6 ? 'close' : 'miss') });
-      i--; j--;
-    } else if(i>0 && dp[i][j] === dp[i-1][j] + 1){
-      outT.unshift({ w:t[i-1], typed:null, sim:0, type:'miss' });
-      i--;
-    } else {
-      j--;
-    }
-  }
-  while(i>0){ outT.unshift({ w:t[i-1], typed:null, sim:0, type:'miss' }); i--; }
 
-  const total = outT.reduce((s,x)=>s+x.sim, 0);
-  const accuracy = t.length ? total / t.length : 0;
-  return { rendered: outT, accuracy };
+  const ops = [];
+  let i = m, j = n;
+  while(i > 0 || j > 0){
+    if(i > 0 && j > 0){
+      const subCost = 1 - wordSimilarity(t[i-1].cmp, g[j-1].cmp);
+      if(Math.abs(dp[i][j] - (dp[i-1][j-1] + subCost)) < EPS){
+        const sim = 1 - subCost;
+        ops.unshift({ kind:'sub', t:t[i-1], g:g[j-1], sim });
+        i--; j--; continue;
+      }
+    }
+    if(i > 0 && Math.abs(dp[i][j] - (dp[i-1][j] + 1)) < EPS){
+      ops.unshift({ kind:'del', t:t[i-1], g:null, sim:0 });
+      i--; continue;
+    }
+    if(j > 0){
+      ops.unshift({ kind:'ins', t:null, g:g[j-1], sim:0 });
+      j--; continue;
+    }
+    break;
+  }
+
+  const earned = ops.reduce((s,o) => s + (o.kind === 'sub' ? o.sim : 0), 0);
+  const denom = Math.max(m, n) || 1;
+  return { ops, accuracy: Math.max(0, Math.min(1, earned / denom)), targetWords: T.words, givenWords: G.words };
 }
 
+function escapeHtml(s){
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+function typeOf(sim){ return sim >= 1 - EPS ? 'hit' : (sim >= 0.5 - EPS ? 'close' : 'miss'); }
+const RANK = { hit:2, close:1, miss:0 };
+
+// Group token-level ops back into visible words for display.
 function renderDiff(target, given){
-  const { rendered, accuracy } = alignWords(target, given);
-  const html = rendered.map(x=>{
-    if(x.type === 'hit') return `<span class="hit">${x.w}</span>`;
-    if(x.type === 'close') return `<mark class="close" title="you wrote: ${x.typed}">${x.w}</mark>`;
-    return `<mark class="miss">${x.w}</mark>`;
+  const res = alignWords(target, given);
+  const items = [];
+  let lastSrc = null;
+
+  res.ops.forEach(op => {
+    if(op.kind === 'ins'){
+      items.push({ kind:'extra', text: op.g.display });
+      lastSrc = null;
+      return;
+    }
+    const type = op.kind === 'del' ? 'miss' : typeOf(op.sim);
+    const typed = op.g ? op.g.display : null;
+    if(lastSrc === op.t.src && items.length && items[items.length-1].kind === 'word'){
+      const last = items[items.length-1];
+      if(RANK[type] < RANK[last.type]) last.type = type;
+      if(typed && !last.typed) last.typed = typed;
+    } else {
+      items.push({ kind:'word', text: op.t.display, type, typed });
+      lastSrc = op.t.src;
+    }
+  });
+
+  const html = items.map(x => {
+    if(x.kind === 'extra') return `<mark class="extra">${escapeHtml(x.text)}</mark>`;
+    const w = escapeHtml(x.text);
+    if(x.type === 'hit') return `<span class="hit">${w}</span>`;
+    if(x.type === 'close'){
+      const note = x.typed ? ` <span class="typed-note">(${escapeHtml(x.typed)})</span>` : '';
+      return `<mark class="close">${w}</mark>${note}`;
+    }
+    return `<mark class="miss">${w}</mark>`;
   }).join(' ');
-  return { html, accuracy };
+
+  return { html, accuracy: res.accuracy, ops: res.ops };
+}
+
+// Capitals + punctuation, reported separately from the word score.
+function punctuationReport(target, given, ops){
+  const marks = s => (String(s).match(/[.,!?;:'"]/g) || []);
+  const tMarks = marks(target), gMarks = marks(given);
+  const pool = gMarks.slice();
+  let markHits = 0;
+  tMarks.forEach(mk => {
+    const at = pool.indexOf(mk);
+    if(at >= 0){ pool.splice(at,1); markHits++; }
+  });
+  const extraMarks = pool.length;
+
+  let capTotal = 0, capHits = 0;
+  const capMissed = [];
+  const seenSrc = new Set();
+  ops.forEach(op => {
+    if(op.kind !== 'sub' || !op.t || seenSrc.has(op.t.src)) return;
+    seenSrc.add(op.t.src);
+    const tw = op.t.display.replace(/[^A-Za-z]/g,'');
+    if(!tw || !/^[A-Z]/.test(tw)) return;
+    capTotal++;
+    const gw = (op.g && op.g.display.replace(/[^A-Za-z]/g,'')) || '';
+    if(/^[A-Z]/.test(gw)) capHits++;
+    else capMissed.push(op.t.display.replace(/[^A-Za-z']/g,''));
+  });
+
+  const total = tMarks.length + capTotal;
+  const hits = markHits + capHits;
+  const notes = [];
+  if(markHits < tMarks.length) notes.push(`${tMarks.length - markHits} punctuation mark${tMarks.length - markHits === 1 ? '' : 's'} missing`);
+  if(extraMarks) notes.push(`${extraMarks} extra mark${extraMarks === 1 ? '' : 's'}`);
+  if(capMissed.length) notes.push(`capital letter on ${capMissed.map(w => '"'+w+'"').join(', ')}`);
+
+  return {
+    total, hits,
+    text: total === 0
+      ? ''
+      : `<b>Punctuation &amp; capitals: ${hits}/${total}</b>${notes.length ? ' — ' + notes.join('; ') : ' — all correct'}`
+  };
+}
+
+function scoreLabel(pct){
+  return pct === 100 ? "Perfect — 100% match" : `${pct}% word match`;
 }
 
 // ---------------- Mode switching ----------------
@@ -637,8 +998,17 @@ tabPractice.addEventListener('click', () => {
 tabTeam.addEventListener('click', () => {
   tabTeam.classList.add('active');
   tabPractice.classList.remove('active');
-  showOnly(teamSetupView);
-  buildTeamNameInputs();
+  // never wipe a game that is still running
+  if(gameActive && turnPointer < turnQueue.length){
+    showOnly(teamPlayView);
+    renderScoreboard();
+  } else if(gameActive){
+    showOnly(teamResultsView);
+  } else {
+    showOnly(teamSetupView);
+    buildTeamNameInputs();
+    refreshRoundOptions();
+  }
 });
 
 // ---------------- Practice mode ----------------
@@ -648,6 +1018,7 @@ let order = [];
 let idx = 0;
 let correctCount = 0;
 let attemptedCount = 0;
+let accSum = 0;
 
 const progressLabel = document.getElementById('progressLabel');
 const poolLabel = document.getElementById('poolLabel');
@@ -658,19 +1029,25 @@ const nextBtn = document.getElementById('nextBtn');
 const resultBox = document.getElementById('resultBox');
 const scoreLine = document.getElementById('scoreLine');
 const diffLine = document.getElementById('diffLine');
+const punctLine = document.getElementById('punctLine');
 const setScore = document.getElementById('setScore');
+const setAvg = document.getElementById('setAvg');
 const restartBtn = document.getElementById('restartBtn');
 const speechWarning = document.getElementById('speechWarning');
+const practiceWarn = document.getElementById('practiceWarn');
 
 const SESSION_SIZE = 12;
+let blankArmed = false;
 
 function loadSet(){
   level = levelSelect.value;
+  lsSet(LS.level, level);
   order = shuffle(BANK[level]).slice(0, SESSION_SIZE);
   poolLabel.textContent = `Drawing from a pool of ${BANK[level].length} ${level} sentences`;
   idx = 0;
   correctCount = 0;
   attemptedCount = 0;
+  accSum = 0;
   updateScoreStrip();
   playBtn.disabled = false;
   loadSentence();
@@ -679,6 +1056,9 @@ function loadSet(){
 function loadSentence(){
   answerInput.value = "";
   resultBox.classList.remove('show');
+  punctLine.style.display = 'none';
+  practiceWarn.textContent = '';
+  blankArmed = false;
   nextBtn.disabled = true;
   checkBtn.disabled = false;
   answerInput.disabled = false;
@@ -688,14 +1068,32 @@ function loadSentence(){
 
 function check(){
   const given = answerInput.value;
-  if(!given.trim()) return;
-  const { html, accuracy } = renderDiff(order[idx], given);
+  if(!given.trim()){
+    if(!blankArmed){
+      practiceWarn.textContent = 'Type what you hear — or press Check again to give up on this one.';
+      blankArmed = true;
+      return;
+    }
+  }
+  practiceWarn.textContent = '';
+  const target = order[idx];
+  const { html, accuracy, ops } = renderDiff(target, given);
   const pct = Math.round(accuracy*100);
   attemptedCount++;
+  accSum += accuracy;
   if(pct === 100) correctCount++;
-  scoreLine.textContent = pct === 100 ? "Perfect — 100% match" : `${pct}% word match`;
+  scoreLine.textContent = scoreLabel(pct);
   scoreLine.style.color = pct === 100 ? "var(--ok)" : "var(--ink)";
   diffLine.innerHTML = `Target: ${html}`;
+
+  if(strictToggle.checked){
+    const rep = punctuationReport(target, given, ops);
+    if(rep.text){ punctLine.innerHTML = rep.text; punctLine.style.display = 'block'; }
+    else punctLine.style.display = 'none';
+  } else {
+    punctLine.style.display = 'none';
+  }
+
   resultBox.classList.add('show');
   nextBtn.disabled = false;
   checkBtn.disabled = true;
@@ -705,16 +1103,18 @@ function check(){
 
 function updateScoreStrip(){
   setScore.textContent = `${correctCount} / ${attemptedCount}`;
+  setAvg.textContent = attemptedCount ? `${Math.round((accSum/attemptedCount)*100)}%` : '—';
 }
 
 function next(){
   idx++;
   if(idx >= order.length){
-    progressLabel.textContent = `Set complete — ${correctCount}/${order.length} perfect`;
+    progressLabel.textContent = `Set complete — ${correctCount}/${order.length} perfect, ${Math.round((accSum/Math.max(attemptedCount,1))*100)}% average`;
     playBtn.disabled = true;
     checkBtn.disabled = true;
     nextBtn.disabled = true;
     answerInput.disabled = true;
+    practiceWarn.textContent = '';
     return;
   }
   loadSentence();
@@ -726,9 +1126,14 @@ nextBtn.addEventListener('click', next);
 restartBtn.addEventListener('click', loadSet);
 levelSelect.addEventListener('change', () => {
   loadSet();
-  if(teamSetupView.style.display !== 'none') { /* no-op, team not started yet */ }
+  refreshRoundOptions();
 });
 answerInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    e.preventDefault();
+    if(!playBtn.disabled) speak(order[idx]);
+    return;
+  }
   if(e.key==='Enter' && !e.shiftKey){
     e.preventDefault();
     if(!checkBtn.disabled) check();
@@ -746,6 +1151,7 @@ const TEAM_COLORS = ['#0f766e','#c2410c','#7c3aed','#be185d','#0369a1','#65a30d'
 
 const teamCountSelect = document.getElementById('teamCountSelect');
 const roundsSelect = document.getElementById('roundsSelect');
+const poolNote = document.getElementById('poolNote');
 const teamNameInputs = document.getElementById('teamNameInputs');
 const startTeamGameBtn = document.getElementById('startTeamGameBtn');
 
@@ -759,12 +1165,48 @@ const teamNextBtn = document.getElementById('teamNextBtn');
 const teamResultBox = document.getElementById('teamResultBox');
 const teamScoreLine = document.getElementById('teamScoreLine');
 const teamDiffLine = document.getElementById('teamDiffLine');
+const teamPunctLine = document.getElementById('teamPunctLine');
+const teamWarn = document.getElementById('teamWarn');
 const leaderboardList = document.getElementById('leaderboardList');
 const playAgainBtn = document.getElementById('playAgainBtn');
 
 let teams = [];
 let turnQueue = [];
 let turnPointer = 0;
+let totalRounds = 0;
+let gameActive = false;
+let teamBlankArmed = false;
+
+const ROUND_CHOICES = [3,5,8,10];
+
+// Rounds are capped by the size of the sentence pool, so the dropdown can
+// never promise more rounds than the level can actually deal out.
+function refreshRoundOptions(){
+  const teamCount = parseInt(teamCountSelect.value, 10);
+  const poolSize = BANK[levelSelect.value].length;
+  const maxRounds = Math.max(1, Math.floor(poolSize / teamCount));
+  const wanted = parseInt(roundsSelect.value, 10) || 5;
+
+  const choices = ROUND_CHOICES.filter(r => r <= maxRounds);
+  if(!choices.length || choices[choices.length-1] < maxRounds){
+    if(choices.indexOf(maxRounds) < 0) choices.push(maxRounds);
+  }
+  choices.sort((a,b)=>a-b);
+
+  roundsSelect.innerHTML = '';
+  choices.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    roundsSelect.appendChild(opt);
+  });
+
+  let pick = choices.filter(r => r <= wanted).pop();
+  if(pick === undefined) pick = choices[0];
+  roundsSelect.value = String(pick);
+
+  poolNote.textContent = `${levelSelect.value} pool: ${poolSize} sentences · ${teamCount} teams → up to ${maxRounds} round${maxRounds === 1 ? '' : 's'} each, all different.`;
+}
 
 function buildTeamNameInputs(){
   const count = parseInt(teamCountSelect.value, 10);
@@ -786,7 +1228,10 @@ function buildTeamNameInputs(){
     teamNameInputs.appendChild(row);
   }
 }
-teamCountSelect.addEventListener('change', buildTeamNameInputs);
+teamCountSelect.addEventListener('change', () => {
+  buildTeamNameInputs();
+  refreshRoundOptions();
+});
 buildTeamNameInputs();
 
 function startTeamGame(){
@@ -795,30 +1240,25 @@ function startTeamGame(){
   const names = Array.from(teamNameInputs.querySelectorAll('input')).map((inp, i) => inp.value.trim() || `Team ${i+1}`);
   const lvl = levelSelect.value;
 
-  const needed = count * rounds;
   const pool = shuffle(BANK[lvl]);
-  const drawn = pool.slice(0, Math.min(needed, pool.length));
+  const perTeam = Math.min(rounds, Math.floor(pool.length / count));
+  totalRounds = Math.max(1, perTeam);
 
   teams = names.map((name, i) => ({
     name,
     color: TEAM_COLORS[i % TEAM_COLORS.length],
-    sentences: [],
+    sentences: pool.slice(i * totalRounds, (i + 1) * totalRounds),
     results: []
   }));
 
-  // deal sentences round-robin so each team gets a distinct, non-overlapping set
-  drawn.forEach((sentence, i) => {
-    teams[i % count].sentences.push(sentence);
-  });
-
   turnQueue = [];
-  const maxRounds = Math.max(...teams.map(t => t.sentences.length));
-  for(let r=0; r<maxRounds; r++){
+  for(let r=0; r<totalRounds; r++){
     for(let t=0; t<teams.length; t++){
       if(teams[t].sentences[r] !== undefined) turnQueue.push({ t, r });
     }
   }
   turnPointer = 0;
+  gameActive = true;
 
   showOnly(teamPlayView);
   renderScoreboard();
@@ -838,7 +1278,7 @@ function renderScoreboard(){
     chip.className = 'team-chip' + (i === currentTeamIdx ? ' current' : '');
     const dot = document.createElement('span');
     dot.className = 'dot';
-    dot.style.background = i === currentTeamIdx ? '#fff' : team.color;
+    dot.style.background = i === currentTeamIdx ? 'var(--on-accent)' : team.color;
     const pct = Math.round(teamAverage(team) * 100);
     chip.appendChild(dot);
     chip.append(`${team.name}: ${team.results.length ? pct + '%' : '—'}`);
@@ -853,11 +1293,14 @@ function renderTurn(){
   }
   const turn = turnQueue[turnPointer];
   const team = teams[turn.t];
-  teamTurnLabel.textContent = `${team.name}'s turn — Round ${turn.r+1}`;
+  teamTurnLabel.textContent = `${team.name}'s turn — Round ${turn.r+1} of ${totalRounds}`;
   currentTeamName.textContent = team.name;
   teamAnswerInput.value = '';
   teamAnswerInput.disabled = false;
   teamResultBox.classList.remove('show');
+  teamPunctLine.style.display = 'none';
+  teamWarn.textContent = '';
+  teamBlankArmed = false;
   teamCheckBtn.disabled = false;
   teamNextBtn.disabled = true;
   teamPlayBtn.disabled = false;
@@ -867,16 +1310,32 @@ function renderTurn(){
 
 function teamCheck(){
   const given = teamAnswerInput.value;
-  if(!given.trim()) return;
+  if(!given.trim()){
+    if(!teamBlankArmed){
+      teamWarn.textContent = 'Empty — press Check again to score this turn 0.';
+      teamBlankArmed = true;
+      return;
+    }
+  }
+  teamWarn.textContent = '';
   const turn = turnQueue[turnPointer];
   const team = teams[turn.t];
   const sentence = team.sentences[turn.r];
-  const { html, accuracy } = renderDiff(sentence, given);
+  const { html, accuracy, ops } = renderDiff(sentence, given);
   team.results.push(accuracy);
   const pct = Math.round(accuracy*100);
   teamScoreLine.textContent = pct === 100 ? `${team.name} — Perfect (100%)` : `${team.name} — ${pct}% word match`;
   teamScoreLine.style.color = pct === 100 ? "var(--ok)" : "var(--ink)";
   teamDiffLine.innerHTML = `Target: ${html}`;
+
+  if(strictToggle.checked){
+    const rep = punctuationReport(sentence, given, ops);
+    if(rep.text){ teamPunctLine.innerHTML = rep.text; teamPunctLine.style.display = 'block'; }
+    else teamPunctLine.style.display = 'none';
+  } else {
+    teamPunctLine.style.display = 'none';
+  }
+
   teamResultBox.classList.add('show');
   teamCheckBtn.disabled = true;
   teamNextBtn.disabled = false;
@@ -921,6 +1380,12 @@ teamPlayBtn.addEventListener('click', () => {
 teamCheckBtn.addEventListener('click', teamCheck);
 teamNextBtn.addEventListener('click', teamNext);
 teamAnswerInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    e.preventDefault();
+    const turn = turnQueue[turnPointer];
+    if(turn) speak(teams[turn.t].sentences[turn.r]);
+    return;
+  }
   if(e.key==='Enter' && !e.shiftKey){
     e.preventDefault();
     if(!teamCheckBtn.disabled) teamCheck();
@@ -928,9 +1393,24 @@ teamAnswerInput.addEventListener('keydown', (e)=>{
   }
 });
 playAgainBtn.addEventListener('click', () => {
+  gameActive = false;
   showOnly(teamSetupView);
+  buildTeamNameInputs();
+  refreshRoundOptions();
 });
 
+// ---------------- Boot ----------------
+
+(function restorePrefs(){
+  const lvl = lsGet(LS.level);
+  if(lvl && BANK[lvl]) levelSelect.value = lvl;
+  const rate = lsGet(LS.rate);
+  if(rate && Array.from(rateSelect.options).some(o => o.value === rate)) rateSelect.value = rate;
+  const strict = lsGet(LS.strict);
+  if(strict !== null) strictToggle.checked = strict === '1';
+})();
+
+refreshRoundOptions();
 loadSet();
 </script>
 </body>
