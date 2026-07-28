@@ -3597,11 +3597,7 @@ function renderClassLogModal(){
                   ? ' <span class="badge other">Holiday</span>'
                   : !r.hasSession
                     ? ' <span class="badge hw" title="Prepared ahead \u2014 this class hasn\u2019t happened yet">planned</span>'
-                    : r.recorded===0
-                      ? ' <span class="badge amber" title="Roll call was never taken \u2014 everyone counts as present, which is the default">assumed</span>'
-                      : r.recorded < r.roster
-                        ? ` <span class="badge amber" title="${r.recorded} of ${r.roster} students were ticked \u2014 the rest count as present, which is the default">partial</span>`
-                        : r.completed ? '' : ' <span class="badge amber" title="Not marked complete">draft</span>'}
+                    : ''}
               </td>
               <td>${r.content?esc(r.content):'<span style="color:var(--muted);">—</span>'}</td>
               <td>${r.hw?esc(r.hw):'<span style="color:var(--muted);">—</span>'}</td>
