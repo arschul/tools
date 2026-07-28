@@ -526,8 +526,26 @@
   .student-name-link:hover{color:var(--accent);text-decoration:underline;}
 
   /* modal */
-  .modal-overlay{position:fixed;inset:0;background:rgba(28,36,54,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
-  .modal{background:var(--card);border-radius:var(--radius);zoom:var(--ui-scale);padding:24px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(28,36,54,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  /* Sizes are divided by --ui-scale because .modal is zoomed: without it a
+     97vw box renders wider than the window at scale 1.25. */
+  .modal{background:var(--card);border-radius:var(--radius);zoom:var(--ui-scale);padding:24px;width:100%;
+         max-width:min(440px, 90vw); max-height:88vh; overflow-y:auto;
+         max-width:min(440px, calc(94vw / var(--ui-scale,1)));
+         max-height:calc((100vh - 32px) / var(--ui-scale,1));}
+  .modal.md{max-width:min(820px, 90vw); max-width:min(820px, calc(94vw / var(--ui-scale,1)));}
+  .modal.lg{max-width:min(1180px, 92vw); max-width:min(1180px, calc(96vw / var(--ui-scale,1)));}
+  .modal.xl{max-width:min(1600px, 93vw); max-width:min(1600px, calc(97vw / var(--ui-scale,1)));}
+  /* A "sheet" keeps its action bar pinned to the bottom edge, so the buttons
+     never scroll out of reach on a long table. */
+  .modal.sheet:has(.modal-actions){padding-bottom:0;}
+  .modal.sheet .modal-actions{position:sticky;bottom:0;margin:18px -24px 0;padding:14px 24px;
+         background:var(--card);border-top:1px solid var(--border);z-index:4;}
+  /* Scrolling table regions inside modals: generous height, sticky header row. */
+  .mtable{max-height:58vh;overflow:auto;max-height:calc(62vh / var(--ui-scale,1));}
+  .mtable-sm{max-height:34vh;overflow:auto;max-height:calc(38vh / var(--ui-scale,1));}
+  .mtable thead th, .mtable-sm thead th{position:sticky;top:0;z-index:2;}
+  .modal .table-wrap table{min-width:0;}
   .modal:focus{outline:none;}
   .modal h3{margin-bottom:16px;font-size:18px;}
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
@@ -1616,7 +1634,7 @@ function openSettingsModal(){
     ? `${formatDateLong(last.slice(0,10))} · ${Math.floor(days)} day${Math.floor(days)===1?'':'s'} ago`
     : 'Never backed up';
 
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h2>Settings</h2>
 
     <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 10px;">Theme</h3>
@@ -1744,7 +1762,7 @@ function exportBackup(){
 function openBackupModal(){
   const last = state.backupMeta?.lastBackupAt;
   const lastLabel = last ? formatDateLong(last.slice(0,10)) + ' at ' + new Date(last).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : 'Never';
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h2>Backup &amp; Restore</h2>
     <p class="meta" style="margin:6px 0 18px;">A local JSON file of everything in your dashboard, independent of Supabase. Keep a copy somewhere safe (Drive, email to yourself, etc).</p>
     <div class="card section" style="margin-bottom:14px;">
@@ -2634,19 +2652,25 @@ function modalFocusable(modal){
   return [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
 }
 
-function showModal(html, persistent){
+/* Set from inside a modal's own template literal — see sizeModal() — so a
+   call site only has to name its size once, at the top of its markup. */
+let _modalSize = null;
+function sizeModal(s){ _modalSize = s || null; return ''; }
+function showModal(html, persistent, size){
   const root = document.getElementById('modal-root');
   // Only capture the return target when opening from a non-modal context;
   // re-rendering an already-open modal must not overwrite it.
   if(!root.firstElementChild) modalLastFocus = document.activeElement;
   modalPersistent = !!persistent;
 
+  const cls = ('modal ' + (size || _modalSize || '')).trim();
+  _modalSize = null;
   root.innerHTML = `
     <div class="modal-overlay" ${persistent?'':'onclick="if(event.target===this) closeModal()"'}>
-      <div class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</div>
+      <div class="${cls}" role="dialog" aria-modal="true" tabindex="-1">${html}</div>
     </div>`;
 
-  const modal = root.querySelector('.modal');
+  const modal = root.querySelector('.modal-overlay > div');
   const heading = modal.querySelector('h2, h3');
   if(heading){
     if(!heading.id) heading.id = 'modal-title-' + (++modalSeq);
@@ -2679,11 +2703,11 @@ function showUndoToast(message, undoFn){
 
 /* ===== C3: global student search ===== */
 function openStudentSearch(){
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3 style="margin-top:0;">Search students</h3>
     <input id="stu-search-input" type="text" autocomplete="off" placeholder="Type a name…" oninput="renderStudentSearchResults(this.value)"
       style="width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:15px;box-sizing:border-box;margin-bottom:12px;">
-    <div id="stu-search-results" style="max-height:52vh;overflow:auto;"></div>
+    <div id="stu-search-results" style="max-height:56vh;max-height:calc(60vh / var(--ui-scale,1));overflow:auto;"></div>
   `);
   setTimeout(()=>{ const i=document.getElementById('stu-search-input'); if(i) i.focus(); renderStudentSearchResults(''); }, 0);
 }
@@ -3559,7 +3583,7 @@ function renderClassLogModal(){
   const rows = clLogOnlyTaken ? allRows.filter(r=>r.hasSession) : allRows;
   const prepCount = allRows.filter(r=>!r.hasSession && !r.holiday).length;
   const body = rows.length ? `
-    <div class="table-wrap" style="max-height:56vh;overflow:auto;">
+    <div class="table-wrap mtable">
       <table>
         <thead><tr>
           <th>Date</th><th>What we did</th><th>Homework assigned</th><th>Class plan</th><th style="text-align:center;white-space:nowrap;">Attendance</th>
@@ -3597,7 +3621,7 @@ function renderClassLogModal(){
       ${prepCount} entr${prepCount===1?'y is':'ies are'} prepared ahead — a plan or homework set from the previous class, for a date that hasn’t happened yet. They aren’t counted in any report.
     </div>` : ''}` : `<div class="empty">No log entries in this period yet. Lesson content, homework and class plans recorded in Roll Call show up here.</div>`;
 
-  showModal(`
+  showModal(`${sizeModal('xl sheet')}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <h3 style="margin:0;"><span class="color-dot" style="background:${c.color}"></span>📋 Class Log — ${esc(c.name)}</h3>
       <span style="font-size:12px;color:var(--muted);">${rows.length} entr${rows.length===1?'y':'ies'}</span>
@@ -3638,7 +3662,7 @@ function openClassModal(classId){
   const dayOptions = [
     [1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[0,'Sun']
   ];
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h3>${c?'Edit class':'Add class'}</h3>
     <div class="field"><label>Class name</label><input id="cm-name" type="text" autofocus value="${c?esc(c.name):''}" placeholder="e.g. Turma B1"></div>
     <div class="field"><label>Group tag (level)</label>
@@ -3833,7 +3857,7 @@ function openContactParentsModal(studentId){
     ? ['Send material','Send link','Homework','Follow-up','Other']
     : ['English Club','Grades','Behavior','Other'];
   if(cp.category && !cats.includes(cp.category)) cats.push(cp.category);
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${isPriv?'⏰ Reminder':'📞 Contact Parents'} — ${esc(s.name)}</h3>
     <div class="field"><label>${isPriv?'Category':'Reason category'}</label>
       <select id="cp-cat">
@@ -3951,7 +3975,7 @@ function openTransferModal(studentId){
   const cur = classById(st.classId);
   const targets = activeClasses().filter(c=>c.id!==st.classId);
   if(!targets.length){ alert('There is no other active class to transfer to.'); return; }
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>⇄ Transfer ${esc(st.name)}</h3>
     <div style="font-size:13px;color:var(--muted);margin:-6px 0 14px;">
       Currently in <b>${cur?esc(cur.name):'—'}</b>. Past roll call records stay attached to the old class and still appear on this student's report.
@@ -4063,7 +4087,7 @@ function renderGradesModal(){
   const body = adv ? gmAdvancedBody(c, cycle, students, n, target)
                    : gmSimpleBody(c, cycle, students, n, testDates, target, adv);
 
-  showModal(`${header}${body}
+  showModal(`${sizeModal('xl sheet')}${header}${body}
     <div class="modal-actions" style="justify-content:space-between;">
       <button class="btn-ghost small" onclick="exportGradesCsv()">⬇ Export CSV</button>
       <button class="btn-accent" onclick="closeModal()">Done</button>
@@ -4085,7 +4109,7 @@ function gmSimpleBody(c, cycle, students, n, testDates, target, adv){
       </div>
     </div>
     ${students.length ? `
-    <div class="table-wrap" style="max-height:50vh;overflow:auto;">
+    <div class="table-wrap mtable">
       <table>
         <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Total</th><th style="text-align:center;">Avg</th><th>Status</th></tr></thead>
         <tbody>
@@ -4150,7 +4174,7 @@ function gmSummaryTable(c, cycle, students, n, target){
     return (v==null ? `<span style="color:var(--muted);font-weight:700;font-size:12.5px;">${sectionsFilled(sec)}/3</span>` : `<b>${v}</b>`) + line;
   };
   const official = `
-    <div class="table-wrap" style="max-height:44vh;overflow:auto;">
+    <div class="table-wrap mtable">
       <table>
         <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Total</th><th style="text-align:center;">Avg</th><th>Status</th></tr></thead>
         <tbody>
@@ -4177,7 +4201,7 @@ function gmSummaryTable(c, cycle, students, n, target){
 
   const mockTable = !mocks.length ? '' : `
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin:16px 0 6px;">🧪 MOCK TESTS — practice only, never counted towards status</div>
-    <div class="table-wrap" style="max-height:32vh;overflow:auto;">
+    <div class="table-wrap mtable-sm">
       <table>
         <thead><tr><th>Student</th>${mocks.map(m=>`<th style="text-align:center;">${esc(m.label||'Mock')}${m.date?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(m.date)}</div>`:''}</th>`).join('')}</tr></thead>
         <tbody>
@@ -4245,7 +4269,7 @@ function gmTestEntry(c, cycle, students, n, target){
   }).join('');
 
   return meta + `
-    <div class="table-wrap" style="max-height:46vh;overflow:auto;">
+    <div class="table-wrap mtable">
       <table>
         <thead><tr><th>Student</th>${TOEFL_SECTIONS.map(x=>`<th style="text-align:center;">${x.en}<div style="font-weight:400;font-size:11px;color:var(--muted);">correct / ${x.max}</div></th>`).join('')}<th style="text-align:center;">Score</th><th style="text-align:center;">vs previous</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -4444,7 +4468,7 @@ function gmEssayBody(c, cycle, students, target){
   }).join('');
 
   return meta + `
-    <div class="table-wrap" style="max-height:46vh;overflow:auto;">
+    <div class="table-wrap mtable">
       <table>
         <thead><tr>
           <th>Student</th>
@@ -4477,7 +4501,7 @@ function gmEssaySummaryTable(c, cycle, students){
       <button type="button" class="linkish" onclick="gmSetTab('essays')">${any?'edit':'enter scores'}</button>
     </div>
     ${!any ? `<div style="font-size:12.5px;color:var(--muted);">No essay scores in this cycle yet.</div>` : `
-    <div class="table-wrap" style="max-height:32vh;overflow:auto;">
+    <div class="table-wrap mtable-sm">
       <table>
         <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${essayLabelFor(c,i)}${dates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(dates[i])}</div>`:''}${topics[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${esc(topics[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Avg</th></tr></thead>
         <tbody>
@@ -5105,7 +5129,7 @@ function openStudentPointsModal(studentId){
     <button type="button" class="pts-preset ${pr.delta<0?'neg':'pos'}" onclick="ptsApplyPreset('${classId}','${studentId}',${i})">
       <span>${pr.emoji}</span> ${esc(pr.label)} <b>${pr.delta>0?'+':''}${pr.delta}</b>
     </button>`;
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h3 style="margin-bottom:2px;">⭐ ${esc(st.name)}</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')}${since?` · round started ${formatDateShort(since)}`:''}</div>
     <div style="text-align:center;margin-bottom:14px;">
@@ -5161,7 +5185,7 @@ function openPointsModal(classId){
   const rows = roster.map(s=>({ s, total: pointsFor(s.id, classId) }))
     .sort((a,b)=> b.total-a.total || a.s.name.localeCompare(b.s.name));
   const medal = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
-  showModal(`
+  showModal(`${sizeModal('lg sheet')}
     <h3 style="margin-bottom:2px;">🏆 ${esc(c.name)} — points</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${c.pointsSince?`Round started ${formatDateShort(c.pointsSince)}`:'All-time'}</div>
     ${rows.length?`
@@ -5453,7 +5477,7 @@ function openTrendsModal(classId){
         </div>
       </div>`;
   }).join('');
-  showModal(`
+  showModal(`${sizeModal('lg sheet')}
     <h3 style="margin-bottom:2px;">📈 ${esc(c.name)} — trends</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Completed sessions only · holidays excluded</div>
     <div class="trend-grid">
@@ -5593,7 +5617,7 @@ function deleteActivity(activityId){
 function openActivityModal(classId, date){
   const c = classById(classId);
   if(!c) return;
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3 style="margin-bottom:2px;">🎯 New activity</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${esc(c.name)} · ${formatDateLong(date)}</div>
     <div class="field"><label>Skill</label>
@@ -5644,7 +5668,7 @@ function openActivityGrading(activityId){
   };
   const graded = Object.keys(a.grades||{}).length;
   const avg = activityAvg(a);
-  showModal(`
+  showModal(`${sizeModal('lg sheet')}
     <h3 style="margin-bottom:2px;">${sk.emoji} ${esc(a.description)}</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')} · ${formatDateLong(a.date)} · ${sk.label}</div>
     <div class="field-row" style="margin-bottom:12px;">
@@ -6238,7 +6262,7 @@ function openReportTextModal(){
     ? 'Comportamento e lição de casa vêm dos dados. Vocabulário, gramática e português são opcionais — defina se quiser incluí-los.'
     : 'Behaviour and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment text is in Portuguese (from the Report Card tool), for a Brazilian report card.';
 
-  showModal(`
+  showModal(`${sizeModal('lg sheet')}
     <h2>${isPt?'Texto para o boletim':'Report card text'}</h2>
     <p class="meta" style="margin:6px 0 14px;">${isPt
       ? 'Edite como quiser e copie para o boletim. Alterar os níveis abaixo regenera o texto (perde edições manuais).'
@@ -6894,7 +6918,7 @@ function openEditContactModal(studentId, entryId, idx){
     ? ['Send material','Send link','Homework','Follow-up','Other']
     : ['English Club','Grades','Behavior','Other'];
   if(e.category && !cats.includes(e.category)) cats.push(e.category);
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${isPriv?'⏰ Edit reminder':'📞 Edit contact'} — ${esc(s.name)}</h3>
     <div class="field"><label>Date</label><input id="ec-date" type="date" value="${e.date||todayStr()}"></div>
     <div class="field"><label>Category</label>
@@ -7324,7 +7348,7 @@ function openDayModal(dateStr){
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   window._dayPrivIds = privToday.map(l=>l.id);
   const holiday = getHoliday(dateStr);
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h3>${formatDateLong(dateStr)}</h3>
     <div class="modal-section">
       <div class="modal-section-label">Holiday</div>
@@ -7918,7 +7942,7 @@ function openPrivStudentModal(id){
   // custom mode when slots have differing times/durations
   const custom = slots.length>1 && slots.some(sl=>sl.time!==defTime || sl.duration!==defDur);
   const dayOptions = [[1,'Mon'],[2,'Tue'],[3,'Wed'],[4,'Thu'],[5,'Fri'],[6,'Sat'],[0,'Sun']];
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h3>${s?'Edit private student':'Add private student'}</h3>
     <div class="field"><label>Name</label><input id="ps-name" type="text" value="${s?esc(s.name):''}" placeholder="Full name"></div>
     <div class="field-row">
@@ -8112,7 +8136,7 @@ function openRescheduleModal(lessonId){
   const l = state.privateLessons.find(x=>x.id===lessonId);
   if(!l) return;
   const s = privStudent(l.studentId);
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>📅 ${s?esc(s.name):'Lesson'}</h3>
     <div style="font-size:13px;color:var(--muted);margin:-6px 0 14px;">
       Currently: <b>${formatDateLong(l.date)}</b>${l.time?` at <b>${l.time}</b>`:''} · ${l.duration} min
@@ -8175,7 +8199,7 @@ function saveReschedule(lessonId){
 function openLessonModal(id, presetStudentId, presetDate){
   const l = id ? state.privateLessons.find(x=>x.id===id) : null;
   const opts = state.privateStudents.filter(s=>s.status!=='inactive'||l?.studentId===s.id);
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${l?'Edit lesson':'Add lesson'}</h3>
     <div class="field"><label>Student</label>
       <select id="pl-student">
@@ -8291,7 +8315,7 @@ function openPaymentModal(id, presetStudentId){
   const p = id ? state.payments.find(x=>x.id===id) : null;
   const sid = p?.studentId || presetStudentId || '';
   const led = sid ? computeLedger(sid) : null;
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${p?'Edit payment':'Log payment'}</h3>
     <div class="field"><label>Student</label>
       <select id="pay-student" onchange="privPayBalanceHint()">
@@ -8375,7 +8399,7 @@ function openPrivDayModal(dateStr){
   const lessons = state.privateLessons.filter(l=>l.date===dateStr)
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   window._privDayIds = lessons.map(l=>l.id);
-  showModal(`
+  showModal(`${sizeModal('md sheet')}
     <h3>${formatDateLong(dateStr)}</h3>
     <div class="modal-section">
       <div class="modal-section-label">Private lessons</div>
@@ -8598,7 +8622,7 @@ function renderPrivStudent(){
 /* ---------- checkpoint modal ---------- */
 function openCheckpointModal(id, studentId){
   const c = id ? state.checkpoints.find(x=>x.id===id) : null;
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${c?'Edit checkpoint':'New checkpoint'}</h3>
     <div class="field"><label>Date</label><input id="cp-date" type="date" value="${c?.date||todayStr()}"></div>
     ${SKILLS.map(sk=>`
@@ -8639,7 +8663,7 @@ function deleteCheckpoint(id){
 /* ---------- learning point modal ---------- */
 function openLearningPointModal(id, studentId){
   const p = id ? state.learningPoints.find(x=>x.id===id) : null;
-  showModal(`
+  showModal(`${sizeModal('md')}
     <h3>${p?'Edit learning point':'New learning point'}</h3>
     <div class="field"><label>Topic</label><input id="lp-topic" type="text" value="${esc(p?.topic||'')}" placeholder="e.g. Present perfect with for/since"></div>
     <div class="field-row">
