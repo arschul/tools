@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍳 Recipe Rumble — EFL Kitchen Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
 
   :root {
     --bg: #1a0a2e;
@@ -195,8 +197,8 @@
     display: flex; align-items: center; gap: 6px;
     background: #ffffff0f;
     border-radius: 8px;
-    padding: 5px 10px;
-    font-size: 0.88rem;
+    padding: 6px 11px;
+    font-size: 1rem;
     font-weight: 700;
     animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -391,9 +393,9 @@
     display: flex; align-items: center; gap: 8px;
     background: #ffffff0f;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 9px 13px;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 1.15rem;
   }
 
   .basics-mini {
@@ -659,6 +661,120 @@
   }
   .counter-btn:hover { background: var(--accent2); color: var(--bg); transform: scale(1.1); }
 
+  /* ===== LEVEL PICKER ===== */
+  .level-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .level-btn {
+    padding: 10px 20px; border-radius: 999px;
+    border: 3px solid var(--surface); background: var(--surface);
+    color: var(--text-muted); font-family: 'Fredoka One', cursive;
+    font-size: 1rem; cursor: pointer; transition: all 0.2s;
+  }
+  .level-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+  .level-btn.selected { background: var(--accent3); border-color: var(--accent3); color: var(--bg); box-shadow: 0 0 20px #00e5ff55; }
+  .level-hint { color: var(--text-muted); font-size: 0.82rem; margin-top: 8px; }
+
+  /* ===== REVEAL TOOLBAR ===== */
+  .reveal-toolbar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; flex-wrap: wrap; width: 100%; max-width: 1100px;
+  }
+  .tool-btn {
+    padding: 10px 20px; border-radius: 999px;
+    border: 2px solid var(--accent3); background: transparent;
+    color: var(--accent3); font-family: 'Nunito', sans-serif;
+    font-weight: 800; font-size: 0.92rem; cursor: pointer; transition: all 0.2s;
+  }
+  .tool-btn:hover { background: var(--accent3); color: var(--bg); }
+
+  .timer-box {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 2px solid var(--accent2);
+    border-radius: 999px; padding: 8px 18px;
+  }
+  .timer-display {
+    font-family: 'Fredoka One', cursive; font-size: 2rem;
+    color: var(--accent2); min-width: 110px; text-align: center;
+    letter-spacing: 2px;
+  }
+  .timer-display.low { color: var(--accent1); animation: pulseTimer 0.8s infinite alternate; }
+  @keyframes pulseTimer { from { opacity: 1; } to { opacity: 0.45; } }
+  .timer-preset {
+    padding: 5px 12px; border-radius: 8px; border: 2px solid #ffffff25;
+    background: transparent; color: var(--text-muted);
+    font-weight: 800; font-size: 0.8rem; cursor: pointer; font-family: 'Nunito', sans-serif;
+  }
+  .timer-preset.selected { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ===== LANGUAGE BANK ===== */
+  .lang-bank {
+    width: 100%; max-width: 1100px;
+    background: linear-gradient(135deg, #0d2438, #10203a);
+    border: 2px solid var(--accent3); border-radius: var(--radius);
+    padding: 20px 24px;
+  }
+  .lang-bank h3 { color: var(--accent3); font-size: 1.15rem; margin-bottom: 14px; }
+  .lang-group { margin-bottom: 14px; }
+  .lang-group-title {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--accent2); font-weight: 800; margin-bottom: 7px;
+  }
+  .lang-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .lang-chip {
+    background: #00e5ff18; border: 1px solid #00e5ff55; color: #d8f8ff;
+    padding: 5px 14px; border-radius: 999px; font-size: 1rem; font-weight: 700;
+  }
+  .lang-frame {
+    background: #ffffff0d; border-left: 3px solid var(--accent2);
+    padding: 8px 14px; border-radius: 0 8px 8px 0; margin-bottom: 6px;
+    font-size: 1.05rem;
+  }
+
+  /* ===== JUDGING ===== */
+  .score-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff1a;
+  }
+  .score-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 800; }
+  .score-val { font-family: 'Fredoka One', cursive; font-size: 1.5rem; color: var(--accent2); min-width: 46px; text-align: center; }
+  .score-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--team-color); background: transparent;
+    color: var(--team-color); font-size: 1.1rem; font-weight: 800;
+    cursor: pointer; line-height: 1;
+  }
+  .score-btn:hover { background: var(--team-color); color: var(--bg); }
+  .reveal-card.winner { box-shadow: 0 0 60px var(--accent2), 0 0 0 4px var(--accent2); }
+  .winner-banner {
+    width: 100%; max-width: 1100px; text-align: center;
+    background: linear-gradient(135deg, #3d2a00, #4a3a0a);
+    border: 2px solid var(--accent2); border-radius: var(--radius);
+    padding: 16px; font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem; color: var(--accent2);
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .scanlines, .sound-toggle, .back-link, .reveal-toolbar,
+    .winner-banner, #printHideBtns, .score-row { display: none !important; }
+    .screen { display: none !important; }
+    #reveal-screen { display: block !important; min-height: auto; }
+    .reveal-title { color: #000 !important; text-shadow: none !important; animation: none !important; font-size: 22pt; }
+    .reveal-grid { display: block !important; }
+    .reveal-card {
+      background: #fff !important; border: 2px solid #000 !important;
+      box-shadow: none !important; animation: none !important;
+      page-break-inside: avoid; margin-bottom: 14pt;
+    }
+    .reveal-team-name, .basics-banner h3 { color: #000 !important; }
+    .reveal-ingredient { background: #eee !important; color: #000 !important; }
+    .basics-banner { background: #fff !important; border: 1px solid #000 !important; box-shadow: none !important; }
+    .basics-tag { background: #fff !important; color: #000 !important; border: 1px solid #000 !important; }
+    .lang-bank { background: #fff !important; border: 1px solid #000 !important; page-break-before: always; }
+    .lang-bank h3, .lang-group-title { color: #000 !important; }
+    .lang-chip, .lang-frame { background: #fff !important; color: #000 !important; border: 1px solid #000 !important; }
+  }
+
   .back-link {
     position: fixed;
     top: 16px;
@@ -720,6 +836,16 @@
         <button class="counter-btn" id="ingredPlus" style="font-size:1.5rem">+</button>
         <span style="color:var(--text-muted);font-size:0.85rem">(each team gets this many secret ingredients)</span>
       </div>
+    </div>
+
+    <div class="form-row" style="margin-top:20px;margin-bottom:0">
+      <label>Vocabulary level</label>
+      <div class="level-picker" id="levelPicker">
+        <button class="level-btn" data-lvl="1">A1</button>
+        <button class="level-btn selected" data-lvl="2">A2</button>
+        <button class="level-btn" data-lvl="3">B1+</button>
+      </div>
+      <p class="level-hint" id="levelHint">A2 — everyday food vocabulary (<span id="poolSize">0</span> ingredients in play)</p>
     </div>
 
     <div class="form-row" style="margin-top:20px;margin-bottom:0">
@@ -798,13 +924,37 @@
 <!-- REVEAL SCREEN -->
 <div class="screen" id="reveal-screen">
   <h1 class="reveal-title">🎉 Recipe Challenge Time!</h1>
-  <p style="color:var(--text-muted);text-align:center;font-size:1.1rem">Create a recipe using your secret ingredients + the shared basics below!</p>
+  <p style="color:var(--text-muted);text-align:center;font-size:1.1rem">Write your recipe, then present it to the class. Use your secret ingredients + the shared basics.</p>
+
+  <div class="reveal-toolbar">
+    <div class="timer-box">
+      <button class="timer-preset" data-min="3">3 min</button>
+      <button class="timer-preset selected" data-min="5">5 min</button>
+      <button class="timer-preset" data-min="10">10 min</button>
+      <span class="timer-display" id="timerDisplay">05:00</span>
+      <button class="tool-btn" id="timerToggle" onclick="toggleTimer()">▶ Start</button>
+      <button class="tool-btn" onclick="resetTimer()">↺</button>
+    </div>
+    <button class="tool-btn" id="langToggleBtn" onclick="toggleLangBank()">📚 Hide useful language</button>
+    <button class="tool-btn" onclick="window.print()">🖨️ Print recipe cards</button>
+  </div>
+
   <div class="basics-banner" style="max-width:1100px;width:100%;margin-bottom:4px">
     <h3>🌿 EVERYONE'S BASICS (free to use!)</h3>
     <div class="basics-tags" id="revealBasicsTags"></div>
   </div>
+
+  <div class="lang-bank" id="langBank">
+    <h3>📚 Useful language <span id="langLevelTag" style="font-size:0.85rem;color:var(--text-muted);font-weight:400"></span></h3>
+    <div id="langBankContent"></div>
+  </div>
+
   <div class="reveal-grid" id="revealGrid"></div>
-  <button class="btn btn-primary" onclick="resetGame()" style="margin-top:12px">🔄 Play Again</button>
+  <div class="winner-banner" id="winnerBanner" style="display:none"></div>
+  <div id="printHideBtns" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px">
+    <button class="btn btn-primary" onclick="crownWinner()">👑 Crown the Winner</button>
+    <button class="btn btn-secondary" onclick="resetGame()">🔄 Play Again</button>
+  </div>
 </div>
 <script defer>
 // ===== SOUND ENGINE =====
@@ -919,54 +1069,106 @@ const INGREDIENT_CATEGORIES = [
   {
     id: 'proteins', label: 'Proteins 🍗', emoji: '🍗',
     items: [
-      { name: 'Chicken 🍗' }, { name: 'Egg 🥚' }, { name: 'Tuna 🐟' },
-      { name: 'Shrimp 🍤' }, { name: 'Beef 🥩' }, { name: 'Ham 🥓' },
-      { name: 'Bacon 🥓' }, { name: 'Sausage 🌭' }, { name: 'Tofu 🧊' },
-      { name: 'Salmon 🐟' },
+      { name: 'Chicken 🍗', lvl: 1 }, { name: 'Egg 🥚', lvl: 1 }, { name: 'Beef 🥩', lvl: 1 },
+      { name: 'Fish 🐟', lvl: 1 }, { name: 'Tuna 🐟', lvl: 2 }, { name: 'Shrimp 🍤', lvl: 2 },
+      { name: 'Ham 🥓', lvl: 2 }, { name: 'Bacon 🥓', lvl: 2 }, { name: 'Sausage 🌭', lvl: 2 },
+      { name: 'Salmon 🐟', lvl: 2 }, { name: 'Tofu 🧊', lvl: 3 }, { name: 'Turkey 🦃', lvl: 3 },
     ]
   },
   {
     id: 'dairy', label: 'Dairy 🧀', emoji: '🧀',
     items: [
-      { name: 'Cheese 🧀' }, { name: 'Milk 🥛' }, { name: 'Cream 🥛' },
-      { name: 'Yogurt 🫙' }, { name: 'Sour cream 🫙' },
+      { name: 'Cheese 🧀', lvl: 1 }, { name: 'Milk 🥛', lvl: 1 }, { name: 'Ice cream 🍨', lvl: 1 },
+      { name: 'Yogurt 🫙', lvl: 2 }, { name: 'Cream 🥛', lvl: 2 }, { name: 'Condensed milk 🥫', lvl: 2 },
+      { name: 'Sour cream 🫙', lvl: 3 },
     ]
   },
   {
     id: 'vegetables', label: 'Vegetables 🥦', emoji: '🥦',
     items: [
-      { name: 'Tomato 🍅' }, { name: 'Potato 🥔' }, { name: 'Carrot 🥕' },
-      { name: 'Broccoli 🥦' }, { name: 'Spinach 🥬' }, { name: 'Mushroom 🍄' },
-      { name: 'Corn 🌽' }, { name: 'Peas 🟢' }, { name: 'Cucumber 🥒' },
-      { name: 'Bell pepper 🫑' }, { name: 'Lettuce 🥗' }, { name: 'Zucchini 🥒' },
-      { name: 'Eggplant 🍆' }, { name: 'Sweet potato 🍠' },
+      { name: 'Tomato 🍅', lvl: 1 }, { name: 'Potato 🥔', lvl: 1 }, { name: 'Carrot 🥕', lvl: 1 },
+      { name: 'Corn 🌽', lvl: 1 }, { name: 'Broccoli 🥦', lvl: 2 }, { name: 'Spinach 🥬', lvl: 2 },
+      { name: 'Mushroom 🍄', lvl: 2 }, { name: 'Peas 🟢', lvl: 2 }, { name: 'Cucumber 🥒', lvl: 2 },
+      { name: 'Bell pepper 🫑', lvl: 2 }, { name: 'Lettuce 🥗', lvl: 2 }, { name: 'Zucchini 🥒', lvl: 3 },
+      { name: 'Eggplant 🍆', lvl: 3 }, { name: 'Sweet potato 🍠', lvl: 3 }, { name: 'Cabbage 🥬', lvl: 3 },
     ]
   },
   {
     id: 'carbs', label: 'Carbs & Grains 🍝', emoji: '🍝',
     items: [
-      { name: 'Rice 🍚' }, { name: 'Pasta 🍝' }, { name: 'Bread 🍞' },
-      { name: 'Noodles 🍜' }, { name: 'Oats 🌾' }, { name: 'Tortilla 🫓' },
-      { name: 'Couscous 🍚' },
+      { name: 'Rice 🍚', lvl: 1 }, { name: 'Pasta 🍝', lvl: 1 }, { name: 'Bread 🍞', lvl: 1 },
+      { name: 'Noodles 🍜', lvl: 2 }, { name: 'Tortilla 🫓', lvl: 2 }, { name: 'Oats 🌾', lvl: 3 },
+      { name: 'Couscous 🍚', lvl: 3 }, { name: 'Quinoa 🌾', lvl: 3 },
     ]
   },
   {
     id: 'fruits', label: 'Fruits 🍎', emoji: '🍎',
     items: [
-      { name: 'Lemon 🍋' }, { name: 'Apple 🍎' }, { name: 'Banana 🍌' },
-      { name: 'Strawberry 🍓' }, { name: 'Orange 🍊' }, { name: 'Pineapple 🍍' },
-      { name: 'Avocado 🥑' }, { name: 'Mango 🥭' }, { name: 'Coconut 🥥' },
+      { name: 'Apple 🍎', lvl: 1 }, { name: 'Banana 🍌', lvl: 1 }, { name: 'Orange 🍊', lvl: 1 },
+      { name: 'Lemon 🍋', lvl: 1 }, { name: 'Grapes 🍇', lvl: 1 }, { name: 'Strawberry 🍓', lvl: 2 },
+      { name: 'Pineapple 🍍', lvl: 2 }, { name: 'Avocado 🥑', lvl: 2 }, { name: 'Mango 🥭', lvl: 2 },
+      { name: 'Coconut 🥥', lvl: 3 }, { name: 'Peach 🍑', lvl: 3 },
     ]
   },
   {
     id: 'legumes', label: 'Legumes & Nuts 🫘', emoji: '🫘',
     items: [
-      { name: 'Chickpeas 🫘' }, { name: 'Beans 🫘' },
-      { name: 'Peanut butter 🥜' }, { name: 'Almonds 🌰' },
-      { name: 'Lentils 🫘' },
+      { name: 'Beans 🫘', lvl: 1 }, { name: 'Peanut butter 🥜', lvl: 2 },
+      { name: 'Chickpeas 🫘', lvl: 3 }, { name: 'Almonds 🌰', lvl: 3 }, { name: 'Lentils 🫘', lvl: 3 },
     ]
   },
 ];
+
+// ===== USEFUL LANGUAGE BANK (by CEFR level) =====
+const LANGUAGE_BANK = {
+  1: {
+    tag: '(A1)',
+    groups: [
+      { title: 'Cooking verbs', chips: ['cut', 'mix', 'add', 'put', 'cook', 'wash', 'eat', 'serve'] },
+      { title: 'Order words', chips: ['First,', 'Then,', 'Next,', 'Finally,'] },
+      { title: 'How much?', chips: ['one', 'two', 'some', 'a lot of', 'a little'] },
+    ],
+    frames: [
+      'Our dish is called ___.',
+      'You need ___, ___ and ___.',
+      'First, cut the ___.',
+      'Then, put the ___ in the ___.',
+      'It is very ___ (good / hot / sweet).',
+    ]
+  },
+  2: {
+    tag: '(A2)',
+    groups: [
+      { title: 'Cooking verbs', chips: ['chop', 'slice', 'fry', 'boil', 'bake', 'pour', 'stir', 'heat', 'mix', 'serve'] },
+      { title: 'Sequencers', chips: ['First of all,', 'After that,', 'While it cooks,', 'When it is ready,', 'Finally,'] },
+      { title: 'Quantities', chips: ['a cup of', 'two spoons of', 'a slice of', 'half a', 'a piece of'] },
+      { title: 'Describing taste', chips: ['sweet', 'salty', 'spicy', 'crunchy', 'delicious', 'fresh'] },
+    ],
+    frames: [
+      'Our dish is called ___ and it comes from ___.',
+      'You need a cup of ___ and two spoons of ___.',
+      'First of all, chop the ___ into small pieces.',
+      'After that, fry the ___ for about five minutes.',
+      'Finally, serve it with ___. It tastes ___.',
+    ]
+  },
+  3: {
+    tag: '(B1+)',
+    groups: [
+      { title: 'Cooking verbs', chips: ['grate', 'whisk', 'simmer', 'season', 'marinate', 'drain', 'garnish', 'roast', 'blend', 'sprinkle'] },
+      { title: 'Sequencers', chips: ['To begin with,', 'Meanwhile,', 'Once it has ___,', 'As soon as,', 'Lastly,'] },
+      { title: 'Quantities', chips: ['a pinch of', 'a handful of', 'a drizzle of', 'roughly 200g of', 'a generous amount of'] },
+      { title: 'Selling your dish', chips: ['what makes it special is', 'the secret ingredient is', 'we would recommend', 'it pairs well with'] },
+    ],
+    frames: [
+      'The dish we have created is ___ — what makes it special is ___.',
+      'To begin with, season the ___ with a pinch of ___.',
+      'Meanwhile, simmer the ___ until it has softened.',
+      'Once it has cooled, garnish it with ___.',
+      'We would recommend serving it with ___, because ___.',
+    ]
+  }
+};
 
 // Flat list built from categories (used as fallback)
 const INGREDIENTS = INGREDIENT_CATEGORIES.flatMap(c => c.items);
@@ -995,6 +1197,15 @@ let gameComplete = false;
 // ===== SETUP =====
 let ingredCount = 4;
 let spinAnimEnabled = true;
+let vocabLevel = 2; // 1 = A1, 2 = A2, 3 = B1+  (cumulative)
+
+// All ingredients allowed at the current vocabulary level
+function levelPool() {
+  return INGREDIENTS.filter(i => (i.lvl || 1) <= vocabLevel);
+}
+function shuffled(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
 // categoryLimits: { [categoryId]: maxPerTeam }  0 = unlimited
 let categoryLimits = {};
 
@@ -1011,6 +1222,18 @@ function toggleSpinAnim() {
     label.textContent = '⚡ Disabled — instant result';
     label.style.color = 'var(--text-muted)';
   }
+}
+
+const LEVEL_HINTS = {
+  1: 'A1 — the most common everyday foods',
+  2: 'A2 — everyday food vocabulary',
+  3: 'B1+ — includes less common ingredients'
+};
+
+function updateLevelHint() {
+  const n = levelPool().length;
+  document.getElementById('levelHint').innerHTML =
+    LEVEL_HINTS[vocabLevel] + ' (<span id="poolSize">' + n + '</span> ingredients in play)';
 }
 
 function renderCatLimits() {
@@ -1042,6 +1265,16 @@ function changeCatLimit(id, delta) {
   renderCatLimits();
 }
 
+const levelPicker = document.getElementById('levelPicker');
+levelPicker.querySelectorAll('.level-btn').forEach(btn => {
+  btn.onclick = () => {
+    levelPicker.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    vocabLevel = parseInt(btn.dataset.lvl);
+    updateLevelHint();
+  };
+});
+
 const teamCountPicker = document.getElementById('teamCountPicker');
 teamCountPicker.querySelectorAll('.team-btn').forEach(btn => {
   btn.onclick = () => {
@@ -1061,6 +1294,7 @@ document.getElementById('ingredPlus').onclick = () => {
 // Init toggle visual state
 document.getElementById('spinToggleTrack').classList.add('on');
 renderCatLimits();
+updateLevelHint();
 
 document.getElementById('startGameBtn').onclick = () => {
   ingredientsPerTeam = ingredCount;
@@ -1077,17 +1311,16 @@ function initGame() {
   // 0 means unlimited. We pre-load numTeams * limit slots worth of each category.
   availableIngredients = [];
   INGREDIENT_CATEGORIES.forEach(cat => {
+    const items = cat.items.filter(i => (i.lvl || 1) <= vocabLevel);
     const limit = categoryLimits[cat.id] || 0;
-    const slots = limit === 0 ? cat.items.length : Math.min(limit * numTeams, cat.items.length);
-    const shuffled = [...cat.items].sort(() => Math.random() - 0.5);
-    availableIngredients.push(...shuffled.slice(0, slots));
+    const slots = limit === 0 ? items.length : Math.min(limit * numTeams, items.length);
+    availableIngredients.push(...shuffled(items).slice(0, slots));
   });
-  availableIngredients.sort(() => Math.random() - 0.5);
-  // Safety: if pool is too small, top it up with anything unused
+  availableIngredients = shuffled(availableIngredients);
+  // Safety: top up from the SAME level pool (never leak higher-level vocabulary in)
   if (availableIngredients.length < numTeams * ingredientsPerTeam) {
     const names = new Set(availableIngredients.map(i => i.name));
-    const extras = INGREDIENTS.filter(i => !names.has(i.name)).sort(() => Math.random() - 0.5);
-    availableIngredients.push(...extras);
+    availableIngredients.push(...shuffled(levelPool().filter(i => !names.has(i.name))));
   }
 
   for (let i = 0; i < numTeams; i++) {
@@ -1201,7 +1434,7 @@ let spinnerItems = [];
 
 function buildSpinner() {
   spinnerItems = availableIngredients.slice(0, Math.min(availableIngredients.length, 40));
-  if (spinnerItems.length < 10) spinnerItems = [...INGREDIENTS].sort(() => Math.random() - 0.5).slice(0, 20);
+  if (spinnerItems.length < 10) spinnerItems = shuffled(levelPool()).slice(0, 20);
   renderSpinnerTrack(0);
 }
 
@@ -1225,13 +1458,13 @@ function spin() {
   document.getElementById('spinBtn').disabled = true;
   document.getElementById('resultDisplay').textContent = '';
 
-  // Refill pool if empty
-  if (availableIngredients.length === 0) {
-    availableIngredients = [...INGREDIENTS].sort(() => Math.random() - 0.5);
-  }
-
-  // Filter pool to only ingredients this team is still allowed (category caps)
   const currentTeam = teams[currentTeamIndex];
+  const owned = new Set(currentTeam.ingredients.map(i => i.name));
+
+  // Refill pool if empty — from this level's ingredients only
+  if (availableIngredients.length === 0) {
+    availableIngredients = shuffled(levelPool());
+  }
   const teamCatCounts = {};
   INGREDIENT_CATEGORIES.forEach(cat => { teamCatCounts[cat.id] = 0; });
   currentTeam.ingredients.forEach(ing => {
@@ -1239,13 +1472,17 @@ function spin() {
     if (cat) teamCatCounts[cat.id] = (teamCatCounts[cat.id] || 0) + 1;
   });
   let filteredPool = availableIngredients.filter(ing => {
+    if (owned.has(ing.name)) return false; // never hand a team the same thing twice
     const cat = INGREDIENT_CATEGORIES.find(c => c.items.find(i => i.name === ing.name));
     if (!cat) return true;
     const limit = categoryLimits[cat.id] || 0;
     if (limit === 0) return true;
     return (teamCatCounts[cat.id] || 0) < limit;
   });
-  if (filteredPool.length === 0) filteredPool = [...availableIngredients];
+  // Relax constraints in order: category caps first, then the pool itself
+  if (filteredPool.length === 0) filteredPool = availableIngredients.filter(i => !owned.has(i.name));
+  if (filteredPool.length === 0) filteredPool = levelPool().filter(i => !owned.has(i.name));
+  if (filteredPool.length === 0) { isSpinning = false; document.getElementById('spinBtn').disabled = false; return; }
 
   // Rebuild spinnerItems from filteredPool so display matches eligible items
   spinnerItems = [...filteredPool].sort(() => Math.random() - 0.5);
@@ -1314,8 +1551,9 @@ function spin() {
 }
 
 function assignIngredient(ingredient, idx) {
-  // Remove from available
-  availableIngredients.splice(idx % availableIngredients.length, 1);
+  // Remove from the pool by NAME — a stale/-1 index used to delete the wrong item
+  const realIdx = availableIngredients.findIndex(i => i.name === ingredient.name);
+  if (realIdx !== -1) availableIngredients.splice(realIdx, 1);
 
   // Assign to current team
   teams[currentTeamIndex].ingredients.push(ingredient);
@@ -1510,7 +1748,7 @@ function doReroll(ti) {
 
   // Get a new ingredient not already owned
   let pool = availableIngredients.filter(i => !team.ingredients.find(x => x.name === i.name));
-  if (pool.length === 0) pool = INGREDIENTS.filter(i => !team.ingredients.find(x => x.name === i.name));
+  if (pool.length === 0) pool = levelPool().filter(i => !team.ingredients.find(x => x.name === i.name));
   if (pool.length === 0) return;
 
   const newIng = pool[Math.floor(Math.random() * pool.length)];
@@ -1571,7 +1809,12 @@ function proposeSwap(fromTi, fromIngIdx, toTi, toIngIdx) {
   if (state.swapUsed) return;
 
   const id = ++swapIdCounter;
-  pendingSwaps.push({ id, fromTi, fromIngIdx, toTi, toIngIdx, status: 'pending' });
+  pendingSwaps.push({
+    id, fromTi, fromIngIdx, toTi, toIngIdx, status: 'pending',
+    // Snapshot the names: after a swap executes the indices point at the other item
+    fromName: teams[fromTi].ingredients[fromIngIdx].name,
+    toName: teams[toTi].ingredients[toIngIdx].name
+  });
 
   state.swapUsed = true;
   state.selectedIngIdx = null;
@@ -1621,8 +1864,8 @@ function renderSwapPanel() {
   pendingSwaps.forEach(swap => {
     const fromTeam = teams[swap.fromTi];
     const toTeam = teams[swap.toTi];
-    const fromIng = fromTeam.ingredients[swap.fromIngIdx];
-    const toIng = toTeam.ingredients[swap.toIngIdx];
+    const fromIng = { name: swap.fromName };
+    const toIng = { name: swap.toName };
 
     let actionHTML = '';
     if (swap.status === 'pending') {
@@ -1650,6 +1893,10 @@ function renderSwapPanel() {
 }
 
 function proceedToReveal() {
+  scores = teams.map(() => 0);
+  document.getElementById('winnerBanner').style.display = 'none';
+  renderLangBank();
+  resetTimer();
   buildFinalReveal();
   playWin();
   spawnConfetti();
@@ -1681,19 +1928,152 @@ function buildFinalReveal() {
       `<div class="reveal-ingredient">${ing.name}</div>`
     ).join('');
 
-
+    card.id = `reveal-card-${i}`;
     card.innerHTML = `
       <div class="reveal-card-header">
         <span style="font-size:2rem">${team.emoji}</span>
         <span class="reveal-team-name">${team.name}</span>
       </div>
       <div class="reveal-ingredients">${ingsHTML}</div>
+      <div class="score-row">
+        <span class="score-label">Judges' score</span>
+        <button class="score-btn" onclick="changeScore(${i},-1)">−</button>
+        <span class="score-val" id="score-${i}">0</span>
+        <button class="score-btn" onclick="changeScore(${i},1)">+</button>
+      </div>
     `;
     grid.appendChild(card);
   });
 }
 
+// ===== JUDGING =====
+let scores = [];
+
+function changeScore(ti, delta) {
+  scores[ti] = Math.max(0, Math.min(20, (scores[ti] || 0) + delta));
+  document.getElementById(`score-${ti}`).textContent = scores[ti];
+  playTick();
+}
+
+function crownWinner() {
+  const banner = document.getElementById('winnerBanner');
+  document.querySelectorAll('.reveal-card').forEach(c => c.classList.remove('winner'));
+
+  const best = Math.max(...scores);
+  if (best === 0) {
+    banner.style.display = 'block';
+    banner.textContent = '🤔 Score the teams first — use the + buttons on each card.';
+    return;
+  }
+
+  const winners = teams.filter((t, i) => scores[i] === best);
+  teams.forEach((t, i) => {
+    if (scores[i] === best) {
+      const card = document.getElementById(`reveal-card-${i}`);
+      if (card) card.classList.add('winner');
+    }
+  });
+
+  const names = winners.map(t => `${t.emoji} ${t.name}`).join(' & ');
+  banner.style.display = 'block';
+  banner.textContent = winners.length > 1
+    ? `👑 It's a tie! ${names} — ${best} points each!`
+    : `👑 ${names} wins the Rumble with ${best} points!`;
+
+  playWin();
+  spawnConfetti();
+  banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ===== USEFUL LANGUAGE PANEL =====
+let langVisible = true;
+
+function renderLangBank() {
+  const data = LANGUAGE_BANK[vocabLevel] || LANGUAGE_BANK[2];
+  document.getElementById('langLevelTag').textContent = data.tag;
+
+  let html = '';
+  data.groups.forEach(g => {
+    html += `<div class="lang-group">
+      <div class="lang-group-title">${g.title}</div>
+      <div class="lang-chips">${g.chips.map(c => `<span class="lang-chip">${c}</span>`).join('')}</div>
+    </div>`;
+  });
+  html += `<div class="lang-group" style="margin-bottom:0">
+    <div class="lang-group-title">Sentence starters</div>
+    ${data.frames.map(f => `<div class="lang-frame">${f}</div>`).join('')}
+  </div>`;
+
+  document.getElementById('langBankContent').innerHTML = html;
+}
+
+function toggleLangBank() {
+  langVisible = !langVisible;
+  document.getElementById('langBank').style.display = langVisible ? 'block' : 'none';
+  document.getElementById('langToggleBtn').textContent =
+    langVisible ? '📚 Hide useful language' : '📚 Show useful language';
+}
+
+// ===== PREP TIMER =====
+let timerTotal = 300;
+let timerLeft = 300;
+let timerHandle = null;
+
+function formatTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function paintTimer() {
+  const el = document.getElementById('timerDisplay');
+  el.textContent = formatTime(timerLeft);
+  el.classList.toggle('low', timerLeft <= 30 && timerLeft > 0);
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('timerToggle');
+  if (timerHandle) {
+    stopTimer();
+    btn.textContent = '▶ Resume';
+    return;
+  }
+  if (timerLeft <= 0) timerLeft = timerTotal;
+  btn.textContent = '⏸ Pause';
+  timerHandle = setInterval(() => {
+    timerLeft--;
+    paintTimer();
+    if (timerLeft <= 0) {
+      stopTimer();
+      document.getElementById('timerToggle').textContent = '▶ Start';
+      playWin();
+      spawnConfetti();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+}
+
+function resetTimer() {
+  stopTimer();
+  timerLeft = timerTotal;
+  paintTimer();
+  document.getElementById('timerToggle').textContent = '▶ Start';
+}
+
+document.querySelectorAll('.timer-preset').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.timer-preset').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    timerTotal = parseInt(btn.dataset.min) * 60;
+    resetTimer();
+  };
+});
+
 function resetGame() {
+  stopTimer();
+  document.getElementById('winnerBanner').style.display = 'none';
   showScreen('setup-screen');
 }
 
