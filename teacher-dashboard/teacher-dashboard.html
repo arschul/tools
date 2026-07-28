@@ -1968,14 +1968,15 @@ function cycleEssays(cycle){
   if(!Array.isArray(cycle.essayEventIds)) cycle.essayEventIds = [];
   return cycle.essayScores;
 }
-// One essay mark: clamped to 0-6 and snapped to the nearest half band.
+// One essay mark: clamped to 0-6, kept to 2 decimal places. Marks like 5.2 or
+// 5.75 are normal here, so nothing is snapped to a band.
 function essayValue(v){
   if(v==null || v==='') return null;
   const n = Number(v);
   if(isNaN(n)) return null;
-  return Math.max(0, Math.min(ESSAY_MAX, Math.round(n*2)/2));
+  return Math.max(0, Math.min(ESSAY_MAX, Math.round(n*100)/100));
 }
-function fmtEssay(v){ return v==null ? '—' : String(Math.round(v*10)/10); }
+function fmtEssay(v){ return v==null ? '—' : String(Math.round(v*100)/100); }
 function studentEssays(cycle, studentId, n){
   const arr = (((cycle.essayScores||{})[studentId])||[]).slice(0, n).map(essayValue);
   while(arr.length < n) arr.push(null);
@@ -1988,7 +1989,7 @@ function essayStatus(cls, cycle, studentId){
   const scores = studentEssays(cycle, studentId, n);
   const nums = scores.filter(v=>v!=null);
   if(!nums.length) return null;
-  const avg = Math.round((nums.reduce((a,b)=>a+b,0)/nums.length)*10)/10;
+  const avg = Math.round((nums.reduce((a,b)=>a+b,0)/nums.length)*100)/100;
   return { scores:scores, entered:nums.length, of:n, avg:avg, max:ESSAY_MAX,
            best:Math.max.apply(null,nums), low:nums.some(v=>v<ESSAY_PASS) };
 }
@@ -4560,7 +4561,7 @@ function gmEssayBody(c, cycle, students, target){
       </div>
     </div>
     <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">
-      TWE bands — <b>6</b> clearly competent · <b>5</b> generally competent · <b>4</b> minimally competent · <b>3</b> developing · <b>2</b> seriously flawed · <b>1</b> incompetent. Half points allowed (4.5, 5.5…).
+      TWE bands — <b>6</b> clearly competent · <b>5</b> generally competent · <b>4</b> minimally competent · <b>3</b> developing · <b>2</b> seriously flawed · <b>1</b> incompetent. Decimals are kept exactly as you type them (5.2, 5.75…).
       Essays are recorded and reported but never change Contact Parents, which stays tied to the TOEFL target${target?` of <b>${target}</b>`:''}.
     </div>`;
 
@@ -4572,7 +4573,7 @@ function gmEssayBody(c, cycle, students, target){
     return `<tr>
       <td style="font-weight:600;">${esc(s.name)}</td>
       ${scores.map((v,i)=>`<td style="text-align:center;">
-        <input type="number" min="0" max="${ESSAY_MAX}" step="0.5" value="${v==null?'':fmtEssay(v)}" style="width:70px;text-align:center;" placeholder="/${ESSAY_MAX}" onchange="gmSetEssay(window._gmIds[${si}], ${i}, this.value)">
+        <input type="number" min="0" max="${ESSAY_MAX}" step="any" value="${v==null?'':fmtEssay(v)}" style="width:70px;text-align:center;" placeholder="/${ESSAY_MAX}" onchange="gmSetEssay(window._gmIds[${si}], ${i}, this.value)">
       </td>`).join('')}
       <td style="text-align:center;font-weight:800;font-size:16px;" id="gessavg-${s.id}">${gmEssayAvgCell(st)}</td>
     </tr>`;
