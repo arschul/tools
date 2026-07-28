@@ -8,48 +8,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --teal:#0f766e;
-    --teal-dark:#0a4f4a;
-    --teal-soft:#e2f2ef;
+    --teal:#0f766e; --teal-dark:#0a4f4a; --teal-soft:#e2f2ef;
     --on-accent:#ffffff;
-    --yellow:#eef200;
-    --on-yellow:#0b1a17;
-    --ink:#0b1a17;
-    --muted:#4b6b65;
-    --paper:#f4faf8;
-    --card:#ffffff;
-    --surface:#f4faf8;
-    --line:#c9ddd8;
-    --err:#d64545;
-    --err-bg:#fbdada;
-    --warn-bg:#fdeeb0;
-    --warn-ink:#7a5b00;
-    --warn-line:#b58900;
-    --gold-bg:#fdf6d0;
-    --gold-line:#e8d97a;
+    --yellow:#eef200; --on-yellow:#0b1a17;
+    --ink:#0b1a17; --muted:#4b6b65;
+    --paper:#f4faf8; --card:#ffffff; --surface:#f4faf8; --line:#c9ddd8;
+    --err:#d64545; --err-bg:#fbdada;
+    --warn-bg:#fdeeb0; --warn-ink:#7a5b00; --warn-line:#b58900;
+    --gold-bg:#fdf6d0; --gold-line:#e8d97a;
     --ok:#0f766e;
     --shadow:0 1px 2px rgba(11,26,23,.04);
   }
   [data-theme="dark"]{
-    --teal:#14b8a6;
-    --teal-dark:#0d9488;
-    --teal-soft:#123c37;
+    --teal:#14b8a6; --teal-dark:#0d9488; --teal-soft:#123c37;
     --on-accent:#04211d;
-    --yellow:#eef200;
-    --on-yellow:#0b1a17;
-    --ink:#e8f4f1;
-    --muted:#8fb3ac;
-    --paper:#07100e;
-    --card:#0f1f1c;
-    --surface:#132824;
-    --line:#26433d;
-    --err:#ff8a8a;
-    --err-bg:#4a1d1d;
-    --warn-bg:#463a12;
-    --warn-ink:#f5d97a;
-    --warn-line:#c9a227;
-    --gold-bg:#3d3413;
-    --gold-line:#8a7524;
+    --yellow:#eef200; --on-yellow:#0b1a17;
+    --ink:#e8f4f1; --muted:#8fb3ac;
+    --paper:#07100e; --card:#0f1f1c; --surface:#132824; --line:#26433d;
+    --err:#ff8a8a; --err-bg:#4a1d1d;
+    --warn-bg:#463a12; --warn-ink:#f5d97a; --warn-line:#c9a227;
+    --gold-bg:#3d3413; --gold-line:#8a7524;
     --ok:#2dd4bf;
     --shadow:none;
   }
@@ -70,18 +48,10 @@
   header{margin-bottom:24px;}
   .eyebrow{
     font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    letter-spacing:.12em;
-    text-transform:uppercase;
-    color:var(--teal);
-    font-weight:700;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--teal);font-weight:700;
   }
-  h1{
-    font-size:34px;
-    font-weight:800;
-    margin:4px 0 6px;
-    letter-spacing:-0.01em;
-  }
+  h1{font-size:34px;font-weight:800;margin:4px 0 6px;letter-spacing:-0.01em;}
   .sub{color:var(--muted);font-size:14px;}
 
   .back-link{
@@ -91,166 +61,103 @@
     font-family:'Bricolage Grotesque',sans-serif;
     font-weight:700;font-size:13px;text-decoration:none;
   }
-  .top-toggles{
-    position:fixed;top:16px;right:16px;z-index:100000;
-    display:flex;gap:8px;
-  }
+  .top-toggles{position:fixed;top:16px;right:16px;z-index:100000;display:flex;gap:8px;}
   .toggle-pill{
-    font-family:'Bricolage Grotesque',sans-serif;
-    font-weight:700;font-size:13px;
-    padding:8px 14px;border-radius:999px;
-    border:1px solid var(--line);
-    background:var(--card);color:var(--ink);
-    cursor:pointer;
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:13px;
+    padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+    background:var(--card);color:var(--ink);cursor:pointer;
   }
   .toggle-pill.on{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
   .card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:24px;
-    margin-bottom:16px;
-    box-shadow:var(--shadow);
+    background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow);
   }
 
   .setup-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-  select, input[type=text], input[type=number]{
-    font-family:inherit;
-    font-size:14px;
-    padding:9px 12px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:var(--surface);
-    color:var(--ink);
+  .setup-row + .setup-row{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);}
+  select, input[type=text]{
+    font-family:inherit;font-size:14px;padding:9px 12px;border-radius:8px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
   }
   select{max-width:230px;}
-  label.opt{
-    font-size:13px;color:var(--muted);
-    display:flex;align-items:center;gap:6px;
-    cursor:pointer;
-  }
+  label.opt{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;}
   label.opt input{accent-color:var(--teal);width:16px;height:16px;}
 
-  .mode-tabs{display:flex;gap:8px;margin-bottom:16px;}
-  .tab-btn{
-    font-family:inherit;
-    font-weight:700;
-    font-size:14px;
-    padding:10px 18px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:var(--card);
-    color:var(--ink);
+  .topic-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .topic-chip{
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:7px 13px;border-radius:999px;
+    border:1px solid var(--line);background:var(--surface);color:var(--muted);
     cursor:pointer;
   }
-  .tab-btn.active{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
+  .topic-chip.on{background:var(--teal-soft);border-color:var(--teal);color:var(--teal);}
+  [data-theme="dark"] .topic-chip.on{color:var(--ink);}
+  .chip-label{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;
+    text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
 
-  .progress{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--muted);
-    margin-bottom:14px;
-  }
-  .progress-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .progress{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .progress-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 
-  .play-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;margin-top:14px;}
+  .play-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;margin-top:14px;flex-wrap:wrap;}
   .play-btn{
     width:56px;height:56px;border-radius:50%;
-    background:var(--teal);
-    border:none;
-    color:var(--on-accent);
-    font-size:22px;
-    cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
+    background:var(--teal);border:none;color:var(--on-accent);
+    font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
     transition:transform .12s ease, background .12s ease;
   }
   .play-btn:hover{background:var(--teal-dark);}
   .play-btn:active{transform:scale(.94);}
   .play-btn:disabled{opacity:.4;cursor:default;}
-  .play-hint{font-size:13px;color:var(--muted);}
+  .play-hint{font-size:13px;color:var(--muted);flex:1;min-width:180px;}
   .play-hint b{color:var(--ink);}
   .play-hint kbd{
     font-family:'JetBrains Mono',monospace;font-size:11px;
-    border:1px solid var(--line);border-radius:4px;padding:1px 5px;
-    background:var(--surface);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--surface);
   }
+  .replays{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .replays.low{color:var(--err);font-weight:700;}
 
   textarea{
-    width:100%;
-    min-height:90px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:15px;
-    line-height:1.5;
-    padding:14px;
-    border-radius:10px;
-    border:1.5px solid var(--line);
-    background:var(--surface);
-    resize:vertical;
-    color:var(--ink);
+    width:100%;min-height:90px;
+    font-family:'JetBrains Mono',monospace;font-size:15px;line-height:1.5;
+    padding:14px;border-radius:10px;border:1.5px solid var(--line);
+    background:var(--surface);resize:vertical;color:var(--ink);
   }
   textarea:focus{outline:2px solid var(--teal);outline-offset:1px;}
 
   .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center;}
   button.primary{
-    font-family:inherit;
-    font-weight:700;
-    font-size:14px;
-    padding:11px 20px;
-    border-radius:8px;
-    border:none;
-    background:var(--yellow);
-    color:var(--on-yellow);
-    cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:14px;padding:11px 20px;
+    border-radius:8px;border:none;background:var(--yellow);color:var(--on-yellow);cursor:pointer;
   }
   button.primary:hover{filter:brightness(0.95);}
   button.ghost{
-    font-family:inherit;
-    font-weight:600;
-    font-size:14px;
-    padding:11px 18px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:var(--card);
-    color:var(--ink);
-    cursor:pointer;
+    font-family:inherit;font-weight:600;font-size:14px;padding:11px 18px;
+    border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;
   }
   button.ghost:hover{background:var(--surface);}
+  button.small{font-size:13px;padding:8px 13px;}
   button:disabled{opacity:.45;cursor:default;}
   .inline-warn{font-size:13px;color:var(--err);font-weight:600;}
 
   .result{
-    margin-top:18px;
-    padding:16px;
-    border-radius:10px;
-    background:var(--surface);
-    border:1px solid var(--line);
-    font-family:'JetBrains Mono',monospace;
-    font-size:15px;
-    line-height:1.9;
-    display:none;
+    margin-top:18px;padding:16px;border-radius:10px;
+    background:var(--surface);border:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:15px;line-height:1.9;display:none;
   }
   .result.show{display:block;}
   .result .score{
-    font-family:'Bricolage Grotesque',sans-serif;
-    font-weight:800;
-    font-size:20px;
-    margin-bottom:10px;
+    font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;margin-bottom:10px;
   }
   .punct-line{
-    font-family:'Bricolage Grotesque',sans-serif;
-    font-size:13px;
-    color:var(--muted);
-    margin-top:12px;
-    padding-top:10px;
-    border-top:1px dashed var(--line);
-    line-height:1.5;
+    font-family:'Bricolage Grotesque',sans-serif;font-size:13px;color:var(--muted);
+    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);line-height:1.5;
   }
   .punct-line b{color:var(--ink);}
   .legend{
-    font-family:'Bricolage Grotesque',sans-serif;
-    font-size:12px;color:var(--muted);
+    font-family:'Bricolage Grotesque',sans-serif;font-size:12px;color:var(--muted);
     margin-top:10px;display:flex;gap:14px;flex-wrap:wrap;
   }
   mark.miss{background:var(--err-bg);color:var(--err);text-decoration:line-through;border-radius:3px;padding:0 3px;}
@@ -258,63 +165,89 @@
   mark.extra{background:transparent;color:var(--muted);text-decoration:line-through;border:1px dashed var(--line);border-radius:3px;padding:0 3px;opacity:.85;}
   span.hit{color:var(--ok);}
   .typed-note{font-size:.78em;opacity:.85;}
+  .revealed-sentence{
+    font-family:'JetBrains Mono',monospace;font-size:20px;line-height:1.6;
+    color:var(--teal);font-weight:500;
+  }
 
   .score-strip{
     display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--muted);
-    padding-top:14px;
-    margin-top:14px;
-    border-top:1px dashed var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
+    padding-top:14px;margin-top:14px;border-top:1px dashed var(--line);
   }
   .score-strip b{color:var(--ink);font-size:14px;}
 
   h2.panel-title{font-size:18px;margin:0 0 4px;}
 
+  /* summary */
+  .summary-head{
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+  }
+  .big-stat{font-size:38px;font-weight:800;line-height:1;}
+  .summary-item{
+    padding:10px 0;border-bottom:1px dashed var(--line);
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .summary-item:last-child{border-bottom:none;}
+  .summary-pct{
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;
+    min-width:52px;text-align:right;
+  }
+  .summary-sentence{font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.7;flex:1;}
+  .pct-good{color:var(--ok);}
+  .pct-mid{color:var(--warn-line);}
+  .pct-bad{color:var(--err);}
+
   .team-name-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
   .team-name-row .swatch{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
   .team-name-row input{flex:1;}
 
-  .pool-note{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;color:var(--muted);
-    margin:4px 0 16px;
-  }
+  .pool-note{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin:4px 0 16px;}
 
   .mini-scoreboard{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
   .team-chip{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    padding:6px 10px;
-    border-radius:20px;
-    background:var(--surface);
-    border:1px solid var(--line);
-    display:flex;align-items:center;gap:6px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;border-radius:20px;
+    background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;gap:6px;
   }
   .team-chip .dot{width:8px;height:8px;border-radius:50%;}
   .team-chip.current{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
+  /* paper marking */
+  .mark-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+    background:var(--surface);margin-bottom:8px;
+  }
+  .mark-row .swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .mark-name{font-weight:700;flex:1;min-width:90px;}
+  .mark-total{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .mark-btns{display:flex;gap:6px;}
+  .mark-btn{
+    font-family:inherit;font-weight:700;font-size:13px;padding:7px 12px;border-radius:7px;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .mark-btn.sel{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
+  .mark-row.done{border-color:var(--teal);}
+
   .leaderboard-row{
-    display:flex;align-items:center;gap:12px;
-    padding:12px 14px;
-    border-radius:10px;
-    background:var(--surface);
-    border:1px solid var(--line);
-    margin-bottom:8px;
+    display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+    background:var(--surface);border:1px solid var(--line);margin-bottom:8px;
   }
   .leaderboard-row.first{background:var(--gold-bg);border-color:var(--gold-line);}
   .rank-badge{
-    font-family:'JetBrains Mono',monospace;
-    font-weight:700;
-    font-size:14px;
-    width:28px;height:28px;border-radius:50%;
-    background:var(--card);border:1px solid var(--line);
-    display:flex;align-items:center;justify-content:center;
-    flex-shrink:0;
+    font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;
+    width:28px;height:28px;border-radius:50%;background:var(--card);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
   }
   .lb-name{font-weight:700;flex:1;}
   .lb-score{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--teal);}
+
+  .mode-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .tab-btn{
+    font-family:inherit;font-weight:700;font-size:14px;padding:10px 18px;
+    border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .tab-btn.active{background:var(--teal);color:var(--on-accent);border-color:var(--teal);}
 
   /* ---------- Board mode: projection-scale type ---------- */
   [data-size="board"] .wrap{max-width:1000px;}
@@ -324,21 +257,36 @@
   [data-size="board"] textarea{font-size:30px;min-height:150px;line-height:1.45;}
   [data-size="board"] .result{font-size:30px;line-height:1.8;}
   [data-size="board"] .result .score{font-size:34px;}
+  [data-size="board"] .revealed-sentence{font-size:40px;}
   [data-size="board"] .punct-line{font-size:19px;}
   [data-size="board"] .legend{font-size:16px;}
   [data-size="board"] .play-hint{font-size:19px;}
+  [data-size="board"] .replays{font-size:17px;}
   [data-size="board"] .play-btn{width:76px;height:76px;font-size:30px;}
   [data-size="board"] .team-chip{font-size:19px;padding:9px 15px;}
   [data-size="board"] .score-strip{font-size:17px;}
   [data-size="board"] .score-strip b{font-size:21px;}
   [data-size="board"] button.primary,[data-size="board"] button.ghost,[data-size="board"] .tab-btn{font-size:19px;padding:14px 24px;}
-  [data-size="board"] .lb-name{font-size:26px;}
-  [data-size="board"] .lb-score{font-size:26px;}
+  [data-size="board"] .mark-name{font-size:24px;}
+  [data-size="board"] .mark-btn{font-size:18px;padding:10px 16px;}
+  [data-size="board"] .mark-total{font-size:17px;}
+  [data-size="board"] .lb-name,[data-size="board"] .lb-score{font-size:26px;}
   [data-size="board"] .rank-badge{width:38px;height:38px;font-size:19px;}
+  [data-size="board"] .summary-sentence{font-size:22px;}
+  [data-size="board"] .summary-pct{font-size:20px;min-width:70px;}
+  [data-size="board"] .big-stat{font-size:56px;}
   [data-size="board"] .setup-card{display:none;}
 
+  /* ---------- Print: answer key only ---------- */
+  #printArea{display:none;}
   @media print{
-    .back-link,.top-toggles,.mode-tabs,.setup-card,.actions,textarea,.play-row{display:none !important;}
+    body{padding:0;display:block;background:#fff;color:#000;}
+    .wrap,.back-link,.top-toggles{display:none !important;}
+    #printArea{display:block;padding:24px;}
+    #printArea h2{font-size:20px;margin:0 0 4px;}
+    #printArea .meta{font-size:12px;color:#555;margin-bottom:18px;}
+    #printArea ol{font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2.4;padding-left:24px;}
+    #printArea li{page-break-inside:avoid;}
   }
 </style>
 </head>
@@ -371,9 +319,19 @@
         <option value="1" selected>Speed: normal</option>
       </select>
       <select id="voiceSelect"></select>
+      <select id="replaySelect" title="How many times a sentence may be played">
+        <option value="0" selected>Replays: unlimited</option>
+        <option value="3">Replays: 3</option>
+        <option value="2">Replays: 2</option>
+        <option value="1">Replays: 1</option>
+      </select>
       <label class="opt" title="Also report capital letters and punctuation">
         <input type="checkbox" id="strictToggle" checked> Grade punctuation &amp; capitals
       </label>
+    </div>
+    <div class="setup-row">
+      <span class="chip-label">Topics</span>
+      <div class="topic-chips" id="topicChips"></div>
     </div>
   </div>
 
@@ -384,52 +342,89 @@
 
   <!-- PRACTICE MODE -->
   <div class="card" id="practiceView">
-    <div class="progress-row">
-      <div>
-        <div class="progress" id="progressLabel">Sentence 1 of 12</div>
-        <div class="progress" id="poolLabel"></div>
+    <div id="drillArea">
+      <div class="progress-row">
+        <div>
+          <div class="progress" id="progressLabel">Sentence 1 of 12</div>
+          <div class="progress" id="poolLabel"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="ghost small" id="printBtn" title="Print this set as an answer key">Print key</button>
+          <button class="ghost small" id="restartBtn">New set</button>
+        </div>
       </div>
-      <button class="ghost" id="restartBtn">Restart set</button>
-    </div>
 
-    <div class="play-row">
-      <button class="play-btn" id="playBtn" title="Play sentence" aria-label="Play sentence">▶</button>
-      <div class="play-hint">Click <b>play</b> to hear it — replay as often as you like. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> replays, <kbd>Enter</kbd> checks.</div>
-    </div>
+      <div class="play-row">
+        <button class="play-btn" id="playBtn" title="Play sentence" aria-label="Play sentence">▶</button>
+        <button class="ghost small" id="chunkBtn" title="Play the sentence in short phrases">Phrases</button>
+        <div class="play-hint">
+          <span id="playHintText">Click <b>play</b> to hear it.</span>
+          <kbd>Ctrl</kbd>+<kbd>Enter</kbd> replays · <kbd>Enter</kbd> checks
+          <div class="replays" id="replayLabel"></div>
+        </div>
+      </div>
 
-    <textarea id="answerInput" placeholder="Type exactly what you hear..." autocomplete="off" spellcheck="false"></textarea>
+      <textarea id="answerInput" placeholder="Type exactly what you hear..." autocomplete="off" spellcheck="false"></textarea>
 
-    <div class="actions">
-      <button class="primary" id="checkBtn">Check</button>
-      <button class="ghost" id="nextBtn" disabled>Next sentence →</button>
-      <span class="inline-warn" id="practiceWarn"></span>
-    </div>
+      <div class="actions">
+        <button class="primary" id="checkBtn">Check</button>
+        <button class="ghost" id="retryBtn" style="display:none;">Listen again &amp; fix</button>
+        <button class="ghost" id="nextBtn" disabled>Next sentence →</button>
+        <button class="ghost small" id="revealBtn" title="Show the sentence — this one scores zero">Show answer</button>
+        <span class="inline-warn" id="practiceWarn"></span>
+      </div>
 
-    <div class="result" id="resultBox">
-      <div class="score" id="scoreLine"></div>
-      <div id="diffLine"></div>
-      <div class="punct-line" id="punctLine" style="display:none;"></div>
-      <div class="legend">
-        <span><span class="hit">correct</span></span>
-        <span><mark class="close">near miss</mark></span>
-        <span><mark class="miss">missed</mark></span>
-        <span><mark class="extra">extra word</mark></span>
+      <div class="result" id="resultBox">
+        <div class="score" id="scoreLine"></div>
+        <div id="diffLine"></div>
+        <div class="punct-line" id="punctLine" style="display:none;"></div>
+        <div class="legend">
+          <span><span class="hit">correct</span></span>
+          <span><mark class="close">near miss</mark></span>
+          <span><mark class="miss">missed</mark></span>
+          <span><mark class="extra">extra word</mark></span>
+        </div>
+      </div>
+
+      <div class="score-strip">
+        <span>Perfect: <b id="setScore">0 / 0</b></span>
+        <span>Average: <b id="setAvg">—</b></span>
+        <span id="speechWarning" style="color:var(--err);"></span>
       </div>
     </div>
 
-    <div class="score-strip">
-      <span>Perfect: <b id="setScore">0 / 0</b></span>
-      <span>Average: <b id="setAvg">—</b></span>
-      <span id="speechWarning" style="color:var(--err);"></span>
+    <!-- END-OF-SET SUMMARY -->
+    <div id="summaryArea" style="display:none;">
+      <div class="summary-head">
+        <div>
+          <h2 class="panel-title">Set complete</h2>
+          <div class="sub" id="summaryMeta"></div>
+        </div>
+        <div style="text-align:right;">
+          <div class="big-stat" id="summaryAvg">0%</div>
+          <div class="sub" id="summaryPerfect"></div>
+        </div>
+      </div>
+      <div id="summaryList"></div>
+      <div class="actions" style="margin-top:18px;">
+        <button class="primary" id="summaryNewBtn">New set</button>
+        <button class="ghost" id="summaryPrintBtn">Print key</button>
+      </div>
     </div>
   </div>
 
   <!-- TEAM SETUP -->
   <div class="card" id="teamSetupView" style="display:none;">
     <h2 class="panel-title">Set up teams</h2>
-    <div class="sub" style="margin-bottom:16px;">Each team gets its own sentences, drawn from the same level.</div>
+    <div class="sub" style="margin-bottom:16px;">Choose how teams will answer, then name them.</div>
 
-    <div class="setup-row" style="margin-bottom:6px;">
+    <div class="setup-row" style="margin-bottom:12px;">
+      <label class="opt">Answers
+        <select id="answerModeSelect">
+          <option value="paper" selected>On paper — teacher marks</option>
+          <option value="device">Typed on this device</option>
+        </select>
+      </label>
       <label class="opt">Teams
         <select id="teamCountSelect">
           <option value="2">2</option>
@@ -439,7 +434,7 @@
           <option value="6">6</option>
         </select>
       </label>
-      <label class="opt">Rounds per team
+      <label class="opt">Rounds
         <select id="roundsSelect"></select>
       </label>
     </div>
@@ -450,14 +445,18 @@
     <button class="primary" id="startTeamGameBtn" style="margin-top:8px;">Start game</button>
   </div>
 
-  <!-- TEAM PLAY -->
+  <!-- TEAM PLAY — typed on device -->
   <div class="card" id="teamPlayView" style="display:none;">
     <div class="mini-scoreboard" id="miniScoreboard"></div>
     <div class="progress" id="teamTurnLabel">Team 1's turn — Round 1 of 5</div>
 
     <div class="play-row">
       <button class="play-btn" id="teamPlayBtn" title="Play sentence" aria-label="Play sentence">▶</button>
-      <div class="play-hint">Pass the device to <b id="currentTeamName">Team 1</b>, then play.</div>
+      <button class="ghost small" id="teamChunkBtn">Phrases</button>
+      <div class="play-hint">
+        Pass the device to <b id="currentTeamName">Team 1</b>, then play.
+        <div class="replays" id="teamReplayLabel"></div>
+      </div>
     </div>
 
     <textarea id="teamAnswerInput" placeholder="Type exactly what you hear..." autocomplete="off" spellcheck="false"></textarea>
@@ -475,19 +474,252 @@
     </div>
   </div>
 
+  <!-- TEAM PLAY — paper, teacher marks -->
+  <div class="card" id="boardPlayView" style="display:none;">
+    <div class="mini-scoreboard" id="boardScoreboard"></div>
+    <div class="progress" id="boardRoundLabel">Round 1 of 5</div>
+
+    <div class="play-row">
+      <button class="play-btn" id="boardPlayBtn" title="Play sentence" aria-label="Play sentence">▶</button>
+      <button class="ghost small" id="boardChunkBtn">Phrases</button>
+      <div class="play-hint">
+        Everyone writes on paper. Play as often as the class needs, then reveal.
+        <div class="replays" id="boardReplayLabel"></div>
+      </div>
+    </div>
+
+    <div class="result" id="boardRevealBox">
+      <div class="revealed-sentence" id="boardSentence"></div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="boardRevealBtn">Reveal sentence</button>
+      <button class="ghost" id="boardNextBtn" disabled>Next round →</button>
+      <span class="inline-warn" id="boardWarn"></span>
+    </div>
+
+    <div id="boardMarking" style="display:none;margin-top:18px;">
+      <div class="sub" style="margin-bottom:10px;">Teams swap papers and mark. Tap a score for each team.</div>
+      <div id="boardMarkRows"></div>
+    </div>
+  </div>
+
   <!-- TEAM RESULTS -->
   <div class="card" id="teamResultsView" style="display:none;">
     <h2 class="panel-title">Final standings</h2>
-    <div class="sub" style="margin-bottom:16px;">Ranked by average word-match accuracy.</div>
+    <div class="sub" style="margin-bottom:16px;" id="resultsSub">Ranked by average accuracy.</div>
     <div id="leaderboardList"></div>
-    <button class="primary" id="playAgainBtn" style="margin-top:8px;">Play again</button>
+    <div class="actions" style="margin-top:8px;">
+      <button class="primary" id="playAgainBtn">Play again</button>
+      <button class="ghost" id="gamePrintBtn">Print key</button>
+    </div>
   </div>
 </div>
 
+<div id="printArea"></div>
+
 <script>
-// ---- Sentence generation: fixed grammatical frames + filler word lists.
-// Subject/verb agreement is baked into each frame, so only vocabulary varies —
-// every combination stays grammatically correct.
+/* =========================================================================
+   CONTENT
+   Frames are grammatical skeletons; fillers only vary vocabulary, so every
+   combination stays correct. Fillers are checked for semantic fit with their
+   frame, and words with US/UK spelling splits (colour, realise, neighbour,
+   centre, maths, cancelled...) are avoided so no student is marked down for
+   the variety they were taught.
+   ========================================================================= */
+
+const TOPICS = [
+  { id:'school',  label:'School' },
+  { id:'friends', label:'Friends' },
+  { id:'food',    label:'Food & home' },
+  { id:'travel',  label:'Travel' },
+  { id:'tech',    label:'Tech & online' },
+  { id:'future',  label:'Work & future' }
+];
+
+const LEVEL_DATA = {
+
+  /* ---------------------------- A1 ---------------------------- */
+  A1: {
+    fillers: {
+      subject: ["English","history","science","geography","art","music","biology"],
+      weekday: ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+      teacherAdj: ["nice","funny","patient","kind","strict","friendly"],
+      schoolThing: ["my notebook","my pencil case","my English book","my water bottle","my headphones","my jacket"],
+      game: ["football","volleyball","basketball","cards","video games","table tennis"],
+      watchThing: ["funny videos","music videos","a new series","cartoons","old films"],
+      relative: ["my best friend","my cousin","my grandmother","my classmate","my uncle","my older sister"],
+      breakfast: ["bread and cheese","eggs","fruit","cereal","toast","yogurt"],
+      drink: ["coffee","tea","orange juice","milk","cold water"],
+      time: ["seven o'clock","eight o'clock","noon","six thirty","nine o'clock","half past ten"],
+      weekendPlace: ["the park","the beach","the market","the shopping mall","the swimming pool","my grandmother's house"],
+      destination: ["the beach","the airport","the train station","the shopping mall","the city"],
+      country: ["Argentina","Canada","Japan","Portugal","Italy","Chile","Australia"],
+      battery: ["almost dead","very low","fine for now","at half"],
+      onlineThing: ["short videos","music videos","cooking videos","football videos"],
+      digitalThing: ["the photos","the link","the homework","a message","your new number"],
+      familyRole: ["mother","father","uncle","aunt","older sister","older brother"],
+      workplace: ["a hospital","a school","an office","a restaurant","a small shop","a bank"],
+      job: ["a doctor","an engineer","a teacher","a designer","a pilot","a nurse","a dentist"]
+    },
+    frames: [
+      { topic:'school',  template:"I have {0} on {1}.", slots:["subject","weekday"], count:14 },
+      { topic:'school',  template:"My {0} teacher is very {1}.", slots:["subject","teacherAdj"], count:14 },
+      { topic:'school',  template:"I forgot {0} at home.", slots:["schoolThing"], count:6 },
+      { topic:'friends', template:"My friends and I play {0} after school.", slots:["game"], count:6 },
+      { topic:'friends', template:"We watch {0} on Saturday.", slots:["watchThing"], count:5 },
+      { topic:'friends', template:"{0} lives near my house.", slots:["relative"], count:6 },
+      { topic:'food',    template:"I eat {0} for breakfast.", slots:["breakfast"], count:6 },
+      { topic:'food',    template:"She drinks {0} every morning.", slots:["drink"], count:5 },
+      { topic:'food',    template:"We have dinner at {0}.", slots:["time"], count:6 },
+      { topic:'travel',  template:"We go to {0} on Sundays.", slots:["weekendPlace"], count:6 },
+      { topic:'travel',  template:"The bus to {0} leaves at {1}.", slots:["destination","time"], count:14 },
+      { topic:'travel',  template:"I want to visit {0} one day.", slots:["country"], count:7 },
+      { topic:'tech',    template:"My phone battery is {0}.", slots:["battery"], count:4 },
+      { topic:'tech',    template:"I watch {0} on my phone every day.", slots:["onlineThing"], count:4 },
+      { topic:'tech',    template:"Please send me {0}.", slots:["digitalThing"], count:5 },
+      { topic:'future',  template:"My {0} works in {1}.", slots:["familyRole","workplace"], count:14 },
+      { topic:'future',  template:"I want to be {0} one day.", slots:["job"], count:7 },
+      { topic:'future',  template:"She starts work at {0}.", slots:["time"], count:6 }
+    ]
+  },
+
+  /* ---------------------------- A2 ---------------------------- */
+  A2: {
+    fillers: {
+      subject: ["English","history","biology","chemistry","geography","physics","literature"],
+      weekday: ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+      classTask: ["finish the presentation","hand in the essay","study for the test","choose a partner","bring the printed pages"],
+      meetPlace: ["the bus stop","the food court","the park","the school library","my house","the corner shop"],
+      age: ["six","seven","eight","ten","twelve"],
+      goodEvent: ["her birthday party","the school festival","the beach last weekend","the football match","my cousin's wedding"],
+      dish: ["sushi","Indian food","goat cheese","black coffee","spicy noodles","cold soup"],
+      groceries: ["rice and beans","some bread and milk","tomatoes and onions","chicken and potatoes","fruit for the week"],
+      cheaperThan: ["the one near school","the new pizza restaurant","the coffee shop on the corner","the food court at the mall"],
+      duration: ["two hours","almost three hours","forty minutes","the whole afternoon","two days"],
+      country: ["Argentina","Canada","Japan","Portugal","Italy","Chile","Australia"],
+      holidayPlace: ["the beach","my grandparents' house","a small farm","the mountains","a lake near the border"],
+      techMoment: ["the test","a video call","my presentation","an online class"],
+      digitalThing: ["the photos","the link","the file","the homework","your message"],
+      postThing: ["a photo of her dog","a video from the concert","a message in the group chat","some pictures from the trip"],
+      jobType: ["part-time","weekend","temporary","evening"],
+      workplace: ["a bookshop","a bakery","a language school","a small hotel","her uncle's office"],
+      field: ["medicine","engineering","design","law","biology","computer science"]
+    },
+    frames: [
+      { topic:'school',  template:"I studied for the {0} test all weekend.", slots:["subject"], count:7 },
+      { topic:'school',  template:"Our teacher said we have to {0} by {1}.", slots:["classTask","weekday"], count:16 },
+      { topic:'school',  template:"She got a much better grade in {0} this time.", slots:["subject"], count:7 },
+      { topic:'friends', template:"We are going to meet at {0} after class.", slots:["meetPlace"], count:6 },
+      { topic:'friends', template:"My best friend has known me since we were {0}.", slots:["age"], count:5 },
+      { topic:'friends', template:"We had a great time at {0}.", slots:["goodEvent"], count:5 },
+      { topic:'food',    template:"He has never tried {0} before.", slots:["dish"], count:6 },
+      { topic:'food',    template:"We need to buy {0} before dinner.", slots:["groceries"], count:5 },
+      { topic:'food',    template:"This place is much cheaper than {0}.", slots:["cheaperThan"], count:4 },
+      { topic:'travel',  template:"Our flight was delayed for {0}.", slots:["duration"], count:5 },
+      { topic:'travel',  template:"They have been to {0} twice.", slots:["country"], count:7 },
+      { topic:'travel',  template:"We are going to spend the holidays at {0}.", slots:["holidayPlace"], count:5 },
+      { topic:'tech',    template:"My laptop stopped working in the middle of {0}.", slots:["techMoment"], count:4 },
+      { topic:'tech',    template:"I have already sent you {0}.", slots:["digitalThing"], count:5 },
+      { topic:'tech',    template:"She posted {0} last night.", slots:["postThing"], count:4 },
+      { topic:'future',  template:"He is going to look for a {0} job this summer.", slots:["jobType"], count:4 },
+      { topic:'future',  template:"My sister has worked at {0} for {1}.", slots:["workplace","duration"], count:16 },
+      { topic:'future',  template:"I am planning to study {0} at university.", slots:["field"], count:6 }
+    ]
+  },
+
+  /* ---------------------------- B1 ---------------------------- */
+  B1: {
+    fillers: {
+      schoolProblem: ["she missed several classes","the test was harder than expected","she had very little time to study","the topic was completely new to her"],
+      schoolFact: ["the deadline had been moved","the project would count for half the grade","the results would be posted online","nobody had failed the assignment"],
+      essayResult: ["I would have finished on time","it would have been much better","I wouldn't have been so stressed","the introduction would make more sense"],
+      friendEvent: ["the band came on stage","the film started","they arrived at the party","the rain finally stopped"],
+      trait: ["funny","patient","creative","generous","honest","curious"],
+      advice: ["I should relax","I was worrying too much","everything would be fine","I needed a proper break"],
+      cookProblem: ["the broken oven","the missing ingredients","our complete lack of experience","the wrong kind of flour"],
+      recommender: ["almost everyone in class","a friend of my mother","several people online","our English teacher"],
+      riskyDish: ["the spiciest dish on the menu","that enormous burger","anything you can't pronounce","the soup they serve on Mondays"],
+      travelProblem: ["it was raining heavily","the traffic was terrible","the flight was delayed again","the hotel was fully booked"],
+      travelAction: ["take a different route","wait at the station","change their plans completely","keep going anyway"],
+      airportEvent: ["the gate had already closed","the plane had left","most passengers had boarded","the storm had passed"],
+      tripReason: ["the bad weather","a problem with the tickets","an unexpected strike","the rising cost of flights"],
+      techSuggestion: ["back up the files first","restart the whole system","ask someone who knows more","read the instructions carefully"],
+      videoEvent: ["anyone noticed the mistake","the account was deleted","she even mentioned it","the news picked it up"],
+      onlineResult: ["you would sleep much better","you would finish your homework faster","you might feel less tired","you would probably read more"],
+      savingSince: ["she started her first job","the beginning of the year","she decided to travel","last summer"],
+      interviewProblem: ["she arrived ten minutes late","she had barely prepared","the questions were unexpected","her laptop crashed twice"],
+      careerNews: ["he was moving to another city","the company would hire more students","the training would start in March","the position had already been filled"]
+    },
+    frames: [
+      { topic:'school',  template:"Although {0}, she still passed the exam.", slots:["schoolProblem"], count:4 },
+      { topic:'school',  template:"The teacher explained that {0}.", slots:["schoolFact"], count:4 },
+      { topic:'school',  template:"If I had started the essay earlier, {0}.", slots:["essayResult"], count:4 },
+      { topic:'friends', template:"We had already left by the time {0}.", slots:["friendEvent"], count:4 },
+      { topic:'friends', template:"She's not only {0} but also surprisingly {1}.", slots:["trait","trait"], count:15, distinct:true },
+      { topic:'friends', template:"My friends kept telling me that {0}.", slots:["advice"], count:4 },
+      { topic:'food',    template:"Despite {0}, the cake turned out perfectly.", slots:["cookProblem"], count:4 },
+      { topic:'food',    template:"The restaurant was recommended by {0}.", slots:["recommender"], count:4 },
+      { topic:'food',    template:"If I were you, I wouldn't order {0}.", slots:["riskyDish"], count:4 },
+      { topic:'travel',  template:"Although {0}, they decided to {1}.", slots:["travelProblem","travelAction"], count:15 },
+      { topic:'travel',  template:"By the time we reached the airport, {0}.", slots:["airportEvent"], count:4 },
+      { topic:'travel',  template:"The trip was postponed because of {0}.", slots:["tripReason"], count:4 },
+      { topic:'tech',    template:"He suggested that we should {0}.", slots:["techSuggestion"], count:4 },
+      { topic:'tech',    template:"The video had been watched a million times before {0}.", slots:["videoEvent"], count:4 },
+      { topic:'tech',    template:"If you spent less time online, {0}.", slots:["onlineResult"], count:4 },
+      { topic:'future',  template:"She's been saving money since {0}.", slots:["savingSince"], count:4 },
+      { topic:'future',  template:"The interview went well, even though {0}.", slots:["interviewProblem"], count:4 },
+      { topic:'future',  template:"He announced that {0}.", slots:["careerNews"], count:4 }
+    ]
+  },
+
+  /* ---------------------------- B2 ---------------------------- */
+  B2: {
+    fillers: {
+      finding: ["several inconsistencies that had been overlooked","a pattern no one had anticipated","gaps in the original method","risks the committee had underestimated"],
+      oversight: ["the size of the sample","how quickly attitudes change","the influence of family background","the role of motivation"],
+      argument: ["such a compelling argument against the proposal","such a well-supported counterpoint","such a persuasive case for reform","such a careful piece of analysis"],
+      socialBelief: ["social media has reshaped how friendships begin","young people are reading less than previous generations","attention spans have shortened dramatically","loneliness is rising among young adults"],
+      knownThing: ["how important the deadline was","what she was going through","that the rules had changed","how few people would come"],
+      argResult: ["nobody objected","the whole class changed its mind","even the teacher agreed","the proposal was accepted immediately"],
+      healthFinding: ["a strong link between sleep and appetite","that breakfast matters less than we assumed","a measurable effect on concentration","that sleep matters more than diet here"],
+      banResult: ["several products would disappear from the shelves","prices would almost certainly rise","manufacturers would have to start again","consumers would barely notice"],
+      schoolIssue: ["the amount of food being wasted","complaints about the menu","the cost of hot lunches","students skipping breakfast"],
+      condition: ["the funding comes through","the council grants approval","negotiations conclude successfully","the pilot project succeeds"],
+      flightClaim: ["we would have arrived before midnight","the connection would have been simple","nobody would have missed the conference","the delay would have gone unnoticed"],
+      hotelFail: ["refused to explain why","offered no alternative","insisted the fault was ours","kept us waiting for hours"],
+      claim: ["the crisis might have been avoided","costs would have fallen further","the outcome would have been very different","fewer jobs would have been lost"],
+      techTwist: ["the app had been collecting far more data","the account was run by a teenager","the whole video had been generated","the story was entirely false"],
+      updateEvent: ["users began reporting problems","the servers went down","complaints flooded the forums","the developers issued an apology"],
+      uncertainty: ["the new rules will be enforced","students actually benefit from the change","the results can be repeated","anyone was held responsible"],
+      achievement: ["presented it flawlessly","volunteered to help the others","found a mistake nobody else had noticed","won the department prize"],
+      prohibition: ["exaggerate their experience","miss the submission deadline","contact the panel directly","share the questions with others"],
+      grounds: ["the costs had been underestimated","no timeline had been provided","similar schemes had already failed","the evidence was simply too thin"]
+    },
+    frames: [
+      { topic:'school',  template:"Not until the results were published did anyone notice {0}.", slots:["finding"], count:4 },
+      { topic:'school',  template:"What the study failed to consider was {0}.", slots:["oversight"], count:4 },
+      { topic:'school',  template:"Rarely have I encountered {0}.", slots:["argument"], count:4 },
+      { topic:'school',  template:"The report highlights {0}.", slots:["finding"], count:4 },
+      { topic:'friends', template:"It is widely believed that {0}.", slots:["socialBelief"], count:4 },
+      { topic:'friends', template:"Had we known {0}, we would have handled it differently.", slots:["knownThing"], count:4 },
+      { topic:'friends', template:"So convincing was her argument that {0}.", slots:["argResult"], count:4 },
+      { topic:'food',    template:"The findings, while preliminary, suggest {0}.", slots:["healthFinding"], count:4 },
+      { topic:'food',    template:"Were the ban to take effect, {0}.", slots:["banResult"], count:4 },
+      { topic:'food',    template:"Only recently has the school addressed {0}.", slots:["schoolIssue"], count:4 },
+      { topic:'travel',  template:"Provided that {0}, construction will begin in spring.", slots:["condition"], count:4 },
+      { topic:'travel',  template:"Had the flight not been diverted, {0}.", slots:["flightClaim"], count:4 },
+      { topic:'travel',  template:"Not only was the hotel overbooked, but the staff also {0}.", slots:["hotelFail"], count:4 },
+      { topic:'tech',    template:"Little did anyone suspect that {0}.", slots:["techTwist"], count:4 },
+      { topic:'tech',    template:"No sooner had the update been released than {0}.", slots:["updateEvent"], count:4 },
+      { topic:'tech',    template:"It remains unclear whether {0}.", slots:["uncertainty"], count:4 },
+      { topic:'future',  template:"Not only did she finish the project early, but she also {0}.", slots:["achievement"], count:4 },
+      { topic:'future',  template:"Under no circumstances should candidates {0}.", slots:["prohibition"], count:4 },
+      { topic:'future',  template:"The proposal was rejected on the grounds that {0}.", slots:["grounds"], count:4 },
+      { topic:'future',  template:"Had the government acted sooner, {0}.", slots:["claim"], count:4 }
+    ]
+  }
+};
 
 function buildFrom(frames, fillerSets){
   const out = new Set();
@@ -504,13 +736,12 @@ function buildFrom(frames, fillerSets){
         const arr = sets[i];
         let pick = arr[Math.floor(Math.random()*arr.length)];
         if(frame.distinct){
-          // resample so repeated slot types never produce the same filler twice
           let guard = 0;
-          while(picks.includes(pick) && guard < 40){
+          while(picks.indexOf(pick) >= 0 && guard < 40){
             pick = arr[Math.floor(Math.random()*arr.length)];
             guard++;
           }
-          if(picks.includes(pick)){ ok = false; break; }
+          if(picks.indexOf(pick) >= 0){ ok = false; break; }
         }
         picks.push(pick);
       }
@@ -524,99 +755,19 @@ function buildFrom(frames, fillerSets){
   return [...out];
 }
 
-const A1_FILLERS = {
-  food: ["coffee","tea","bread","rice","fish","chicken","fruit","cheese","soup","juice","milk","eggs","pizza","salad","pasta"],
-  animal: ["a dog","a cat","a bird","a rabbit","a fish","a horse","a hamster","a turtle"],
-  place: ["the park","the market","school","the beach","the gym","the library","the office","the station"],
-  colorObj: ["a red apple","a blue car","a green book","a black bag","a white shirt","a small table","a big house","a new phone"],
-  person: ["my brother","my sister","my mother","my father","my friend","my teacher","my neighbor","my cousin"],
-  time: ["seven o'clock","eight o'clock","noon","six thirty","nine o'clock","half past ten"],
-  activity: ["read a book","watch TV","play football","clean the house","cook dinner","do homework","listen to music","go for a walk"]
-};
-const A1_FRAMES = [
-  { template:"I like {0} in the morning.", slots:["food"], count:15 },
-  { template:"She has {0}.", slots:["animal"], count:8 },
-  { template:"We go to {0} by bus.", slots:["place"], count:8 },
-  { template:"This is {0}.", slots:["colorObj"], count:8 },
-  { template:"{0} works near the station.", slots:["person"], count:8 },
-  { template:"They live near {0}.", slots:["place"], count:8 },
-  { template:"He wakes up at {0}.", slots:["time"], count:6 },
-  { template:"On Sundays, I usually {0}.", slots:["activity"], count:8 },
-  { template:"{0} is my best friend.", slots:["person"], count:8 },
-  { template:"The shop sells {0}.", slots:["food"], count:12 }
-];
+let activeTopics = TOPICS.map(t => t.id);
+let BANK_CACHE = {};
 
-const A2_FILLERS = {
-  time: ["seven o'clock","eight thirty","noon","midnight","six fifteen","nine forty-five"],
-  chore: ["buy some milk and bread","clean the kitchen","walk the dog","water the plants","pick up the kids","finish the report","pay the bills","book the tickets"],
-  object: ["his umbrella","her keys","the invoice","the tickets","his passport","her laptop charger","the shopping list"],
-  place: ["the office","the gym","the airport","the new mall","the dentist","the train station"],
-  duration: ["two years","six months","almost a decade","several weeks","a few days","three summers"],
-  event: ["a trip to the coast","a birthday party","a team meeting","a school reunion","a weekend getaway","a work conference"],
-  day: ["Friday afternoon","Monday morning","next Tuesday","the weekend","early next week","Thursday evening"]
-};
-const A2_FRAMES = [
-  { template:"I usually wake up before {0}.", slots:["time"], count:10 },
-  { template:"We need to {0}.", slots:["chore"], count:15 },
-  { template:"He forgot {0} at {1}.", slots:["object","place"], count:15 },
-  { template:"She has been living here for {0}.", slots:["duration"], count:10 },
-  { template:"They are planning {0} next month.", slots:["event"], count:12 },
-  { template:"The meeting was moved to {0}.", slots:["day"], count:10 },
-  { template:"My sister works near {0}.", slots:["place"], count:8 },
-  { template:"Could you please help me {0}?", slots:["chore"], count:12 },
-  { template:"I haven't seen {0} for {1}.", slots:["object","duration"], count:12 }
-];
-
-const B1_FILLERS = {
-  cond1: ["it was raining","the traffic was heavy","the store was closed","the flight was delayed","the power went out"],
-  action1: ["walk to the station","take a different route","reschedule the meeting","wait at the gate","call a taxi"],
-  cond2: ["I had known you were free","I had checked the forecast","she had told me earlier","we had booked in advance"],
-  claim: ["profits had increased significantly","the merger was finalized","costs had dropped sharply","demand had exceeded expectations","the launch was postponed"],
-  trait: ["talented","hard-working","reliable","persuasive","organized","ambitious"],
-  event: ["the show had already started","the doors had closed","the train had left","the interview had ended"],
-  suggestion: ["reconsider the whole plan","postpone the launch","hire an extra assistant","revise the budget","contact the supplier"],
-  difficulty: ["the tight deadline","the limited budget","the bad weather","the staff shortage","the technical issues"],
-  worry: ["the deadline","the budget","that email","the presentation","what they think","the interview"]
-};
-const B1_FRAMES = [
-  { template:"Although {0}, they decided to {1}.", slots:["cond1","action1"], count:15 },
-  { template:"I would have called you if {0}.", slots:["cond2"], count:6 },
-  { template:"The company announced that {0}.", slots:["claim"], count:8 },
-  { template:"She's not only {0} but also incredibly {1}.", slots:["trait","trait"], count:15, distinct:true },
-  { template:"By the time we arrived, {0}.", slots:["event"], count:6 },
-  { template:"He suggested that we should {0}.", slots:["suggestion"], count:8 },
-  { template:"Despite {0}, the team managed to finish on time.", slots:["difficulty"], count:8 },
-  { template:"If I were you, I wouldn't worry about {0}.", slots:["worry"], count:6 }
-];
-
-const B2_FILLERS = {
-  claim: ["the crisis might have been avoided","costs would have fallen further","the outcome would have been different","fewer jobs would have been lost"],
-  finding: ["several inconsistencies that were previously overlooked","a pattern no one had anticipated","gaps in the original methodology","risks the board had underestimated"],
-  belief: ["remote work has reshaped urban economies","automation is accelerating faster than predicted","consumer habits have shifted permanently","trust in institutions has declined"],
-  argument: ["such a compelling argument against the proposal","such a well-supported counterpoint","such a persuasive case for reform","such a rigorous piece of analysis"],
-  correlation: ["a strong correlation between the two variables","an unexpected link between the datasets","a measurable effect on retention","little evidence for the original hypothesis"],
-  condition: ["the funding comes through","the board grants approval","negotiations conclude successfully","the pilot program succeeds"],
-  objection: ["the obvious cost implications","the tight timeline","the lack of precedent","the objections raised in committee"]
-};
-const B2_FRAMES = [
-  { template:"Had the government intervened earlier, {0}.", slots:["claim"], count:6 },
-  { template:"The report highlights {0}.", slots:["finding"], count:8 },
-  { template:"It is widely believed that {0}.", slots:["belief"], count:8 },
-  { template:"Rarely have I encountered {0}.", slots:["argument"], count:8 },
-  { template:"The findings, while preliminary, suggest {0}.", slots:["correlation"], count:8 },
-  { template:"Provided that {0}, construction will begin in spring.", slots:["condition"], count:6 },
-  { template:"So convincing was the case that the board approved it unanimously, despite {0}.", slots:["objection"], count:6 },
-  { template:"Not until the review was complete did anyone notice {0}.", slots:["finding"], count:6 },
-  { template:"What the committee failed to consider was {0}.", slots:["correlation"], count:6 },
-  { template:"Were the board to reject the proposal, {0}.", slots:["claim"], count:6 }
-];
-
-const BANK = {
-  A1: buildFrom(A1_FRAMES, A1_FILLERS),
-  A2: buildFrom(A2_FRAMES, A2_FILLERS),
-  B1: buildFrom(B1_FRAMES, B1_FILLERS),
-  B2: buildFrom(B2_FRAMES, B2_FILLERS)
-};
+function bankFor(levelKey){
+  const key = levelKey + '|' + activeTopics.slice().sort().join(',');
+  if(BANK_CACHE[key]) return BANK_CACHE[key];
+  const data = LEVEL_DATA[levelKey];
+  let frames = data.frames.filter(f => activeTopics.indexOf(f.topic) >= 0);
+  if(!frames.length) frames = data.frames;
+  const bank = buildFrom(frames, data.fillers);
+  BANK_CACHE[key] = bank;
+  return bank;
+}
 
 function shuffle(arr){
   const a = arr.slice();
@@ -627,15 +778,20 @@ function shuffle(arr){
   return a;
 }
 
-// ---------------- Preferences ----------------
+/* =========================================================================
+   PREFERENCES
+   ========================================================================= */
 
 const LS = {
-  theme: 'theme',                    // shared across the ecosystem
-  level: 'dictation.level',
-  rate:  'dictation.rate',
-  voice: 'dictation.voiceURI',
+  theme:'theme',
+  level:'dictation.level',
+  rate:'dictation.rate',
+  voice:'dictation.voiceURI',
   strict:'dictation.strict',
-  board: 'dictation.board'
+  board:'dictation.board',
+  topics:'dictation.topics',
+  replays:'dictation.replays',
+  answerMode:'dictation.answerMode'
 };
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -648,7 +804,6 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
 const themeToggle = document.getElementById('themeToggle');
 const boardToggle = document.getElementById('boardToggle');
-
 function syncToggles(){
   themeToggle.classList.toggle('on', document.documentElement.getAttribute('data-theme') === 'dark');
   boardToggle.classList.toggle('on', document.documentElement.getAttribute('data-size') === 'board');
@@ -662,18 +817,20 @@ themeToggle.addEventListener('click', () => {
 });
 boardToggle.addEventListener('click', () => {
   const html = document.documentElement;
-  const on = html.getAttribute('data-size') === 'board';
-  if(on){ html.removeAttribute('data-size'); lsSet(LS.board,'0'); }
+  if(html.getAttribute('data-size') === 'board'){ html.removeAttribute('data-size'); lsSet(LS.board,'0'); }
   else { html.setAttribute('data-size','board'); lsSet(LS.board,'1'); }
   syncToggles();
 });
 syncToggles();
 
-// ---------------- Voices & speech ----------------
+/* =========================================================================
+   VOICES & SPEECH
+   ========================================================================= */
 
 const levelSelect = document.getElementById('levelSelect');
 const rateSelect = document.getElementById('rateSelect');
 const voiceSelect = document.getElementById('voiceSelect');
+const replaySelect = document.getElementById('replaySelect');
 const strictToggle = document.getElementById('strictToggle');
 
 let voices = [];
@@ -681,25 +838,24 @@ let voices = [];
 function voiceQualityScore(v){
   const n = v.name.toLowerCase();
   let score = 0;
-  if(n.includes('natural')) score += 5;
-  if(n.includes('neural')) score += 5;
-  if(n.includes('premium')) score += 4;
-  if(n.includes('enhanced')) score += 4;
-  if(n.includes('google')) score += 3;
+  if(n.indexOf('natural') >= 0) score += 5;
+  if(n.indexOf('neural') >= 0) score += 5;
+  if(n.indexOf('premium') >= 0) score += 4;
+  if(n.indexOf('enhanced') >= 0) score += 4;
+  if(n.indexOf('google') >= 0) score += 3;
   if(v.localService === false) score += 1;
-  if(!v.lang.toLowerCase().startsWith('en')) score -= 10;
+  if(v.lang.toLowerCase().indexOf('en') !== 0) score -= 10;
   return score;
 }
 
 function loadVoices(){
   const all = window.speechSynthesis.getVoices();
   if(!all.length) return;
-  const wanted = voiceSelect.value ? (voices[parseInt(voiceSelect.value,10)] || null) : null;
-  const wantedURI = (wanted && wanted.voiceURI) || lsGet(LS.voice);
+  const current = voiceSelect.value ? voices[parseInt(voiceSelect.value,10)] : null;
+  const wantedURI = (current && current.voiceURI) || lsGet(LS.voice);
 
-  voices = all
-    .filter(v => v.lang.toLowerCase().startsWith('en'))
-    .sort((a,b) => voiceQualityScore(b) - voiceQualityScore(a));
+  voices = all.filter(v => v.lang.toLowerCase().indexOf('en') === 0)
+              .sort((a,b) => voiceQualityScore(b) - voiceQualityScore(a));
   if(!voices.length) voices = all;
 
   voiceSelect.innerHTML = '';
@@ -710,7 +866,6 @@ function loadVoices(){
     voiceSelect.appendChild(opt);
   });
 
-  // restore the teacher's choice by voiceURI — onvoiceschanged can fire repeatedly
   if(wantedURI){
     const idx = voices.findIndex(v => v.voiceURI === wantedURI);
     if(idx >= 0) voiceSelect.value = String(idx);
@@ -729,25 +884,59 @@ voiceSelect.addEventListener('change', () => {
 rateSelect.addEventListener('change', () => lsSet(LS.rate, rateSelect.value));
 strictToggle.addEventListener('change', () => lsSet(LS.strict, strictToggle.checked ? '1' : '0'));
 
-function speak(text){
-  if(!('speechSynthesis' in window) || !text) return;
-  window.speechSynthesis.cancel();
+function utterFor(text){
   const utter = new SpeechSynthesisUtterance(text);
   utter.rate = parseFloat(rateSelect.value) || 1;
   const chosen = voices[parseInt(voiceSelect.value, 10)];
-  if(chosen){
-    utter.voice = chosen;
-    utter.lang = chosen.lang;
-  } else {
-    utter.lang = 'en-US';
-  }
-  window.speechSynthesis.speak(utter);
+  if(chosen){ utter.voice = chosen; utter.lang = chosen.lang; }
+  else utter.lang = 'en-US';
+  return utter;
 }
 
-// ---------------- Scoring ----------------
-// Tokens are compared on a canonical form (lower-case, apostrophes removed,
-// contractions expanded, number words folded to digits). Display keeps the
-// original word so feedback shows the real spelling and capitalisation.
+function speak(text){
+  if(!('speechSynthesis' in window) || !text) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterFor(text));
+}
+
+// Split into natural dictation chunks: at commas first, then at conjunctions,
+// merging anything shorter than three words into its neighbour.
+function chunkSentence(s){
+  let parts = String(s).split(/,\s*/).map((p,i,arr) => i < arr.length-1 ? p + ',' : p);
+  const out = [];
+  parts.forEach(p => {
+    if(p.split(/\s+/).length > 9){
+      const pieces = p.split(/\s+(?=(?:but|and|because|that|which|so|before|after|while|although)\s)/i);
+      pieces.forEach(x => out.push(x));
+    } else out.push(p);
+  });
+  const merged = [];
+  out.forEach(p => {
+    const words = p.trim().split(/\s+/).length;
+    if(merged.length && words < 3) merged[merged.length-1] += ' ' + p.trim();
+    else merged.push(p.trim());
+  });
+  return merged.filter(Boolean);
+}
+
+function speakChunks(text){
+  if(!('speechSynthesis' in window) || !text) return;
+  window.speechSynthesis.cancel();
+  const chunks = chunkSentence(text);
+  let i = 0;
+  const sayNext = () => {
+    if(i >= chunks.length) return;
+    const u = utterFor(chunks[i]);
+    i++;
+    u.onend = () => setTimeout(sayNext, 700);
+    window.speechSynthesis.speak(u);
+  };
+  sayNext();
+}
+
+/* =========================================================================
+   SCORING
+   ========================================================================= */
 
 const CONTRACTIONS = {
   "i'm":["i","am"], "i've":["i","have"], "i'll":["i","will"], "i'd":["i","would|had"],
@@ -784,22 +973,18 @@ function canon(word){
   return canonOne(word);
 }
 
-// -> [{ src, display, cmp }]  (src = index of the visible word it came from)
 function tokenize(raw){
   const words = String(raw)
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[-\u2013\u2014]/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean);
+    .split(/\s+/).filter(Boolean);
   const toks = [];
   words.forEach((w, si) => {
     const core = w.replace(/[^A-Za-z0-9']/g, '');
     if(!core) return;
     const lower = core.toLowerCase();
     const expansion = CONTRACTIONS[lower] || [core];
-    expansion.forEach(part => {
-      toks.push({ src: si, display: w, cmp: canon(part) });
-    });
+    expansion.forEach(part => toks.push({ src: si, display: w, cmp: canon(part) }));
   });
   return { words, toks };
 }
@@ -828,8 +1013,6 @@ function levenshtein(a, b){
   return prev[n];
 }
 
-// Discrete similarity: 1 = correct, 0.5 = near miss, 0 = wrong.
-// Short words get no fuzzy credit — "she" must not half-count as "the".
 function wordSimilarity(a, b){
   if(tokensEqual(a, b)) return 1;
   const x = a.split('|')[0], y = b.split('|')[0];
@@ -841,9 +1024,6 @@ function wordSimilarity(a, b){
 
 const EPS = 1e-9;
 
-// Needleman–Wunsch style alignment. Deletions (missed words) and insertions
-// (extra typed words) both cost a full word, so padding the answer with extra
-// words can no longer reach 100%.
 function alignWords(target, given){
   const T = tokenize(target), G = tokenize(given);
   const t = T.toks, g = G.toks;
@@ -865,8 +1045,7 @@ function alignWords(target, given){
     if(i > 0 && j > 0){
       const subCost = 1 - wordSimilarity(t[i-1].cmp, g[j-1].cmp);
       if(Math.abs(dp[i][j] - (dp[i-1][j-1] + subCost)) < EPS){
-        const sim = 1 - subCost;
-        ops.unshift({ kind:'sub', t:t[i-1], g:g[j-1], sim });
+        ops.unshift({ kind:'sub', t:t[i-1], g:g[j-1], sim: 1 - subCost });
         i--; j--; continue;
       }
     }
@@ -883,7 +1062,7 @@ function alignWords(target, given){
 
   const earned = ops.reduce((s,o) => s + (o.kind === 'sub' ? o.sim : 0), 0);
   const denom = Math.max(m, n) || 1;
-  return { ops, accuracy: Math.max(0, Math.min(1, earned / denom)), targetWords: T.words, givenWords: G.words };
+  return { ops, accuracy: Math.max(0, Math.min(1, earned / denom)) };
 }
 
 function escapeHtml(s){
@@ -892,7 +1071,6 @@ function escapeHtml(s){
 function typeOf(sim){ return sim >= 1 - EPS ? 'hit' : (sim >= 0.5 - EPS ? 'close' : 'miss'); }
 const RANK = { hit:2, close:1, miss:0 };
 
-// Group token-level ops back into visible words for display.
 function renderDiff(target, given){
   const res = alignWords(target, given);
   const items = [];
@@ -930,7 +1108,6 @@ function renderDiff(target, given){
   return { html, accuracy: res.accuracy, ops: res.ops };
 }
 
-// Capitals + punctuation, reported separately from the word score.
 function punctuationReport(target, given, ops){
   const marks = s => (String(s).match(/[.,!?;:'"]/g) || []);
   const tMarks = marks(target), gMarks = marks(given);
@@ -944,10 +1121,10 @@ function punctuationReport(target, given, ops){
 
   let capTotal = 0, capHits = 0;
   const capMissed = [];
-  const seenSrc = new Set();
+  const seenSrc = {};
   ops.forEach(op => {
-    if(op.kind !== 'sub' || !op.t || seenSrc.has(op.t.src)) return;
-    seenSrc.add(op.t.src);
+    if(op.kind !== 'sub' || !op.t || seenSrc[op.t.src]) return;
+    seenSrc[op.t.src] = true;
     const tw = op.t.display.replace(/[^A-Za-z]/g,'');
     if(!tw || !/^[A-Z]/.test(tw)) return;
     capTotal++;
@@ -965,27 +1142,66 @@ function punctuationReport(target, given, ops){
 
   return {
     total, hits,
-    text: total === 0
-      ? ''
-      : `<b>Punctuation &amp; capitals: ${hits}/${total}</b>${notes.length ? ' — ' + notes.join('; ') : ' — all correct'}`
+    text: total === 0 ? '' :
+      `<b>Punctuation &amp; capitals: ${hits}/${total}</b>${notes.length ? ' — ' + notes.join('; ') : ' — all correct'}`
   };
 }
 
-function scoreLabel(pct){
-  return pct === 100 ? "Perfect — 100% match" : `${pct}% word match`;
+/* =========================================================================
+   TOPIC CHIPS
+   ========================================================================= */
+
+const topicChips = document.getElementById('topicChips');
+
+function renderTopicChips(){
+  topicChips.innerHTML = '';
+  const allOn = activeTopics.length === TOPICS.length;
+  const allBtn = document.createElement('button');
+  allBtn.className = 'topic-chip' + (allOn ? ' on' : '');
+  allBtn.textContent = 'All';
+  allBtn.addEventListener('click', () => {
+    activeTopics = TOPICS.map(t => t.id);
+    persistTopics(); renderTopicChips(); onContentChange();
+  });
+  topicChips.appendChild(allBtn);
+
+  TOPICS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'topic-chip' + (activeTopics.indexOf(t.id) >= 0 && !allOn ? ' on' : '');
+    b.textContent = t.label;
+    b.addEventListener('click', () => {
+      const at = activeTopics.indexOf(t.id);
+      if(allOn){ activeTopics = [t.id]; }
+      else if(at >= 0){
+        if(activeTopics.length > 1) activeTopics.splice(at,1);
+      } else activeTopics.push(t.id);
+      persistTopics(); renderTopicChips(); onContentChange();
+    });
+    topicChips.appendChild(b);
+  });
+}
+function persistTopics(){ lsSet(LS.topics, activeTopics.join(',')); }
+
+function onContentChange(){
+  loadSet();
+  refreshRoundOptions();
 }
 
-// ---------------- Mode switching ----------------
+/* =========================================================================
+   VIEW SWITCHING
+   ========================================================================= */
 
 const tabPractice = document.getElementById('tabPractice');
 const tabTeam = document.getElementById('tabTeam');
 const practiceView = document.getElementById('practiceView');
 const teamSetupView = document.getElementById('teamSetupView');
 const teamPlayView = document.getElementById('teamPlayView');
+const boardPlayView = document.getElementById('boardPlayView');
 const teamResultsView = document.getElementById('teamResultsView');
 
 function showOnly(view){
-  [practiceView, teamSetupView, teamPlayView, teamResultsView].forEach(v => v.style.display = 'none');
+  [practiceView, teamSetupView, teamPlayView, boardPlayView, teamResultsView]
+    .forEach(v => v.style.display = 'none');
   view.style.display = 'block';
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
@@ -998,9 +1214,8 @@ tabPractice.addEventListener('click', () => {
 tabTeam.addEventListener('click', () => {
   tabTeam.classList.add('active');
   tabPractice.classList.remove('active');
-  // never wipe a game that is still running
   if(gameActive && turnPointer < turnQueue.length){
-    showOnly(teamPlayView);
+    showOnly(answerMode === 'paper' ? boardPlayView : teamPlayView);
     renderScoreboard();
   } else if(gameActive){
     showOnly(teamResultsView);
@@ -1011,7 +1226,9 @@ tabTeam.addEventListener('click', () => {
   }
 });
 
-// ---------------- Practice mode ----------------
+/* =========================================================================
+   PRACTICE MODE
+   ========================================================================= */
 
 let level = "A2";
 let order = [];
@@ -1019,13 +1236,24 @@ let idx = 0;
 let correctCount = 0;
 let attemptedCount = 0;
 let accSum = 0;
+let history = [];
+let replaysLeft = 0;
+let firstAcc = null;
+let retryUsed = false;
+let blankArmed = false;
 
+const drillArea = document.getElementById('drillArea');
+const summaryArea = document.getElementById('summaryArea');
 const progressLabel = document.getElementById('progressLabel');
 const poolLabel = document.getElementById('poolLabel');
 const playBtn = document.getElementById('playBtn');
+const chunkBtn = document.getElementById('chunkBtn');
+const replayLabel = document.getElementById('replayLabel');
 const answerInput = document.getElementById('answerInput');
 const checkBtn = document.getElementById('checkBtn');
+const retryBtn = document.getElementById('retryBtn');
 const nextBtn = document.getElementById('nextBtn');
+const revealBtn = document.getElementById('revealBtn');
 const resultBox = document.getElementById('resultBox');
 const scoreLine = document.getElementById('scoreLine');
 const diffLine = document.getElementById('diffLine');
@@ -1033,23 +1261,44 @@ const punctLine = document.getElementById('punctLine');
 const setScore = document.getElementById('setScore');
 const setAvg = document.getElementById('setAvg');
 const restartBtn = document.getElementById('restartBtn');
+const printBtn = document.getElementById('printBtn');
 const speechWarning = document.getElementById('speechWarning');
 const practiceWarn = document.getElementById('practiceWarn');
 
 const SESSION_SIZE = 12;
-let blankArmed = false;
+
+function replayCap(){ return parseInt(replaySelect.value, 10) || 0; }
+
+function updateReplayLabel(){
+  const cap = replayCap();
+  if(!cap){ replayLabel.textContent = ''; return; }
+  replayLabel.textContent = `Plays left: ${replaysLeft} of ${cap}`;
+  replayLabel.classList.toggle('low', replaysLeft <= 1);
+}
+
+function usePlay(){
+  const cap = replayCap();
+  if(!cap) return true;
+  if(replaysLeft <= 0) return false;
+  replaysLeft--;
+  updateReplayLabel();
+  if(replaysLeft <= 0){ playBtn.disabled = true; chunkBtn.disabled = true; }
+  return true;
+}
 
 function loadSet(){
   level = levelSelect.value;
   lsSet(LS.level, level);
-  order = shuffle(BANK[level]).slice(0, SESSION_SIZE);
-  poolLabel.textContent = `Drawing from a pool of ${BANK[level].length} ${level} sentences`;
-  idx = 0;
-  correctCount = 0;
-  attemptedCount = 0;
-  accSum = 0;
+  const pool = bankFor(level);
+  order = shuffle(pool).slice(0, Math.min(SESSION_SIZE, pool.length));
+  const topicText = activeTopics.length === TOPICS.length ? 'all topics'
+    : activeTopics.map(id => (TOPICS.find(t => t.id === id) || {}).label).join(' + ');
+  poolLabel.textContent = `${level} · ${topicText} · pool of ${pool.length} sentences`;
+  idx = 0; correctCount = 0; attemptedCount = 0; accSum = 0;
+  history = [];
+  drillArea.style.display = 'block';
+  summaryArea.style.display = 'none';
   updateScoreStrip();
-  playBtn.disabled = false;
   loadSentence();
 }
 
@@ -1059,11 +1308,31 @@ function loadSentence(){
   punctLine.style.display = 'none';
   practiceWarn.textContent = '';
   blankArmed = false;
+  retryUsed = false;
+  firstAcc = null;
+  retryBtn.style.display = 'none';
   nextBtn.disabled = true;
   checkBtn.disabled = false;
+  revealBtn.disabled = false;
   answerInput.disabled = false;
+  playBtn.disabled = false;
+  chunkBtn.disabled = false;
+  replaysLeft = replayCap();
+  updateReplayLabel();
   progressLabel.textContent = `Sentence ${idx+1} of ${order.length}`;
   answerInput.focus();
+}
+
+function showFeedback(target, given, accuracy, ops, headline){
+  const pct = Math.round(accuracy*100);
+  scoreLine.textContent = headline || (pct === 100 ? "Perfect — 100% match" : `${pct}% word match`);
+  scoreLine.style.color = pct === 100 ? "var(--ok)" : "var(--ink)";
+  if(strictToggle.checked && ops){
+    const rep = punctuationReport(target, given, ops);
+    if(rep.text){ punctLine.innerHTML = rep.text; punctLine.style.display = 'block'; }
+    else punctLine.style.display = 'none';
+  } else punctLine.style.display = 'none';
+  resultBox.classList.add('show');
 }
 
 function check(){
@@ -1078,26 +1347,76 @@ function check(){
   practiceWarn.textContent = '';
   const target = order[idx];
   const { html, accuracy, ops } = renderDiff(target, given);
-  const pct = Math.round(accuracy*100);
-  attemptedCount++;
-  accSum += accuracy;
-  if(pct === 100) correctCount++;
-  scoreLine.textContent = scoreLabel(pct);
-  scoreLine.style.color = pct === 100 ? "var(--ok)" : "var(--ink)";
   diffLine.innerHTML = `Target: ${html}`;
 
-  if(strictToggle.checked){
-    const rep = punctuationReport(target, given, ops);
-    if(rep.text){ punctLine.innerHTML = rep.text; punctLine.style.display = 'block'; }
-    else punctLine.style.display = 'none';
-  } else {
-    punctLine.style.display = 'none';
+  let recorded = accuracy;
+  let headline = null;
+  if(retryUsed && firstAcc !== null){
+    // second attempt earns half the improvement it gained
+    recorded = firstAcc + (accuracy - firstAcc) * 0.5;
+    headline = `${Math.round(accuracy*100)}% on the retry — ${Math.round(recorded*100)}% counted`;
   }
 
-  resultBox.classList.add('show');
-  nextBtn.disabled = false;
+  showFeedback(target, given, recorded, ops, headline);
+
+  attemptedCount++;
+  accSum += recorded;
+  if(recorded >= 1 - EPS) correctCount++;
+  history.push({ sentence: target, acc: recorded, html, revealed:false });
+
+  if(!retryUsed && recorded < 1 - EPS){
+    firstAcc = accuracy;
+    retryBtn.style.display = 'inline-block';
+  } else {
+    retryBtn.style.display = 'none';
+  }
+
   checkBtn.disabled = true;
+  revealBtn.disabled = true;
   answerInput.disabled = true;
+  nextBtn.disabled = false;
+  updateScoreStrip();
+}
+
+function retry(){
+  // roll back the first attempt, give one more listen
+  const last = history.pop();
+  attemptedCount--;
+  accSum -= last.acc;
+  if(last.acc >= 1 - EPS) correctCount--;
+  updateScoreStrip();
+
+  retryUsed = true;
+  retryBtn.style.display = 'none';
+  resultBox.classList.remove('show');
+  punctLine.style.display = 'none';
+  checkBtn.disabled = false;
+  revealBtn.disabled = false;
+  answerInput.disabled = false;
+  nextBtn.disabled = true;
+  if(replayCap()){
+    replaysLeft = Math.max(replaysLeft, 1);
+    playBtn.disabled = false;
+    chunkBtn.disabled = false;
+    updateReplayLabel();
+  }
+  answerInput.focus();
+}
+
+function reveal(){
+  const target = order[idx];
+  diffLine.innerHTML = `<span class="revealed-sentence">${escapeHtml(target)}</span>`;
+  scoreLine.textContent = 'Answer shown — this one scores 0';
+  scoreLine.style.color = 'var(--muted)';
+  punctLine.style.display = 'none';
+  resultBox.classList.add('show');
+  attemptedCount++;
+  history.push({ sentence: target, acc: 0, html: escapeHtml(target), revealed:true });
+  checkBtn.disabled = true;
+  revealBtn.disabled = true;
+  retryBtn.style.display = 'none';
+  answerInput.disabled = true;
+  nextBtn.disabled = false;
   updateScoreStrip();
 }
 
@@ -1106,32 +1425,78 @@ function updateScoreStrip(){
   setAvg.textContent = attemptedCount ? `${Math.round((accSum/attemptedCount)*100)}%` : '—';
 }
 
+function pctClass(p){ return p >= 90 ? 'pct-good' : (p >= 60 ? 'pct-mid' : 'pct-bad'); }
+
+function showSummary(){
+  drillArea.style.display = 'none';
+  summaryArea.style.display = 'block';
+  const avg = attemptedCount ? accSum/attemptedCount : 0;
+  document.getElementById('summaryAvg').textContent = `${Math.round(avg*100)}%`;
+  document.getElementById('summaryAvg').className = 'big-stat ' + pctClass(Math.round(avg*100));
+  document.getElementById('summaryPerfect').textContent = `${correctCount} of ${order.length} perfect`;
+  const topicText = activeTopics.length === TOPICS.length ? 'all topics'
+    : activeTopics.map(id => (TOPICS.find(t => t.id === id) || {}).label).join(' + ');
+  document.getElementById('summaryMeta').textContent = `${level} · ${topicText}`;
+
+  const list = document.getElementById('summaryList');
+  list.innerHTML = '';
+  history.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'summary-item';
+    const p = Math.round(h.acc*100);
+    const pctEl = document.createElement('div');
+    pctEl.className = 'summary-pct ' + pctClass(p);
+    pctEl.textContent = h.revealed ? 'shown' : p + '%';
+    const s = document.createElement('div');
+    s.className = 'summary-sentence';
+    s.innerHTML = h.html;
+    row.appendChild(pctEl);
+    row.appendChild(s);
+    list.appendChild(row);
+  });
+}
+
 function next(){
   idx++;
-  if(idx >= order.length){
-    progressLabel.textContent = `Set complete — ${correctCount}/${order.length} perfect, ${Math.round((accSum/Math.max(attemptedCount,1))*100)}% average`;
-    playBtn.disabled = true;
-    checkBtn.disabled = true;
-    nextBtn.disabled = true;
-    answerInput.disabled = true;
-    practiceWarn.textContent = '';
-    return;
-  }
+  if(idx >= order.length){ showSummary(); return; }
   loadSentence();
 }
 
-playBtn.addEventListener('click', () => speak(order[idx]));
+function printKey(sentences, titleText){
+  const area = document.getElementById('printArea');
+  const topicText = activeTopics.length === TOPICS.length ? 'all topics'
+    : activeTopics.map(id => (TOPICS.find(t => t.id === id) || {}).label).join(' + ');
+  const items = sentences.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+  area.innerHTML = `<h2>${escapeHtml(titleText)}</h2>
+    <div class="meta">${level} · ${topicText} · ${new Date().toLocaleDateString()}</div>
+    <ol>${items}</ol>`;
+  window.print();
+}
+
+playBtn.addEventListener('click', () => { if(usePlay()) speak(order[idx]); });
+chunkBtn.addEventListener('click', () => { if(usePlay()) speakChunks(order[idx]); });
 checkBtn.addEventListener('click', check);
+retryBtn.addEventListener('click', retry);
 nextBtn.addEventListener('click', next);
+revealBtn.addEventListener('click', reveal);
 restartBtn.addEventListener('click', loadSet);
-levelSelect.addEventListener('change', () => {
-  loadSet();
-  refreshRoundOptions();
+printBtn.addEventListener('click', () => printKey(order, 'Dictation Drill — answer key'));
+document.getElementById('summaryNewBtn').addEventListener('click', loadSet);
+document.getElementById('summaryPrintBtn').addEventListener('click', () => printKey(order, 'Dictation Drill — answer key'));
+
+levelSelect.addEventListener('change', onContentChange);
+replaySelect.addEventListener('change', () => {
+  lsSet(LS.replays, replaySelect.value);
+  replaysLeft = replayCap();
+  playBtn.disabled = false;
+  chunkBtn.disabled = false;
+  updateReplayLabel();
 });
+
 answerInput.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
     e.preventDefault();
-    if(!playBtn.disabled) speak(order[idx]);
+    if(!playBtn.disabled && usePlay()) speak(order[idx]);
     return;
   }
   if(e.key==='Enter' && !e.shiftKey){
@@ -1145,10 +1510,13 @@ if(!('speechSynthesis' in window)){
   speechWarning.textContent = "No speech synthesis in this browser.";
 }
 
-// ---------------- Team game mode ----------------
+/* =========================================================================
+   TEAM GAME
+   ========================================================================= */
 
 const TEAM_COLORS = ['#0f766e','#c2410c','#7c3aed','#be185d','#0369a1','#65a30d'];
 
+const answerModeSelect = document.getElementById('answerModeSelect');
 const teamCountSelect = document.getElementById('teamCountSelect');
 const roundsSelect = document.getElementById('roundsSelect');
 const poolNote = document.getElementById('poolNote');
@@ -1158,6 +1526,8 @@ const startTeamGameBtn = document.getElementById('startTeamGameBtn');
 const miniScoreboard = document.getElementById('miniScoreboard');
 const teamTurnLabel = document.getElementById('teamTurnLabel');
 const teamPlayBtn = document.getElementById('teamPlayBtn');
+const teamChunkBtn = document.getElementById('teamChunkBtn');
+const teamReplayLabel = document.getElementById('teamReplayLabel');
 const currentTeamName = document.getElementById('currentTeamName');
 const teamAnswerInput = document.getElementById('teamAnswerInput');
 const teamCheckBtn = document.getElementById('teamCheckBtn');
@@ -1167,8 +1537,24 @@ const teamScoreLine = document.getElementById('teamScoreLine');
 const teamDiffLine = document.getElementById('teamDiffLine');
 const teamPunctLine = document.getElementById('teamPunctLine');
 const teamWarn = document.getElementById('teamWarn');
+
+const boardScoreboard = document.getElementById('boardScoreboard');
+const boardRoundLabel = document.getElementById('boardRoundLabel');
+const boardPlayBtn = document.getElementById('boardPlayBtn');
+const boardChunkBtn = document.getElementById('boardChunkBtn');
+const boardReplayLabel = document.getElementById('boardReplayLabel');
+const boardRevealBox = document.getElementById('boardRevealBox');
+const boardSentence = document.getElementById('boardSentence');
+const boardRevealBtn = document.getElementById('boardRevealBtn');
+const boardNextBtn = document.getElementById('boardNextBtn');
+const boardWarn = document.getElementById('boardWarn');
+const boardMarking = document.getElementById('boardMarking');
+const boardMarkRows = document.getElementById('boardMarkRows');
+
 const leaderboardList = document.getElementById('leaderboardList');
+const resultsSub = document.getElementById('resultsSub');
 const playAgainBtn = document.getElementById('playAgainBtn');
+const gamePrintBtn = document.getElementById('gamePrintBtn');
 
 let teams = [];
 let turnQueue = [];
@@ -1176,36 +1562,45 @@ let turnPointer = 0;
 let totalRounds = 0;
 let gameActive = false;
 let teamBlankArmed = false;
+let answerMode = 'paper';
+let boardSentences = [];
+let boardRound = 0;
+let boardMarks = [];
+let teamReplaysLeft = 0;
 
 const ROUND_CHOICES = [3,5,8,10];
 
-// Rounds are capped by the size of the sentence pool, so the dropdown can
-// never promise more rounds than the level can actually deal out.
 function refreshRoundOptions(){
   const teamCount = parseInt(teamCountSelect.value, 10);
-  const poolSize = BANK[levelSelect.value].length;
-  const maxRounds = Math.max(1, Math.floor(poolSize / teamCount));
+  const poolSize = bankFor(levelSelect.value).length;
+  const mode = answerModeSelect.value;
+  // paper mode: every team hears the same sentence, so rounds are capped by the
+  // pool itself; device mode deals a private sentence per team per round.
+  const maxRounds = mode === 'paper'
+    ? Math.max(1, poolSize)
+    : Math.max(1, Math.floor(poolSize / teamCount));
   const wanted = parseInt(roundsSelect.value, 10) || 5;
 
   const choices = ROUND_CHOICES.filter(r => r <= maxRounds);
-  if(!choices.length || choices[choices.length-1] < maxRounds){
+  if(!choices.length || (choices[choices.length-1] < maxRounds && maxRounds < 10)){
     if(choices.indexOf(maxRounds) < 0) choices.push(maxRounds);
   }
+  if(!choices.length) choices.push(maxRounds);
   choices.sort((a,b)=>a-b);
 
   roundsSelect.innerHTML = '';
   choices.forEach(r => {
     const opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r;
+    opt.value = r; opt.textContent = r;
     roundsSelect.appendChild(opt);
   });
-
   let pick = choices.filter(r => r <= wanted).pop();
   if(pick === undefined) pick = choices[0];
   roundsSelect.value = String(pick);
 
-  poolNote.textContent = `${levelSelect.value} pool: ${poolSize} sentences · ${teamCount} teams → up to ${maxRounds} round${maxRounds === 1 ? '' : 's'} each, all different.`;
+  poolNote.textContent = mode === 'paper'
+    ? `Pool: ${poolSize} sentences · one shared sentence per round, up to ${maxRounds}.`
+    : `Pool: ${poolSize} sentences · ${teamCount} teams → up to ${maxRounds} private round${maxRounds === 1 ? '' : 's'} each.`;
 }
 
 function buildTeamNameInputs(){
@@ -1223,33 +1618,46 @@ function buildTeamNameInputs(){
     input.placeholder = `Team ${i+1} name`;
     input.value = existing[i] || `Team ${i+1}`;
     input.maxLength = 24;
-    row.appendChild(swatch);
-    row.appendChild(input);
+    row.appendChild(swatch); row.appendChild(input);
     teamNameInputs.appendChild(row);
   }
 }
-teamCountSelect.addEventListener('change', () => {
-  buildTeamNameInputs();
-  refreshRoundOptions();
-});
+teamCountSelect.addEventListener('change', () => { buildTeamNameInputs(); refreshRoundOptions(); });
+answerModeSelect.addEventListener('change', () => { lsSet(LS.answerMode, answerModeSelect.value); refreshRoundOptions(); });
 buildTeamNameInputs();
+
+function teamAverage(team){
+  if(!team.results.length) return 0;
+  return team.results.reduce((s,x)=>s+x,0) / team.results.length;
+}
+function teamPoints(team){ return team.results.reduce((s,x)=>s+x,0); }
 
 function startTeamGame(){
   const count = parseInt(teamCountSelect.value, 10);
   const rounds = parseInt(roundsSelect.value, 10);
   const names = Array.from(teamNameInputs.querySelectorAll('input')).map((inp, i) => inp.value.trim() || `Team ${i+1}`);
-  const lvl = levelSelect.value;
-
-  const pool = shuffle(BANK[lvl]);
-  const perTeam = Math.min(rounds, Math.floor(pool.length / count));
-  totalRounds = Math.max(1, perTeam);
+  const pool = shuffle(bankFor(levelSelect.value));
+  answerMode = answerModeSelect.value;
 
   teams = names.map((name, i) => ({
-    name,
-    color: TEAM_COLORS[i % TEAM_COLORS.length],
-    sentences: pool.slice(i * totalRounds, (i + 1) * totalRounds),
-    results: []
+    name, color: TEAM_COLORS[i % TEAM_COLORS.length], sentences: [], results: []
   }));
+
+  if(answerMode === 'paper'){
+    totalRounds = Math.max(1, Math.min(rounds, pool.length));
+    boardSentences = pool.slice(0, totalRounds);
+    boardRound = 0;
+    gameActive = true;
+    turnQueue = boardSentences.map((s,i) => ({ r:i }));
+    turnPointer = 0;
+    showOnly(boardPlayView);
+    renderBoardRound();
+    return;
+  }
+
+  const perTeam = Math.min(rounds, Math.floor(pool.length / count));
+  totalRounds = Math.max(1, perTeam);
+  teams.forEach((t,i) => { t.sentences = pool.slice(i*totalRounds, (i+1)*totalRounds); });
 
   turnQueue = [];
   for(let r=0; r<totalRounds; r++){
@@ -1259,38 +1667,54 @@ function startTeamGame(){
   }
   turnPointer = 0;
   gameActive = true;
-
   showOnly(teamPlayView);
   renderScoreboard();
   renderTurn();
 }
 
-function teamAverage(team){
-  if(!team.results.length) return 0;
-  return team.results.reduce((s,x)=>s+x,0) / team.results.length;
-}
-
 function renderScoreboard(){
-  miniScoreboard.innerHTML = '';
-  const currentTeamIdx = turnQueue[turnPointer] ? turnQueue[turnPointer].t : -1;
+  const target = answerMode === 'paper' ? boardScoreboard : miniScoreboard;
+  target.innerHTML = '';
+  const currentTeamIdx = (answerMode === 'paper' || !turnQueue[turnPointer]) ? -1 : turnQueue[turnPointer].t;
   teams.forEach((team, i) => {
     const chip = document.createElement('div');
     chip.className = 'team-chip' + (i === currentTeamIdx ? ' current' : '');
     const dot = document.createElement('span');
     dot.className = 'dot';
     dot.style.background = i === currentTeamIdx ? 'var(--on-accent)' : team.color;
-    const pct = Math.round(teamAverage(team) * 100);
     chip.appendChild(dot);
-    chip.append(`${team.name}: ${team.results.length ? pct + '%' : '—'}`);
-    miniScoreboard.appendChild(chip);
+    if(answerMode === 'paper'){
+      chip.append(`${team.name}: ${teamPoints(team).toString().replace(/\.5$/,'½').replace(/^0½$/,'½')}`);
+    } else {
+      chip.append(`${team.name}: ${team.results.length ? Math.round(teamAverage(team)*100) + '%' : '—'}`);
+    }
+    target.appendChild(chip);
   });
 }
 
+/* ---------------- device mode ---------------- */
+
+function teamUsePlay(labelEl, playB, chunkB){
+  const cap = replayCap();
+  if(!cap) return true;
+  if(teamReplaysLeft <= 0) return false;
+  teamReplaysLeft--;
+  labelEl.textContent = `Plays left: ${teamReplaysLeft} of ${cap}`;
+  labelEl.classList.toggle('low', teamReplaysLeft <= 1);
+  if(teamReplaysLeft <= 0){ playB.disabled = true; chunkB.disabled = true; }
+  return true;
+}
+function resetTeamReplays(labelEl, playB, chunkB){
+  const cap = replayCap();
+  teamReplaysLeft = cap;
+  playB.disabled = false;
+  chunkB.disabled = false;
+  labelEl.classList.remove('low');
+  labelEl.textContent = cap ? `Plays left: ${cap} of ${cap}` : '';
+}
+
 function renderTurn(){
-  if(turnPointer >= turnQueue.length){
-    finishTeamGame();
-    return;
-  }
+  if(turnPointer >= turnQueue.length){ finishTeamGame(); return; }
   const turn = turnQueue[turnPointer];
   const team = teams[turn.t];
   teamTurnLabel.textContent = `${team.name}'s turn — Round ${turn.r+1} of ${totalRounds}`;
@@ -1303,7 +1727,7 @@ function renderTurn(){
   teamBlankArmed = false;
   teamCheckBtn.disabled = false;
   teamNextBtn.disabled = true;
-  teamPlayBtn.disabled = false;
+  resetTeamReplays(teamReplayLabel, teamPlayBtn, teamChunkBtn);
   renderScoreboard();
   teamAnswerInput.focus();
 }
@@ -1327,15 +1751,11 @@ function teamCheck(){
   teamScoreLine.textContent = pct === 100 ? `${team.name} — Perfect (100%)` : `${team.name} — ${pct}% word match`;
   teamScoreLine.style.color = pct === 100 ? "var(--ok)" : "var(--ink)";
   teamDiffLine.innerHTML = `Target: ${html}`;
-
   if(strictToggle.checked){
     const rep = punctuationReport(sentence, given, ops);
     if(rep.text){ teamPunctLine.innerHTML = rep.text; teamPunctLine.style.display = 'block'; }
     else teamPunctLine.style.display = 'none';
-  } else {
-    teamPunctLine.style.display = 'none';
-  }
-
+  } else teamPunctLine.style.display = 'none';
   teamResultBox.classList.add('show');
   teamCheckBtn.disabled = true;
   teamNextBtn.disabled = false;
@@ -1343,14 +1763,94 @@ function teamCheck(){
   renderScoreboard();
 }
 
-function teamNext(){
-  turnPointer++;
-  renderTurn();
+function teamNext(){ turnPointer++; renderTurn(); }
+
+/* ---------------- paper mode ---------------- */
+
+function renderBoardRound(){
+  if(boardRound >= boardSentences.length){ finishTeamGame(); return; }
+  turnPointer = boardRound;
+  boardRoundLabel.textContent = `Round ${boardRound+1} of ${totalRounds}`;
+  boardRevealBox.classList.remove('show');
+  boardSentence.textContent = '';
+  boardMarking.style.display = 'none';
+  boardMarkRows.innerHTML = '';
+  boardWarn.textContent = '';
+  boardRevealBtn.disabled = false;
+  boardNextBtn.disabled = true;
+  boardMarks = teams.map(() => null);
+  resetTeamReplays(boardReplayLabel, boardPlayBtn, boardChunkBtn);
+  renderScoreboard();
 }
+
+function renderMarkRows(){
+  boardMarkRows.innerHTML = '';
+  const OPTIONS = [
+    { label:'Perfect', value:1 },
+    { label:'Almost', value:0.5 },
+    { label:'Not yet', value:0 }
+  ];
+  teams.forEach((team, i) => {
+    const row = document.createElement('div');
+    row.className = 'mark-row' + (boardMarks[i] !== null ? ' done' : '');
+    const sw = document.createElement('div');
+    sw.className = 'swatch';
+    sw.style.background = team.color;
+    const name = document.createElement('div');
+    name.className = 'mark-name';
+    name.textContent = team.name;
+    const total = document.createElement('div');
+    total.className = 'mark-total';
+    total.textContent = `${teamPoints(team)} pt${teamPoints(team) === 1 ? '' : 's'}`;
+    const btns = document.createElement('div');
+    btns.className = 'mark-btns';
+    OPTIONS.forEach(opt => {
+      const b = document.createElement('button');
+      b.className = 'mark-btn' + (boardMarks[i] === opt.value ? ' sel' : '');
+      b.textContent = opt.label;
+      b.addEventListener('click', () => {
+        boardMarks[i] = opt.value;
+        renderMarkRows();
+        boardNextBtn.disabled = boardMarks.some(m => m === null);
+        boardWarn.textContent = '';
+      });
+      btns.appendChild(b);
+    });
+    row.appendChild(sw); row.appendChild(name); row.appendChild(total); row.appendChild(btns);
+    boardMarkRows.appendChild(row);
+  });
+}
+
+function boardReveal(){
+  boardSentence.textContent = boardSentences[boardRound];
+  boardRevealBox.classList.add('show');
+  boardRevealBtn.disabled = true;
+  boardPlayBtn.disabled = false;
+  boardChunkBtn.disabled = false;
+  boardMarking.style.display = 'block';
+  renderMarkRows();
+}
+
+function boardNext(){
+  if(boardMarks.some(m => m === null)){
+    boardWarn.textContent = 'Give every team a score first.';
+    return;
+  }
+  teams.forEach((team, i) => team.results.push(boardMarks[i]));
+  boardRound++;
+  renderBoardRound();
+}
+
+/* ---------------- results ---------------- */
 
 function finishTeamGame(){
   showOnly(teamResultsView);
-  const ranked = teams.slice().sort((a,b) => teamAverage(b) - teamAverage(a));
+  const paper = answerMode === 'paper';
+  resultsSub.textContent = paper
+    ? `Ranked by points over ${totalRounds} round${totalRounds === 1 ? '' : 's'}.`
+    : 'Ranked by average word-match accuracy.';
+  const ranked = teams.slice().sort((a,b) =>
+    paper ? teamPoints(b) - teamPoints(a) : teamAverage(b) - teamAverage(a));
   leaderboardList.innerHTML = '';
   ranked.forEach((team, i) => {
     const row = document.createElement('div');
@@ -1363,19 +1863,25 @@ function finishTeamGame(){
     name.textContent = team.name;
     const score = document.createElement('div');
     score.className = 'lb-score';
-    score.textContent = `${Math.round(teamAverage(team)*100)}%`;
-    row.appendChild(badge);
-    row.appendChild(name);
-    row.appendChild(score);
+    score.textContent = paper
+      ? `${teamPoints(team)} / ${totalRounds}`
+      : `${Math.round(teamAverage(team)*100)}%`;
+    row.appendChild(badge); row.appendChild(name); row.appendChild(score);
     leaderboardList.appendChild(row);
   });
 }
 
 startTeamGameBtn.addEventListener('click', startTeamGame);
+
 teamPlayBtn.addEventListener('click', () => {
   const turn = turnQueue[turnPointer];
   if(!turn) return;
-  speak(teams[turn.t].sentences[turn.r]);
+  if(teamUsePlay(teamReplayLabel, teamPlayBtn, teamChunkBtn)) speak(teams[turn.t].sentences[turn.r]);
+});
+teamChunkBtn.addEventListener('click', () => {
+  const turn = turnQueue[turnPointer];
+  if(!turn) return;
+  if(teamUsePlay(teamReplayLabel, teamPlayBtn, teamChunkBtn)) speakChunks(teams[turn.t].sentences[turn.r]);
 });
 teamCheckBtn.addEventListener('click', teamCheck);
 teamNextBtn.addEventListener('click', teamNext);
@@ -1383,7 +1889,7 @@ teamAnswerInput.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
     e.preventDefault();
     const turn = turnQueue[turnPointer];
-    if(turn) speak(teams[turn.t].sentences[turn.r]);
+    if(turn && teamUsePlay(teamReplayLabel, teamPlayBtn, teamChunkBtn)) speak(teams[turn.t].sentences[turn.r]);
     return;
   }
   if(e.key==='Enter' && !e.shiftKey){
@@ -1392,24 +1898,53 @@ teamAnswerInput.addEventListener('keydown', (e)=>{
     else if(!teamNextBtn.disabled) teamNext();
   }
 });
+
+boardPlayBtn.addEventListener('click', () => {
+  if(teamUsePlay(boardReplayLabel, boardPlayBtn, boardChunkBtn)) speak(boardSentences[boardRound]);
+});
+boardChunkBtn.addEventListener('click', () => {
+  if(teamUsePlay(boardReplayLabel, boardPlayBtn, boardChunkBtn)) speakChunks(boardSentences[boardRound]);
+});
+boardRevealBtn.addEventListener('click', boardReveal);
+boardNextBtn.addEventListener('click', boardNext);
+
 playAgainBtn.addEventListener('click', () => {
   gameActive = false;
   showOnly(teamSetupView);
   buildTeamNameInputs();
   refreshRoundOptions();
 });
+gamePrintBtn.addEventListener('click', () => {
+  const sentences = answerMode === 'paper'
+    ? boardSentences
+    : teams.reduce((acc,t) => acc.concat(t.sentences), []);
+  printKey(sentences, 'Dictation Drill — game answer key');
+});
 
-// ---------------- Boot ----------------
+/* =========================================================================
+   BOOT
+   ========================================================================= */
 
 (function restorePrefs(){
   const lvl = lsGet(LS.level);
-  if(lvl && BANK[lvl]) levelSelect.value = lvl;
+  if(lvl && LEVEL_DATA[lvl]) levelSelect.value = lvl;
   const rate = lsGet(LS.rate);
   if(rate && Array.from(rateSelect.options).some(o => o.value === rate)) rateSelect.value = rate;
   const strict = lsGet(LS.strict);
   if(strict !== null) strictToggle.checked = strict === '1';
+  const reps = lsGet(LS.replays);
+  if(reps && Array.from(replaySelect.options).some(o => o.value === reps)) replaySelect.value = reps;
+  const am = lsGet(LS.answerMode);
+  if(am && (am === 'paper' || am === 'device')) answerModeSelect.value = am;
+  answerMode = answerModeSelect.value;
+  const tp = lsGet(LS.topics);
+  if(tp){
+    const ids = tp.split(',').filter(id => TOPICS.some(t => t.id === id));
+    if(ids.length) activeTopics = ids;
+  }
 })();
 
+renderTopicChips();
 refreshRoundOptions();
 loadSet();
 </script>
