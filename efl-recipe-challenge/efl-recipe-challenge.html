@@ -7,6 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>
+(function() {
+  var saved = null;
+  try { saved = localStorage.getItem('theme'); } catch (e) {}
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
 <style>
 
   :root {
@@ -21,6 +28,99 @@
     --text: #fff;
     --text-muted: #c0a8e0;
     --radius: 16px;
+  }
+
+  /* ===== LIGHT THEME ===== */
+  [data-theme="light"] {
+    --bg: #fbf7f2;
+    --surface: #f0e9e2;
+    --card: #ffffff;
+    --accent1: #d94f18;
+    --accent2: #b4740a;
+    --accent3: #0e7490;
+    --accent4: #c2185b;
+    --green: #15803d;
+    --text: #2b1b3d;
+    --text-muted: #6b5b7d;
+  }
+  [data-theme="light"] body {
+    background-image:
+      radial-gradient(ellipse at 20% 20%, #ffd7b81f 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 80%, #ffc9dd1f 0%, transparent 55%);
+  }
+  [data-theme="light"] .scanlines { display: none; }
+  [data-theme="light"] .logo h1 { text-shadow: 3px 3px 0 var(--accent1); }
+  [data-theme="light"] .setup-card { border-color: #00000010; box-shadow: 0 12px 34px #00000014; }
+  [data-theme="light"] .team-card,
+  [data-theme="light"] .spinner-section,
+  [data-theme="light"] .cat-limit-row { border-color: #00000012; }
+  [data-theme="light"] .team-card,
+  [data-theme="light"] .trading-card { box-shadow: 0 6px 18px #0000000d; }
+  [data-theme="light"] .basics-banner {
+    background: linear-gradient(135deg, #eaf7ea, #e0f1da);
+    box-shadow: 0 4px 14px #15803d14;
+  }
+  [data-theme="light"] .basics-tag { background: #15803d14; border-color: #15803d55; }
+  [data-theme="light"] .ingredient-pill,
+  [data-theme="light"] .reveal-ingredient,
+  [data-theme="light"] .lang-frame { background: #2b1b3d0d; }
+  [data-theme="light"] .trade-ing-row { background: #2b1b3d0a; }
+  [data-theme="light"] .trade-ing-row:hover { background: #2b1b3d14; }
+  [data-theme="light"] .swap-row { background: #2b1b3d08; }
+  [data-theme="light"] .swap-ing-tag { background: #2b1b3d0f; }
+  [data-theme="light"] .ingredient-slot { background: #2b1b3d1f; }
+  [data-theme="light"] .progress-bar-wrap { background: #2b1b3d14; }
+  [data-theme="light"] .score-row { border-top-color: #00000014; }
+  [data-theme="light"] .lang-bank {
+    background: linear-gradient(135deg, #eef8fb, #e6f3f7);
+  }
+  [data-theme="light"] .lang-chip { background: #0e749014; border-color: #0e749055; color: #0b5568; }
+  [data-theme="light"] .winner-banner { background: linear-gradient(135deg, #fff6e0, #ffedc0); }
+  [data-theme="light"] .reveal-title { text-shadow: none; animation: none; }
+  [data-theme="light"] .spin-btn { box-shadow: 0 8px 24px #b4740a33; }
+  [data-theme="light"] .btn-primary { box-shadow: 0 8px 24px #d94f1833; }
+  [data-theme="light"] .team-btn.selected { color: #fff; box-shadow: 0 0 16px #b4740a44; }
+  [data-theme="light"] .level-btn.selected { color: #fff; box-shadow: 0 0 16px #0e749044; }
+  [data-theme="light"] .toggle-track.on .toggle-thumb { background: #fff; }
+  [data-theme="light"] .team-name-input { border-color: #00000012; }
+
+  /* ===== TEAM NAME INPUTS ===== */
+  .team-names-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .team-name-row { display: flex; align-items: center; gap: 8px; }
+  .team-name-row .dot { font-size: 1.2rem; }
+  .team-name-input {
+    flex: 1; min-width: 0;
+    background: var(--surface);
+    border: 2px solid #ffffff18;
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .team-name-input:focus { outline: none; border-color: var(--accent3); }
+
+  /* ===== THEME TOGGLE ===== */
+  .theme-toggle {
+    position: fixed; top: 16px; right: 70px;
+    background: var(--surface);
+    border: 2px solid var(--accent2);
+    color: var(--accent2);
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover { background: var(--accent2); color: var(--bg); }
+  @media print { .theme-toggle { display: none !important; } }
+
+  @media (max-width: 560px) {
+    .team-names-grid, .cat-limits-grid { grid-template-columns: 1fr; }
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -806,6 +906,7 @@
 <a class="back-link" href="../">← Tool Hub</a>
 <div class="scanlines"></div>
 
+<button class="theme-toggle" id="themeToggle" title="Toggle light / dark" onclick="toggleTheme()">🌙</button>
 <button class="sound-toggle" id="soundToggle" title="Toggle sound">🔊</button>
 
 <!-- SETUP SCREEN -->
@@ -826,6 +927,12 @@
         <button class="team-btn" data-n="5">5</button>
         <button class="team-btn" data-n="6">6</button>
       </div>
+    </div>
+
+    <div class="form-row">
+      <label>Team names <span style="color:var(--text-muted);font-size:0.78rem;font-weight:400">(tap to edit)</span></label>
+      <div class="team-names-grid" id="teamNamesGrid"></div>
+      <button class="tool-btn" style="margin-top:10px;font-size:0.78rem;padding:6px 14px" onclick="resetTeamNames()">↺ Reset to colour names</button>
     </div>
 
     <div class="form-row" style="margin-bottom:0">
@@ -1173,14 +1280,93 @@ const LANGUAGE_BANK = {
 // Flat list built from categories (used as fallback)
 const INGREDIENTS = INGREDIENT_CATEGORIES.flatMap(c => c.items);
 
+// Neon colours read well on the dark theme; the light variants keep contrast on white.
 const TEAM_THEMES = [
-  { color: '#ff6b35', glow: '#ff6b3544', emoji: '🔴', name: 'Team Red' },
-  { color: '#00e5ff', glow: '#00e5ff44', emoji: '🔵', name: 'Team Blue' },
-  { color: '#ffd700', glow: '#ffd70044', emoji: '🟡', name: 'Team Yellow' },
-  { color: '#ff4da6', glow: '#ff4da644', emoji: '🩷', name: 'Team Pink' },
-  { color: '#39ff14', glow: '#39ff1444', emoji: '🟢', name: 'Team Green' },
-  { color: '#bf5af2', glow: '#bf5af244', emoji: '🟣', name: 'Team Purple' },
+  { color: '#ff6b35', glow: '#ff6b3544', colorLight: '#d94f18', glowLight: '#d94f1826', emoji: '🔴', name: 'Team Red' },
+  { color: '#00e5ff', glow: '#00e5ff44', colorLight: '#0e7490', glowLight: '#0e749026', emoji: '🔵', name: 'Team Blue' },
+  { color: '#ffd700', glow: '#ffd70044', colorLight: '#b4740a', glowLight: '#b4740a26', emoji: '🟡', name: 'Team Yellow' },
+  { color: '#ff4da6', glow: '#ff4da644', colorLight: '#c2185b', glowLight: '#c2185b26', emoji: '🩷', name: 'Team Pink' },
+  { color: '#39ff14', glow: '#39ff1444', colorLight: '#15803d', glowLight: '#15803d26', emoji: '🟢', name: 'Team Green' },
+  { color: '#bf5af2', glow: '#bf5af244', colorLight: '#7c3aed', glowLight: '#7c3aed26', emoji: '🟣', name: 'Team Purple' },
 ];
+
+// ===== THEME =====
+function isLight() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+// Theme-correct team colour / glow — used everywhere instead of team.color
+function tc(t) { return isLight() ? (t.colorLight || t.color) : t.color; }
+function tg(t) { return isLight() ? (t.glowLight || t.glow) : t.glow; }
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  try { localStorage.setItem('theme', next); } catch (e) {}
+  paintThemeToggle();
+  refreshThemedScreens();
+}
+
+function paintThemeToggle() {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isLight() ? '☀️' : '🌙';
+}
+
+// Team colours are written inline, so the active screen has to be redrawn on toggle
+function refreshThemedScreens() {
+  const active = document.querySelector('.screen.active');
+  if (!active || teams.length === 0) return;
+  if (active.id === 'game-screen') { renderTeams(); updateCurrentTeamBanner(); }
+  else if (active.id === 'trading-screen') { renderTradingScreen(); }
+  else if (active.id === 'reveal-screen') { buildFinalReveal(); applyWinnerHighlight(); }
+}
+
+// ===== TEAM NAMES =====
+const DEFAULT_TEAM_NAMES = TEAM_THEMES.map(t => t.name);
+let teamNames = (function() {
+  try {
+    const raw = localStorage.getItem('recipeRumble.teamNames');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length === 6) return arr;
+    }
+  } catch (e) {}
+  return [...DEFAULT_TEAM_NAMES];
+})();
+
+function saveTeamNames() {
+  try { localStorage.setItem('recipeRumble.teamNames', JSON.stringify(teamNames)); } catch (e) {}
+}
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderTeamNames() {
+  const grid = document.getElementById('teamNamesGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < numTeams; i++) {
+    const row = document.createElement('div');
+    row.className = 'team-name-row';
+    row.innerHTML = `
+      <span class="dot">${TEAM_THEMES[i].emoji}</span>
+      <input class="team-name-input" type="text" maxlength="22"
+             value="${escAttr(teamNames[i] || DEFAULT_TEAM_NAMES[i])}"
+             placeholder="${DEFAULT_TEAM_NAMES[i]}"
+             oninput="setTeamName(${i}, this.value)">
+    `;
+    grid.appendChild(row);
+  }
+}
+
+function setTeamName(i, v) {
+  teamNames[i] = v.slice(0, 22);
+  saveTeamNames();
+}
+
+function resetTeamNames() {
+  teamNames = [...DEFAULT_TEAM_NAMES];
+  saveTeamNames();
+  renderTeamNames();
+}
 
 // ===== GAME STATE =====
 let numTeams = 3;
@@ -1281,6 +1467,7 @@ teamCountPicker.querySelectorAll('.team-btn').forEach(btn => {
     teamCountPicker.querySelectorAll('.team-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     numTeams = parseInt(btn.dataset.n);
+    renderTeamNames();
   };
 });
 
@@ -1295,6 +1482,8 @@ document.getElementById('ingredPlus').onclick = () => {
 document.getElementById('spinToggleTrack').classList.add('on');
 renderCatLimits();
 updateLevelHint();
+renderTeamNames();
+paintThemeToggle();
 
 document.getElementById('startGameBtn').onclick = () => {
   ingredientsPerTeam = ingredCount;
@@ -1326,6 +1515,7 @@ function initGame() {
   for (let i = 0; i < numTeams; i++) {
     teams.push({
       ...TEAM_THEMES[i],
+      name: (teamNames[i] || '').trim() || DEFAULT_TEAM_NAMES[i],
       ingredients: [],
     });
   }
@@ -1369,8 +1559,8 @@ function renderTeams() {
     const card = document.createElement('div');
     card.className = 'team-card' + (i === currentTeamIndex ? ' active-team' : '');
     card.id = `team-card-${i}`;
-    card.style.setProperty('--team-color', team.color);
-    card.style.setProperty('--team-color-glow', team.glow);
+    card.style.setProperty('--team-color', tc(team));
+    card.style.setProperty('--team-color-glow', tg(team));
 
     let slotsHTML = '<div class="ingredient-slots">';
     for (let s = 0; s < ingredientsPerTeam; s++) {
@@ -1426,7 +1616,7 @@ function updateCurrentTeamBanner() {
     return;
   }
   const team = teams[currentTeamIndex];
-  banner.innerHTML = `It's the turn of: <span id="spinningForTeam" style="color:${team.color}">${team.emoji} ${team.name}</span>`;
+  banner.innerHTML = `It's the turn of: <span id="spinningForTeam" style="color:${tc(team)}">${team.emoji} ${team.name}</span>`;
 }
 
 // ===== SPINNER =====
@@ -1585,8 +1775,8 @@ function assignIngredient(ingredient, idx) {
     slots.forEach((s, i) => {
       if (i < team.ingredients.length) s.classList.add('filled');
     });
-    card.style.setProperty('--team-color', team.color);
-    card.style.setProperty('--team-color-glow', team.glow);
+    card.style.setProperty('--team-color', tc(team));
+    card.style.setProperty('--team-color-glow', tg(team));
   }
 
   // Advance
@@ -1694,7 +1884,7 @@ function renderTradingScreen() {
     const state = tradingState[ti];
     const card = document.createElement('div');
     card.className = 'trading-card';
-    card.style.setProperty('--team-color', team.color);
+    card.style.setProperty('--team-color', tc(team));
 
     let ingsHTML = team.ingredients.map((ing, ii) => {
       let cls = 'trade-ing-row';
@@ -1780,19 +1970,19 @@ function openSwapModal(fromTi) {
   panel.style.display = 'block';
 
   let html = `<p style="margin-bottom:14px;color:var(--text-muted)">
-    <strong style="color:${fromTeam.color}">${fromTeam.emoji} ${fromTeam.name}</strong> wants to trade away
+    <strong style="color:${tc(fromTeam)}">${fromTeam.emoji} ${fromTeam.name}</strong> wants to trade away
     <strong style="color:var(--accent3)">${fromIng.name}</strong> — pick what they want in return:
   </p>`;
 
   teams.forEach((toTeam, toTi) => {
     if (toTi === fromTi) return;
     html += `<div style="margin-bottom:12px">
-      <div style="font-family:'Fredoka One',cursive;color:${toTeam.color};margin-bottom:6px">${toTeam.emoji} ${toTeam.name}</div>
+      <div style="font-family:'Fredoka One',cursive;color:${tc(toTeam)};margin-bottom:6px">${toTeam.emoji} ${toTeam.name}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${toTeam.ingredients.map((ing, ii) =>
           `<button onclick="proposeSwap(${fromTi},${state.selectedIngIdx},${toTi},${ii})"
-            style="padding:6px 14px;border-radius:8px;border:2px solid ${toTeam.color};background:transparent;color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s"
-            onmouseover="this.style.background='${toTeam.color}'" onmouseout="this.style.background='transparent'">
+            style="padding:6px 14px;border-radius:8px;border:2px solid ${tc(toTeam)};background:transparent;color:var(--text);font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s"
+            onmouseover="this.style.background='${tc(toTeam)}';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--text)'">
             ${ing.name}
           </button>`
         ).join('')}
@@ -1880,11 +2070,11 @@ function renderSwapPanel() {
     }
 
     html += `<div class="swap-row">
-      <span style="color:${fromTeam.color};font-weight:800">${fromTeam.emoji} ${fromTeam.name}</span>
-      <span class="swap-ing-tag" style="border:1px solid ${fromTeam.color}">${fromIng.name}</span>
+      <span style="color:${tc(fromTeam)};font-weight:800">${fromTeam.emoji} ${fromTeam.name}</span>
+      <span class="swap-ing-tag" style="border:1px solid ${tc(fromTeam)}">${fromIng.name}</span>
       <span class="swap-arrow">⇄</span>
-      <span class="swap-ing-tag" style="border:1px solid ${toTeam.color}">${toIng.name}</span>
-      <span style="color:${toTeam.color};font-weight:800">${toTeam.emoji} ${toTeam.name}</span>
+      <span class="swap-ing-tag" style="border:1px solid ${tc(toTeam)}">${toIng.name}</span>
+      <span style="color:${tc(toTeam)};font-weight:800">${toTeam.emoji} ${toTeam.name}</span>
       ${actionHTML}
     </div>`;
   });
@@ -1894,6 +2084,7 @@ function renderSwapPanel() {
 
 function proceedToReveal() {
   scores = teams.map(() => 0);
+  winnersCrowned = false;
   document.getElementById('winnerBanner').style.display = 'none';
   renderLangBank();
   resetTimer();
@@ -1921,8 +2112,8 @@ function buildFinalReveal() {
   teams.forEach((team, i) => {
     const card = document.createElement('div');
     card.className = 'reveal-card';
-    card.style.setProperty('--team-color', team.color);
-    card.style.setProperty('--team-color-glow', team.glow);
+    card.style.setProperty('--team-color', tc(team));
+    card.style.setProperty('--team-color-glow', tg(team));
 
     let ingsHTML = team.ingredients.map(ing =>
       `<div class="reveal-ingredient">${ing.name}</div>`
@@ -1938,7 +2129,7 @@ function buildFinalReveal() {
       <div class="score-row">
         <span class="score-label">Judges' score</span>
         <button class="score-btn" onclick="changeScore(${i},-1)">−</button>
-        <span class="score-val" id="score-${i}">0</span>
+        <span class="score-val" id="score-${i}">${scores[i] || 0}</span>
         <button class="score-btn" onclick="changeScore(${i},1)">+</button>
       </div>
     `;
@@ -1955,25 +2146,37 @@ function changeScore(ti, delta) {
   playTick();
 }
 
-function crownWinner() {
-  const banner = document.getElementById('winnerBanner');
+let winnersCrowned = false;
+
+function applyWinnerHighlight() {
   document.querySelectorAll('.reveal-card').forEach(c => c.classList.remove('winner'));
-
+  if (!winnersCrowned || scores.length === 0) return;
   const best = Math.max(...scores);
-  if (best === 0) {
-    banner.style.display = 'block';
-    banner.textContent = '🤔 Score the teams first — use the + buttons on each card.';
-    return;
-  }
-
-  const winners = teams.filter((t, i) => scores[i] === best);
+  if (best === 0) return;
   teams.forEach((t, i) => {
     if (scores[i] === best) {
       const card = document.getElementById(`reveal-card-${i}`);
       if (card) card.classList.add('winner');
     }
   });
+}
 
+function crownWinner() {
+  const banner = document.getElementById('winnerBanner');
+  const best = Math.max(...scores);
+
+  if (best === 0) {
+    winnersCrowned = false;
+    applyWinnerHighlight();
+    banner.style.display = 'block';
+    banner.textContent = '🤔 Score the teams first — use the + buttons on each card.';
+    return;
+  }
+
+  winnersCrowned = true;
+  applyWinnerHighlight();
+
+  const winners = teams.filter((t, i) => scores[i] === best);
   const names = winners.map(t => `${t.emoji} ${t.name}`).join(' & ');
   banner.style.display = 'block';
   banner.textContent = winners.length > 1
