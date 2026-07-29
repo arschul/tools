@@ -1619,19 +1619,22 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('pagehide', flushSaves);
 window.addEventListener('focus', checkFreshnessOnFocus);
 
-/* Terms used to be called "cycles". Rename the stored labels (and the calendar
-   event titles that embed them) once, so nothing on screen says "cycle". */
+/* The container holding a level's test record is a COURSE; the terms live
+   inside it. It was called a "cycle", then briefly a "term" — rename any old
+   labels (and the calendar titles that embed them) once, so nothing on screen
+   uses the wrong word. */
 function migrateCycleLabels(){
   let touched = false, events = false;
+  const OLD = /^(?:Cycle|Term)\s*(\d+)$/i;
   Object.values(state.grades || {}).forEach(g=>{
     (g.cycles || []).forEach(cy=>{
-      const m = /^Cycle\s*(\d+)$/i.exec(cy.label || '');
-      if(m){ cy.label = 'Term ' + m[1]; touched = true; }
+      const m = OLD.exec(cy.label || '');
+      if(m){ cy.label = 'Course ' + m[1]; touched = true; }
     });
   });
   (state.events || []).forEach(ev=>{
-    if(ev.fromGrades && typeof ev.title === 'string' && /\u2014\s*Cycle\s*\d+$/i.test(ev.title)){
-      ev.title = ev.title.replace(/\u2014\s*Cycle\s*(\d+)$/i, '\u2014 Term $1');
+    if(ev.fromGrades && typeof ev.title === 'string' && /\u2014\s*(?:Cycle|Term)\s*\d+$/i.test(ev.title)){
+      ev.title = ev.title.replace(/\u2014\s*(?:Cycle|Term)\s*(\d+)$/i, '\u2014 Course $1');
       events = true;
     }
   });
@@ -1958,53 +1961,69 @@ function archivedClasses(){ return state.classes.filter(c=>c.archived); }
 
 /* ---------- group level tags & test grades ----------
    Group tags live on the CLASS (not the student). Test regime derives from the tag:
-   - Teens / Basic / Intermediate: 3 tests per cycle, need 240 total (avg 80).
+   - Teens / Basic / Intermediate: three TERMS in a course, each closed by its
+     own test (First, Second, Third). 240 points total across them (avg 80).
      If the running average of entered tests is under 80 -> contact parents.
-   - Advanced: 2 TOEFL tests per cycle, per-level target score
-     (Adv 1 = 475, Adv 2 = 500, Adv 3 = 525, Adv 4 = 550).
-     If any entered test is under the target -> contact parents.
+   - Advanced: ONE term. A diagnostic in the first week sets the baseline; the
+     real TOEFL sits on the last class or the one before it. Per-level target
+     (Adv 1 = 475, Adv 2 = 500, Adv 3 = 525, Adv 4 = 550) applies to the FINAL
+     TOEFL only -> contact parents. A low diagnostic is the expected starting
+     point and never raises a flag. Two essays are written during the term.
 */
 const GROUP_LEVELS = ['Teens 1','Teens 2','Teens 3','Teens 4','Basic 1','Basic 2','Basic 3','Basic 4','Intermediate 1','Intermediate 2','Intermediate 3','Intermediate 4','Advanced 1','Advanced 2','Advanced 3','Advanced 4'];
 const TOEFL_TARGETS = {'Advanced 1':475,'Advanced 2':500,'Advanced 3':525,'Advanced 4':550};
 const CYCLE_TOTAL_TARGET = 240, CYCLE_AVG_TARGET = 80;
 function isAdvancedLevel(lv){ return /^Advanced /.test(lv||''); }
 function testCountFor(cls){ return isAdvancedLevel(cls?.level) ? 2 : 3; }
-/* The three tests ARE the periods of the term, so they're named as such
-   rather than numbered. Advanced keeps the TOEFL wording. */
+/* Regular levels run three terms, each closed by its own test.
+   Advanced runs ONE term: a diagnostic in the first week to set the baseline,
+   and the real TOEFL on the last (or second-to-last) class of the term. The
+   two are not comparable attempts, so they are never averaged or added. */
 const TEST_ORDINALS = ['First','Second','Third','Fourth','Fifth','Sixth'];
+const ADV_TEST_LABELS = ['Diagnostic', 'TOEFL Test'];
 function testLabelFor(cls, i){
-  if(isAdvancedLevel(cls?.level)) return 'TOEFL '+(i+1);
+  if(isAdvancedLevel(cls?.level)) return ADV_TEST_LABELS[i] || ('TOEFL '+(i+1));
   return TEST_ORDINALS[i] ? TEST_ORDINALS[i]+' Test' : 'Test '+(i+1);
 }
+// Which slot carries the mark that decides pass/fail. Advanced: the final TOEFL.
+function finalTestIdx(cls){ return testCountFor(cls) - 1; }
 
-/* ================= TEST PERIODS =================
-   A term is divided by its tests: the stretch of classes leading up to the
-   First Test is the first period, and so on. Reports use these to show how a
-   student is attending *right now* — in the period they're currently in —
-   next to the accumulated figures for the whole term, which can hide a recent
-   slide behind a good start. */
-function testPeriodsFor(cls, cycle){
+/* ================= TERMS =================
+   Regular levels: three terms. Term 1 runs from day one to the First Test;
+   Term 2 from the first class after it to the Second Test; Term 3 likewise to
+   the Third Test. Advanced: a single term, opened by a diagnostic in week one
+   and closed by the real TOEFL on the last class or the one before it.
+   Reports use these to show how a student is attending in the term they're in
+   right now, next to the accumulated figures — a strong start can otherwise
+   hide a recent slide. */
+function termsFor(cls, cycle){
   if(!cls || !cycle) return [];
-  const n = testCountFor(cls);
   const dates = cycle.testDates || [];
   const today = todayStr();
-  const out = [];
-  let after = null;                                   // exclusive lower bound
-  let from = cycle.startedAt || cls.startDate || null; // inclusive, first period only
-  for(let i=0;i<n;i++){
-    const to = dates[i] || null;
-    out.push({ idx:i, label:testLabelFor(cls,i), from:(after?null:from), after:after, to:to });
-    if(to) after = to;
+  const start = cycle.startedAt || cls.startDate || null;
+
+  if(isAdvancedLevel(cls.level)){
+    const end = dates[finalTestIdx(cls)] || null;
+    return [{ idx:0, label:'Term', endLabel:testLabelFor(cls, finalTestIdx(cls)),
+              testIdx:finalTestIdx(cls), from:start, after:null, to:end, isCurrent:true }];
   }
-  // Current = the first period whose test is still ahead (or undated).
-  // Once every test is written, the last period is the current one.
+
+  const n = testCountFor(cls);
+  const out = [];
+  let after = null;                 // exclusive lower bound (the previous test day)
+  for(let i=0;i<n;i++){
+    out.push({ idx:i, label:'Term '+(i+1), endLabel:testLabelFor(cls,i), testIdx:i,
+               from:(after?null:start), after:after, to:dates[i] || null });
+    if(dates[i]) after = dates[i];
+  }
+  // Current = the first term whose test is still ahead (or undated).
   let cur = out.findIndex(p => !p.to || p.to >= today);
   if(cur < 0) cur = out.length - 1;
   out.forEach((p,i)=>{ p.isCurrent = (i===cur); });
   return out;
 }
 
-// Attendance figures for one period, from a student's full record history.
+// Attendance figures for one term, from a student's full record history.
 function periodStats(records, p){
   const today = todayStr();
   const rows = records.filter(r=>{
@@ -2034,14 +2053,14 @@ function testPeriodCardHtml(info, pt){
   const tot = info.total;
   return `
     <div class="card section">
-      <h3>📅 ${pt?'Presença por prova':'Attendance by test period'}</h3>
+      <h3>📅 ${pt?'Presença por período':'Attendance by term'}</h3>
       <div class="chart-note" style="margin-bottom:8px;">${pt
-        ? 'Cada período vai até a prova que o encerra. O período atual mostra como o aluno está agora, e não só a média do semestre.'
-        : 'Each period runs up to the test that closes it. The current period shows how the student is attending now, not just the term average.'}</div>
+        ? 'Cada período vai do primeiro dia (ou do dia seguinte à prova anterior) até a prova que o encerra. O período atual mostra como o aluno está agora, e não só a média do curso.'
+        : 'Each term runs from day one — or the first class after the previous test — up to the test that closes it. The current term shows how the student is attending now, not just the course average.'}</div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>${pt?'Período':'Period'}</th>
+            <th>${pt?'Período':'Term'}</th>
             <th>${pt?'Datas':'Dates'}</th>
             <th style="text-align:center;">${pt?'Aulas':'Classes'}</th>
             <th style="text-align:center;">${pt?'Presenças':'Attended'}</th>
@@ -2051,7 +2070,7 @@ function testPeriodCardHtml(info, pt){
           </tr></thead>
           <tbody>
             ${rows.map(p=>`<tr${p.isCurrent?' style="background:var(--surface-alt,rgba(0,0,0,.035));"':''}>
-              <td style="font-weight:${p.isCurrent?'800':'600'};">${esc(p.label)}${p.isCurrent?` <span class="badge other" style="font-size:11px;">${pt?'atual':'current'}</span>`:''}</td>
+              <td style="font-weight:${p.isCurrent?'800':'600'};">${esc(p.label)}${p.isCurrent?` <span class="badge other" style="font-size:11px;">${pt?'atual':'current'}</span>`:''}${p.endLabel?`<div style="font-size:11px;font-weight:400;color:var(--muted);">${pt?'encerra com':'ends with'} ${esc(p.endLabel)}</div>`:''}</td>
               <td style="font-size:12px;color:var(--muted);">${periodRangeTxt(p, pt)}</td>
               <td style="text-align:center;">${p.classes||'—'}</td>
               <td style="text-align:center;">${p.classes?`${p.present}${p.rate!=null?` <span style="font-size:11px;color:var(--muted);">(${p.rate}%)</span>`:''}`:'—'}</td>
@@ -2151,7 +2170,7 @@ function essayReportCardHtml(info, pt){
       </tr>`).join('');
     const foot = `<tr>
         <td></td>
-        <td colspan="2" style="text-align:right;font-size:12px;color:var(--muted);">${pt?'Média do período':'Term average'}</td>
+        <td colspan="2" style="text-align:right;font-size:12px;color:var(--muted);">${pt?'Média do curso':'Course average'}</td>
         <td style="text-align:center;font-weight:800;">${cy.avg==null?'—':fmtEssay(cy.avg)}</td>
       </tr>`;
     return body + foot;
@@ -2165,7 +2184,7 @@ function essayReportCardHtml(info, pt){
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>${pt?'Período':'Term'}</th><th>${pt?'Redação':'Essay'}</th>
+            <th>${pt?'Curso':'Course'}</th><th>${pt?'Redação':'Essay'}</th>
             <th>${pt?'Tema':'Title'}</th><th style="text-align:center;">${pt?'Nota':'Score'}</th>
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -2560,7 +2579,7 @@ function toeflGroupTableHtml(cls, students, pt){
 function classGrades(classId){
   if(!state.grades[classId]) state.grades[classId] = { cycles: [] };
   const g = state.grades[classId];
-  if(!g.cycles.length) g.cycles.push({ id: uid(), label: 'Term 1', startedAt: todayStr(), scores: {} });
+  if(!g.cycles.length) g.cycles.push({ id: uid(), label: 'Course 1', startedAt: todayStr(), scores: {} });
   g.cycles.forEach(cy=>{ if(!cy.id) cy.id = uid(); });   // older records predate cycle ids
   return g;
 }
@@ -2583,11 +2602,20 @@ function gradeStatus(cls, cycle, studentId){
   const avg = Math.round((total/nums.length)*10)/10;
   const margin = gradeMargin();
   if(isAdvancedLevel(cls.level)){
+    /* The diagnostic is a baseline taken in week one — being under target there
+       is the normal starting point, not a warning. Only the real TOEFL at the
+       end of the term decides pass/fail, so only it can raise Contact Parents. */
     const target = TOEFL_TARGETS[cls.level];
-    const belowCount = nums.filter(v=>v<target).length;
-    const closeCount = nums.filter(v=>v>=target && v<target+margin).length;
-    return { advanced:true, target, total, avg, entered:nums.length, of:n, scores, entries,
-             under: belowCount>0, belowCount, close: belowCount===0 && closeCount>0, closeCount };
+    const fi = finalTestIdx(cls);
+    const diagnostic = scores[0] != null ? scores[0] : null;
+    const final = scores[fi] != null ? scores[fi] : null;
+    const gain = (diagnostic != null && final != null) ? final - diagnostic : null;
+    const gapToTarget = (target != null && diagnostic != null && final == null) ? target - diagnostic : null;
+    return { advanced:true, target, diagnostic, final, gain, gapToTarget,
+             total, avg, entered:nums.length, of:n, scores, entries,
+             pending: final == null,
+             under: final != null && final < target,
+             close: final != null && final >= target && final < target + margin };
   }
   return { advanced:false, target:CYCLE_AVG_TARGET, totalTarget:CYCLE_TOTAL_TARGET, total, avg, entered:nums.length, of:n, scores, entries,
            under: avg < CYCLE_AVG_TARGET, close: avg >= CYCLE_AVG_TARGET && avg < CYCLE_AVG_TARGET + margin };
@@ -2597,9 +2625,17 @@ function gradeStatusLine(st, lang){
   const pt = lang==='pt';
   const scoresTxt = st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ');
   if(st.advanced){
-    return `TOEFL ${scoresTxt} · ${pt?'meta':'target'} ${st.target}`
-      + (st.under ? (pt?` — ${st.belowCount} abaixo da meta`:` — ${st.belowCount} below target`)
-         : st.close ? (pt?' — perto da meta':' — close to the target') : '');
+    const d = st.diagnostic == null ? '—' : st.diagnostic;
+    const f = st.final == null ? '—' : st.final;
+    const gain = st.gain == null ? '' : ` (${st.gain>=0?'+':''}${st.gain})`;
+    return `${pt?'Diagnóstico':'Diagnostic'} ${d} → TOEFL ${f}${gain} · ${pt?'meta':'target'} ${st.target}`
+      + (st.under ? (pt?' — abaixo da meta':' — below target')
+         : st.close ? (pt?' — perto da meta':' — close to the target')
+         : st.gapToTarget != null
+            ? (st.gapToTarget > 0
+                 ? (pt?` — faltam ${st.gapToTarget} pontos`:` — ${st.gapToTarget} points to go`)
+                 : (pt?' — já na meta no diagnóstico':' — already at target on the diagnostic'))
+         : '');
   }
   return `${scoresTxt} · ${pt?'total':'total'} ${st.total}/${st.totalTarget} · ${pt?'média':'avg'} ${st.avg}`
     + (st.under ? (pt?' — abaixo da média 80':' — below the 80 average')
@@ -4298,8 +4334,8 @@ function renderGradesModal(){
   const ruleNote = !c.level
     ? `⚠ This class has no group tag yet, so it defaults to the 3-test / 240-point rule. <button type="button" class="linkish" onclick="closeModal();openClassModal('${c.id}')">Set the tag</button> for the right rules.`
     : adv
-      ? `TOEFL — 2 tests per term. Target for ${esc(c.level)}: <b>${target}</b> per test. Any test under the target flags Contact Parents${margin?` · passing scores under <b>${target+margin}</b> are flagged as "close"`:''}. Plus <b>2 essays</b> per term, scored 0–${ESSAY_MAX} — recorded and reported, but not counted towards status.`
-      : `3 tests per term — First, Second and Third · <b>240 points total</b> needed (average 80). An average under 80 flags Contact Parents${margin?` · averages under <b>${CYCLE_AVG_TARGET+margin}</b> are flagged as "close"`:''}.`;
+      ? `One term: a <b>diagnostic</b> in the first week sets the baseline, and the real <b>TOEFL</b> falls on the last class or the one before it. Target for ${esc(c.level)}: <b>${target}</b> — only the final TOEFL counts towards Contact Parents${margin?`, and passing scores under <b>${target+margin}</b> are flagged as "close"`:''}; the diagnostic never does. Plus <b>2 essays</b> during the term, scored 0–${ESSAY_MAX} — recorded and reported, not counted towards status.`
+      : `Three terms, each closed by its own test — First, Second, Third · <b>240 points total</b> needed (average 80). An average under 80 flags Contact Parents${margin?` · averages under <b>${CYCLE_AVG_TARGET+margin}</b> are flagged as "close"`:''}.`;
 
   window._gmIds = students.map(s=>s.id);
 
@@ -4310,14 +4346,14 @@ function renderGradesModal(){
     </div>
     <div style="font-size:13px;color:var(--muted);margin:8px 0 12px;">${ruleNote}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-      <label style="font-size:13px;font-weight:600;color:var(--muted);">Term:</label>
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Course:</label>
       ${g.cycles.length>1 ? `<select onchange="gmSelectCycle(this.value)">
         ${g.cycles.map((cy,i)=>`<option value="${i}" ${i===gmCycleIdx?'selected':''}>${esc(cy.label)} (${formatDateShort(cy.startedAt)})${i===g.cycles.length-1?' · current':''}</option>`).join('')}
       </select>` : `<span style="font-size:13px;font-weight:700;">${esc(cycle.label)}</span><span style="font-size:12px;color:var(--muted);">started ${formatDateShort(cycle.startedAt)}</span>`}
-      <button class="btn-ghost small" onclick="gmRenameCycle()" title="Rename this term">✏️ Rename</button>
-      <button class="btn-ghost small" onclick="gmNewCycle()" title="Start a fresh term — the current one stays saved">+ New term</button>
-      ${g.cycles.length>1?`<button class="btn-ghost small" style="color:var(--red);" onclick="gmDeleteCycle()" title="Delete this term">🗑 Delete</button>`:''}
-      ${!isCurrent?`<span class="badge other">Viewing a past term — still editable</span>`:''}
+      <button class="btn-ghost small" onclick="gmRenameCycle()" title="Rename this course">✏️ Rename</button>
+      <button class="btn-ghost small" onclick="gmNewCycle()" title="Start a fresh course — the current one stays saved">+ New course</button>
+      ${g.cycles.length>1?`<button class="btn-ghost small" style="color:var(--red);" onclick="gmDeleteCycle()" title="Delete this course">🗑 Delete</button>`:''}
+      ${!isCurrent?`<span class="badge other">Viewing a past course — still editable</span>`:''}
     </div>`;
 
   const body = adv ? gmAdvancedBody(c, cycle, students, n, target)
@@ -4370,6 +4406,13 @@ function gmStatusHtml(st, c, target){
   if(!st) return '<span style="color:var(--muted);font-size:12px;">—</span>';
   if(st.under) return `<span class="badge red">📞 ${adv?'Below '+target:'Avg under 80'}</span>`;
   if(st.close) return `<span class="badge amber">📞 ${adv?'Close to '+target:'Close to 80'}</span>`;
+  if(adv && st.pending){
+    // Diagnostic only so far — show the climb still needed, with no alarm.
+    if(st.gapToTarget == null) return `<span class="badge other">Diagnostic not taken</span>`;
+    return st.gapToTarget > 0
+      ? `<span class="badge other">Baseline set · ${st.gapToTarget} to go</span>`
+      : `<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">Baseline already at target</span>`;
+  }
   if(st.entered<st.of) return `<span class="badge other">On track (${st.entered}/${st.of})</span>`;
   return `<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${adv?'Target met':'Approved'}</span>`;
 }
@@ -4398,6 +4441,13 @@ function gmEssayTabSub(c, cycle, students){
   return done ? done+'/'+students.length+' done' : '0–'+ESSAY_MAX;
 }
 
+// Diagnostic -> TOEFL movement. The only combined figure worth showing.
+function gmGainHtml(st){
+  if(!st || st.gain == null) return '<span style="color:var(--muted);">—</span>';
+  const up = st.gain > 0, flat = st.gain === 0;
+  return `<b style="color:${flat?'var(--muted)':up?'var(--green)':'var(--red)'};">${up?'+':''}${st.gain}</b>`;
+}
+
 function gmSummaryTable(c, cycle, students, n, target){
   if(!students.length) return `<div class="empty">No students in this class yet.</div>`;
   const mocks = cycleMocks(cycle);
@@ -4412,7 +4462,7 @@ function gmSummaryTable(c, cycle, students, n, target){
   const official = `
     <div class="table-wrap mtable">
       <table>
-        <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;" title="Adding TOEFL scores together means nothing — this is the average of the tests taken">Average</th><th>Status</th></tr></thead>
+        <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;" title="How far the student moved from the diagnostic baseline to the real TOEFL">Change</th><th>Status</th></tr></thead>
         <tbody>
           ${students.map((s,si)=>{
             const entries = studentScores(cycle, s.id, n);
@@ -4425,7 +4475,7 @@ function gmSummaryTable(c, cycle, students, n, target){
                 const v = scoreValue(e);
                 return `<td style="text-align:center;"><input type="number" min="0" max="677" value="${v==null?'':v}" style="width:72px;text-align:center;" title="Type a final score directly, or open the ${esc(testLabelFor(c,ti))} tab to enter section answers" onchange="gmSetScore(window._gmIds[${si}], ${ti}, this.value)"></td>`;
               }).join('')}
-              <td style="text-align:center;">${st?st.avg:'—'}</td>
+              <td style="text-align:center;">${gmGainHtml(st)}</td>
               <td>${gmStatusHtml(st, c, target)}</td>
             </tr>`;
           }).join('')}
@@ -4735,7 +4785,7 @@ function gmEssaySummaryTable(c, cycle, students){
       <span style="font-size:12px;font-weight:700;color:var(--muted);">✍️ ESSAYS — 0–${ESSAY_MAX}, not counted towards status</span>
       <button type="button" class="linkish" onclick="gmSetTab('essays')">${any?'edit':'enter scores'}</button>
     </div>
-    ${!any ? `<div style="font-size:12.5px;color:var(--muted);">No essay scores in this term yet.</div>` : `
+    ${!any ? `<div style="font-size:12.5px;color:var(--muted);">No essay scores in this course yet.</div>` : `
     <div class="table-wrap mtable-sm">
       <table>
         <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${essayLabelFor(c,i)}${dates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(dates[i])}</div>`:''}${topics[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${esc(topics[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Avg</th></tr></thead>
@@ -4933,10 +4983,10 @@ function gmSelectCycle(idx){ gmCycleIdx = Number(idx); gmTab = 'summary'; render
 
 function gmNewCycle(){
   const g = classGrades(gmClassId);
-  if(!confirm('Start a new term?\n\nThe current term stays saved and selectable. Scores do NOT carry over — the new term starts empty.')) return;
-  const label = prompt('Name for the new term:', 'Term '+(g.cycles.length+1));
+  if(!confirm('Start a new course?\n\nThe current one stays saved and selectable. Scores do NOT carry over — the new course starts empty.')) return;
+  const label = prompt('Name for the new course:', 'Course '+(g.cycles.length+1));
   if(label===null) return;
-  g.cycles.push({ id: uid(), label: label.trim() || ('Term '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
+  g.cycles.push({ id: uid(), label: label.trim() || ('Course '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
   gmCycleIdx = g.cycles.length-1;
   gmTab = 'summary';
   scheduleSave('grades', state.grades);
@@ -4947,7 +4997,7 @@ function gmRenameCycle(){
   const g = classGrades(gmClassId);
   const cy = g.cycles[gmCycleIdx];
   if(!cy) return;
-  const label = prompt('Rename term:', cy.label);
+  const label = prompt('Rename course:', cy.label);
   if(label===null) return;
   const trimmed = label.trim();
   if(!trimmed) return;
@@ -4983,7 +5033,7 @@ function gmDeleteCycle(){
   const mockEvents = cycleMocks(cy).map(m=>m.eventId).filter(Boolean);
   const essayEvents = cycleEssays(cy) && cy.essayEventIds.filter(Boolean);
   const linked = (cy.testEventIds||[]).filter(Boolean).length + mockEvents.length + essayEvents.length;
-  if(!confirm(`Delete term "${cy.label}"?\n\nAll test scores in it will be removed${linked?`, along with ${linked} test event(s) on the Calendar`:''}.\n\nThis cannot be undone.`)) return;
+  if(!confirm(`Delete course "${cy.label}"?\n\nAll test scores in it will be removed${linked?`, along with ${linked} test event(s) on the Calendar`:''}.\n\nThis cannot be undone.`)) return;
   // Remove this cycle's linked calendar events.
   const evIds = new Set((cy.testEventIds||[]).filter(Boolean).concat(mockEvents).concat(essayEvents));
   if(evIds.size) state.events = state.events.filter(e=>!evIds.has(e.id));
@@ -6409,11 +6459,13 @@ function buildReportText(s, lang){
         + mark);
     });
     const tt = s.periods.total;
-    out.push(`- ${isPt?'ACUMULADO':'ACCUMULATED'}: ${tt.present}/${tt.classes} ${isPt?'presenças':'attended'}`
-      + (tt.rate!=null?` (${tt.rate}%)`:'')
-      + (tt.absent?`, ${tt.absent} ${isPt?'falta(s)':'absence(s)'}`:'')
-      + (tt.late?`, ${tt.late} ${isPt?'atraso(s)':'late'}`:'')
-      + (s.periods.avg!=null?` · ${isPt?'média':'avg'} ${s.periods.avg}`:''));
+    if(tt){
+      out.push(`- ${isPt?'ACUMULADO':'ACCUMULATED'}: ${tt.present}/${tt.classes} ${isPt?'presenças':'attended'}`
+        + (tt.rate!=null?` (${tt.rate}%)`:'')
+        + (tt.absent?`, ${tt.absent} ${isPt?'falta(s)':'absence(s)'}`:'')
+        + (tt.late?`, ${tt.late} ${isPt?'atraso(s)':'late'}`:'')
+        + (s.periods.avg!=null?` · ${isPt?'média':'avg'} ${s.periods.avg}`:''));
+    }
   }
 
   // --- essays ---
@@ -6682,19 +6734,22 @@ function renderStudentProfile(){
   if(cls){
     const gp = state.grades[cls.id];
     const term = (gp && gp.cycles && gp.cycles.length) ? gp.cycles[gp.cycles.length-1] : null;
-    const ps = term ? testPeriodsFor(cls, term) : [];
+    const ps = term ? termsFor(cls, term) : [];
     if(ps.length){
       const nT = testCountFor(cls);
       const sc = studentScores(term, student.id, nT).map(scoreValue);
-      const rows = ps.map((pp,i)=>Object.assign({}, pp, periodStats(dedupedRecords, pp), { score: sc[i] }));
+      const rows = ps.map(pp=>Object.assign({}, pp, periodStats(dedupedRecords, pp),
+                                            { score: sc[pp.testIdx != null ? pp.testIdx : pp.idx] }));
       const acc = rows.reduce((a,r)=>({ classes:a.classes+r.classes, present:a.present+r.present,
                                         absent:a.absent+r.absent, late:a.late+r.late }),
                               { classes:0, present:0, absent:0, late:0 });
       acc.rate = acc.classes ? Math.round(100*acc.present/acc.classes) : null;
       const gst = gradeStatus(cls, term, student.id);
       if(acc.classes || rows.some(r=>r.score!=null)){
-        periodInfo = { periods: rows, total: acc, termLabel: term.label,
-                       current: rows.find(r=>r.isCurrent) || null, avg: gst ? gst.avg : null };
+        periodInfo = { periods: rows, total: rows.length > 1 ? acc : null, termLabel: term.label,
+                       advanced: isAdvancedLevel(cls.level),
+                       current: rows.find(r=>r.isCurrent) || null,
+                       avg: (gst && !isAdvancedLevel(cls.level)) ? gst.avg : null };
       }
     }
   }
@@ -6903,10 +6958,10 @@ function renderStudentProfile(){
     <div class="card section" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
       <h3>📝 ${state.reportLang==='pt'?'Notas':'Test Grades'}${gradesInfo.level?` <span class="badge other" style="font-size:12px;vertical-align:middle;">${esc(gradesInfo.level)}</span>`:''}</h3>
       <div class="chart-note" style="margin-bottom:8px;">${gradesInfo.advanced
-        ? (state.reportLang==='pt' ? `TOEFL — meta por prova: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>` : `TOEFL — target per test: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>`)
+        ? (state.reportLang==='pt' ? `Diagnóstico na primeira semana · TOEFL no fim do período · meta: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>` : `Diagnostic in week one · real TOEFL at the end of the term · target: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>`)
         : (state.reportLang==='pt' ? `3 provas por período · <b>240 pontos</b> no total (média 80) para aprovação` : `3 tests per term · <b>240 points</b> total (average 80) to be approved`)}</div>
       <table>
-        <thead><tr><th>${state.reportLang==='pt'?'Período':'Term'}</th><th>${state.reportLang==='pt'?'Notas':'Scores'}</th>${gradesInfo.advanced?'':`<th style="text-align:center;">Total</th>`}<th style="text-align:center;">${state.reportLang==='pt'?'Média':'Average'}</th><th>Status</th></tr></thead>
+        <thead><tr><th>${state.reportLang==='pt'?'Curso':'Course'}</th><th>${state.reportLang==='pt'?'Notas':'Scores'}</th>${gradesInfo.advanced?'':`<th style="text-align:center;">Total</th>`}<th style="text-align:center;">${gradesInfo.advanced?(state.reportLang==='pt'?'Evolução':'Change'):(state.reportLang==='pt'?'Média':'Average')}</th><th>Status</th></tr></thead>
         <tbody>
           ${gradesInfo.cycles.map(cy=>{
             const st = cy.status;
@@ -6921,7 +6976,7 @@ function renderStudentProfile(){
               <td>${esc(cy.label)}${cy.isCurrent?` <span class="badge other" style="font-size:11px;">${state.reportLang==='pt'?'atual':'current'}</span>`:''}</td>
               <td>${st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ')}</td>
               ${gradesInfo.advanced?'':`<td style="text-align:center;">${st.total}</td>`}
-              <td style="text-align:center;">${st.avg}</td>
+              <td style="text-align:center;">${gradesInfo.advanced ? (st.gain==null?'—':`<b style="color:${st.gain>0?'var(--green)':st.gain<0?'var(--red)':'var(--muted)'};">${st.gain>0?'+':''}${st.gain}</b>`) : st.avg}</td>
               <td>${st.under?`<span class="badge red">📞 ${statusTxt}</span>`:st.close?`<span class="badge amber">📞 ${statusTxt}</span>`:(ok?`<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${statusTxt}</span>`:`<span class="badge other">${statusTxt}</span>`)}</td>
             </tr>`;
           }).join('')}
@@ -7444,7 +7499,7 @@ function exportGradesCsv(){
   const advCsv = isAdvancedLevel(c.level);
   const header = ['Student']
     .concat(...Array.from({length:n},(_,i)=>testCols(testLabelFor(c,i))))
-    .concat(advCsv ? ['Avg','Status'] : ['Total','Avg','Status'])
+    .concat(advCsv ? ['Change','Status'] : ['Total','Avg','Status'])
     .concat(essayHead)
     .concat(...mocks.map(m=>testCols((m.label||'Mock')+' (mock)')));
   const rows = [header].concat(students.map(s=>{
@@ -7456,7 +7511,7 @@ function exportGradesCsv(){
     const essayCells = en ? studentEssays(cycle, s.id, en).map(v=>v==null?'':v).concat([est?est.avg:'']) : [];
     return [s.name]
       .concat(...entries.map(cellCols))
-      .concat(advCsv ? [st?st.avg:'', statusTxt] : [st?st.total:'', st?st.avg:'', statusTxt])
+      .concat(advCsv ? [(st && st.gain!=null)?st.gain:'', statusTxt] : [st?st.total:'', st?st.avg:'', statusTxt])
       .concat(essayCells)
       .concat(...mocks.map(m=>cellCols((m.scores||{})[s.id])));
   }));
