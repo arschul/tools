@@ -1619,6 +1619,26 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('pagehide', flushSaves);
 window.addEventListener('focus', checkFreshnessOnFocus);
 
+/* Terms used to be called "cycles". Rename the stored labels (and the calendar
+   event titles that embed them) once, so nothing on screen says "cycle". */
+function migrateCycleLabels(){
+  let touched = false, events = false;
+  Object.values(state.grades || {}).forEach(g=>{
+    (g.cycles || []).forEach(cy=>{
+      const m = /^Cycle\s*(\d+)$/i.exec(cy.label || '');
+      if(m){ cy.label = 'Term ' + m[1]; touched = true; }
+    });
+  });
+  (state.events || []).forEach(ev=>{
+    if(ev.fromGrades && typeof ev.title === 'string' && /\u2014\s*Cycle\s*\d+$/i.test(ev.title)){
+      ev.title = ev.title.replace(/\u2014\s*Cycle\s*(\d+)$/i, '\u2014 Term $1');
+      events = true;
+    }
+  });
+  if(touched) scheduleSave('grades', state.grades);
+  if(events) scheduleSave('events', state.events);
+}
+
 /* ---------- appearance: themes + interface size ----------
    Stored in localStorage, not Supabase: these are per-device preferences
    (the phone used for roll call wants a different size than the desktop),
@@ -1949,7 +1969,111 @@ const TOEFL_TARGETS = {'Advanced 1':475,'Advanced 2':500,'Advanced 3':525,'Advan
 const CYCLE_TOTAL_TARGET = 240, CYCLE_AVG_TARGET = 80;
 function isAdvancedLevel(lv){ return /^Advanced /.test(lv||''); }
 function testCountFor(cls){ return isAdvancedLevel(cls?.level) ? 2 : 3; }
-function testLabelFor(cls, i){ return isAdvancedLevel(cls?.level) ? 'TOEFL '+(i+1) : 'Test '+(i+1); }
+/* The three tests ARE the periods of the term, so they're named as such
+   rather than numbered. Advanced keeps the TOEFL wording. */
+const TEST_ORDINALS = ['First','Second','Third','Fourth','Fifth','Sixth'];
+function testLabelFor(cls, i){
+  if(isAdvancedLevel(cls?.level)) return 'TOEFL '+(i+1);
+  return TEST_ORDINALS[i] ? TEST_ORDINALS[i]+' Test' : 'Test '+(i+1);
+}
+
+/* ================= TEST PERIODS =================
+   A term is divided by its tests: the stretch of classes leading up to the
+   First Test is the first period, and so on. Reports use these to show how a
+   student is attending *right now* — in the period they're currently in —
+   next to the accumulated figures for the whole term, which can hide a recent
+   slide behind a good start. */
+function testPeriodsFor(cls, cycle){
+  if(!cls || !cycle) return [];
+  const n = testCountFor(cls);
+  const dates = cycle.testDates || [];
+  const today = todayStr();
+  const out = [];
+  let after = null;                                   // exclusive lower bound
+  let from = cycle.startedAt || cls.startDate || null; // inclusive, first period only
+  for(let i=0;i<n;i++){
+    const to = dates[i] || null;
+    out.push({ idx:i, label:testLabelFor(cls,i), from:(after?null:from), after:after, to:to });
+    if(to) after = to;
+  }
+  // Current = the first period whose test is still ahead (or undated).
+  // Once every test is written, the last period is the current one.
+  let cur = out.findIndex(p => !p.to || p.to >= today);
+  if(cur < 0) cur = out.length - 1;
+  out.forEach((p,i)=>{ p.isCurrent = (i===cur); });
+  return out;
+}
+
+// Attendance figures for one period, from a student's full record history.
+function periodStats(records, p){
+  const today = todayStr();
+  const rows = records.filter(r=>{
+    if(p.after && r.date <= p.after) return false;
+    if(!p.after && p.from && r.date < p.from) return false;
+    return r.date <= (p.to || today);
+  });
+  const classes = rows.length;
+  const absent = rows.filter(r=>r.attendance==='absent').length;
+  const late = rows.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
+  const present = classes - absent;
+  return { classes, present, absent, late,
+           rate: classes ? Math.round((present/classes)*100) : null };
+}
+
+function periodRangeTxt(p, pt){
+  const a = p.after || p.from;
+  const from = a ? formatDateShort(a) : (pt?'início':'start');
+  const to = p.to ? formatDateShort(p.to) : (pt?'em curso':'ongoing');
+  return from + ' – ' + to;
+}
+
+/* --- "By test period" block for the individual student report --- */
+function testPeriodCardHtml(info, pt){
+  const rows = (info && info.periods) || [];
+  if(!rows.length) return '';
+  const tot = info.total;
+  return `
+    <div class="card section">
+      <h3>📅 ${pt?'Presença por prova':'Attendance by test period'}</h3>
+      <div class="chart-note" style="margin-bottom:8px;">${pt
+        ? 'Cada período vai até a prova que o encerra. O período atual mostra como o aluno está agora, e não só a média do semestre.'
+        : 'Each period runs up to the test that closes it. The current period shows how the student is attending now, not just the term average.'}</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>${pt?'Período':'Period'}</th>
+            <th>${pt?'Datas':'Dates'}</th>
+            <th style="text-align:center;">${pt?'Aulas':'Classes'}</th>
+            <th style="text-align:center;">${pt?'Presenças':'Attended'}</th>
+            <th style="text-align:center;">${pt?'Faltas':'Absences'}</th>
+            <th style="text-align:center;">${pt?'Atrasos':'Late'}</th>
+            <th style="text-align:center;">${pt?'Nota':'Score'}</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(p=>`<tr${p.isCurrent?' style="background:var(--surface-alt,rgba(0,0,0,.035));"':''}>
+              <td style="font-weight:${p.isCurrent?'800':'600'};">${esc(p.label)}${p.isCurrent?` <span class="badge other" style="font-size:11px;">${pt?'atual':'current'}</span>`:''}</td>
+              <td style="font-size:12px;color:var(--muted);">${periodRangeTxt(p, pt)}</td>
+              <td style="text-align:center;">${p.classes||'—'}</td>
+              <td style="text-align:center;">${p.classes?`${p.present}${p.rate!=null?` <span style="font-size:11px;color:var(--muted);">(${p.rate}%)</span>`:''}`:'—'}</td>
+              <td style="text-align:center;${p.absent?'color:var(--red);font-weight:700;':''}">${p.absent||'—'}</td>
+              <td style="text-align:center;${p.late?'color:var(--amber);font-weight:700;':''}">${p.late||'—'}</td>
+              <td style="text-align:center;font-weight:700;">${p.score==null?'<span style="color:var(--muted);font-weight:400;">—</span>':p.score}</td>
+            </tr>`).join('')}
+            ${tot ? `<tr style="border-top:2px solid var(--border);">
+              <td style="font-weight:800;">${pt?'Acumulado':'Accumulated'}</td>
+              <td style="font-size:12px;color:var(--muted);">${esc(info.termLabel||'')}</td>
+              <td style="text-align:center;font-weight:700;">${tot.classes||'—'}</td>
+              <td style="text-align:center;font-weight:700;">${tot.classes?`${tot.present}${tot.rate!=null?` <span style="font-size:11px;color:var(--muted);font-weight:400;">(${tot.rate}%)</span>`:''}`:'—'}</td>
+              <td style="text-align:center;font-weight:700;${tot.absent?'color:var(--red);':''}">${tot.absent||'—'}</td>
+              <td style="text-align:center;font-weight:700;${tot.late?'color:var(--amber);':''}">${tot.late||'—'}</td>
+              <td style="text-align:center;">${info.avg==null?'—':`<b>${info.avg}</b> <span style="font-size:11px;color:var(--muted);">${pt?'média':'avg'}</span>`}</td>
+            </tr>` : ''}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 
 /* ================= ESSAYS (Advanced classes) =================
    Advanced classes write 2 essays per cycle alongside their 2 TOEFL tests.
@@ -2027,7 +2151,7 @@ function essayReportCardHtml(info, pt){
       </tr>`).join('');
     const foot = `<tr>
         <td></td>
-        <td colspan="2" style="text-align:right;font-size:12px;color:var(--muted);">${pt?'Média do ciclo':'Cycle average'}</td>
+        <td colspan="2" style="text-align:right;font-size:12px;color:var(--muted);">${pt?'Média do período':'Term average'}</td>
         <td style="text-align:center;font-weight:800;">${cy.avg==null?'—':fmtEssay(cy.avg)}</td>
       </tr>`;
     return body + foot;
@@ -2036,12 +2160,12 @@ function essayReportCardHtml(info, pt){
     <div class="card section">
       <h3>✍️ ${pt?'Redações':'Essays'}</h3>
       <div class="chart-note" style="margin-bottom:8px;">${pt
-        ? `2 redações por ciclo · nota de 0 a ${ESSAY_MAX} (escala TWE). ${ESSAY_PASS} é o mínimo esperado. Não altera o status de aprovação.`
-        : `2 essays per cycle · scored 0–${ESSAY_MAX} (TWE scale). ${ESSAY_PASS} is the minimum expected. Does not change pass/fail status.`}</div>
+        ? `2 redações por período · nota de 0 a ${ESSAY_MAX} (escala TWE). ${ESSAY_PASS} é o mínimo esperado. Não altera o status de aprovação.`
+        : `2 essays per term · scored 0–${ESSAY_MAX} (TWE scale). ${ESSAY_PASS} is the minimum expected. Does not change pass/fail status.`}</div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>${pt?'Ciclo':'Cycle'}</th><th>${pt?'Redação':'Essay'}</th>
+            <th>${pt?'Período':'Term'}</th><th>${pt?'Redação':'Essay'}</th>
             <th>${pt?'Tema':'Title'}</th><th style="text-align:center;">${pt?'Nota':'Score'}</th>
           </tr></thead>
           <tbody>${rows}</tbody>
@@ -2436,7 +2560,7 @@ function toeflGroupTableHtml(cls, students, pt){
 function classGrades(classId){
   if(!state.grades[classId]) state.grades[classId] = { cycles: [] };
   const g = state.grades[classId];
-  if(!g.cycles.length) g.cycles.push({ id: uid(), label: 'Cycle 1', startedAt: todayStr(), scores: {} });
+  if(!g.cycles.length) g.cycles.push({ id: uid(), label: 'Term 1', startedAt: todayStr(), scores: {} });
   g.cycles.forEach(cy=>{ if(!cy.id) cy.id = uid(); });   // older records predate cycle ids
   return g;
 }
@@ -4174,8 +4298,8 @@ function renderGradesModal(){
   const ruleNote = !c.level
     ? `⚠ This class has no group tag yet, so it defaults to the 3-test / 240-point rule. <button type="button" class="linkish" onclick="closeModal();openClassModal('${c.id}')">Set the tag</button> for the right rules.`
     : adv
-      ? `TOEFL — 2 tests per cycle. Target for ${esc(c.level)}: <b>${target}</b> per test. Any test under the target flags Contact Parents${margin?` · passing scores under <b>${target+margin}</b> are flagged as "close"`:''}. Plus <b>2 essays</b> per cycle, scored 0–${ESSAY_MAX} — recorded and reported, but not counted towards status.`
-      : `3 tests per cycle · <b>240 points total</b> needed (average 80). An average under 80 flags Contact Parents${margin?` · averages under <b>${CYCLE_AVG_TARGET+margin}</b> are flagged as "close"`:''}.`;
+      ? `TOEFL — 2 tests per term. Target for ${esc(c.level)}: <b>${target}</b> per test. Any test under the target flags Contact Parents${margin?` · passing scores under <b>${target+margin}</b> are flagged as "close"`:''}. Plus <b>2 essays</b> per term, scored 0–${ESSAY_MAX} — recorded and reported, but not counted towards status.`
+      : `3 tests per term — First, Second and Third · <b>240 points total</b> needed (average 80). An average under 80 flags Contact Parents${margin?` · averages under <b>${CYCLE_AVG_TARGET+margin}</b> are flagged as "close"`:''}.`;
 
   window._gmIds = students.map(s=>s.id);
 
@@ -4186,14 +4310,14 @@ function renderGradesModal(){
     </div>
     <div style="font-size:13px;color:var(--muted);margin:8px 0 12px;">${ruleNote}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-      <label style="font-size:13px;font-weight:600;color:var(--muted);">Cycle:</label>
-      <select onchange="gmSelectCycle(this.value)">
+      <label style="font-size:13px;font-weight:600;color:var(--muted);">Term:</label>
+      ${g.cycles.length>1 ? `<select onchange="gmSelectCycle(this.value)">
         ${g.cycles.map((cy,i)=>`<option value="${i}" ${i===gmCycleIdx?'selected':''}>${esc(cy.label)} (${formatDateShort(cy.startedAt)})${i===g.cycles.length-1?' · current':''}</option>`).join('')}
-      </select>
-      <button class="btn-ghost small" onclick="gmRenameCycle()" title="Rename this cycle">✏️ Rename</button>
-      <button class="btn-ghost small" onclick="gmNewCycle()">+ New cycle</button>
-      ${g.cycles.length>1?`<button class="btn-ghost small" style="color:var(--red);" onclick="gmDeleteCycle()" title="Delete this cycle">🗑 Delete</button>`:''}
-      ${!isCurrent?`<span class="badge other">Viewing a past cycle — still editable</span>`:''}
+      </select>` : `<span style="font-size:13px;font-weight:700;">${esc(cycle.label)}</span><span style="font-size:12px;color:var(--muted);">started ${formatDateShort(cycle.startedAt)}</span>`}
+      <button class="btn-ghost small" onclick="gmRenameCycle()" title="Rename this term">✏️ Rename</button>
+      <button class="btn-ghost small" onclick="gmNewCycle()" title="Start a fresh term — the current one stays saved">+ New term</button>
+      ${g.cycles.length>1?`<button class="btn-ghost small" style="color:var(--red);" onclick="gmDeleteCycle()" title="Delete this term">🗑 Delete</button>`:''}
+      ${!isCurrent?`<span class="badge other">Viewing a past term — still editable</span>`:''}
     </div>`;
 
   const body = adv ? gmAdvancedBody(c, cycle, students, n, target)
@@ -4288,7 +4412,7 @@ function gmSummaryTable(c, cycle, students, n, target){
   const official = `
     <div class="table-wrap mtable">
       <table>
-        <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Total</th><th style="text-align:center;">Avg</th><th>Status</th></tr></thead>
+        <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${testLabelFor(c,i)}${testDates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(testDates[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;" title="Adding TOEFL scores together means nothing — this is the average of the tests taken">Average</th><th>Status</th></tr></thead>
         <tbody>
           ${students.map((s,si)=>{
             const entries = studentScores(cycle, s.id, n);
@@ -4301,7 +4425,6 @@ function gmSummaryTable(c, cycle, students, n, target){
                 const v = scoreValue(e);
                 return `<td style="text-align:center;"><input type="number" min="0" max="677" value="${v==null?'':v}" style="width:72px;text-align:center;" title="Type a final score directly, or open the ${esc(testLabelFor(c,ti))} tab to enter section answers" onchange="gmSetScore(window._gmIds[${si}], ${ti}, this.value)"></td>`;
               }).join('')}
-              <td style="text-align:center;">${st?st.total:'—'}</td>
               <td style="text-align:center;">${st?st.avg:'—'}</td>
               <td>${gmStatusHtml(st, c, target)}</td>
             </tr>`;
@@ -4546,7 +4669,7 @@ function gmEssayBody(c, cycle, students, target){
   const dates = cycle.essayDates, topics = cycle.essayTopics;
   const meta = `
     <div class="card" style="padding:12px 14px;margin-bottom:12px;">
-      <div style="font-weight:800;font-size:15px;margin-bottom:2px;">✍️ Essays — ${n} per cycle, scored 0–${ESSAY_MAX}</div>
+      <div style="font-weight:800;font-size:15px;margin-bottom:2px;">✍️ Essays — ${n} per term, scored 0–${ESSAY_MAX}</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Scheduling a date adds an Essay day to the Calendar.</div>
       <div style="display:grid;gap:10px;">
         ${Array.from({length:n},(_,i)=>`
@@ -4612,7 +4735,7 @@ function gmEssaySummaryTable(c, cycle, students){
       <span style="font-size:12px;font-weight:700;color:var(--muted);">✍️ ESSAYS — 0–${ESSAY_MAX}, not counted towards status</span>
       <button type="button" class="linkish" onclick="gmSetTab('essays')">${any?'edit':'enter scores'}</button>
     </div>
-    ${!any ? `<div style="font-size:12.5px;color:var(--muted);">No essay scores in this cycle yet.</div>` : `
+    ${!any ? `<div style="font-size:12.5px;color:var(--muted);">No essay scores in this term yet.</div>` : `
     <div class="table-wrap mtable-sm">
       <table>
         <thead><tr><th>Student</th>${Array.from({length:n},(_,i)=>`<th style="text-align:center;">${essayLabelFor(c,i)}${dates[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${formatDateShort(dates[i])}</div>`:''}${topics[i]?`<div style="font-weight:400;font-size:11px;color:var(--muted);">${esc(topics[i])}</div>`:''}</th>`).join('')}<th style="text-align:center;">Avg</th></tr></thead>
@@ -4810,10 +4933,10 @@ function gmSelectCycle(idx){ gmCycleIdx = Number(idx); gmTab = 'summary'; render
 
 function gmNewCycle(){
   const g = classGrades(gmClassId);
-  if(!confirm('Start a new grading cycle?\n\nThe current cycle stays saved and selectable. Scores do NOT carry over — the new cycle starts empty.')) return;
-  const label = prompt('Name for the new cycle:', 'Cycle '+(g.cycles.length+1));
+  if(!confirm('Start a new term?\n\nThe current term stays saved and selectable. Scores do NOT carry over — the new term starts empty.')) return;
+  const label = prompt('Name for the new term:', 'Term '+(g.cycles.length+1));
   if(label===null) return;
-  g.cycles.push({ id: uid(), label: label.trim() || ('Cycle '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
+  g.cycles.push({ id: uid(), label: label.trim() || ('Term '+(g.cycles.length+1)), startedAt: todayStr(), scores: {} });
   gmCycleIdx = g.cycles.length-1;
   gmTab = 'summary';
   scheduleSave('grades', state.grades);
@@ -4824,7 +4947,7 @@ function gmRenameCycle(){
   const g = classGrades(gmClassId);
   const cy = g.cycles[gmCycleIdx];
   if(!cy) return;
-  const label = prompt('Rename cycle:', cy.label);
+  const label = prompt('Rename term:', cy.label);
   if(label===null) return;
   const trimmed = label.trim();
   if(!trimmed) return;
@@ -4860,7 +4983,7 @@ function gmDeleteCycle(){
   const mockEvents = cycleMocks(cy).map(m=>m.eventId).filter(Boolean);
   const essayEvents = cycleEssays(cy) && cy.essayEventIds.filter(Boolean);
   const linked = (cy.testEventIds||[]).filter(Boolean).length + mockEvents.length + essayEvents.length;
-  if(!confirm(`Delete cycle "${cy.label}"?\n\nAll test scores in it will be removed${linked?`, along with ${linked} test event(s) on the Calendar`:''}.\n\nThis cannot be undone.`)) return;
+  if(!confirm(`Delete term "${cy.label}"?\n\nAll test scores in it will be removed${linked?`, along with ${linked} test event(s) on the Calendar`:''}.\n\nThis cannot be undone.`)) return;
   // Remove this cycle's linked calendar events.
   const evIds = new Set((cy.testEventIds||[]).filter(Boolean).concat(mockEvents).concat(essayEvents));
   if(evIds.size) state.events = state.events.filter(e=>!evIds.has(e.id));
@@ -6270,6 +6393,29 @@ function buildReportText(s, lang){
     }
   }
 
+  // --- attendance by test period ---
+  if(s.periods && s.periods.periods.length){
+    out.push('');
+    out.push(isPt ? 'PRESENÇA POR PROVA' : 'ATTENDANCE BY TEST PERIOD');
+    s.periods.periods.forEach(pp=>{
+      const mark = pp.isCurrent ? (isPt ? '  << período atual' : '  << current period') : '';
+      out.push(`- ${pp.label} (${periodRangeTxt(pp, isPt)}): `
+        + (pp.classes
+            ? `${pp.present}/${pp.classes} ${isPt?'presenças':'attended'}`
+              + (pp.absent ? `, ${pp.absent} ${isPt?'falta(s)':'absence(s)'}` : '')
+              + (pp.late ? `, ${pp.late} ${isPt?'atraso(s)':'late'}` : '')
+            : (isPt ? 'sem aulas registradas' : 'no classes recorded'))
+        + (pp.score!=null ? ` · ${isPt?'nota':'score'} ${pp.score}` : '')
+        + mark);
+    });
+    const tt = s.periods.total;
+    out.push(`- ${isPt?'ACUMULADO':'ACCUMULATED'}: ${tt.present}/${tt.classes} ${isPt?'presenças':'attended'}`
+      + (tt.rate!=null?` (${tt.rate}%)`:'')
+      + (tt.absent?`, ${tt.absent} ${isPt?'falta(s)':'absence(s)'}`:'')
+      + (tt.late?`, ${tt.late} ${isPt?'atraso(s)':'late'}`:'')
+      + (s.periods.avg!=null?` · ${isPt?'média':'avg'} ${s.periods.avg}`:''));
+  }
+
   // --- essays ---
   if(s.essays && s.essays.cycles && s.essays.cycles.length){
     out.push('');
@@ -6528,6 +6674,31 @@ function renderStudentProfile(){
     if(cycE.length) essayInfo = { level: cls.level||null, cycles: cycE };
   }
 
+  /* Presence broken down by test period. The accumulated figures above cover
+     the whole term, which can hide a recent slide behind a strong start — so
+     the report also shows where the student stands in the period they are in
+     right now. Computed from the full history, not the report date range. */
+  let periodInfo = null;
+  if(cls){
+    const gp = state.grades[cls.id];
+    const term = (gp && gp.cycles && gp.cycles.length) ? gp.cycles[gp.cycles.length-1] : null;
+    const ps = term ? testPeriodsFor(cls, term) : [];
+    if(ps.length){
+      const nT = testCountFor(cls);
+      const sc = studentScores(term, student.id, nT).map(scoreValue);
+      const rows = ps.map((pp,i)=>Object.assign({}, pp, periodStats(dedupedRecords, pp), { score: sc[i] }));
+      const acc = rows.reduce((a,r)=>({ classes:a.classes+r.classes, present:a.present+r.present,
+                                        absent:a.absent+r.absent, late:a.late+r.late }),
+                              { classes:0, present:0, absent:0, late:0 });
+      acc.rate = acc.classes ? Math.round(100*acc.present/acc.classes) : null;
+      const gst = gradeStatus(cls, term, student.id);
+      if(acc.classes || rows.some(r=>r.score!=null)){
+        periodInfo = { periods: rows, total: acc, termLabel: term.label,
+                       current: rows.find(r=>r.isCurrent) || null, avg: gst ? gst.avg : null };
+      }
+    }
+  }
+
   // TOEFL attempt history (official tests + mocks), Advanced classes only.
   let toeflInfo = null;
   if(cls && isAdvancedLevel(cls.level)){
@@ -6539,6 +6710,7 @@ function renderStudentProfile(){
   lastReportStats = {
     name: student.name, className: cls?cls.name:null,
     grades: gradesInfo,
+    periods: periodInfo,
     essays: essayInfo,
     toefl: toeflInfo,
     activityNotes: cls ? studentActivityGrades(student.id, cls.id)
@@ -6726,14 +6898,15 @@ function renderStudentProfile(){
       })()}
     </div>`;
     })()}
+    ${periodInfo ? testPeriodCardHtml(periodInfo, state.reportLang==='pt') : ''}
     ${gradesInfo ? `
     <div class="card section" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
       <h3>📝 ${state.reportLang==='pt'?'Notas':'Test Grades'}${gradesInfo.level?` <span class="badge other" style="font-size:12px;vertical-align:middle;">${esc(gradesInfo.level)}</span>`:''}</h3>
       <div class="chart-note" style="margin-bottom:8px;">${gradesInfo.advanced
         ? (state.reportLang==='pt' ? `TOEFL — meta por prova: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>` : `TOEFL — target per test: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>`)
-        : (state.reportLang==='pt' ? `3 provas por ciclo · <b>240 pontos</b> no total (média 80) para aprovação` : `3 tests per cycle · <b>240 points</b> total (average 80) to be approved`)}</div>
+        : (state.reportLang==='pt' ? `3 provas por período · <b>240 pontos</b> no total (média 80) para aprovação` : `3 tests per term · <b>240 points</b> total (average 80) to be approved`)}</div>
       <table>
-        <thead><tr><th>${state.reportLang==='pt'?'Ciclo':'Cycle'}</th><th>${state.reportLang==='pt'?'Notas':'Scores'}</th><th style="text-align:center;">Total</th><th style="text-align:center;">${state.reportLang==='pt'?'Média':'Average'}</th><th>Status</th></tr></thead>
+        <thead><tr><th>${state.reportLang==='pt'?'Período':'Term'}</th><th>${state.reportLang==='pt'?'Notas':'Scores'}</th>${gradesInfo.advanced?'':`<th style="text-align:center;">Total</th>`}<th style="text-align:center;">${state.reportLang==='pt'?'Média':'Average'}</th><th>Status</th></tr></thead>
         <tbody>
           ${gradesInfo.cycles.map(cy=>{
             const st = cy.status;
@@ -6747,7 +6920,7 @@ function renderStudentProfile(){
             return `<tr>
               <td>${esc(cy.label)}${cy.isCurrent?` <span class="badge other" style="font-size:11px;">${state.reportLang==='pt'?'atual':'current'}</span>`:''}</td>
               <td>${st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ')}</td>
-              <td style="text-align:center;">${st.total}</td>
+              ${gradesInfo.advanced?'':`<td style="text-align:center;">${st.total}</td>`}
               <td style="text-align:center;">${st.avg}</td>
               <td>${st.under?`<span class="badge red">📞 ${statusTxt}</span>`:st.close?`<span class="badge amber">📞 ${statusTxt}</span>`:(ok?`<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${statusTxt}</span>`:`<span class="badge other">${statusTxt}</span>`)}</td>
             </tr>`;
@@ -7268,9 +7441,10 @@ function exportGradesCsv(){
   const en = essayCountFor(c);
   if(en) cycleEssays(cycle);
   const essayHead = en ? Array.from({length:en},(_,i)=>essayLabelFor(c,i)+((cycle.essayTopics||[])[i]?' ('+cycle.essayTopics[i]+')':'')).concat(['Essay avg']) : [];
+  const advCsv = isAdvancedLevel(c.level);
   const header = ['Student']
     .concat(...Array.from({length:n},(_,i)=>testCols(testLabelFor(c,i))))
-    .concat(['Total','Avg','Status'])
+    .concat(advCsv ? ['Avg','Status'] : ['Total','Avg','Status'])
     .concat(essayHead)
     .concat(...mocks.map(m=>testCols((m.label||'Mock')+' (mock)')));
   const rows = [header].concat(students.map(s=>{
@@ -7282,7 +7456,7 @@ function exportGradesCsv(){
     const essayCells = en ? studentEssays(cycle, s.id, en).map(v=>v==null?'':v).concat([est?est.avg:'']) : [];
     return [s.name]
       .concat(...entries.map(cellCols))
-      .concat([st?st.total:'', st?st.avg:'', statusTxt])
+      .concat(advCsv ? [st?st.avg:'', statusTxt] : [st?st.total:'', st?st.avg:'', statusTxt])
       .concat(essayCells)
       .concat(...mocks.map(m=>cellCols((m.scores||{})[s.id])));
   }));
@@ -8939,6 +9113,7 @@ async function init(){
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
+  migrateCycleLabels();
   dataReady = true;   // writes unlocked only now
   renderSaveState();  // paint the Save buttons / indicators from the moment writing is possible
 
