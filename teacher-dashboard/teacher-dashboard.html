@@ -925,7 +925,8 @@ const T = {
     attended: 'attended',
     attendedRecorded: 'of recorded',
     basedOn: n => `Based on ${n} recorded session${n===1?'':'s'}.`,
-    basedOnHw: n => `Based on the ${n} class${n===1?'':'es'} where homework was assigned.`,
+    basedOnHw: n => `Based on the ${n} class${n===1?'':'es'} where homework was assigned`,
+    noHwCountShort: n => `${n} more had none assigned`,
     noHwSet: 'not assigned',
     hwLegend: n => `<b>“not assigned”</b> means the teacher gave no homework that week. It is not missed homework and is left out of the average — ${n} class${n===1?'':'es'} in this period had none. Where homework was assigned, the percentage is what the student handed in: <b>100%</b> complete, <b>0%</b> not done.`,
     hwLegendNone: '<b>“not assigned”</b> means the teacher gave no homework that week. It is not missed homework and is left out of the average. Where homework was assigned, the percentage is what the student handed in: <b>100%</b> complete, <b>0%</b> not done.',
@@ -1012,7 +1013,8 @@ const T = {
     attended: 'de presença',
     attendedRecorded: 'de sessões',
     basedOn: n => `Com base em ${n} aula${n===1?'':'s'} registrada${n===1?'':'s'}.`,
-    basedOnHw: n => `Com base nas ${n} aula${n===1?'':'s'} em que houve dever de casa.`,
+    basedOnHw: n => `Com base nas ${n} aula${n===1?'':'s'} em que houve dever de casa`,
+    noHwCountShort: n => `mais ${n} sem dever passado`,
     noHwSet: 'não houve dever',
     hwLegend: n => `<b>“não houve dever”</b> quer dizer que o professor não passou dever naquela semana. Não é dever deixado de fazer pelo aluno, e não entra na média — ${n} aula${n===1?'':'s'} deste período ficou${n===1?'':'ram'} nessa situação. Quando houve dever, a porcentagem é o que o aluno entregou: <b>100%</b> completo, <b>0%</b> não feito.`,
     hwLegendNone: '<b>“não houve dever”</b> quer dizer que o professor não passou dever naquela semana. Não é dever deixado de fazer pelo aluno, e não entra na média. Quando houve dever, a porcentagem é o que o aluno entregou: <b>100%</b> completo, <b>0%</b> não feito.',
@@ -2862,6 +2864,21 @@ function attendanceRate(expected, absent, present, late){
   if(recorded) return { rate: Math.round(100*present/recorded), basis:'recorded' };
   return { rate: null, basis:'recorded' };
 }
+/* Classroom time runs to thousands of minutes, which nobody can picture.
+   Show the exact minutes and the same figure in hours. */
+function fmtHours(mins){
+  const m = Math.max(0, Math.round(mins||0));
+  if(m < 60) return m + ' min';
+  const h = Math.floor(m/60), r = m%60;
+  return r ? h+'h '+r+'min' : h+'h';
+}
+function fmtMinsAndHours(mins){
+  const m = Math.max(0, Math.round(mins||0));
+  return m < 60 ? (m+' min') : (fmtNum(m)+' min ('+fmtHours(m)+')');
+}
+// 1.240 for a report in Portuguese, 1,240 in English.
+function fmtNum(n){ return Number(n).toLocaleString(state.reportLang==='pt' ? 'pt-BR' : 'en-US'); }
+
 function renderDonut(slices, centerLabel, centerSub){
   const total = slices.reduce((s,x)=>s+x.value,0);
   const size=140, stroke=20, r=(size-stroke)/2, c=2*Math.PI*r;
@@ -2882,7 +2899,7 @@ function renderDonut(slices, centerLabel, centerSub){
         </div>
       </div>
       <div class="donut-legend">
-        ${slices.map(sl=>`<div class="legend-item"><svg width="10" height="10" viewBox="0 0 10 10" style="flex-shrink:0;"><circle cx="5" cy="5" r="5" fill="${sl.color}"/></svg>${sl.label}: ${sl.value}${sl.unit||''}${total?` (${Math.round(sl.value/total*100)}%)`:''}</div>`).join('')}
+        ${slices.map(sl=>`<div class="legend-item"><svg width="10" height="10" viewBox="0 0 10 10" style="flex-shrink:0;"><circle cx="5" cy="5" r="5" fill="${sl.color}"/></svg>${sl.label}: ${sl.display || (sl.value + (sl.unit||''))}${total?` (${Math.round(sl.value/total*100)}%)`:''}</div>`).join('')}
       </div>
     </div>`;
 }
@@ -6901,17 +6918,16 @@ function renderStudentProfile(){
           return t.outOfMixed(totalPossibleMin, breakdown);
         })()}</div>
         ${renderDonut([
-          {label:t.inClass, value:inClassMin, color:'var(--green)', unit:' min'},
-          {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', unit:' min'},
-          {label:t.leftEarly, value:lostEarlyMin, color:'var(--purple)', unit:' min'},
-          {label:t.absent, value:absentMin, color:'var(--red)', unit:' min'}
-        ], (lostLateMin+lostEarlyMin+absentMin)+' min', t.timeMissed)}
+          {label:t.inClass, value:inClassMin, color:'var(--green)', display:fmtMinsAndHours(inClassMin)},
+          {label:t.lateArrivals, value:lostLateMin, color:'var(--amber)', display:fmtMinsAndHours(lostLateMin)},
+          {label:t.leftEarly, value:lostEarlyMin, color:'var(--purple)', display:fmtMinsAndHours(lostEarlyMin)},
+          {label:t.absent, value:absentMin, color:'var(--red)', display:fmtMinsAndHours(absentMin)}
+        ], fmtHours(lostLateMin+lostEarlyMin+absentMin), fmtNum(lostLateMin+lostEarlyMin+absentMin)+' min · '+t.timeMissed)}
       </div>
       ${hwRecords.length ? `
       <div class="card chart-card">
         <h3>${t.homeworkDone}</h3>
-        <div class="chart-note">${t.basedOnHw(hwRecords.length)}${hwAvgOnTime!=null && hwAvgOnTime!==hwAvg?` · ${t.onTimeWas(hwAvgOnTime)}`:''}</div>
-        <div class="chart-note" style="margin-top:-2px;">${noHwCount ? t.hwLegend(noHwCount) : t.hwLegendNone}</div>
+        <div class="chart-note">${t.basedOnHw(hwRecords.length)}${hwAvgOnTime!=null && hwAvgOnTime!==hwAvg?` · ${t.onTimeWas(hwAvgOnTime)}`:''}${noHwCount?` · ${t.noHwCountShort(noHwCount)}`:''}</div>
         ${(()=>{
           const avg = hwAvg??0;
           return renderDonut([
@@ -7045,7 +7061,7 @@ function renderStudentProfile(){
     <div class="card section">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
-      ${total ? `<div class="lost-summary" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${t.timeLost}: <b>${totalLostMin} min ≈ ${lostEquivClasses} ${t.equivClasses}</b>${expected?` (${t.of} ${expected} ${t.expectedShort})`:''}.</div>` : ''}
+      ${total ? `<div class="lost-summary" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${t.timeLost}: <b>${fmtMinsAndHours(totalLostMin)} ≈ ${lostEquivClasses} ${t.equivClasses}</b>${expected?` (${t.of} ${expected} ${t.expectedShort})`:''}.</div>` : ''}
     </div>
     ${(student.contactParents?.reason || student.contactParentsHistory?.length) ? `
     <div class="card section" style="border-left:4px solid var(--red);">
