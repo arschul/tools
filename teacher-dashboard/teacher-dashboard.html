@@ -925,6 +925,10 @@ const T = {
     attended: 'attended',
     attendedRecorded: 'of recorded',
     basedOn: n => `Based on ${n} recorded session${n===1?'':'s'}.`,
+    basedOnHw: n => `Based on the ${n} class${n===1?'':'es'} that had homework set.`,
+    noHwSet: 'none set',
+    hwLegend: n => `Homework only counts when it was set. ${n} class${n===1?'':'es'} in this period had no homework assigned — those show as “none set” and are left out of the average. They are not missed homework. <b>0%</b> means homework was set and not handed in.`,
+    hwLegendNone: 'Homework only counts when it was set. Classes with no homework assigned show as “none set” and are left out of the average — they are not missed homework. <b>0%</b> means homework was set and not handed in.',
     timeInClass: 'Time in class',
     timeMissed: 'time missed',
     outOf: (possible, n, dur) => `Out of ${possible} min possible (${n} session${n===1?'':'s'} × ${dur} min).`,
@@ -1008,6 +1012,10 @@ const T = {
     attended: 'de presença',
     attendedRecorded: 'de sessões',
     basedOn: n => `Com base em ${n} aula${n===1?'':'s'} registrada${n===1?'':'s'}.`,
+    basedOnHw: n => `Com base nas ${n} aula${n===1?'':'s'} em que houve dever de casa.`,
+    noHwSet: 'sem dever',
+    hwLegend: n => `O dever só entra na conta quando foi passado. ${n} aula${n===1?'':'s'} deste período não teve${n===1?'':'ram'} dever — aparece${n===1?'':'m'} como “sem dever” e fica${n===1?'':'m'} fora da média. Não é dever não feito. <b>0%</b> significa que o dever foi passado e não foi entregue.`,
+    hwLegendNone: 'O dever só entra na conta quando foi passado. Aulas sem dever aparecem como “sem dever” e ficam fora da média — não são dever não feito. <b>0%</b> significa que o dever foi passado e não foi entregue.',
     timeInClass: 'Tempo em aula',
     timeMissed: 'tempo perdido',
     outOf: (possible, n, dur) => `De ${possible} min possíveis (${n} aula${n===1?'':'s'} × ${dur} min).`,
@@ -2731,7 +2739,7 @@ function studentAttendanceRecords(student){
     if(!sessionHappened(classId, date)) continue;
     consider(classId, date, assumedRecord());
   }
-  return annotateLateHw([...map.values()].sort((a,b)=>b.date.localeCompare(a.date)));
+  return annotateLateHw(annotateHwAssigned([...map.values()].sort((a,b)=>b.date.localeCompare(a.date))));
 }
 
 function getPreviousClassDate(cls, fromDateStr){
@@ -5528,6 +5536,35 @@ function attendanceMonthly(records, maxMonths=8){
     .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(100*by[k].p/(by[k].p+by[k].a)), n: by[k].p+by[k].a }));
 }
 function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
+/* ===== Was homework even set? =====
+   Homework is written on the day it's given and is due the NEXT class, so a
+   session only owes homework if the previous session of the same class had the
+   "Homework to assign (due next class)" field filled in. Sessions with nothing
+   set are marked _hwAssigned:false and stay out of every average.
+   Without this, a class where no homework was given still scored 100% (the
+   roll-call default) or showed a dash that reads, to a parent, as if the
+   student had failed to do it. */
+/* What homework is due at the class meeting on `date` — i.e. whatever was
+   written in the previous meeting's "Homework to assign" box. '' means none. */
+function hwDueOn(classId, date){
+  const c = classById(classId);
+  const prev = c ? getPreviousClassDate(c, date) : null;
+  return prev ? String(getHomework(classId, prev) || '').trim() : '';
+}
+
+function annotateHwAssigned(sorted){
+  sorted.forEach((r, i)=>{
+    let prevDate = null;
+    for(let j=i+1; j<sorted.length; j++){        // newest-first: later entries are earlier dates
+      if(sorted[j]._classId === r._classId){ prevDate = sorted[j].date; break; }
+    }
+    const text = prevDate ? String(getHomework(r._classId, prevDate) || '').trim() : '';
+    r._hwPrevDate = prevDate;
+    r._hwAssigned = !!text;                      // false also covers a student's very first class
+    if(text) r._hwText = text;
+  });
+  return sorted;
+}
 /* ===== Late homework =====
    The stored percentage is never rewritten — it records what was handed in on
    the day. But homework brought in late IS done, so every average reads through
@@ -5539,9 +5576,21 @@ function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 1
    absence — stay out of the average either way; they still show in the late
    donut so the outcome isn't lost. */
 function hwEffOf(r){
+  if(r._hwAssigned === false) return null;       // no homework was set for that class
   if(r._hwEff != null) return r._hwEff;
   return r.hw == null ? null : hwValueOf(r);
 }
+/* The three states a homework cell can be in, kept apart on purpose. */
+function hwCellHtml(r, pt){
+  if(r._hwAssigned === false)
+    return `<span style="color:var(--muted);font-size:11px;font-style:italic;" title="${pt?'Nenhum dever foi passado para esta aula':'No homework was set for this class'}">${pt?'sem dever':'none set'}</span>`;
+  if(r.hw == null)
+    return `<span style="color:var(--muted);" title="${pt?'Não registrado':'Not recorded'}">—</span>`;
+  const v = hwValueOf(r);
+  const col = v >= 100 ? 'var(--green)' : v === 0 ? 'var(--red)' : 'var(--amber)';
+  return `<span style="font-weight:700;color:${col};">${v}%</span>`;
+}
+
 function annotateLateHw(sorted){
   const byDate = new Map(sorted.map(r=>[r.date, r]));
   sorted.forEach((r, i)=>{
@@ -6002,6 +6051,7 @@ function toggleSessionCompleted(classId, date){
 function renderCompactRoster(cls, students, recFor, hwPending, locked){
   const pts = classPointsEnabled(cls.id);
   const anyMissed = students.some(s=>hwPending.has(s.id));
+  const hwDue = hwDueOn(cls.id, state.rollcall.date);
   const dis = locked ? 'disabled' : '';
   const head = `
     <tr>
@@ -6011,7 +6061,7 @@ function renderCompactRoster(cls, students, recFor, hwPending, locked){
       <th title="Minutes late">Late</th>
       <th title="Minutes left early">Left</th>
       <th title="Phone used (times)">📱</th>
-      <th title="Homework %">HW%</th>
+      <th title="${hwDue ? 'Due today: '+esc(hwDue) : 'No homework was set last class, so nothing is due today — this column stays out of the averages and reports'}">HW%${hwDue?'':`<div style="font-weight:400;font-size:10px;opacity:.75;">none set</div>`}</th>
       <th title="English only">English</th>
       <th title="Participation">Particip.</th>
       ${anyMissed?'<th title="Homework owed from last class (absent, or handed in under 100%)">Prev HW</th>':''}
@@ -6390,7 +6440,9 @@ function buildReportText(s, lang){
   // --- metrics ---
   out.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
   out.push(`${L.punctuality}: ${s.late} ${L.late}`);
-  out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`);
+  out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`
+    + (s.hwCount ? ` (${isPt?'em':'over'} ${s.hwCount} ${isPt?(s.hwCount===1?'aula com dever':'aulas com dever'):(s.hwCount===1?'class with homework set':'classes with homework set')})` : '')
+    + (s.noHwCount ? ` · ${s.noHwCount} ${isPt?(s.noHwCount===1?'aula sem dever passado':'aulas sem dever passado'):(s.noHwCount===1?'class had no homework set':'classes had no homework set')}` : ''));
   out.push(`${L.part}: ${fmtPct(s.partScore)}`);
   if(s.totalPhone){
     const tl = isPt ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
@@ -6648,6 +6700,8 @@ function renderStudentProfile(){
   const late = records.filter(r=>r.attendance!=='absent' && (r.lateMin||0)>0).length;
   const present = total - absent;   // attended = present, including those who arrived late
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
+  // Classes in this period where the teacher set no homework at all.
+  const noHwCount = records.filter(r=>r._hwAssigned===false).length;
   const hwRecords = records.filter(r=>hwEffOf(r)!=null);
   const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwEffOf(r),0)/hwRecords.length) : null;
   // Same set, ignoring late deliveries — used to show what changed.
@@ -6774,7 +6828,7 @@ function renderStudentProfile(){
                  letter:(a.grades||{})[student.id]||null, note:(a.notes[student.id]||'').trim() })) : [],
     fromVal, toVal,
     total, present, late, absent, totalPhone,
-    hwAvg, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
+    hwAvg, hwCount: hwRecords.length, noHwCount, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
     totalLostMin, lostEquivClasses, avgDuration,
     contactPending: student.contactParents?.reason ? student.contactParents : null,
     contactHistory: (student.contactParentsHistory||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)),
@@ -6854,7 +6908,8 @@ function renderStudentProfile(){
       ${hwRecords.length ? `
       <div class="card chart-card">
         <h3>${t.homeworkDone}</h3>
-        <div class="chart-note">${t.basedOn(hwRecords.length)}${hwAvgOnTime!=null && hwAvgOnTime!==hwAvg?` · ${t.onTimeWas(hwAvgOnTime)}`:''}</div>
+        <div class="chart-note">${t.basedOnHw(hwRecords.length)}${hwAvgOnTime!=null && hwAvgOnTime!==hwAvg?` · ${t.onTimeWas(hwAvgOnTime)}`:''}</div>
+        <div class="chart-note" style="margin-top:-2px;">${noHwCount ? t.hwLegend(noHwCount) : t.hwLegendNone}</div>
         ${(()=>{
           const avg = hwAvg??0;
           return renderDonut([
@@ -7041,7 +7096,7 @@ function renderStudentProfile(){
                   <td>${r.lateMin?r.lateMin+' min':'—'}</td>
                   <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
                   <td>${r.phone||'—'}</td>
-                  <td>${r.hw!=null?(typeof r.hw==='number'?r.hw+'%':(r.hw==='done'?'100%':'0%')):'—'}</td>
+                  <td>${hwCellHtml(r, state.reportLang==='pt')}</td>
                   <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>${r.lateHwFor?`<span class="late-hw-ref">${formatDateShort(r.lateHwFor)}${r.lateHwPrevPct!=null?` · ${r.lateHwPrevPct}%`:''}</span>`:''}` : '—'}</td>
                   <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
                   <td>${r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:'—'}</td>
@@ -7055,6 +7110,9 @@ function renderStudentProfile(){
         <b>${t.histLegendTitle}:</b>
         ${[t.histCols.late,t.histCols.early,t.histCols.phone,t.histCols.hw,t.histCols.hwLate,t.histCols.eng,t.histCols.part]
           .map(c=>`<span class="hist-legend-item"><b>${c.abbr}</b> = ${c.full}</span>`).join('')}
+      </div>
+      <div class="hist-legend" style="border-top:none;padding-top:0;">
+        ${noHwCount ? t.hwLegend(noHwCount) : t.hwLegendNone}
       </div>
       ` : `<div class="empty-card">${t.noRecords}</div>`}
     </div>
