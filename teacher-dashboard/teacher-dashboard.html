@@ -925,10 +925,10 @@ const T = {
     attended: 'attended',
     attendedRecorded: 'of recorded',
     basedOn: n => `Based on ${n} recorded session${n===1?'':'s'}.`,
-    basedOnHw: n => `Based on the ${n} class${n===1?'':'es'} that had homework set.`,
-    noHwSet: 'none set',
-    hwLegend: n => `Homework only counts when it was set. ${n} class${n===1?'':'es'} in this period had no homework assigned — those show as “none set” and are left out of the average. They are not missed homework. <b>0%</b> means homework was set and not handed in.`,
-    hwLegendNone: 'Homework only counts when it was set. Classes with no homework assigned show as “none set” and are left out of the average — they are not missed homework. <b>0%</b> means homework was set and not handed in.',
+    basedOnHw: n => `Based on the ${n} class${n===1?'':'es'} where homework was assigned.`,
+    noHwSet: 'not assigned',
+    hwLegend: n => `<b>“not assigned”</b> means the teacher gave no homework that week. It is not missed homework and is left out of the average — ${n} class${n===1?'':'es'} in this period had none. Where homework was assigned, the percentage is what the student handed in: <b>100%</b> complete, <b>0%</b> not done.`,
+    hwLegendNone: '<b>“not assigned”</b> means the teacher gave no homework that week. It is not missed homework and is left out of the average. Where homework was assigned, the percentage is what the student handed in: <b>100%</b> complete, <b>0%</b> not done.',
     timeInClass: 'Time in class',
     timeMissed: 'time missed',
     outOf: (possible, n, dur) => `Out of ${possible} min possible (${n} session${n===1?'':'s'} × ${dur} min).`,
@@ -1013,9 +1013,9 @@ const T = {
     attendedRecorded: 'de sessões',
     basedOn: n => `Com base em ${n} aula${n===1?'':'s'} registrada${n===1?'':'s'}.`,
     basedOnHw: n => `Com base nas ${n} aula${n===1?'':'s'} em que houve dever de casa.`,
-    noHwSet: 'sem dever',
-    hwLegend: n => `O dever só entra na conta quando foi passado. ${n} aula${n===1?'':'s'} deste período não teve${n===1?'':'ram'} dever — aparece${n===1?'':'m'} como “sem dever” e fica${n===1?'':'m'} fora da média. Não é dever não feito. <b>0%</b> significa que o dever foi passado e não foi entregue.`,
-    hwLegendNone: 'O dever só entra na conta quando foi passado. Aulas sem dever aparecem como “sem dever” e ficam fora da média — não são dever não feito. <b>0%</b> significa que o dever foi passado e não foi entregue.',
+    noHwSet: 'não houve dever',
+    hwLegend: n => `<b>“não houve dever”</b> quer dizer que o professor não passou dever naquela semana. Não é dever deixado de fazer pelo aluno, e não entra na média — ${n} aula${n===1?'':'s'} deste período ficou${n===1?'':'ram'} nessa situação. Quando houve dever, a porcentagem é o que o aluno entregou: <b>100%</b> completo, <b>0%</b> não feito.`,
+    hwLegendNone: '<b>“não houve dever”</b> quer dizer que o professor não passou dever naquela semana. Não é dever deixado de fazer pelo aluno, e não entra na média. Quando houve dever, a porcentagem é o que o aluno entregou: <b>100%</b> completo, <b>0%</b> não feito.',
     timeInClass: 'Tempo em aula',
     timeMissed: 'tempo perdido',
     outOf: (possible, n, dur) => `De ${possible} min possíveis (${n} aula${n===1?'':'s'} × ${dur} min).`,
@@ -5576,17 +5576,19 @@ function annotateHwAssigned(sorted){
    absence — stay out of the average either way; they still show in the late
    donut so the outcome isn't lost. */
 function hwEffOf(r){
-  if(r._hwAssigned === false) return null;       // no homework was set for that class
+  if(r._hwAssigned === false) return null;       // the teacher assigned nothing that class
   if(r._hwEff != null) return r._hwEff;
-  return r.hw == null ? null : hwValueOf(r);
+  // Homework WAS assigned, so there are only two outcomes. A student the
+  // teacher never ticked follows the same default the roll call shows them
+  // with — present, nothing noted, homework done — exactly as attendance does.
+  return r.hw == null ? 100 : hwValueOf(r);
 }
-/* The three states a homework cell can be in, kept apart on purpose. */
+/* Two states only: the teacher assigned homework, or the teacher didn't.
+   Where homework was assigned there is always a percentage. */
 function hwCellHtml(r, pt){
   if(r._hwAssigned === false)
-    return `<span style="color:var(--muted);font-size:11px;font-style:italic;" title="${pt?'Nenhum dever foi passado para esta aula':'No homework was set for this class'}">${pt?'sem dever':'none set'}</span>`;
-  if(r.hw == null)
-    return `<span style="color:var(--muted);" title="${pt?'Não registrado':'Not recorded'}">—</span>`;
-  const v = hwValueOf(r);
+    return `<span style="color:var(--muted);font-size:11px;font-style:italic;" title="${pt?'O professor não passou dever para esta aula':'The teacher did not assign any homework for this class'}">${pt?'não houve dever':'not assigned'}</span>`;
+  const v = hwEffOf(r);
   const col = v >= 100 ? 'var(--green)' : v === 0 ? 'var(--red)' : 'var(--amber)';
   return `<span style="font-weight:700;color:${col};">${v}%</span>`;
 }
@@ -6061,7 +6063,7 @@ function renderCompactRoster(cls, students, recFor, hwPending, locked){
       <th title="Minutes late">Late</th>
       <th title="Minutes left early">Left</th>
       <th title="Phone used (times)">📱</th>
-      <th title="${hwDue ? 'Due today: '+esc(hwDue) : 'No homework was set last class, so nothing is due today — this column stays out of the averages and reports'}">HW%${hwDue?'':`<div style="font-weight:400;font-size:10px;opacity:.75;">none set</div>`}</th>
+      <th title="${hwDue ? 'Due today: '+esc(hwDue) : 'You assigned no homework last class, so nothing is due today — this column stays out of the averages and reports'}">HW%${hwDue?'':`<div style="font-weight:400;font-size:10px;opacity:.75;">not assigned</div>`}</th>
       <th title="English only">English</th>
       <th title="Participation">Particip.</th>
       ${anyMissed?'<th title="Homework owed from last class (absent, or handed in under 100%)">Prev HW</th>':''}
@@ -6441,8 +6443,8 @@ function buildReportText(s, lang){
   out.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
   out.push(`${L.punctuality}: ${s.late} ${L.late}`);
   out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`
-    + (s.hwCount ? ` (${isPt?'em':'over'} ${s.hwCount} ${isPt?(s.hwCount===1?'aula com dever':'aulas com dever'):(s.hwCount===1?'class with homework set':'classes with homework set')})` : '')
-    + (s.noHwCount ? ` · ${s.noHwCount} ${isPt?(s.noHwCount===1?'aula sem dever passado':'aulas sem dever passado'):(s.noHwCount===1?'class had no homework set':'classes had no homework set')}` : ''));
+    + (s.hwCount ? ` (${isPt?'em':'over'} ${s.hwCount} ${isPt?(s.hwCount===1?'aula com dever':'aulas com dever'):(s.hwCount===1?'class with homework assigned':'classes with homework assigned')})` : '')
+    + (s.noHwCount ? ` · ${s.noHwCount} ${isPt?(s.noHwCount===1?'aula em que não houve dever':'aulas em que não houve dever'):(s.noHwCount===1?'class where no homework was assigned':'classes where no homework was assigned')}` : ''));
   out.push(`${L.part}: ${fmtPct(s.partScore)}`);
   if(s.totalPhone){
     const tl = isPt ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
