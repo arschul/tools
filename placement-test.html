@@ -32,6 +32,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .fi:focus,.fsel:focus{border-color:var(--accent)}
 .fsel{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237D8590' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:44px}
 .fsel option{background:var(--card)}
+.howto{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:4px 0 18px}
+.howto-t{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.howto p{font-size:13.5px;line-height:1.55;color:var(--text2);margin-bottom:9px}
+.howto p:last-child{margin-bottom:0}
+.howto strong{color:var(--text)}
 .btn-begin{width:100%;background:var(--accent);border:none;border-radius:8px;padding:16px 24px;color:#fff;font-family:var(--fd);font-size:16px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:opacity .2s,transform .15s;margin-top:4px}
 .btn-begin:hover{opacity:.9}
 .btn-begin:active{transform:scale(.98)}
@@ -58,7 +63,34 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100
 .s-chip{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;background:rgba(16,185,129,.12);color:#10B981}
 .q-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:10px}
 .q-oc-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.q-text{font-family:var(--fd);font-size:20px;font-weight:600;line-height:1.6;color:var(--text)}
+.q-text{font-family:var(--fd);font-size:24px;font-weight:600;line-height:1.5;color:var(--text)}
+.q-topic{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.q-say{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.fups{margin-top:18px;padding-top:16px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:8px}
+.fups-lbl{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.fup{background:var(--surface);border-left:2px solid var(--border);border-radius:0 6px 6px 0;padding:9px 12px;font-size:15px;line-height:1.45;color:var(--text2)}
+.ev-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 16px}
+.ev-lbl{font-family:var(--fb);font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.ev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:640px){.ev-grid{grid-template-columns:repeat(2,1fr)}}
+.ev-btn{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:13px 10px;cursor:pointer;text-align:left;transition:all .15s;color:var(--text2);font-family:var(--fb)}
+.ev-btn:hover{border-color:var(--muted)}
+.ev-btn .evt{display:block;font-family:var(--fd);font-size:13px;font-weight:700;color:var(--text);line-height:1.25;margin-bottom:4px}
+.ev-btn .evd{display:block;font-size:11px;line-height:1.35;color:var(--muted)}
+.ev-btn.on{border-width:2px;padding:12px 9px}
+.ev-btn[data-ev="no"].on{border-color:var(--accent);background:var(--accent-dim)}
+.ev-btn[data-ev="try"].on{border-color:var(--warning);background:var(--warning-dim)}
+.ev-btn[data-ev="ok"].on{border-color:var(--success);background:var(--success-dim)}
+.ev-btn[data-ev="nat"].on{border-color:var(--purple);background:var(--purple-dim)}
+.ev-note{width:100%;margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--fb);font-size:14px;outline:none}
+.ev-note:focus{border-color:var(--muted)}
+.btn-skip{background:transparent;border:1px dashed var(--border);color:var(--muted);border-radius:8px;padding:14px 16px;font-family:var(--fb);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-skip:hover{border-color:var(--muted);color:var(--text2)}
+.rev-item{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--warning);border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px}
+.rev-item.hard{border-left-color:var(--accent)}
+.rev-h{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--text)}
+.rev-s{font-size:13px;color:var(--muted);margin-top:3px}
+.rev-n{font-size:13px;color:var(--text2);margin-top:6px;font-style:italic}
 .q-tests{font-size:13px;color:var(--muted);margin-bottom:20px;padding:0 2px}
 .q-tests em{font-style:normal;color:var(--text2)}
 .score-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:14px}
@@ -72,7 +104,8 @@ input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1
 input[type=range]::-moz-range-thumb{width:26px;height:26px;border:none;border-radius:50%;background:#fff;cursor:grab}
 .slide-lbls{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--muted)}
 .slide-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;min-height:18px}
-.q-actions{display:grid;grid-template-columns:1fr 2fr;gap:12px}
+.q-actions{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:10px}
+@media(max-width:640px){.q-actions{grid-template-columns:1fr}}
 .btn-strike{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:14px 16px;font-family:var(--fb);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-strike:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
 .btn-next{background:var(--success);border:none;color:#fff;border-radius:8px;padding:14px 24px;font-family:var(--fd);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
@@ -255,7 +288,7 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
   <div class="s-logo">
     <div class="s-school">EFL Placement Test</div>
     <h1 class="s-title">Placement Test</h1>
-    <p class="s-sub">Curitiba · Oral Assessment</p>
+    <p class="s-sub">Curitiba · Spoken Interview</p>
   </div>
   <div class="s-card">
     <div class="fg">
@@ -277,7 +310,13 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
         <option value="8">Intermediate 4</option>
       </select>
     </div>
-    <button class="btn-begin" id="btn-begin">Begin Test →</button>
+    <div class="howto">
+      <div class="howto-t">How to run it</div>
+      <p>It's a conversation, not a quiz. Read the opening line as if you were just chatting — the wording already does the work, so never name the grammar. Use the follow-ups to keep the student talking until you've heard enough.</p>
+      <p>Then record one thing only: <strong>did the target form come out, and was it right?</strong> Keys <strong>1–4</strong> score, <strong>Enter</strong> moves on.</p>
+      <p>If a target never fits the conversation naturally, <strong>skip</strong> it — a skip is left out of the average rather than counted as a zero.</p>
+    </div>
+    <button class="btn-begin" id="btn-begin">Start the Conversation →</button>
     <div class="resume-wrap" id="resume-wrap" style="display:none">
       <div class="resume-label">Saved Progress</div>
       <button class="btn-resume" id="btn-resume">
@@ -311,25 +350,29 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
     <div class="q-meta">
       <span class="q-unit" id="q-unit"></span>
       <span class="q-sep">·</span>
-      <span class="s-chip">Outcome</span>
+      <span class="s-chip" id="q-oc-lbl">Outcome</span>
     </div>
     <div class="q-card">
-      <div class="q-oc-lbl" id="q-oc-lbl">Outcome</div>
+      <div class="q-topic" id="q-topic"></div>
+      <div class="q-say">Say this</div>
       <div class="q-text" id="q-text">Loading…</div>
+      <div class="fups" id="q-fups"></div>
     </div>
     <div class="q-tests" id="q-tests"></div>
-    <div class="score-panel">
-      <div class="score-top">
-        <div class="score-lbl-txt">Response Quality</div>
-        <div class="score-num pending" id="score-num">—</div>
+    <div class="ev-panel">
+      <div class="ev-lbl" id="ev-lbl">Did the form appear?</div>
+      <div class="ev-grid">
+        <button class="ev-btn" data-ev="no"><span class="evt">Didn't appear</span><span class="evd">Avoided it or used something else</span></button>
+        <button class="ev-btn" data-ev="try"><span class="evt">Tried, broke</span><span class="evd">Reached for it, form was wrong</span></button>
+        <button class="ev-btn" data-ev="ok"><span class="evt">Correct once</span><span class="evd">Produced it accurately</span></button>
+        <button class="ev-btn" data-ev="nat"><span class="evt">Natural</span><span class="evd">Accurate, repeated, unprompted</span></button>
       </div>
-      <input type="range" id="sslider" min="0" max="100" value="50">
-      <div class="slide-lbls"><span>0% — No answer</span><span>100% — Perfect</span></div>
-      <div class="slide-hint" id="shint">Move the slider to score this response</div>
+      <input class="ev-note" id="ev-note" type="text" placeholder="Note what they actually said (optional)">
     </div>
     <div class="q-actions">
-      <button class="btn-strike" id="btn-strike">✗ No Response</button>
-      <button class="btn-next" id="btn-next" disabled>Next Question →</button>
+      <button class="btn-strike" id="btn-strike">✗ No Response At All</button>
+      <button class="btn-skip" id="btn-skip">↷ Didn't fit — skip</button>
+      <button class="btn-next" id="btn-next" disabled>Next →</button>
     </div>
   </div>
 </section>
@@ -369,6 +412,10 @@ table.rtbl{width:100%;border-collapse:collapse;font-size:14px}
   <div class="rsec" id="obs-sec">
     <div class="rsec-title">Observations</div>
     <div class="obs-list" id="obs-list"></div>
+  </div>
+  <div class="rsec" id="rev-sec" style="display:none">
+    <div class="rsec-title">What To Review First</div>
+    <div id="rev-list"></div>
   </div>
   <div class="rsec">
     <div class="rsec-title">Question Detail</div>
@@ -425,96 +472,818 @@ const _view  = _p.get('view')      || null;   // 'tracker' → skip test
 const LEVELS = ['Starter','Basic 1','Basic 2','Basic 3','Basic 4','Intermediate 1','Intermediate 2','Intermediate 3','Intermediate 4'];
 
 const QB = {
-'Starter':[
-  {unit:'Unit 1 – Me',outcome:'Introduce yourself with be',question:'Say: "My name is ___, I\'m from Brazil, and I\'m a teacher." Then ask: "What\'s your name? Where are you from? Are you a student?"',tests:'be statements and yes/no questions, subject pronouns'},
-  {unit:'Unit 2 – My Place',outcome:'Identify objects near and far',question:'Hold up one object and say: "This is a pen." Point across the room: "Those are books." Then point at new objects and ask: "What\'s this? What are those?"',tests:'a/an, singular and plural nouns, this/that/these/those'},
-  {unit:'Unit 2 – My Place',outcome:'Say where things are',question:'Say: "In my room, there\'s a table and there are two chairs. The table is next to the window." Ask: "What\'s in your bedroom? Where is your bed? Where is your phone right now?"',tests:'There is / There are, prepositions of place'},
-  {unit:'Unit 3 – Life and Work',outcome:'Talk about work and study',question:'Say: "I work at a school. I teach English. My brother works in an office." Ask: "What do you do? What does your best friend do?"',tests:'Simple present statements (I/you vs. he/she + -s)'},
-  {unit:'Unit 3 – Life and Work',outcome:'Ask and answer yes/no questions',question:'Ask: "Do you work? Do you like music? Does your family live in this city?" After the student answers, say: "Now ask me two questions starting with Do you...?"',tests:'Yes/no questions and short answers with do/does'},
-  {unit:'Unit 3 – Life and Work',outcome:'Say how often you do things',question:'Say: "I always drink coffee in the morning and I never eat fast food." Ask: "What do you always do in the morning? What do you never do? How often do you watch TV?"',tests:'Adverbs of frequency (always, usually, sometimes, never)'},
-  {unit:'Unit 5 – Free Time',outcome:'Talk about abilities',question:'Say: "I can cook, but I can\'t sing." Ask: "What can you do well? What can\'t you do? Can you swim? Can you play an instrument?"',tests:'can / can\'t for ability'},
-  {unit:'Unit 5 – Free Time',outcome:'Describe actions happening now',question:'Say: "Right now, I\'m sitting here and I\'m talking to you." Ask: "What are you doing right now? What are you wearing today? What is your family doing at this moment?"',tests:'Present progressive (am/is/are + -ing)'}
-],
-'Basic 1':[
-  {unit:'Unit 1 – Who Are You?',outcome:'Ask and answer information questions with be',question:'Ask: "Where are you from? How old are you? Who is your favorite singer?" Then say: "Now ask me three questions with is or are."',tests:'Information questions with be'},
-  {unit:'Unit 2 – Work/Life Balance',outcome:'Talk about family with possessives',question:'Say: "My car is old, but my wife\'s car is new." Ask: "What\'s your mother\'s name? Is your best friend\'s house near here? Whose phone is newer — yours or your friend\'s?"',tests:'Possessive adjectives and possessive \'s'},
-  {unit:'Unit 2 – Work/Life Balance',outcome:'Talk about jobs with articles',question:'Say: "I\'m a teacher. My friend is an engineer. His kids are students." Ask: "What do the people in your family do? Is anyone an artist or an athlete?"',tests:'Articles a, an, and no article with jobs'},
-  {unit:'Unit 3 – Fun and Games',outcome:'Express likes and dislikes',question:'Say: "I love watching movies and I hate waking up early." Ask: "What do you like doing in your free time? What do you hate doing? What do you love eating?"',tests:'like / love / hate + -ing'},
-  {unit:'Unit 3 – Fun and Games',outcome:'Give step-by-step instructions',question:'Say: "I want to make really good coffee. Tell me what to do: First, boil the water. Then... — continue!" Have the student give full imperative instructions for something simple.',tests:'The imperative for instructions'},
-  {unit:'Unit 4 – That\'s Life!',outcome:'Describe your daily routine',question:'Ask: "What time do you get up? What do you do after lunch? When does your day end?" Then say: "Now ask me two questions about my routine."',tests:'Simple present information questions, daily routine'},
-  {unit:'Unit 5 – Finding Your Way',outcome:'Describe your neighborhood',question:'Say: "In my neighborhood, there\'s a bakery, but there aren\'t any parks." Ask: "What is there near your home? Is there a supermarket? Are there any good restaurants?"',tests:'There is / There are with some/any, places vocabulary'},
-  {unit:'Unit 6 – Going Viral',outcome:'Contrast routines with current actions',question:'Say: "I usually work in the evening, but today I\'m doing something different — I\'m testing you!" Ask: "What do you usually do at this time of day? What are you doing differently this week?"',tests:'Present progressive vs. simple present'}
-],
-'Basic 2':[
-  {unit:'Unit 7 – Fit for Life',outcome:'Say how people do things',question:'Say: "Messi plays beautifully. I cook badly, but I drive carefully." Ask: "How do you drive? How do you speak English? What do you do well — and what do you do badly?"',tests:'Adverbs of manner (well, badly, carefully, fast)'},
-  {unit:'Unit 8 – Foodie?',outcome:'Talk about quantities of food',question:'Ask: "How much coffee do you drink every day? How many eggs do you eat per week? Is there much sugar in your diet? Are there many vegetables?"',tests:'Countable and uncountable nouns with much/many'},
-  {unit:'Unit 9 – Seeing the World',outcome:'Talk about travel wishes',question:'Say: "I want to visit Japan, and I enjoy trying new food when I travel." Ask: "Where do you want to travel? What do you enjoy doing on vacation? What do you plan to do on your next trip?"',tests:'Verb + infinitive or gerund (want to, enjoy -ing, plan to)'},
-  {unit:'Unit 9 – Seeing the World',outcome:'Give travel advice',question:'Say: "My friend is visiting your city next month. What should she see? What could she skip?" Then: "Give me two more tips starting with You should..."',tests:'should / could for advice and suggestions'},
-  {unit:'Unit 10 – Life Stories',outcome:'Narrate your day in the past',question:'Say: "Yesterday I woke up at six, worked all day, and watched a movie at night." Ask: "Tell me about your day yesterday, from morning to night."',tests:'Simple past affirmative (regular and irregular verbs)'},
-  {unit:'Unit 10 – Life Stories',outcome:'Ask and answer about the past',question:'Ask: "Did you go out last weekend? What did you do? What didn\'t you do that you wanted to do?" Then say: "Now ask me a question about my weekend."',tests:'Simple past negatives and questions'},
-  {unit:'Unit 11 – Planning Ahead',outcome:'Talk about plans',question:'Say: "Next month I\'m going to visit my parents." Ask: "What are you going to do next weekend? What is your family going to do on your next vacation?"',tests:'Going to for plans and intentions'},
-  {unit:'Unit 12 – The Great Outdoors',outcome:'Compare places',question:'Say: "Curitiba is colder than Rio, but Rio is bigger." Ask: "Compare two cities you know. Which is better? Which is more expensive? Is your city hotter or colder than São Paulo?"',tests:'Comparative adjectives (-er / more... than)'}
-],
-'Basic 3':[
-  {unit:'Unit 1 – Extraordinary',outcome:'Describe a past moment in progress',question:'Say: "Yesterday at 8 p.m. I was having dinner with my family." Ask: "What were you doing yesterday at 8 p.m.? What were the people in your house doing?"',tests:'Past progressive'},
-  {unit:'Unit 1 – Extraordinary',outcome:'Tell an interrupted-action story',question:'Say: "I was walking to work when it suddenly started to rain." Ask: "Tell me about something surprising that happened to you. What were you doing when it happened?"',tests:'Past progressive vs. simple past with when/while'},
-  {unit:'Unit 2 – Party!',outcome:'Talk about money and quantity',question:'Ask: "How much money is enough for a great weekend? How many people is too many at a party? Do you have enough free time? How much is too much to spend on a meal?"',tests:'Quantifiers (much, many, a lot of), enough / too'},
-  {unit:'Unit 3 – What\'s Trending?',outcome:'Talk about past habits',question:'Say: "I used to play video games every day, but now I don\'t." Ask: "What did you use to do as a child that you don\'t do now? Did you use to listen to different music?"',tests:'Used to for past habits'},
-  {unit:'Unit 4 – Your ID',outcome:'Compare people with as...as',question:'Say: "I\'m not as patient as my mother, but I\'m as stubborn as my father." Ask: "Are you as organized as your best friend? Who in your family is as funny as you?"',tests:'(not) as...as comparisons'},
-  {unit:'Unit 4 – Your ID',outcome:'Talk about extremes with superlatives',question:'Ask: "What\'s the most beautiful place you\'ve visited? Who\'s the funniest person in your family? What\'s the best restaurant in your city — and the worst?"',tests:'Superlative adjectives'},
-  {unit:'Unit 5 – Prepping',outcome:'Make polite requests',question:'Role-play: the student needs to borrow your car. Say: "Ask me politely — twice. First I\'m your friend, then I\'m your boss. Start with Can I...?, Could I...?, or May I...?"',tests:'Modals of request and permission (can/could/may)'},
-  {unit:'Unit 6 – Changes',outcome:'Talk about experiences and duration',question:'Say: "I\'ve lived here since 2010, and I\'ve never visited Asia." Ask: "How long have you studied English? Have you ever traveled abroad? Have you ever done something really crazy?"',tests:'Present perfect with for / since / ever / never'}
-],
-'Basic 4':[
-  {unit:'Unit 7 – Get to Work',outcome:'Talk about what\'s done and not done',question:'Say: "I\'ve already had coffee today, but I haven\'t had lunch yet." Ask: "What have you already done today? What haven\'t you done yet? Have you just come from work or school?"',tests:'Present perfect with already / yet / just'},
-  {unit:'Unit 8 – Downtime',outcome:'Talk about activities as subjects',question:'Say: "Cooking relaxes me. Waking up early is hard for me." Ask: "What activities relax you? Complete these: Studying English is... / Living in this city is..."',tests:'Gerund phrases as subject'},
-  {unit:'Unit 8 – Downtime',outcome:'Talk about decisions and habits',question:'Say: "I\'ve decided to exercise more, but I keep forgetting to start." Ask: "What have you decided to do this year? What do you keep doing that you want to stop? What do you avoid doing?"',tests:'Verb + gerund or infinitive (decide to, keep -ing, avoid -ing)'},
-  {unit:'Unit 9 – Room for Me',outcome:'Talk about future plans and predictions',question:'Say: "Tonight I\'m meeting a friend, and I think I\'ll sleep early." Ask: "What are you doing this weekend? What do you think the weather will be like? What are your plans for next month?"',tests:'Future forms (will, going to, present continuous for future)'},
-  {unit:'Unit 9 – Room for Me',outcome:'Speculate about the future',question:'Say: "In 2050, houses might be smaller and cars could fly." Ask: "What might change in your city in 20 years? What could stay the same? What will definitely be different?"',tests:'Future possibility and certainty (might, could, will definitely)'},
-  {unit:'Unit 10 – Wellbeing',outcome:'Talk about causes and real plans',question:'Say: "If I don\'t sleep well, I feel terrible. If I have time this weekend, I\'ll rest." Ask: "What happens if you don\'t sleep enough? If you have free time this weekend, what will you do?"',tests:'Zero and first conditional'},
-  {unit:'Unit 10 – Wellbeing',outcome:'Imagine hypothetical situations',question:'Say: "If I won the lottery, I would travel the world." Ask: "If you won the lottery, what would you do? If you could live anywhere, where would you live? Why?"',tests:'Second conditional'},
-  {unit:'Unit 11 – Use and Reuse',outcome:'Talk about products with passives',question:'Say: "My phone was made in China. Coffee is grown in Brazil." Ask: "What is your country famous for producing? Where was your phone made? What is your favorite food made of?"',tests:'Simple present and simple past passive'}
-],
-'Intermediate 1':[
-  {unit:'Unit 1 – Incredible Lives',outcome:'Contrast states and actions',question:'Say: "I think English is fun — but right now I\'m thinking about lunch." Ask: "What do you think about tests like this one? What are you thinking about right now? What do you see around you, and what are you looking at?"',tests:'Stative and dynamic verbs (think/see vs. thinking/looking)'},
-  {unit:'Unit 1 – Incredible Lives',outcome:'Talk about achieved abilities',question:'Say: "Last week I finally managed to fix my computer — normally I\'m not able to do tech stuff." Ask: "What have you managed to do recently that you couldn\'t do before? What would you like to be able to do?"',tests:'Expressing ability (can, could, be able to, manage to)'},
-  {unit:'Unit 2 – The Animal Connection',outcome:'Confirm information with tags',question:'Say: "Learning English is difficult, isn\'t it? You\'ve studied for a while, haven\'t you?" Then say: "Now confirm three things about me using tag questions — guess if you have to."',tests:'Tag questions'},
-  {unit:'Unit 3 – Think About It',outcome:'Sequence future actions',question:'Say: "As soon as we finish here, I\'ll have a coffee." Ask: "What will you do when you get home today? What will you do before you go to bed? And after you wake up tomorrow?"',tests:'Future time clauses (when, as soon as, before, after, until)'},
-  {unit:'Unit 3 – Think About It',outcome:'Talk about ongoing activities',question:'Say: "I\'ve been teaching for over ten years." Ask: "How long have you been studying English? What have you been doing lately to practice? What have you been watching or reading recently?"',tests:'Present perfect progressive (have been doing)'},
-  {unit:'Unit 5 – One Planet',outcome:'Express wishes and hopes',question:'Say: "I wish I had more free time, and I hope next year is calmer." Ask: "What do you wish were different in your life right now? What do you hope will happen next year?"',tests:'Wishes and hopes (I wish + past, I hope + will)'},
-  {unit:'Unit 6 – Moments in Time',outcome:'Sequence past events',question:'Say: "By the time I turned 18, I had already chosen my career." Ask: "What had you already done by the time you finished school? What hadn\'t you done yet by then?"',tests:'Past perfect with by the time / already / yet'},
-  {unit:'Unit 6 – Moments in Time',outcome:'Define things with relative clauses',question:'Say: "A teacher is someone who helps people learn." Ask: "Now define these for me using who, that, or where: a smartphone, a best friend, a library, a hero."',tests:'Defining relative clauses (who, which, that, where)'}
-],
-'Intermediate 2':[
-  {unit:'Unit 7 – Looking Back',outcome:'Express regrets about the past',question:'Say: "I should have learned German when I was younger." Ask: "What\'s something you should have done differently in your life? What shouldn\'t you have done? What should a company you know have done differently?"',tests:'Should / shouldn\'t have + past participle'},
-  {unit:'Unit 8 – A New Home?',outcome:'Imagine a different past',question:'Say: "If I had been born in another country, my life would have been completely different." Ask: "If you had made one different choice in your life, what would have happened? If you hadn\'t started English, what would you have done instead?"',tests:'Third conditional'},
-  {unit:'Unit 8 – A New Home?',outcome:'Ask polite indirect questions',question:'Role-play: you\'re a stranger. Say: "Ask me about my life — but politely. Start with Could you tell me...?, Do you know...?, or I\'d like to know... Ask me three indirect questions."',tests:'Indirect questions'},
-  {unit:'Unit 9 – The World of News',outcome:'Emphasize with so/such/too/enough',question:'Say: "This year has been so busy that I need a vacation. It was such a crazy year." Ask: "Describe your year using so...that and such a... Was it too busy? Did you get enough rest?"',tests:'So / such / too / enough'},
-  {unit:'Unit 9 – The World of News',outcome:'Speculate with modals of deduction',question:'Say: "My neighbor leaves at 5 a.m. every day wearing a uniform and comes home exhausted." Ask: "What must he do? What might his job be? What can\'t be true about him?"',tests:'Modals of deduction (must, might, could, can\'t + be)'},
-  {unit:'Unit 10 – Got It?',outcome:'Report what people said',question:'Say: "Yesterday a student told me she was tired and asked me if my tests were hard." Ask: "Think of something someone said or asked you recently. Report it: He told me... / She asked me if..."',tests:'Reported speech (statements and questions)'},
-  {unit:'Unit 11 – Money in the Bank',outcome:'Talk about services with causatives',question:'Say: "I don\'t cut my own hair — I have it cut at a barbershop." Ask: "What do you get done by other people? If you were rich, what would you have done for you every week?"',tests:'Causatives (have / get something done)'},
-  {unit:'Unit 12 – Inside Advertising',outcome:'Describe changes with passives',question:'Say: "A new mall is being built downtown, and the old theater has been renovated." Ask: "What is being built or changed in your city right now? What has been improved in recent years?"',tests:'Passive voice in progressive and perfect tenses'}
-],
-'Intermediate 3':[
-  {unit:'Unit 1 – It\'s a Mystery!',outcome:'Describe objects with ordered adjectives',question:'Say: "I bought a beautiful little old wooden table." Ask: "Describe three objects you own using at least three adjectives each, in the right order — opinion, size, age, colour, origin, material."',tests:'Adjective order (opinion-size-age-shape-colour-origin-material)'},
-  {unit:'Unit 2 – Starting Up',outcome:'Talk about pairs and groups',question:'Say: "Both my parents work, but neither of them loves their job." Ask: "Tell me about pairs in your life using both, neither, and either — your parents, two friends, two cities you know."',tests:'Quantifiers: both, neither, either, all, none, each'},
-  {unit:'Unit 2 – Starting Up',outcome:'Explain rules and obligations',question:'Say: "At my school, teachers must arrive early, students aren\'t allowed to use phones, and we don\'t have to wear uniforms." Ask: "What are the rules at your work or school? What must you do? What\'s not permitted? What don\'t you have to do?"',tests:'Obligation, permission, prohibition (must, mustn\'t, be allowed to, don\'t have to)'},
-  {unit:'Unit 3 – Blending Worlds',outcome:'Contrast stop/remember + gerund or infinitive',question:'Say: "I stopped drinking soda last year — but yesterday I stopped to drink a coffee. Big difference!" Ask: "What have you stopped doing? Do you remember learning to read? What must you remember to do this week?"',tests:'Verbs + gerund/infinitive with change in meaning (stop, remember, try, forget)'},
-  {unit:'Unit 3 – Blending Worlds',outcome:'Talk about adapting to change',question:'Say: "When I started this job, I couldn\'t get used to waking up early — now I\'m used to it." Ask: "What are you used to doing now that felt strange at first? What could you never get used to?"',tests:'Be / get used to + gerund'},
-  {unit:'Unit 4 – Lifelong Learning',outcome:'Describe background to a past moment',question:'Say: "By the time I got my first job, I had been studying English for ten years, but I had never used it at work." Ask: "Tell me about a big moment in your life. What had you been doing before it? What had already happened?"',tests:'Past perfect vs. past perfect progressive'},
-  {unit:'Unit 4 – Lifelong Learning',outcome:'Express preferences',question:'Say: "I\'d rather work in the morning than at night, and I prefer coffee to tea." Ask: "Would you rather work from home or in an office? Do you prefer traveling alone or with friends? Why?"',tests:'Prefer / would prefer / would rather'},
-  {unit:'Unit 5 – Media Matters',outcome:'Create emphasis with cleft sentences',question:'Say: "What I love about my job is the freedom. It\'s my family that keeps me motivated." Ask: "Now tell me about your own life the same way: What I love about... is... / It\'s... that..."',tests:'Creating emphasis (cleft sentences: What I love is..., It\'s...that...)'}
-],
-'Intermediate 4':[
-  {unit:'Unit 7 – Hit the Road',outcome:'Deduce about the past',question:'Say: "My neighbor\'s car is gone and his lights have been off for days — he must have traveled. He can\'t have moved; I saw him last week." Ask: "Think of a small mystery from your own life. What must have happened? What might have happened?"',tests:'Past modals of deduction (must have, might have, can\'t have + past participle)'},
-  {unit:'Unit 7 – Hit the Road',outcome:'Talk about influence and expectations',question:'Say: "My parents encouraged me to study languages, and my boss expects me to be on time." Ask: "Who encouraged you to do something important? What do people expect you to do? What would you advise me to do?"',tests:'Verb + object + infinitive (encourage/expect/want/advise someone to do)'},
-  {unit:'Unit 8 – Future Innovations',outcome:'Add extra information with clauses',question:'Say: "Curitiba, which is one of the coldest big cities in Brazil, is where I live." Ask: "Tell me about your city and one family member using the same pattern: My mother, who..., ... / My city, which..., ..."',tests:'Non-defining relative clauses'},
-  {unit:'Unit 8 – Future Innovations',outcome:'Front ideas with noun clauses',question:'Say: "What worries me about the future is AI. The fact that technology changes so fast doesn\'t bother me." Ask: "What worries you about the future? Start with What worries me is... and The fact that..."',tests:'Noun clauses as subjects (What concerns me is..., The fact that...)'},
-  {unit:'Unit 9 – Trendsetter',outcome:'Talk about interests after prepositions',question:'Say: "I\'m interested in learning German, but I\'m tired of memorizing vocabulary." Ask: "What are you interested in doing? What are you good at? What are you tired of doing?"',tests:'Gerund as object of preposition (interested in doing, good at doing, tired of doing)'},
-  {unit:'Unit 10 – Mind Over Matter',outcome:'Talk about procrastination and anticipation',question:'Say: "I keep putting off going to the dentist, but I\'m looking forward to traveling in December." Ask: "What do you put off doing? What are you looking forward to? What do you put up with at work or school?"',tests:'Phrasal-prepositional verbs (put off, look forward to, put up with, get around to)'},
-  {unit:'Unit 8 – Future Innovations',outcome:'Predict with future passives',question:'Say: "In 20 years, most cars will be driven by computers, and many jobs will have been replaced." Ask: "What do you think will be invented next? What will be changed in your profession? What will have been achieved by 2050?"',tests:'Future passive (will be done, will have been done)'},
-  {unit:'Unit 10 – Mind Over Matter',outcome:'Express commitment and intention',question:'Say: "I\'m committed to improving my German, and I intend to travel next year." Ask: "What are you determined to achieve in the next five years? What do you intend to do about it? Is there anything you\'ve given up on?"',tests:'Verb phrases of intention (intend to, be committed to, be determined to, give up on)'}
-]
+ "Starter": [
+  {
+   "unit": "Unit 1 - Me",
+   "outcome": "Introduce yourself",
+   "tests": "be statements, yes/no questions with be, subject pronouns",
+   "topic": "Meeting each other",
+   "question": "Hi, I'm Alex. I'm from Curitiba and I'm a teacher. And you?",
+   "follow": [
+    "Are you a student, or do you work?",
+    "Is your family from here too?",
+    "Ask me something — anything you want to know about me."
+   ]
+  },
+  {
+   "unit": "Unit 2 - My Place",
+   "outcome": "Identify objects near and far",
+   "tests": "a/an, singular and plural nouns, this/that/these/those",
+   "topic": "Things around us",
+   "question": "(Hold up a pen) What's this? And those, over there — what are they?",
+   "follow": [
+    "What's in your bag right now?",
+    "Point at three things in this room and name them for me."
+   ]
+  },
+  {
+   "unit": "Unit 2 - My Place",
+   "outcome": "Say where things are",
+   "tests": "There is / There are, prepositions of place",
+   "topic": "Your room",
+   "question": "My desk is a disaster. There's a laptop, there are four cups, and my keys are under a book somewhere. What about your desk?",
+   "follow": [
+    "Where's your phone right now?",
+    "Tell me about your bedroom — what's in it?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Life and Work",
+   "outcome": "Talk about work and study",
+   "tests": "Simple present statements, third person -s",
+   "topic": "Jobs",
+   "question": "So — what do you do? Work, study, both?",
+   "follow": [
+    "And your best friend — what does he or she do?",
+    "Does anyone in your family have a strange job?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Life and Work",
+   "outcome": "Ask and answer yes/no questions",
+   "tests": "Yes/no questions and short answers with do/does",
+   "topic": "Likes",
+   "question": "Quick ones: do you like coffee? Do you play any sport? Does your family live near you?",
+   "follow": [
+    "Your turn — ask me three questions. Anything.",
+    "Do your friends speak English?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Life and Work",
+   "outcome": "Say how often you do things",
+   "tests": "Adverbs of frequency (always, usually, sometimes, never)",
+   "topic": "Mornings",
+   "question": "I always drink coffee in the morning and I never eat breakfast. What about you — how do your mornings go?",
+   "follow": [
+    "How often do you exercise?",
+    "What do you never do, ever?"
+   ]
+  },
+  {
+   "unit": "Unit 5 - Free Time",
+   "outcome": "Talk about abilities",
+   "tests": "can / can't for ability",
+   "topic": "What you can do",
+   "question": "I can cook, but I can't sing at all. What are you good at?",
+   "follow": [
+    "Can you drive? Swim? Play an instrument?",
+    "What's something you really can't do?"
+   ]
+  },
+  {
+   "unit": "Unit 5 - Free Time",
+   "outcome": "Describe actions happening now",
+   "tests": "Present progressive (am/is/are + -ing)",
+   "topic": "Right now",
+   "question": "It's the middle of the day — what's your family doing right now, do you think?",
+   "follow": [
+    "Look out the window. What's happening out there?",
+    "What's your best friend probably doing at this moment?"
+   ]
+  }
+ ],
+ "Basic 1": [
+  {
+   "unit": "Unit 1 - Who Are You?",
+   "outcome": "Ask and answer information questions with be",
+   "tests": "Information questions with be (where/how/who)",
+   "topic": "Getting to know you",
+   "question": "Where are you from originally? How old are you? Who's your favourite singer?",
+   "follow": [
+    "Now ask me the same three questions back.",
+    "How far is your house from here?"
+   ]
+  },
+  {
+   "unit": "Unit 2 - Work/Life Balance",
+   "outcome": "Talk about family with possessives",
+   "tests": "Possessive adjectives and possessive 's",
+   "topic": "Family",
+   "question": "My wife's car is newer than mine, which is annoying. Tell me about your family.",
+   "follow": [
+    "What's your mother's name?",
+    "Whose phone is newer — yours or your best friend's?"
+   ]
+  },
+  {
+   "unit": "Unit 2 - Work/Life Balance",
+   "outcome": "Talk about jobs with articles",
+   "tests": "Articles a / an / no article with jobs",
+   "topic": "What people do",
+   "question": "My brother is an engineer and my sister is a nurse. What do the people in your family do?",
+   "follow": [
+    "Anyone with an unusual job?",
+    "What job would you never want?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Fun and Games",
+   "outcome": "Express likes and dislikes",
+   "tests": "like / love / hate + -ing",
+   "topic": "Free time",
+   "question": "I love watching films and I hate waking up early. How about you?",
+   "follow": [
+    "What do you enjoy doing at the weekend?",
+    "Is there anything you really hate doing?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Fun and Games",
+   "outcome": "Give step-by-step instructions",
+   "tests": "The imperative for instructions",
+   "topic": "Teaching me something",
+   "question": "My coffee is terrible. Tell me exactly what to do — step by step, as if I know nothing.",
+   "follow": [
+    "Now tell me how to get from here to the nearest supermarket.",
+    "Teach me one thing you're good at."
+   ]
+  },
+  {
+   "unit": "Unit 4 - That's Life!",
+   "outcome": "Describe your daily routine",
+   "tests": "Simple present information questions, daily routine",
+   "topic": "A normal day",
+   "question": "Walk me through a normal Tuesday. Start from the moment you get up.",
+   "follow": [
+    "What do you do after lunch?",
+    "When does your day actually end?",
+    "Ask me about my day."
+   ]
+  },
+  {
+   "unit": "Unit 5 - Finding Your Way",
+   "outcome": "Describe your neighborhood",
+   "tests": "There is / There are with some/any, places vocabulary",
+   "topic": "Your neighbourhood",
+   "question": "There's a great bakery near my place, but there aren't any parks. What's your neighbourhood like?",
+   "follow": [
+    "Is there a supermarket close to you?",
+    "Are there any good restaurants around there?"
+   ]
+  },
+  {
+   "unit": "Unit 6 - Going Viral",
+   "outcome": "Contrast routines with current actions",
+   "tests": "Present progressive vs. simple present",
+   "topic": "This week",
+   "question": "I usually work in the evenings, but this week I'm doing something completely different. Is anything different for you this week?",
+   "follow": [
+    "What do you usually do at this time of day?",
+    "What are you working on at the moment?"
+   ]
+  }
+ ],
+ "Basic 2": [
+  {
+   "unit": "Unit 7 - Fit for Life",
+   "outcome": "Say how people do things",
+   "tests": "Adverbs of manner (well, badly, carefully, fast)",
+   "topic": "Doing things well or badly",
+   "question": "I cook badly but I drive carefully — most of the time. How do you drive, honestly?",
+   "follow": [
+    "What do you do really well?",
+    "And what do you do badly?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - Foodie?",
+   "outcome": "Talk about quantities of food",
+   "tests": "Countable and uncountable nouns with much/many",
+   "topic": "Food and drink",
+   "question": "How much coffee do you drink in a normal day?",
+   "follow": [
+    "How many hours do you sleep?",
+    "Is there much sugar in the food you eat?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - Seeing the World",
+   "outcome": "Talk about travel wishes",
+   "tests": "Verb + infinitive or gerund (want to, enjoy -ing, plan to)",
+   "topic": "Travel",
+   "question": "I want to go to Japan one day, and I really enjoy trying strange food when I travel. Where do you want to go?",
+   "follow": [
+    "What do you enjoy doing on holiday?",
+    "Anything planned for this year?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - Seeing the World",
+   "outcome": "Give travel advice",
+   "tests": "should / could for advice and suggestions",
+   "topic": "Advice for a visitor",
+   "question": "A friend of mine is coming to your city for three days. What should she do?",
+   "follow": [
+    "Anything she should avoid?",
+    "Where could she eat that's cheap and good?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Life Stories",
+   "outcome": "Narrate your day in the past",
+   "tests": "Simple past affirmative (regular and irregular verbs)",
+   "topic": "Yesterday",
+   "question": "Yesterday I woke up at six, worked all day and fell asleep in front of the TV. Tell me about your yesterday.",
+   "follow": [
+    "What did you eat?",
+    "How did it end?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Life Stories",
+   "outcome": "Ask and answer about the past",
+   "tests": "Simple past negatives and questions",
+   "topic": "Last weekend",
+   "question": "Did you go out last weekend? What did you do?",
+   "follow": [
+    "Was there anything you didn't do that you wanted to?",
+    "Now ask me about my weekend."
+   ]
+  },
+  {
+   "unit": "Unit 11 - Planning Ahead",
+   "outcome": "Talk about plans",
+   "tests": "Going to for plans and intentions",
+   "topic": "Coming up",
+   "question": "Next month I'm going to visit my parents in the countryside. What are you going to do this weekend?",
+   "follow": [
+    "Any plans for the holidays?",
+    "What's your family going to do?"
+   ]
+  },
+  {
+   "unit": "Unit 12 - The Great Outdoors",
+   "outcome": "Compare places",
+   "tests": "Comparative adjectives (-er / more... than)",
+   "topic": "Two cities",
+   "question": "Curitiba is colder than Rio, but Rio is much bigger. Compare two places you know well.",
+   "follow": [
+    "Which one is better to live in? Why?",
+    "Is your city more expensive than Sao Paulo?"
+   ]
+  }
+ ],
+ "Basic 3": [
+  {
+   "unit": "Unit 1 - Extraordinary",
+   "outcome": "Describe a past moment in progress",
+   "tests": "Past progressive",
+   "topic": "Yesterday evening",
+   "question": "Yesterday at eight in the evening I was having dinner with my family. Where were you? What were you doing?",
+   "follow": [
+    "What were the other people in your house doing?",
+    "And at eight in the morning?"
+   ]
+  },
+  {
+   "unit": "Unit 1 - Extraordinary",
+   "outcome": "Tell an interrupted-action story",
+   "tests": "Past progressive vs. simple past with when/while",
+   "topic": "A surprise",
+   "question": "I was walking to work one morning when a dog followed me the whole way. Has anything surprising like that happened to you?",
+   "follow": [
+    "What were you doing when it happened?",
+    "What did you do next?"
+   ]
+  },
+  {
+   "unit": "Unit 2 - Party!",
+   "outcome": "Talk about money and quantity",
+   "tests": "Quantifiers (much, many, a lot of), enough / too",
+   "topic": "Time and money",
+   "question": "Do you have enough free time? Be honest.",
+   "follow": [
+    "How much is too much to spend on dinner?",
+    "How many people is too many at a party?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - What's Trending?",
+   "outcome": "Talk about past habits",
+   "tests": "Used to for past habits",
+   "topic": "When you were a kid",
+   "question": "I used to play video games every single day. Now I never touch them. What did you do as a kid that you don't do now?",
+   "follow": [
+    "Was your city different when you were small?",
+    "What kind of music did you listen to back then?"
+   ]
+  },
+  {
+   "unit": "Unit 4 - Your ID",
+   "outcome": "Compare people with as...as",
+   "tests": "(not) as...as comparisons",
+   "topic": "You and other people",
+   "question": "I'm not as patient as my mother, but I'm just as stubborn as my father. Are you as organised as your best friend?",
+   "follow": [
+    "Who in your family is most like you?",
+    "Is your job as hard as people think?"
+   ]
+  },
+  {
+   "unit": "Unit 4 - Your ID",
+   "outcome": "Talk about extremes with superlatives",
+   "tests": "Superlative adjectives",
+   "topic": "The best and the worst",
+   "question": "Best restaurant in your city — and the worst?",
+   "follow": [
+    "Who's the funniest person you know?",
+    "What's the most beautiful place you know?"
+   ]
+  },
+  {
+   "unit": "Unit 5 - Prepping",
+   "outcome": "Make polite requests",
+   "tests": "Modals of request and permission (can/could/may)",
+   "topic": "Asking a favour",
+   "question": "Little role-play: you need to borrow my car for the weekend. I'm your friend — ask me.",
+   "follow": [
+    "Now I'm your boss, not your friend. Ask me again.",
+    "Now ask me for something much bigger."
+   ]
+  },
+  {
+   "unit": "Unit 6 - Changes",
+   "outcome": "Talk about experiences and duration",
+   "tests": "Present perfect with for / since / ever / never",
+   "topic": "Your experience",
+   "question": "I've lived in this city since 2010 and I've never been to Asia. How long have you been studying English?",
+   "follow": [
+    "Have you ever travelled outside Brazil?",
+    "Have you ever met someone famous?"
+   ]
+  }
+ ],
+ "Basic 4": [
+  {
+   "unit": "Unit 7 - Get to Work",
+   "outcome": "Talk about what is done and not done",
+   "tests": "Present perfect with already / yet / just",
+   "topic": "Today so far",
+   "question": "I've already had three coffees today but I haven't had lunch yet. How's your day going so far?",
+   "follow": [
+    "What have you already done today?",
+    "What haven't you done yet?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - Downtime",
+   "outcome": "Talk about activities as subjects",
+   "tests": "Gerund phrases as subject",
+   "topic": "What relaxes you",
+   "question": "Cooking relaxes me. Waking up early destroys me. What about you?",
+   "follow": [
+    "Finish this: studying English is...",
+    "And living in this city is...?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - Downtime",
+   "outcome": "Talk about decisions and habits",
+   "tests": "Verb + gerund or infinitive (decide to, keep -ing, avoid -ing)",
+   "topic": "Habits",
+   "question": "I've decided to exercise more, but I keep forgetting to actually go. Have you decided to change anything this year?",
+   "follow": [
+    "What do you keep forgetting to do?",
+    "Is there anything you avoid doing?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - Room for Me",
+   "outcome": "Talk about future plans and predictions",
+   "tests": "Future forms (will, going to, present continuous for future)",
+   "topic": "Tonight and tomorrow",
+   "question": "Tonight I'm meeting a friend, and I think I'll be asleep by ten. What about your evening?",
+   "follow": [
+    "What do you think the weather will be like tomorrow?",
+    "What are you doing at the weekend?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - Room for Me",
+   "outcome": "Speculate about the future",
+   "tests": "Future possibility and certainty (might, could, will definitely)",
+   "topic": "Your city in 20 years",
+   "question": "What do you think your city will look like in twenty years?",
+   "follow": [
+    "What might change?",
+    "Is there anything that definitely won't change?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Wellbeing",
+   "outcome": "Talk about causes and real plans",
+   "tests": "Zero and first conditional",
+   "topic": "Sleep and free time",
+   "question": "If I don't sleep well, I'm useless the whole day. What happens to you if you don't sleep enough?",
+   "follow": [
+    "If you have free time this weekend, what will you do?",
+    "What happens if you drink coffee at night?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Wellbeing",
+   "outcome": "Imagine hypothetical situations",
+   "tests": "Second conditional",
+   "topic": "The lottery",
+   "question": "If you won the lottery tomorrow, what would you do?",
+   "follow": [
+    "If you could live anywhere in the world, where would you live?",
+    "Would you keep working?"
+   ]
+  },
+  {
+   "unit": "Unit 11 - Use and Reuse",
+   "outcome": "Talk about products with passives",
+   "tests": "Simple present and simple past passive",
+   "topic": "Where things come from",
+   "question": "Where was your phone made?",
+   "follow": [
+    "What is Brazil famous for producing?",
+    "What's your favourite dish made of?"
+   ]
+  }
+ ],
+ "Intermediate 1": [
+  {
+   "unit": "Unit 1 - Incredible Lives",
+   "outcome": "Contrast states and actions",
+   "tests": "Stative and dynamic verbs (think/see vs. thinking/looking)",
+   "topic": "Opinions vs. this moment",
+   "question": "What do you think about all this AI stuff? And then — what are you thinking about right now, honestly?",
+   "follow": [
+    "What can you see out of the window? And what are you looking at on your phone all day?",
+    "Do you understand why people love it? Are you starting to understand it better?"
+   ]
+  },
+  {
+   "unit": "Unit 1 - Incredible Lives",
+   "outcome": "Talk about achieved abilities",
+   "tests": "Expressing ability (can, could, be able to, manage to)",
+   "topic": "Something you finally did",
+   "question": "Last week I finally managed to fix my own bike — normally I'm hopeless with tools. What have you managed to do recently that you couldn't do before?",
+   "follow": [
+    "What would you like to be able to do?",
+    "Were you able to do it first time?"
+   ]
+  },
+  {
+   "unit": "Unit 2 - The Animal Connection",
+   "outcome": "Confirm information with tags",
+   "tests": "Tag questions",
+   "topic": "Checking what you know",
+   "question": "You've been studying English for a while, haven't you? And this is your first test with me, isn't it?",
+   "follow": [
+    "Your turn — guess three things about me and check with me.",
+    "You're not from here originally, are you?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Think About It",
+   "outcome": "Sequence future actions",
+   "tests": "Future time clauses (when, as soon as, before, after, until)",
+   "topic": "The rest of your day",
+   "question": "As soon as we finish here, I'm going straight for a coffee. What's the first thing you'll do when you get home?",
+   "follow": [
+    "What will you do before you go to bed?",
+    "What happens after you wake up tomorrow?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Think About It",
+   "outcome": "Talk about ongoing activities",
+   "tests": "Present perfect progressive (have been doing)",
+   "topic": "Lately",
+   "question": "I've been teaching for over ten years now. How long have you been studying English?",
+   "follow": [
+    "What have you been watching or reading lately?",
+    "What have you been doing to practise?"
+   ]
+  },
+  {
+   "unit": "Unit 5 - One Planet",
+   "outcome": "Express wishes and hopes",
+   "tests": "Wishes and hopes (I wish + past, I hope + will)",
+   "topic": "If things were different",
+   "question": "I wish I had more free time, and I hope next year is calmer than this one. What about you?",
+   "follow": [
+    "What do you wish were different in your life right now?",
+    "What do you hope happens next year?"
+   ]
+  },
+  {
+   "unit": "Unit 6 - Moments in Time",
+   "outcome": "Sequence past events",
+   "tests": "Past perfect with by the time / already / yet",
+   "topic": "Before a turning point",
+   "question": "By the time I turned eighteen I had already chosen the wrong career once. What had you decided by the time you finished school?",
+   "follow": [
+    "What hadn't you done yet by then?",
+    "Had you ever travelled before that?"
+   ]
+  },
+  {
+   "unit": "Unit 6 - Moments in Time",
+   "outcome": "Define things with relative clauses",
+   "tests": "Defining relative clauses (who, which, that, where)",
+   "topic": "Explaining things simply",
+   "question": "Explain these to me as if I were five years old: a smartphone, a best friend, a library.",
+   "follow": [
+    "Now define 'hero'.",
+    "And what's a place where you feel completely relaxed?"
+   ]
+  }
+ ],
+ "Intermediate 2": [
+  {
+   "unit": "Unit 7 - Looking Back",
+   "outcome": "Express regrets about the past",
+   "tests": "Should / shouldn't have + past participle",
+   "topic": "Looking back",
+   "question": "I should have learned German when I was younger — now it's much harder. Looking back, is there anything you should have done differently?",
+   "follow": [
+    "Anything you definitely shouldn't have done?",
+    "What should your school have taught you?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - A New Home?",
+   "outcome": "Imagine a different past",
+   "tests": "Third conditional",
+   "topic": "A different life",
+   "question": "If I had been born in another country my life would have been completely different. If you hadn't started learning English, what would your life look like now?",
+   "follow": [
+    "If you'd made one different choice, what would have happened?",
+    "Would you have stayed in the same city?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - A New Home?",
+   "outcome": "Ask polite indirect questions",
+   "tests": "Indirect questions",
+   "topic": "Being polite with a stranger",
+   "question": "Role-play: I'm a stranger at the airport and you need help, but you want to be really polite about it. Ask me three things.",
+   "follow": [
+    "Now you're at a hotel reception, same thing.",
+    "Ask me something personal — but carefully."
+   ]
+  },
+  {
+   "unit": "Unit 9 - The World of News",
+   "outcome": "Emphasize with so/such/too/enough",
+   "tests": "So / such / too / enough",
+   "topic": "How your year has been",
+   "question": "Mine's been so busy that I need a two-month holiday. Such a strange year. How's yours been?",
+   "follow": [
+    "Was it too much?",
+    "Did you get enough rest?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - The World of News",
+   "outcome": "Speculate with modals of deduction",
+   "tests": "Modals of deduction (must, might, could, can't + be)",
+   "topic": "A small mystery",
+   "question": "My neighbour leaves at five every morning in a uniform and comes home exhausted at midnight. What's his job?",
+   "follow": [
+    "What definitely isn't his job?",
+    "Why might he do those hours?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Got It?",
+   "outcome": "Report what people said",
+   "tests": "Reported speech (statements and questions)",
+   "topic": "What people told you",
+   "question": "Yesterday a student told me she was exhausted and asked me if my tests were hard. What's the last interesting thing somebody told you?",
+   "follow": [
+    "And what did they ask you?",
+    "What did you say back?"
+   ]
+  },
+  {
+   "unit": "Unit 11 - Money in the Bank",
+   "outcome": "Talk about services with causatives",
+   "tests": "Causatives (have / get something done)",
+   "topic": "Things other people do for you",
+   "question": "I don't cut my own hair — I have it cut at a place near my house. Do you cut your own?",
+   "follow": [
+    "What else do you get done by other people?",
+    "If you were rich, what would you have done for you every week?"
+   ]
+  },
+  {
+   "unit": "Unit 12 - Inside Advertising",
+   "outcome": "Describe changes with passives",
+   "tests": "Passive voice in progressive and perfect tenses",
+   "topic": "Your city right now",
+   "question": "A huge new building is being put up near my street, and the old cinema has finally been renovated. Is anything being built near you?",
+   "follow": [
+    "What's been improved in your city in the last few years?",
+    "What's been destroyed that you miss?"
+   ]
+  }
+ ],
+ "Intermediate 3": [
+  {
+   "unit": "Unit 1 - It's a Mystery!",
+   "outcome": "Describe objects with ordered adjectives",
+   "tests": "Adjective order (opinion-size-age-shape-colour-origin-material)",
+   "topic": "Describing your things",
+   "question": "Describe your favourite thing you own — and I want real detail, not just 'a chair'.",
+   "follow": [
+    "Now describe the room you're in right now.",
+    "Describe the worst piece of furniture you've ever owned."
+   ]
+  },
+  {
+   "unit": "Unit 2 - Starting Up",
+   "outcome": "Talk about pairs and groups",
+   "tests": "Quantifiers: both, neither, either, all, none, each",
+   "topic": "Pairs in your life",
+   "question": "Both my parents worked, but neither of them enjoyed their job. What about yours?",
+   "follow": [
+    "Your two closest friends — how are they different?",
+    "Do you get on with all of your neighbours?"
+   ]
+  },
+  {
+   "unit": "Unit 2 - Starting Up",
+   "outcome": "Explain rules and obligations",
+   "tests": "Obligation, permission, prohibition (must, mustn't, be allowed to, don't have to)",
+   "topic": "Rules where you are",
+   "question": "At my school teachers have to arrive early, students aren't allowed to use phones, but we don't have to wear a uniform. What are the rules where you work or study?",
+   "follow": [
+    "What are you not allowed to do?",
+    "What don't you have to do that people assume you do?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Blending Worlds",
+   "outcome": "Contrast stop/remember + gerund or infinitive",
+   "tests": "Verbs + gerund/infinitive with change in meaning (stop, remember, try, forget)",
+   "topic": "Habits and memory",
+   "question": "I stopped drinking soda last year — although yesterday I stopped to drink one, which doesn't count. Have you stopped doing anything?",
+   "follow": [
+    "Do you remember learning to ride a bike?",
+    "What must you remember to do this week?"
+   ]
+  },
+  {
+   "unit": "Unit 3 - Blending Worlds",
+   "outcome": "Talk about adapting to change",
+   "tests": "Be / get used to + gerund",
+   "topic": "Adapting",
+   "question": "When I started this job I couldn't get used to waking up at five. Now I don't even notice. What was hardest for you to adapt to?",
+   "follow": [
+    "What are you used to now that felt strange at first?",
+    "What could you never get used to?"
+   ]
+  },
+  {
+   "unit": "Unit 4 - Lifelong Learning",
+   "outcome": "Describe background to a past moment",
+   "tests": "Past perfect vs. past perfect progressive",
+   "topic": "A turning point",
+   "question": "By the time I got my first real job I had been studying English for ten years, but I had never used it with a real person. Think of a big turning point in your life.",
+   "follow": [
+    "What had been going on before it?",
+    "What had already happened by then?"
+   ]
+  },
+  {
+   "unit": "Unit 4 - Lifelong Learning",
+   "outcome": "Express preferences",
+   "tests": "Prefer / would prefer / would rather",
+   "topic": "Choices",
+   "question": "I'd rather work early in the morning than late at night, and I prefer coffee to absolutely everything. Home or office — which would you choose?",
+   "follow": [
+    "Travelling alone or with people? Why?",
+    "Would you rather have more money or more time?"
+   ]
+  },
+  {
+   "unit": "Unit 5 - Media Matters",
+   "outcome": "Create emphasis with cleft sentences",
+   "tests": "Creating emphasis (cleft sentences: What I love is..., It's...that...)",
+   "topic": "What matters to you",
+   "question": "What I love about my job is the freedom. It's my family that keeps me going when it's hard. What about yours?",
+   "follow": [
+    "What's the one thing you really love about what you do?",
+    "Who or what actually keeps you motivated?"
+   ]
+  }
+ ],
+ "Intermediate 4": [
+  {
+   "unit": "Unit 7 - Hit the Road",
+   "outcome": "Deduce about the past",
+   "tests": "Past modals of deduction (must have, might have, can't have + past participle)",
+   "topic": "An unexplained thing",
+   "question": "My neighbour's car vanished for a week and came back covered in mud — he must have gone somewhere wild. Has anything odd ever happened to you that you never explained?",
+   "follow": [
+    "What must have happened?",
+    "What can't have happened?"
+   ]
+  },
+  {
+   "unit": "Unit 7 - Hit the Road",
+   "outcome": "Talk about influence and expectations",
+   "tests": "Verb + object + infinitive (encourage/expect/want/advise someone to do)",
+   "topic": "Who pushed you",
+   "question": "My parents encouraged me to study languages, which I resisted for years. Who pushed you towards what you do now?",
+   "follow": [
+    "What do people expect you to do?",
+    "What would you advise me to do about learning Portuguese?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - Future Innovations",
+   "outcome": "Add extra information with clauses",
+   "tests": "Non-defining relative clauses",
+   "topic": "Your city and your people",
+   "question": "Curitiba, which is one of the coldest big cities in Brazil, is where I grew up. Tell me about your city the same way — with the extra details.",
+   "follow": [
+    "Now one person in your family, same thing.",
+    "Tell me about your school, which I know nothing about."
+   ]
+  },
+  {
+   "unit": "Unit 8 - Future Innovations",
+   "outcome": "Front ideas with noun clauses",
+   "tests": "Noun clauses as subjects (What concerns me is..., The fact that...)",
+   "topic": "What worries you",
+   "question": "What worries me about the future is how fast everything moves. The fact that nobody reads any more doesn't bother me at all, oddly. What about you?",
+   "follow": [
+    "What worries you most about the next ten years?",
+    "What doesn't bother you that bothers everyone else?"
+   ]
+  },
+  {
+   "unit": "Unit 9 - Trendsetter",
+   "outcome": "Talk about interests after prepositions",
+   "tests": "Gerund as object of preposition (interested in doing, good at doing, tired of doing)",
+   "topic": "What you are into",
+   "question": "I'm interested in learning German but I'm completely tired of memorising vocabulary. What are you into these days?",
+   "follow": [
+    "What are you good at?",
+    "What are you tired of doing?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Mind Over Matter",
+   "outcome": "Talk about procrastination and anticipation",
+   "tests": "Phrasal-prepositional verbs (put off, look forward to, put up with, get around to)",
+   "topic": "Putting things off",
+   "question": "I keep putting off the dentist, but I'm really looking forward to December. What about you?",
+   "follow": [
+    "What do you keep putting off?",
+    "What do you put up with at work or school?"
+   ]
+  },
+  {
+   "unit": "Unit 8 - Future Innovations",
+   "outcome": "Predict with future passives",
+   "tests": "Future passive (will be done, will have been done)",
+   "topic": "What comes next",
+   "question": "In twenty years most cars will be driven by computers and half of these jobs will have been replaced. What do you think will be invented next?",
+   "follow": [
+    "What will be changed in your profession?",
+    "What will have been achieved by 2050?"
+   ]
+  },
+  {
+   "unit": "Unit 10 - Mind Over Matter",
+   "outcome": "Express commitment and intention",
+   "tests": "Verb phrases of intention (intend to, be committed to, be determined to, give up on)",
+   "topic": "The next five years",
+   "question": "I'm committed to improving my German and I intend to actually go there next year. What are you determined to achieve in the next five years?",
+   "follow": [
+    "How do you intend to do it?",
+    "Is there anything you've given up on?"
+   ]
+  }
+ ]
 };
 
 // ═══════════════════════════════════════════════
@@ -522,7 +1291,7 @@ const QB = {
 // ═══════════════════════════════════════════════
 let S = {
   name:'', startIdx:0, curIdx:0, qIdx:0,
-  sliderMoved:false, sliderVal:50,
+  ev:null, note:'', sliderVal:0,
   strikesNow:0, curScores:[], curAsked:0, curQuestions:[],
   levelResults:[], observations:[], finalPlacement:null, endReason:''
 };
@@ -546,36 +1315,48 @@ function hslColor(val){
   return `hsl(${Math.round(val*1.2)},88%,55%)`;
 }
 
-function updateSliderUI(val){
-  const c = hslColor(val);
-  $('sslider').style.background = `linear-gradient(to right,${c} 0%,${c} ${val}%,var(--border) ${val}%,var(--border) 100%)`;
-  $('score-num').textContent = val + '%';
-  $('score-num').style.color = c;
-  $('score-num').classList.remove('pending');
+
+/* Evidence scale. The teacher records an observable fact — did the target form
+   come out of the student's mouth, and was it right — rather than an overall
+   impression. The numbers behind it keep the existing level thresholds working
+   (8 correct = 80% = advance). */
+const EV = { no:0, try:40, ok:80, nat:100 };
+const EV_ORDER = ['no','try','ok','nat'];
+
+function evFromScore(v){
+  if(v === null || v === undefined) return null;
+  let best = 'no', d = 1e9;
+  EV_ORDER.forEach(k => { const dd = Math.abs(EV[k] - v); if(dd < d){ d = dd; best = k; } });
+  return best;
+}
+
+function paintEv(){
+  document.querySelectorAll('.ev-btn').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.ev === S.ev);
+  });
+  $('btn-next').disabled = !S.ev;
+}
+
+function setEv(k){
+  S.ev = k;
+  S.sliderVal = EV[k];
+  paintEv();
 }
 
 function resetSlider(){
-  S.sliderMoved = false;
   const lvl = LEVELS[S.curIdx];
   const prevEntry = prevScores && prevScores[lvl] && prevScores[lvl][S.qIdx];
   const sameQ = prevEntry && prevEntry.outcome === QB[lvl][S.qIdx].outcome;
   const prevScore = (sameQ && prevEntry.score !== null && prevEntry.score !== undefined) ? prevEntry.score : null;
+  S.ev = null;
+  S.note = '';
+  $('ev-note').value = '';
   if(prevScore !== null){
-    S.sliderVal = prevScore;
-    S.sliderMoved = true;
-    $('sslider').value = prevScore;
-    updateSliderUI(prevScore);
-    $('btn-next').disabled = false;
-    $('shint').textContent = 'Previous score pre-filled — adjust if needed';
+    setEv(prevEntry.ev || evFromScore(prevScore));
+    $('ev-lbl').textContent = 'Did the form appear? — last time: ' + prevScore + '%';
   } else {
-    S.sliderVal = 50;
-    $('sslider').value = 50;
-    $('sslider').style.background = 'var(--border)';
-    $('score-num').textContent = '—';
-    $('score-num').style.color = '';
-    $('score-num').classList.add('pending');
-    $('btn-next').disabled = true;
-    $('shint').textContent = 'Move the slider to score this response';
+    $('ev-lbl').textContent = 'Did the form appear?';
+    paintEv();
   }
 }
 
@@ -597,8 +1378,15 @@ function render(){
   $('qfill').style.width = pct + '%';
   $('q-unit').textContent = q.unit;
   $('q-oc-lbl').textContent = q.outcome;
+  $('q-topic').textContent = q.topic || '';
   $('q-text').textContent = q.question;
-  $('q-tests').innerHTML = `<em>Testing:</em> ${q.tests}`;
+  const fl = q.follow || [];
+  $('q-fups').style.display = fl.length ? '' : 'none';
+  $('q-fups').innerHTML = fl.length
+    ? '<div class="fups-lbl">Keep it going — use as many as you need</div>'
+      + fl.map(f => `<div class="fup">${f.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`).join('')
+    : '';
+  $('q-tests').innerHTML = `<em>Listen for:</em> ${q.tests}`;
 
   updatePips();
   resetSlider();
@@ -654,7 +1442,7 @@ function showModal(lvl, average, type){
     $('mhdg').textContent = 'Level Passed';
     $('mavg').textContent = average + '%';
     $('mavg').style.color = 'var(--success)';
-    $('mdesc').innerHTML = `<strong>${lvl}</strong> completed with a strong score.<br>Advancing to <strong>${nxt}</strong>.`;
+    $('mdesc').innerHTML = `Nearly everything on <strong>${lvl}</strong> came out correctly.<br>Moving up to <strong>${nxt}</strong>.`;
     B.appendChild(makeBtn(`Begin ${nxt} →`, 'btn-mm', ()=>{ closeModal(); advanceLevel(); }));
 
   } else if(type === 'borderline'){
@@ -662,7 +1450,7 @@ function showModal(lvl, average, type){
     $('mhdg').textContent = 'Borderline Score';
     $('mavg').textContent = average + '%';
     $('mavg').style.color = 'var(--warning)';
-    $('mdesc').innerHTML = `<strong>${lvl}</strong> — score in the borderline range (65–79%).<br>Place the student here or advance to the next level?`;
+    $('mdesc').innerHTML = `Some of <strong>${lvl}</strong> is there, some of it broke down.<br>Place the student here, or push on and see how far it goes?`;
     if(!isLast){
       B.appendChild(makeBtn(`Advance to ${nxt} →`, 'btn-mm', ()=>{
         S.levelResults[S.levelResults.length-1].outcome = 'borderline-advanced';
@@ -679,7 +1467,7 @@ function showModal(lvl, average, type){
     $('mhdg').textContent = 'Test Complete';
     $('mavg').textContent = average + '%';
     $('mavg').style.color = 'var(--accent)';
-    $('mdesc').innerHTML = `Score on <strong>${lvl}</strong> is below the advance threshold.<br>Placing student at <strong>${lvl}</strong>.`;
+    $('mdesc').innerHTML = `Too much of <strong>${lvl}</strong> didn't come out.<br>This is where to start: <strong>${lvl}</strong>.`;
     B.appendChild(makeBtn('View Results', 'btn-mm', ()=>{ closeModal(); endTest(lvl, 'placed'); }));
 
   } else if(type === 'strike-end'){
@@ -859,6 +1647,41 @@ function buildResults(){
     }
   }
 
+  /* What to review first — every target the student did not produce, or
+     produced broken, at or below where they've been placed. This is the
+     actual teaching plan for the first few lessons. */
+  const placedIdx = LEVELS.indexOf(S.finalPlacement);
+  const gaps = [];
+  S.levelResults.forEach(r => {
+    if(placedIdx >= 0 && r.levelIdx > placedIdx) return;
+    (r.questions || []).forEach(q => {
+      if(q.skipped) return;
+      if(q.strike || q.ev === 'no' || q.ev === 'try'){
+        const qd = QB[r.level] ? QB[r.level][q.qNum - 1] : null;
+        gaps.push({
+          level: r.level,
+          unit: q.unit,
+          outcome: q.outcome,
+          tests: qd ? qd.tests : '',
+          hard: q.strike || q.ev === 'no',
+          note: q.note || ''
+        });
+      }
+    });
+  });
+  const revSec = $('rev-sec'), revList = $('rev-list');
+  if(gaps.length){
+    revSec.style.display = '';
+    revList.innerHTML = gaps.map(g => `
+      <div class="rev-item${g.hard ? ' hard' : ''}">
+        <div class="rev-h">${g.hard ? '✗' : '~'} ${g.tests || g.outcome}</div>
+        <div class="rev-s">${g.level} · ${g.unit} — ${g.outcome}</div>
+        ${g.note ? `<div class="rev-n">“${g.note.replace(/</g,'&lt;')}”</div>` : ''}
+      </div>`).join('');
+  } else {
+    revSec.style.display = 'none';
+  }
+
   // Per-question detail
   const pqDetail = $('pq-detail');
   pqDetail.innerHTML = '';
@@ -869,6 +1692,13 @@ function buildResults(){
     const rows = r.questions.map(q => {
       const prevEntry = prevScores && prevScores[r.level] && prevScores[r.level][q.qNum - 1];
       const prevScore = (prevEntry && prevEntry.score !== null && prevEntry.score !== undefined) ? prevEntry.score : null;
+      if(q.skipped){
+        return `<tr>
+          <td class="pq-n">${q.qNum}</td>
+          <td class="pq-u">${q.unit}</td>
+          <td class="pq-oc">${q.outcome}</td>
+          <td class="pq-miss" style="color:var(--muted)">↷ Not reached</td></tr>`;
+      }
       if(q.strike){
         const prevHTML = prevScore !== null ? `<span style="color:var(--muted);font-size:11px;">(was ${prevScore}%)</span> ` : '';
         return `<tr>
@@ -930,21 +1760,36 @@ $('sname').addEventListener('input', () => {
   $('err-msg').textContent = '';
 });
 
-$('sslider').addEventListener('input', function(){
-  S.sliderVal = parseInt(this.value);
-  S.sliderMoved = true;
-  updateSliderUI(S.sliderVal);
-  $('btn-next').disabled = false;
-  $('shint').textContent = '';
+document.querySelectorAll('.ev-btn').forEach(btn => {
+  btn.addEventListener('click', () => setEv(btn.dataset.ev));
+});
+
+$('ev-note').addEventListener('input', function(){ S.note = this.value; });
+
+document.addEventListener('keydown', e => {
+  if(!$('qs').classList.contains('active')) return;
+  if(document.activeElement === $('ev-note')) return;
+  if(['1','2','3','4'].includes(e.key)) setEv(EV_ORDER[parseInt(e.key) - 1]);
+  if(e.key === 'Enter' && S.ev) $('btn-next').click();
+});
+
+/* An organic conversation doesn't always reach every target. Skipping records
+   nothing rather than recording a zero, so the level average stays honest. */
+$('btn-skip').addEventListener('click', () => {
+  S.curQuestions.push({ qNum:S.qIdx+1, unit:QB[LEVELS[S.curIdx]][S.qIdx].unit,
+    outcome:QB[LEVELS[S.curIdx]][S.qIdx].outcome, score:null, ev:'skip', note:'', strike:false, skipped:true });
+  S.curAsked++;
+  nextQ();
 });
 
 $('btn-strike').addEventListener('click', handleStrike);
 
 $('btn-next').addEventListener('click', () => {
-  if(!S.sliderMoved) return;
+  if(!S.ev) return;
   const lvl = LEVELS[S.curIdx];
   const q = QB[lvl][S.qIdx];
-  S.curQuestions.push({ qNum:S.qIdx+1, unit:q.unit, outcome:q.outcome, score:S.sliderVal, strike:false });
+  S.curQuestions.push({ qNum:S.qIdx+1, unit:q.unit, outcome:q.outcome,
+    score:S.sliderVal, ev:S.ev, note:(S.note||'').trim(), strike:false });
   S.curScores.push(S.sliderVal);
   S.curAsked++;
   nextQ();
@@ -966,10 +1811,12 @@ function buildStudentRecord() {
     r.questions.forEach(q => {
       const qData = QB[r.level][q.qNum - 1];
       scores[r.level][q.qNum - 1] = {
-        score: q.strike ? null : q.score,
+        score: (q.strike || q.skipped) ? null : q.score,
+        ev: q.ev || null,
+        note: q.note || '',
         unit: qData ? qData.unit : (q.unit || ''),
         outcome: qData ? qData.outcome : (q.outcome || ''),
-        updated: q.strike ? null : new Date().toISOString()
+        updated: (q.strike || q.skipped) ? null : new Date().toISOString()
       };
     });
   });
