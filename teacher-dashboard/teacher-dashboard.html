@@ -3741,6 +3741,7 @@ function renderClassCard(c, isArchived){
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
                     </button>
+                    <button class="icon-btn" onclick="openRenameStudentModal('${s.id}')" title="Edit this student's name">✏️ Rename</button>
                     <button class="icon-btn" onclick="openTransferModal('${s.id}')" title="Transfer to another class">⇄ Transfer</button>
                     <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
                   </div>
@@ -4327,6 +4328,43 @@ function transferStudent(studentId){
   closeModal();
   refreshView();
 }
+/* Renaming keeps the same student record, so attendance, grades, notes,
+   points and report history all follow the new name. */
+function openRenameStudentModal(studentId){
+  const s = state.students.find(x=>x.id===studentId);
+  if(!s) return;
+  const cls = classById(s.classId);
+  showModal(`${sizeModal('md')}
+    <h3>Rename student</h3>
+    <div class="field">
+      <label for="rs-name">Name</label>
+      <input type="text" id="rs-name" value="${esc(s.name)}" autofocus
+             onkeydown="if(event.key==='Enter') saveStudentName('${s.id}')">
+    </div>
+    <p class="meta">${cls?esc(cls.name)+' · ':''}Attendance, grades, notes and points stay with this student \u2014 only the name changes.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="saveStudentName('${s.id}')">Save name</button>
+    </div>`);
+}
+
+function saveStudentName(studentId){
+  const s = state.students.find(x=>x.id===studentId);
+  const input = document.getElementById('rs-name');
+  if(!s || !input) return;
+  const name = input.value.trim();
+  if(!name){ alert('The name cannot be empty.'); input.focus(); return; }
+  if(name === s.name){ closeModal(); return; }
+  const clash = state.students.find(x=>x.id!==s.id && x.classId===s.classId
+                                        && x.name.toLowerCase() === name.toLowerCase());
+  if(clash && !confirm(`Another student in this class is already called \u201c${name}\u201d.\n\nKeep both?`)) return;
+  s.name = name;
+  sortStudentStore();             // the new name may belong elsewhere in the list
+  scheduleSave('students', state.students);
+  closeModal();                   // flushes the save before the modal shuts
+  refreshView();
+}
+
 function deleteStudent(studentId){
   if(!confirm('Remove this student from the class?')) return;
   state.students = state.students.filter(s=>s.id!==studentId);
@@ -6886,6 +6924,7 @@ function renderStudentProfile(){
         <div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:6px;">${t.reportPeriod}: ${fromVal?formatDateShort(fromVal):t.allTime}${fromVal||toVal?` – ${toVal?formatDateShort(toVal):t.present2}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
+        <button class="btn-ghost" onclick="openRenameStudentModal('${student.id}')" title="Edit this student's name">✏️</button>
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
         <button class="btn-ghost" onclick="openReportTextModal()">${t.copyTextBtn}</button>
         <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
