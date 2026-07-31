@@ -2651,7 +2651,19 @@ function gradeStatusLine(st, lang){
     + (st.under ? (pt?' — abaixo da média 80':' — below the 80 average')
        : st.close ? (pt?' — perto da média 80':' — close to the 80 average') : '');
 }
-function studentsInClass(classId){ return state.students.filter(s=>s.classId===classId); }
+/* Every student list in the app is alphabetical. A base-sensitivity collator
+   keeps Brazilian names where a teacher expects them — Álvaro under A rather
+   than after Z, Ângela next to Ana — which a plain sort or a default
+   localeCompare does not guarantee. */
+const NAME_COLLATOR = new Intl.Collator('pt-BR', { sensitivity:'base', numeric:true });
+function byName(a, b){ return NAME_COLLATOR.compare(a?.name || '', b?.name || ''); }
+function sortByName(list){ return list.slice().sort(byName); }
+// Keep the master list ordered too, so anything reading state.students
+// directly is alphabetical without needing to remember to sort.
+function sortStudentStore(){ state.students.sort(byName); }
+function sortPrivateStudentStore(){ state.privateStudents.sort(byName); }
+
+function studentsInClass(classId){ return sortByName(state.students.filter(s=>s.classId===classId)); }
 
 function daysAgo(dateStr){ return (Date.now() - new Date(dateStr+'T00:00:00').getTime()) / 86400000; }
 
@@ -3027,7 +3039,7 @@ function renderStudentSearchResults(qRaw){
   }));
   let all = group.concat(priv);
   if(q) all = all.filter(x=>x.name.toLowerCase().includes(q));
-  all.sort((a,b)=>a.name.localeCompare(b.name));
+  all.sort(byName);
   window._stuSearch = all;
   if(!all.length){ box.innerHTML = `<div class="empty">${q?'No students match.':'No students yet.'}</div>`; return; }
   box.innerHTML = all.slice(0,50).map((x,i)=>`
@@ -3337,7 +3349,7 @@ function _renderDashboard(el){
     : `<div class="empty">${upRange==='today'?'Nothing scheduled for today.':upRange==='tomorrow'?'Nothing scheduled for tomorrow.':'Nothing scheduled this week.'} <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
 
   // — Contact Parents (group students) —
-  const cpStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; });
+  const cpStudents = sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; }));
   window._dashCpIds = cpStudents.map(s=>s.id);
   const cpHtml = cpStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
@@ -3360,7 +3372,7 @@ function _renderDashboard(el){
     </div>` : '';
 
   // — Reminders (private students: adults, so it's "send that link", not "call home") —
-  const remStudents = state.privateStudents.filter(s=>s.contactParents?.reason);
+  const remStudents = sortByName(state.privateStudents.filter(s=>s.contactParents?.reason));
   window._dashRemIds = remStudents.map(s=>s.id);
   const remHtml = remStudents.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--amber);">
@@ -3383,7 +3395,7 @@ function _renderDashboard(el){
     </div>` : '';
 
   // — English Club —
-  const ecStudents = state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; });
+  const ecStudents = sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; }));
   window._dashEcIds = ecStudents.map(s=>s.id);
   const ecHtml = ecStudents.length ? `
     <div class="card section" style="margin-top:16px;">
@@ -3565,7 +3577,7 @@ function _renderDashboard(el){
 
   // — At-risk: combined signals (attendance dip + homework + grades) —
   const risks = state.students.map(riskAssess).filter(Boolean)
-    .sort((a,b)=> b.score-a.score || a.name.localeCompare(b.name));
+    .sort((a,b)=> b.score-a.score || byName(a,b));
   window._dashRiskIds = risks.map(x=>x.studentId);
   const riskHtml = risks.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--purple);">
@@ -4111,7 +4123,7 @@ function archiveClass(classId){
   const c = classById(classId);
   if(!c) return;
   // Contact Parents must be resolved before archiving (per spec Q1)
-  const pending = state.students.filter(s=>s.classId===classId && s.contactParents?.reason);
+  const pending = sortByName(state.students.filter(s=>s.classId===classId && s.contactParents?.reason));
   if(pending.length){
     alert(`Cannot archive: ${pending.length} student(s) still have an unresolved Contact Parents flag (${pending.map(s=>s.name).join(', ')}). Mark those as done first.`);
     return;
@@ -4139,6 +4151,7 @@ function addStudent(classId){
   const name = input.value.trim();
   if(!name) return;
   state.students.push({id:uid(), name, classId});
+  sortStudentStore();
   scheduleSave('students', state.students);
   refreshView();
 }
@@ -5491,9 +5504,9 @@ function ptsApplyCustom(classId, studentId){
 function openPointsModal(classId){
   const c = classById(classId);
   if(!c) return;
-  const roster = state.students.filter(s=>s.classId===classId).sort((a,b)=>a.name.localeCompare(b.name));
+  const roster = studentsInClass(classId);
   const rows = roster.map(s=>({ s, total: pointsFor(s.id, classId) }))
-    .sort((a,b)=> b.total-a.total || a.s.name.localeCompare(b.s.name));
+    .sort((a,b)=> b.total-a.total || byName(a.s, b.s));
   const medal = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
   showModal(`${sizeModal('lg sheet')}
     <h3 style="margin-bottom:2px;">🏆 ${esc(c.name)} — points</h3>
@@ -5520,7 +5533,7 @@ function openPointsModal(classId){
   `, true);
 }
 function ptsAwardAll(classId, delta){
-  const roster = state.students.filter(s=>s.classId===classId);
+  const roster = studentsInClass(classId);
   roster.forEach(s=> awardPoints(classId, s.id, delta, 'Whole class', todayStr()));
   openPointsModal(classId);
 }
@@ -5788,7 +5801,7 @@ const RISK_ICON = { attendance:'📉', homework:'📕', grades:'📝' };
 function openTrendsModal(classId){
   const c = classById(classId);
   if(!c) return;
-  const roster = studentsInClass(classId).sort((a,b)=>a.name.localeCompare(b.name));
+  const roster = studentsInClass(classId);
   // All completed non-holiday records of THIS class, across all its students
   const classRecords = [];
   (()=>{
@@ -6000,7 +6013,7 @@ function openActivityGrading(activityId){
   const c = classById(a.classId);
   const sk = skillMeta(a.skill);
   const session = state.sessions[a.classId+'_'+a.date] || {};
-  const roster = studentsInClass(a.classId).sort((x,y)=>x.name.localeCompare(y.name));
+  const roster = studentsInClass(a.classId);
   const isAbsent = s => session[s.id]?.attendance==='absent';
   const present = roster.filter(s=>!isAbsent(s));
   const absent = roster.filter(isAbsent);
@@ -8159,7 +8172,7 @@ function setPrivView(v){ state.privView = v; refreshView(); }
 
 /* ---------- private: overview ---------- */
 function privOverviewHtml(){
-  const active = state.privateStudents.filter(s=>s.status==='active');
+  const active = sortByName(state.privateStudents.filter(s=>s.status==='active'));
   const rows = active.map(s=>({s, ledger:computeLedger(s.id), next:nextPrivLesson(s.id)}));
   const owing = rows.filter(x=>x.ledger.balance>0.5)
     .sort((a,b)=>(b.ledger.overdue-a.ledger.overdue)||(b.ledger.balance-a.ledger.balance));
@@ -8211,11 +8224,11 @@ function privOverviewHtml(){
 /* ---------- private: students ---------- */
 function privStudentsHtml(){
   const q = (state.privStudentSearch||'').toLowerCase();
-  const filtered = state.privateStudents.filter(s=>{
+  const filtered = sortByName(state.privateStudents.filter(s=>{
     if(state.privStudentFilter!=='all' && s.status!==state.privStudentFilter) return false;
     if(q && !s.name.toLowerCase().includes(q)) return false;
     return true;
-  });
+  }));
   window._privListIds = filtered.map(s=>s.id);
   const filters = [['active','Active'],['paused','Paused'],['inactive','Inactive'],['all','All']];
   return `
@@ -8514,6 +8527,7 @@ function savePrivStudent(id){
   const isNew = !s;
   if(isNew){ s = { id: uid(), pinnedSkills: [], studyPoints: [] }; state.privateStudents.push(s); }
   s.name = name;
+  sortPrivateStudentStore();   // a new name may belong somewhere else in the list
   s.contactPhone = document.getElementById('ps-phone').value.trim();
   s.cefr = document.getElementById('ps-cefr').value;
   s.isMinor = document.getElementById('ps-minor').checked;
@@ -8615,7 +8629,7 @@ function saveReschedule(lessonId){
 /* ---------- private: lesson modal ---------- */
 function openLessonModal(id, presetStudentId, presetDate){
   const l = id ? state.privateLessons.find(x=>x.id===id) : null;
-  const opts = state.privateStudents.filter(s=>s.status!=='inactive'||l?.studentId===s.id);
+  const opts = sortByName(state.privateStudents.filter(s=>s.status!=='inactive'||l?.studentId===s.id));
   showModal(`${sizeModal('md')}
     <h3>${l?'Edit lesson':'Add lesson'}</h3>
     <div class="field"><label>Student</label>
@@ -8737,7 +8751,7 @@ function openPaymentModal(id, presetStudentId){
     <div class="field"><label>Student</label>
       <select id="pay-student" onchange="privPayBalanceHint()">
         <option value="">— pick —</option>
-        ${state.privateStudents.map(s=>`<option value="${s.id}" ${sid===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
+        ${sortByName(state.privateStudents).map(s=>`<option value="${s.id}" ${sid===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
       </select>
       <div id="pay-hint" style="font-size:12px;color:var(--muted);margin-top:6px;">${led?`Current balance: ${balanceDisplay(led.balance)}`:''}</div>
     </div>
@@ -9244,6 +9258,8 @@ async function init(){
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
+  sortStudentStore();
+  sortPrivateStudentStore();
   migrateCycleLabels();
   dataReady = true;   // writes unlocked only now
   renderSaveState();  // paint the Save buttons / indicators from the moment writing is possible
