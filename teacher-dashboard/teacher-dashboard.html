@@ -571,6 +571,11 @@
   .field input, .field select, .modal select, .modal input{
     width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;
   }
+  /* ...but not tick boxes: those are glyphs, not fields. */
+  .field input[type="checkbox"], .modal input[type="checkbox"],
+  .field input[type="radio"],    .modal input[type="radio"]{
+    width:16px;height:16px;flex:0 0 auto;padding:0;margin:0;border-radius:4px;
+  }
   input, select, textarea{background:var(--surface);color:var(--text);}
   input::placeholder, textarea::placeholder{color:var(--muted);opacity:1;}
   .swatches{display:flex;gap:8px;flex-wrap:wrap;}
@@ -9679,10 +9684,44 @@ function _renderProjectBoard(el, run){
 
     ${grid}
 
+    ${projUnassignedPanel(run)}
+
     ${teams.map(t=>projTeamPanel(run, t)).join('')}
 
     ${!teams.length?'':`<p class="meta" style="margin-top:18px;">Click a step to cycle it: not started → in progress → done.</p>`}
   `;
+}
+
+/* Students in the class who are not on any team in this run. */
+function projUnassigned(run){
+  const on = {};
+  (run.teams||[]).forEach(t=>(t.memberIds||[]).forEach(id=>{ on[id]=1; }));
+  return studentsInClass(run.classId).filter(s=>!on[s.id]);
+}
+function projUnassignedPanel(run){
+  const left = projUnassigned(run);
+  if(!left.length || !(run.teams||[]).length) return '';
+  return `
+    <div class="card section" style="margin-bottom:12px;border-left:4px solid var(--amber,#f59e0b);">
+      <h3 style="margin-top:0;">Not in a team yet <span class="meta" style="font-weight:400;">(${left.length})</span></h3>
+      ${left.map(s=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+          <span style="flex:1;font-size:14px;">${esc(s.name)}</span>
+          <select onchange="projMoveStudent('${run.id}','${s.id}',this.value)" style="width:auto;min-width:150px;padding:5px 8px;font-size:13px;">
+            <option value="">Add to team…</option>
+            ${(run.teams||[]).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>`;
+}
+function projMoveStudent(runId, studentId, teamId){
+  if(!teamId) return;
+  const run = projRun(runId); if(!run) return;
+  (run.teams||[]).forEach(t=>{ t.memberIds = (t.memberIds||[]).filter(id=>id!==studentId); });
+  const target = (run.teams||[]).filter(t=>t.id===teamId)[0];
+  if(target) target.memberIds.push(studentId);
+  saveProjects();
+  refreshView();
 }
 
 function projTeamPanel(run, team){
@@ -9880,6 +9919,7 @@ function projDeleteTeam(runId, teamId){
 
 /* ---------- assign ---------- */
 function openAssignProjectModal(){
+  projAssignPicks = {};
   if(!projCatalogueReady()){ alert('The project catalogue has not loaded. Check your connection and reload the page.'); return; }
   const classes = activeClasses();
   if(!classes.length){ alert('Add a class first.'); return; }
@@ -9899,7 +9939,7 @@ function openAssignProjectModal(){
     </div>
     <div class="field" style="margin-bottom:12px;">
       <label>Class</label>
-      <select id="ap-class" onchange="projAssignPreview()" style="width:100%;">${classOpts}</select>
+      <select id="ap-class" onchange="projAssignClassChanged()" style="width:100%;">${classOpts}</select>
     </div>
     <div class="modal-row" style="display:flex;gap:12px;margin-bottom:12px;">
       <div class="field" style="flex:1;">
@@ -9908,10 +9948,14 @@ function openAssignProjectModal(){
       </div>
       <div class="field" style="flex:1;">
         <label>Number of teams</label>
-        <input type="number" id="ap-teams" min="1" max="12" value="3" onchange="projAssignPreview()" style="width:100%;">
+        <input type="number" id="ap-teams" min="1" max="12" value="3" onchange="projAssignTeamCount()" style="width:100%;">
       </div>
     </div>
-    <div class="card section" id="ap-preview" style="margin-bottom:16px;"></div>
+    <div class="card section" id="ap-preview" style="margin-bottom:14px;"></div>
+    <div class="field">
+      <label>Who goes in which team</label>
+      <div id="ap-roster"></div>
+    </div>
     <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;">
       <button class="btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn-accent" onclick="projAssignConfirm()">Assign project</button>
@@ -9920,23 +9964,86 @@ function openAssignProjectModal(){
   projAssignPreview();
 }
 
+/* Team membership is chosen by the teacher, never guessed.
+   projAssignPicks maps studentId -> team index; absent means unassigned. */
+let projAssignPicks = {};
+
+function projAssignTeamN(){
+  const el = document.getElementById('ap-teams');
+  return Math.max(1, Math.min(12, Number(el ? el.value : 3) || 1));
+}
+function projAssignTeamCount(){
+  const n = projAssignTeamN();
+  Object.keys(projAssignPicks).forEach(id=>{ if(projAssignPicks[id] >= n) delete projAssignPicks[id]; });
+  projAssignPreview();
+}
+function projAssignSetPick(studentId, val){
+  if(val === '') delete projAssignPicks[studentId];
+  else projAssignPicks[studentId] = Number(val);
+  projAssignPreview();
+}
+function projAssignClearPicks(){ projAssignPicks = {}; projAssignPreview(); }
+function projAssignSplitEven(){
+  const cls = classById(document.getElementById('ap-class').value);
+  const n = projAssignTeamN();
+  projAssignPicks = {};
+  (cls ? studentsInClass(cls.id) : []).forEach((s,i)=>{ projAssignPicks[s.id] = i % n; });
+  projAssignPreview();
+}
+function projAssignClassChanged(){ projAssignPicks = {}; projAssignPreview(); }
+
 function projAssignPreview(){
-  const box = document.getElementById('ap-preview'); if(!box) return;
+  const box = document.getElementById('ap-preview');
+  const rosterBox = document.getElementById('ap-roster');
+  if(!box) return;
   const p = projDef(document.getElementById('ap-project').value);
   const cls = classById(document.getElementById('ap-class').value);
   const start = document.getElementById('ap-start').value || todayStr();
-  const nTeams = Math.max(1, Math.min(12, Number(document.getElementById('ap-teams').value)||1));
-  if(!p){ box.innerHTML = ''; return; }
+  const n = projAssignTeamN();
+  if(!p){ box.innerHTML = ''; if(rosterBox) rosterBox.innerHTML = ''; return; }
+
   const roster = cls ? studentsInClass(cls.id) : [];
   const days = projMeetingDays(cls, start, p.hours);
-  const per = Math.ceil(roster.length / nTeams) || 0;
+  const placed = roster.filter(s=>projAssignPicks[s.id]!=null).length;
+
   box.innerHTML = `
     <div style="font-size:13px;line-height:1.7;">
       <b>${p.icon} ${esc(p.title)}</b> — ${esc(p.level)}, ${p.stages.length} stages, ${projectStepCount(p)} steps<br>
       <span class="meta">${esc(p.hook)}</span><br><br>
       <b>${p.hours}</b> lessons at one hour a day${days.length?`, ending <b>${formatDateShort(days[days.length-1])}</b>`:''}<br>
-      <b>${roster.length}</b> student${roster.length===1?'':'s'} split into <b>${nTeams}</b> team${nTeams===1?'':'s'}${per?` of about ${per}`:''}<br>
+      <b>${placed}</b> of <b>${roster.length}</b> student${roster.length===1?'':'s'} placed into <b>${n}</b> team${n===1?'':'s'}<br>
       <span class="meta">Suggested team size for this project: ${esc(p.teamSize)}</span>
+    </div>`;
+
+  if(!rosterBox) return;
+  if(!roster.length){ rosterBox.innerHTML = '<p class="meta">This class has no students yet.</p>'; return; }
+
+  const counts = [];
+  for(let i=0;i<n;i++) counts.push(roster.filter(s=>projAssignPicks[s.id]===i).length);
+
+  rosterBox.innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;align-items:center;">
+      ${counts.map((c,i)=>`<span style="font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;
+        border:1px solid ${PROJ_COLOURS[i%PROJ_COLOURS.length]};color:${PROJ_COLOURS[i%PROJ_COLOURS.length]};">Team ${i+1}: ${c}</span>`).join('')}
+      ${placed<roster.length?`<span class="meta">${roster.length-placed} still unassigned</span>`:''}
+    </div>
+    <div style="max-height:270px;overflow:auto;border:1px solid var(--border);border-radius:9px;">
+      ${roster.map((s,idx)=>{
+        const cur = projAssignPicks[s.id];
+        const col = cur!=null ? PROJ_COLOURS[cur%PROJ_COLOURS.length] : null;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;${idx?'border-top:1px solid var(--border);':''}">
+          <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:${col||'transparent'};border:1px solid ${col||'var(--border)'};"></span>
+          <span style="flex:1;font-size:14px;">${esc(s.name)}</span>
+          <select onchange="projAssignSetPick('${s.id}', this.value)" style="width:auto;min-width:132px;padding:5px 8px;font-size:13px;">
+            <option value="" ${cur==null?'selected':''}>— Unassigned</option>
+            ${Array.from({length:n}, (_,i)=>`<option value="${i}" ${cur===i?'selected':''}>Team ${i+1}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:9px;">
+      <button type="button" class="btn-ghost small" onclick="projAssignSplitEven()">Split evenly</button>
+      <button type="button" class="btn-ghost small" onclick="projAssignClearPicks()">Clear all</button>
     </div>`;
 }
 
@@ -9952,7 +10059,14 @@ function projAssignConfirm(){
   for(let i=0;i<nTeams;i++){
     teams.push({ id: uid(), name: 'Team '+(i+1), colour: PROJ_COLOURS[i%PROJ_COLOURS.length], memberIds: [] });
   }
-  roster.forEach((s,i)=>{ teams[i % nTeams].memberIds.push(s.id); });
+  // Only the students the teacher actually placed. The rest stay unassigned
+  // and are listed on the board until they are put somewhere.
+  roster.forEach(s=>{
+    const t = projAssignPicks[s.id];
+    if(t!=null && teams[t]) teams[t].memberIds.push(s.id);
+  });
+  const unplaced = roster.length - Object.keys(projAssignPicks).filter(id=>roster.some(s=>s.id===id)).length;
+  if(unplaced > 0 && !confirm(`${unplaced} student${unplaced===1?' is':'s are'} not in a team yet.\n\nAssign the project anyway? You can add them from the board.`)) return;
 
   const cls = classById(classId);
   const days = projMeetingDays(cls, start, p.hours);
@@ -10014,10 +10128,10 @@ function openProjTeamModal(runId, teamId){
       <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:9px;padding:8px;margin-top:6px;">
         ${roster.map(s=>{
           const on = team && (team.memberIds||[]).includes(s.id);
-          return `<label style="display:flex;align-items:center;gap:9px;padding:6px 4px;font-size:14px;cursor:pointer;">
+          return `<label style="display:flex;align-items:center;gap:10px;padding:7px 6px;font-size:14px;cursor:pointer;border-radius:7px;">
             <input type="checkbox" class="tm-mem" value="${s.id}" ${on?'checked':''}>
-            <span>${esc(s.name)}</span>
-            ${taken[s.id]?`<span class="meta" style="margin-left:auto;">on ${esc(taken[s.id])}</span>`:''}
+            <span style="flex:1;text-align:left;">${esc(s.name)}</span>
+            ${taken[s.id]?`<span class="meta" style="white-space:nowrap;">on ${esc(taken[s.id])}</span>`:''}
           </label>`;
         }).join('')}
       </div>`}
