@@ -213,6 +213,21 @@ html[data-theme="light"] .stp.s1{color:#fff}
 .tilebk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:16%;background:var(--act2)}
 .tilebk::after{content:"";position:absolute;left:28%;right:12%;top:34%;height:4px;background:var(--ink);opacity:.3;
   box-shadow:0 12px 0 rgba(0,0,0,0),0 10px 0 currentColor}
+/* trophy */
+.tr-cup{left:50%;top:20%;width:44%;height:34%;margin-left:-22%;background:var(--act);
+  border:5px solid var(--ink);border-radius:8px 8px 46% 46%/8px 8px 62% 62%}
+.tr-hnd{top:24%;width:17%;height:22%;border:5px solid var(--ink);border-radius:50%}
+.tr-hnd.l{left:18%;border-right-color:transparent}
+.tr-hnd.r{right:18%;border-left-color:transparent}
+.tr-stem{left:50%;top:54%;width:11%;height:13%;margin-left:-5.5%;background:var(--ink);opacity:.7}
+.tr-base{left:33%;right:33%;top:67%;height:8%;background:var(--panel2);border:5px solid var(--ink);border-radius:4px}
+.tr-plate{left:24%;right:24%;top:75%;height:10%;background:var(--act2);border:5px solid var(--ink);border-radius:6px}
+.tr-st{left:50%;top:28%;width:17%;height:17%;margin-left:-8.5%;background:var(--act2);
+  clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.spark{width:10%;height:10%;background:var(--act2);opacity:.85;
+  clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%);
+  animation:twinkle 3.2s ease-in-out infinite}
+@keyframes twinkle{0%,100%{transform:scale(.7);opacity:.35}50%{transform:scale(1);opacity:.95}}
 /* finale */
 .qmark{left:50%;top:50%;width:52%;height:52%;margin:-26% 0 0 -26%;border-radius:50%;background:var(--act);
   display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:800;
@@ -471,6 +486,9 @@ html[data-theme="light"] #ov{background:rgba(238,243,250,.95)}
        data-basic="Good moment or bad moment? Tap and see."
        data-plus="So when is a good moment? Tap each one."></p>
     <div class="qgrid three" id="rgrid"></div>
+    <p class="note lv" style="text-align:center;color:var(--act2);font-weight:600"
+       data-basic="This is a privilege. If the class uses it badly, it stops — and you ask permission again."
+       data-plus="Going without asking is a privilege, not a right. If the class abuses it, it goes away and everyone asks permission again."></p>
   </div>
 </section>
 
@@ -573,7 +591,33 @@ html[data-theme="light"] #ov{background:rgba(238,243,250,.95)}
   </div>
 </section>
 
-<!-- 10 · BEHAVIOUR -->
+<!-- 12 · CLASS REWARDS -->
+<section class="slide" data-act="4" data-title="What the class earns">
+  <div>
+    <span class="eyebrow">Together</span>
+    <h2 class="lv" data-basic="The class earns the fun." data-plus="Your class earns its own rewards."></h2>
+    <p class="lead lv" data-basic="One class, one result. Follow the rules and you get more."
+       data-plus="How the class behaves decides what the class gets to do — all of you, together."></p>
+    <ul class="points">
+      <li class="lv" data-basic="More games in class." data-plus="More games instead of exercises."></li>
+      <li class="lv" data-basic="Activities outside the classroom." data-plus="Activities outside the classroom."></li>
+      <li class="lv" data-basic="Picnic day." data-plus="Picnic day."></li>
+    </ul>
+    <p class="note lv" data-basic="One student cannot win this alone. And one student can lose it for everybody."
+       data-plus="Nobody earns this on their own — and it only takes a few people to lose it for everybody."></p>
+  </div>
+  <div class="art">
+    <div class="spark" style="left:12%;top:20%"></div>
+    <div class="spark" style="right:14%;top:14%;animation-delay:.9s"></div>
+    <div class="spark" style="right:10%;top:52%;animation-delay:1.7s"></div>
+    <div class="tr-hnd l"></div><div class="tr-hnd r"></div>
+    <div class="tr-cup"></div><div class="tr-st"></div>
+    <div class="tr-stem"></div><div class="tr-base"></div><div class="tr-plate"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 13 · BEHAVIOUR -->
 <section class="slide" data-act="4" data-title="If there's a problem">
   <div>
     <span class="eyebrow">If there's a problem</span>
@@ -613,6 +657,9 @@ html[data-theme="light"] #ov{background:rgba(238,243,250,.95)}
     </ul>
     <p class="note lv" data-basic="When you get the test dates, write them on the cover of your book."
        data-plus="When you receive the test dates, write them on the cover of your book."></p>
+    <p class="note lv" style="color:var(--act2);font-weight:600"
+       data-basic="Low scores? I put you in English Club — extra classes on Friday to help you."
+       data-plus="If your scores are low, I register you for English Club: extra Friday classes to get you back on track."></p>
   </div>
   <div class="art">
     <div class="bar b1"></div><div class="bar b2"></div><div class="bar b3"></div><div class="bar b4"></div>
@@ -873,7 +920,8 @@ var REST = [
   { t: 'We are correcting the exercise together.', v: 'no', w: 'Bad moment. You will miss the answers.' },
   { t: 'The break finished two minutes ago.', v: 'no', w: 'Bad moment. You had fifteen minutes.' },
   { t: 'We are in the middle of a long reading text.', v: 'hm', w: 'OK — if you can catch up on what you missed.' },
-  { t: 'I have just set an individual exercise.', v: 'ok', w: 'Good moment. Go at the start, not in the middle.' }
+  { t: 'I have just set an individual exercise.', v: 'ok', w: 'Good moment. Go at the start, not in the middle.' },
+  { t: 'Good moment — but Ana went out two minutes ago.', v: 'no', w: 'Wait. Only one person outside at a time.' }
 ];
 var RLBL = { ok: 'GOOD MOMENT', no: 'BAD MOMENT', hm: 'OK, BUT...' };
 function buildRest(){
