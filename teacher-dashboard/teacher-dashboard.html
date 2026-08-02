@@ -6483,8 +6483,13 @@ function initRcState(s){
       homework: hwToLevel(s.hwAvg),
       vocab: null, grammar: null, port: null
     },
+    includeProjects: true,
     nonce: 0
   };
+}
+function rcSetProjects(on){
+  if(rcState) rcState.includeProjects = !!on;
+  refreshReportTextArea();
 }
 
 function buildReportText(s, lang){
@@ -6615,6 +6620,25 @@ function buildReportText(s, lang){
     });
   }
 
+  // --- projects ---
+  if(s.projects && s.projects.length && (!rcState || rcState.includeProjects !== false)){
+    out.push('');
+    out.push(isPt ? 'PROJETOS' : 'PROJECTS');
+    s.projects.forEach(p=>{
+      const span = p.startDate
+        ? formatDateShort(p.startDate) + (p.endDate ? ' – ' + formatDateShort(p.endDate) : '')
+        : '';
+      out.push(`- ${p.title}${span?` (${span})`:''} · ${isPt?'equipe':'team'}: ${p.team}`);
+      out.push(`    ${isPt?'Etapas':'Stages'}: ${p.stagesDone}/${p.stagesTotal} · ${isPt?'passos':'steps'}: ${p.stepsDone}/${p.stepsTotal}`);
+      const scored = p.criteria.filter(c=>c.score!=null);
+      if(scored.length){
+        const line = scored.map(c=>`${isPt?c.labelPt:c.label} ${c.score}`).join(' · ');
+        out.push(`    ${line}${p.letter?`  → ${p.letter}`:''}`);
+      }
+      if(p.comment) out.push(`    ${p.comment}`);
+    });
+  }
+
   // --- per-activity observations written during grading ---
   if(s.activityNotes && s.activityNotes.length){
     out.push('');
@@ -6719,6 +6743,14 @@ function openReportTextModal(){
       </div>
       <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
     </div>
+
+    ${(lastReportStats.projects||[]).length ? `
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" ${rcState.includeProjects!==false?'checked':''} onchange="rcSetProjects(this.checked)">
+        <span>${isPt?'Incluir projetos':'Include projects'} <span class="meta">(${lastReportStats.projects.length})</span></span>
+      </label>
+    </div>` : ''}
 
     <textarea id="report-text-area" style="width:100%;min-height:260px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
@@ -6903,6 +6935,7 @@ function renderStudentProfile(){
     periods: periodInfo,
     essays: essayInfo,
     toefl: toeflInfo,
+    projects: cls ? projStudentReport(student.id, cls.id, fromVal, toVal) : [],
     activityNotes: cls ? studentActivityGrades(student.id, cls.id)
       .filter(a=>((a.notes||{})[student.id]||'').trim())
       .map(a=>({ date:a.date, description:a.description, skill:a.skill,
@@ -7045,6 +7078,32 @@ function renderStudentProfile(){
         ${block((pt?'Média por ciclo':'Grade avg / cycle')+(gradeTarget?` <span style="font-weight:400;color:var(--muted);">(${pt?'meta':'target'} ${gradeTarget})</span>`:''), gradeS, {target:gradeTarget})}
         ${block(pt?'Pontos / mês':'Points / month (net)', ptsS, {})}
       </div>
+    </div>`;
+    })()}
+    ${(()=>{
+      const pt = state.reportLang==='pt';
+      const prj = lastReportStats.projects||[];
+      if(!prj.length) return '';
+      return `
+    <div class="card section">
+      <h3>🧪 ${pt?'Projetos':'Projects'}</h3>
+      ${prj.map(p=>{
+        const span = p.startDate ? formatDateShort(p.startDate) + (p.endDate?' – '+formatDateShort(p.endDate):'') : '';
+        const scored = p.criteria.filter(c=>c.score!=null);
+        return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+            <b style="font-size:14px;">${esc(p.icon||'')} ${esc(p.title)}</b>
+            <span class="meta">${span?esc(span)+' · ':''}${pt?'equipe':'team'} ${esc(p.team)}</span>
+            ${p.letter?`<span class="badge" style="margin-left:auto;font-size:14px;">${p.letter}</span>`:''}
+          </div>
+          <div class="meta" style="margin-top:4px;">
+            ${pt?'Etapas':'Stages'} ${p.stagesDone}/${p.stagesTotal} · ${pt?'passos':'steps'} ${p.stepsDone}/${p.stepsTotal}
+            ${scored.length?' · '+scored.map(c=>esc(pt?c.labelPt:c.label)+' '+c.score).join(' · '):''}
+          </div>
+          ${p.comment?`<div style="margin-top:5px;font-size:13px;">${esc(p.comment)}</div>`:''}
+        </div>`;
+      }).join('')}
     </div>`;
     })()}
     ${(()=>{
@@ -9364,6 +9423,64 @@ function projNextStep(run, teamId){
   }
   return null;
 }
+/* Criteria for a run. Stored on the run at assignment time so grades survive
+   a catalogue edit; older runs and a failed catalogue load fall back safely. */
+const PROJ_FALLBACK_CRITERIA = [
+  { id:'lang',     label:'Language range & accuracy', labelPt:'Linguagem' },
+  { id:'task',     label:'Task completion',           labelPt:'Cumprimento' },
+  { id:'collab',   label:'Collaboration',             labelPt:'Colaboração' },
+  { id:'delivery', label:'Delivery',                  labelPt:'Apresentação' }
+];
+function projCriteria(run){
+  if(run && Array.isArray(run.criteria) && run.criteria.length) return run.criteria;
+  const def = run ? projDef(run.projectId) : null;
+  if(def && typeof projectCriteria === 'function'){
+    return projectCriteria(def).map(c=>({ id:c.id, label:c.label, labelPt:c.labelPt||c.label, project:!!c.project }));
+  }
+  return PROJ_FALLBACK_CRITERIA;
+}
+function projBands(critId){
+  if(typeof PROJECT_RUBRIC === 'undefined') return null;
+  const c = PROJECT_RUBRIC.filter(x=>x.id===critId)[0];
+  return c ? c.bands : null;
+}
+function projStudentScore(run, studentId){
+  const scores = (run.scores||{})[studentId]||{};
+  const crits = projCriteria(run);
+  const vals = crits.map(c=>scores[c.id]).filter(v=>v!=null);
+  if(!vals.length) return { avg:null, letter:null, entered:0, of:crits.length };
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  return { avg, letter:numToLetter(avg), entered:vals.length, of:crits.length };
+}
+/* Everything the report builder needs about one student's projects. */
+function projStudentReport(studentId, classId, fromVal, toVal){
+  return projRuns()
+    .filter(r=>r.classId===classId)
+    .filter(r=>{
+      if(fromVal && r.endDate && r.endDate < fromVal) return false;
+      if(toVal && r.startDate && r.startDate > toVal) return false;
+      return true;
+    })
+    .map(r=>{
+      const team = (r.teams||[]).filter(t=>(t.memberIds||[]).includes(studentId))[0];
+      if(!team) return null;
+      const crits = projCriteria(r);
+      const scores = (r.scores||{})[studentId]||{};
+      const st = projStudentScore(r, studentId);
+      const stagesTotal = (r.milestones||[]).length;
+      const stagesDone = (r.milestones||[]).filter(s=>projStageDone(r, team.id, s)===s.steps.length).length;
+      return {
+        title:r.title, icon:r.icon, startDate:r.startDate, endDate:r.endDate,
+        team:team.name, stagesDone, stagesTotal,
+        stepsDone:projTeamDone(r, team.id), stepsTotal:projStepTotal(r),
+        criteria:crits.map(c=>({ label:c.label, labelPt:c.labelPt||c.label, score:scores[c.id]==null?null:scores[c.id] })),
+        letter:st.letter, comment:((r.comment||{})[studentId]||'').trim()
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')));
+}
+
 function projOverallPct(run){
   const teams = run.teams||[];
   if(!teams.length) return 0;
@@ -9626,8 +9743,91 @@ function projTeamPanel(run, team){
               style="width:100%;margin-top:8px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;">${esc(notes[st.id]||'')}</textarea>
           </div>`;
         }).join('')}
+        ${projTeamGrades(run, team)}
       </div>`}
   </div>`;
+}
+
+/* Grading is per student, not per team: collaboration and delivery are
+   individual even when the deliverables are shared. */
+function projTeamGrades(run, team){
+  const members = (team.memberIds||[]).map(id=>state.students.filter(x=>x.id===id)[0]).filter(Boolean);
+  if(!members.length) return '';
+  const crits = projCriteria(run);
+  const scores = run.scores||{};
+  const comments = run.comment||{};
+  return `
+    <div style="border-top:1px solid var(--border);padding-top:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <b style="font-size:13px;">Grades</b>
+        <span class="meta">1 Below · 2 Approaching · 3 Meets · 4 Exceeds</span>
+        <button class="btn-ghost small" style="margin-left:auto;" onclick="projLogAsActivity('${run.id}','${team.id}')">Log as graded activity</button>
+      </div>
+      ${members.map(s=>{
+        const sc = scores[s.id]||{};
+        const st = projStudentScore(run, s.id);
+        return `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;">
+            <b style="font-size:14px;">${esc(s.name)}</b>
+            <span class="meta">${st.entered}/${st.of} scored</span>
+            ${st.letter?`<span class="badge" style="margin-left:auto;font-size:14px;">${st.letter}</span>`:'<span class="meta" style="margin-left:auto;">not graded</span>'}
+          </div>
+          ${crits.map(c=>{
+            const bands = projBands(c.id);
+            const cur = sc[c.id]||null;
+            return `<div style="display:flex;align-items:center;gap:9px;padding:4px 0;">
+              <span style="flex:1;font-size:12.5px;color:${c.project?'var(--accent)':'var(--muted)'};">${esc(c.label)}</span>
+              <span style="display:flex;gap:4px;">
+                ${[1,2,3,4].map(v=>`<button type="button"
+                    title="${esc(bands?bands[v-1]:'')}"
+                    onclick="projSetScore('${run.id}','${s.id}','${c.id}',${v})"
+                    style="width:28px;height:26px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+                      border:1px solid ${cur===v?'var(--accent)':'var(--border)'};
+                      background:${cur===v?'var(--accent)':'transparent'};
+                      color:${cur===v?'#fff':'var(--muted)'};">${v}</button>`).join('')}
+              </span>
+            </div>`;
+          }).join('')}
+          <textarea rows="2" placeholder="Comment for the report card…"
+            onchange="projSetComment('${run.id}','${s.id}',this.value)"
+            style="width:100%;margin-top:9px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;">${esc(comments[s.id]||'')}</textarea>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function projSetScore(runId, studentId, critId, v){
+  const run = projRun(runId); if(!run) return;
+  run.scores = run.scores||{};
+  run.scores[studentId] = run.scores[studentId]||{};
+  if(run.scores[studentId][critId] === v) delete run.scores[studentId][critId];   // tap again to clear
+  else run.scores[studentId][critId] = v;
+  saveProjects();
+  refreshView();
+}
+function projSetComment(runId, studentId, val){
+  const run = projRun(runId); if(!run) return;
+  run.comment = run.comment||{};
+  const t = (val||'').trim();
+  if(t) run.comment[studentId] = t; else delete run.comment[studentId];
+  saveProjects();
+}
+/* Push the finished project into the Activities log so it counts towards the
+   existing skill averages. Opt-in, because not every project should. */
+function projLogAsActivity(runId, teamId){
+  const run = projRun(runId); if(!run) return;
+  const team = (run.teams||[]).filter(t=>t.id===teamId)[0]; if(!team) return;
+  const members = (team.memberIds||[]).filter(id=>projStudentScore(run, id).letter);
+  if(!members.length){ alert('Score at least one student on this team first.'); return; }
+  if(!confirm(`Add "${run.title}" to the Activities log as a speaking activity, with ${members.length} grade(s)?`)) return;
+  const grades = {};
+  members.forEach(id=>{ grades[id] = projStudentScore(run, id).letter; });
+  if(!state.activities) state.activities = [];
+  state.activities.push({ id: uid(), classId: run.classId, date: todayStr(), skill: 'speaking',
+    description: 'Project: ' + run.title + ' (' + team.name + ')', grades, notes: {}, ts: Date.now() });
+  scheduleSave('activities', state.activities);
+  alert('Added to Activities.');
 }
 
 function projToggleTeam(id){
@@ -9769,6 +9969,7 @@ function projAssignConfirm(){
     startDate: start,
     endDate: days.length ? days[days.length-1] : null,
     milestones: JSON.parse(JSON.stringify(p.stages)),   // frozen copy
+    criteria: projectCriteria(p).map(c=>({ id:c.id, label:c.label, labelPt:c.labelPt||c.label, project:!!c.project })),
     teams: teams,
     progress: {},
     notes: {},
