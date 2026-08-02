@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First Class of the Term — Tool Hub</title>
+<script>
+(function(){var s=localStorage.getItem('theme');if(s)document.documentElement.setAttribute('data-theme',s);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080e1b; --bg2:#0e1830; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.07);
+  --ink:#eaf1fb; --muted:#9db0cd; --line:rgba(255,255,255,.13);
+  --act:#10b981; --act2:#6ee7b7; --shadow:0 24px 60px rgba(0,0,0,.45);
+}
+html[data-theme="light"]{
+  --bg:#eef3fa; --bg2:#ffffff; --panel:rgba(9,25,54,.04); --panel2:rgba(9,25,54,.07);
+  --ink:#0c1a2e; --muted:#4a6280; --line:rgba(9,25,54,.14);
+  --shadow:0 20px 44px rgba(15,35,70,.14);
+}
+body[data-act="1"]{--act:#10b981;--act2:#6ee7b7}
+body[data-act="2"]{--act:#38bdf8;--act2:#7dd3fc}
+body[data-act="3"]{--act:#f59e0b;--act2:#fcd34d}
+body[data-act="4"]{--act:#fb7185;--act2:#fda4af}
+body[data-act="5"]{--act:#a78bfa;--act2:#c4b5fd}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+  overflow:hidden; transition:background .6s ease;
+}
+/* ---------- ambient background ---------- */
+#bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+#bg .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;transition:background .8s ease}
+#bg .o1{width:52vw;height:52vw;left:-14vw;top:-16vw;background:var(--act);opacity:.30;animation:drift1 26s ease-in-out infinite}
+#bg .o2{width:44vw;height:44vw;right:-12vw;bottom:-18vw;background:var(--act2);opacity:.24;animation:drift2 32s ease-in-out infinite}
+#bg .o3{width:30vw;height:30vw;right:22vw;top:-10vw;background:var(--act);opacity:.14;animation:drift1 38s ease-in-out infinite reverse}
+#bg .grid{position:absolute;inset:0;
+  background-image:radial-gradient(currentColor 1px,transparent 1px);
+  background-size:34px 34px;color:var(--ink);opacity:.06;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 78%);
+  mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 78%);}
+#bg .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,var(--bg) 100%)}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(6vw,5vh)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-7vw,-4vh)}}
+/* ---------- chrome ---------- */
+.back-link{position:fixed;top:14px;left:14px;z-index:60;text-decoration:none;color:var(--ink);
+  background:rgba(8,14,27,.62);border:1px solid var(--line);padding:8px 15px;border-radius:999px;
+  font-size:14px;font-weight:600;backdrop-filter:blur(8px);transition:.2s}
+html[data-theme="light"] .back-link{background:rgba(255,255,255,.8)}
+.back-link:hover{border-color:var(--act);color:var(--act)}
+.topbar{position:fixed;top:14px;right:14px;z-index:60;display:flex;gap:8px;align-items:center}
+.btn{background:rgba(8,14,27,.62);border:1px solid var(--line);color:var(--ink);border-radius:999px;
+  padding:8px 14px;font:600 14px 'Inter';cursor:pointer;backdrop-filter:blur(8px);transition:.18s}
+html[data-theme="light"] .btn{background:rgba(255,255,255,.82)}
+.btn:hover{border-color:var(--act);color:var(--act)}
+.btn:focus-visible,.link-chip:focus-visible,.qbtn:focus-visible{outline:3px solid var(--act2);outline-offset:3px}
+.seg{display:flex;background:rgba(8,14,27,.62);border:1px solid var(--line);border-radius:999px;overflow:hidden;backdrop-filter:blur(8px)}
+html[data-theme="light"] .seg{background:rgba(255,255,255,.82)}
+.seg button{background:none;border:0;color:var(--muted);font:700 13px 'Inter';padding:8px 13px;cursor:pointer}
+.seg button.on{background:var(--act);color:#04121d}
+html[data-theme="light"] .seg button.on{color:#fff}
+/* ---------- deck ---------- */
+#deck{position:relative;z-index:2;height:100%}
+.slide{position:absolute;inset:0;display:none;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  align-items:center;gap:clamp(20px,4vw,64px);
+  padding:clamp(56px,7vh,92px) clamp(26px,5vw,80px) clamp(84px,12vh,104px)}
+.slide.active{display:grid;animation:slideIn .5s cubic-bezier(.22,.9,.3,1)}
+.slide.wide{grid-template-columns:minmax(0,1fr);justify-items:center;text-align:center}
+@keyframes slideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:700 clamp(12px,1.1vw,15px) 'Inter';
+  letter-spacing:.16em;text-transform:uppercase;color:var(--act2);margin-bottom:clamp(10px,1.6vh,20px)}
+.eyebrow::before{content:"";width:clamp(24px,3vw,44px);height:3px;border-radius:2px;background:var(--act)}
+h1{font-family:'Sora';font-weight:800;line-height:1.02;letter-spacing:-.025em;font-size:clamp(38px,6.4vw,88px)}
+h2{font-family:'Sora';font-weight:800;line-height:1.05;letter-spacing:-.02em;font-size:clamp(32px,4.6vw,66px)}
+.lead{font-size:clamp(19px,2.1vw,32px);line-height:1.4;color:var(--muted);margin-top:clamp(12px,2vh,22px);max-width:22ch}
+.slide.wide .lead{max-width:34ch}
+.note{font-size:clamp(15px,1.35vw,21px);color:var(--muted);margin-top:14px}
+ul.points{list-style:none;margin-top:clamp(14px,2.4vh,26px);display:flex;flex-direction:column;gap:clamp(9px,1.5vh,16px)}
+ul.points li{position:relative;padding-left:clamp(28px,2.6vw,40px);font-size:clamp(17px,1.85vw,28px);line-height:1.35}
+ul.points li::before{content:"";position:absolute;left:0;top:.52em;width:clamp(12px,1.2vw,18px);height:3px;border-radius:2px;background:var(--act)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:clamp(14px,2.2vh,24px)}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 16px;
+  font-size:clamp(14px,1.45vw,22px);font-weight:500}
+.chip b{color:var(--act2);font-weight:700}
+.field{border-bottom:2px dashed var(--line);padding:0 6px;min-width:2ch;display:inline-block;outline:none;cursor:text}
+.field:hover{border-bottom-color:var(--act)}
+.field:focus{border-bottom-style:solid;border-bottom-color:var(--act);background:var(--panel)}
+.field:empty::before{content:attr(data-ph);color:var(--muted);opacity:.65}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s cubic-bezier(.22,.9,.3,1);pointer-events:none}
+.reveal.shown{opacity:1;transform:none;pointer-events:auto}
+/* ---------- art frame ---------- */
+.art{position:relative;width:min(100%,min(52vh,540px));aspect-ratio:1/1;justify-self:center}
+.art *{position:absolute}
+.plinth{left:6%;right:6%;bottom:6%;height:12%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 50%,var(--act) 0%,transparent 68%);opacity:.25;filter:blur(6px)}
+/* window + sunrise (title) */
+.win{left:18%;right:18%;top:8%;bottom:14%;border:5px solid var(--ink);border-radius:50% 50% 8px 8px/34% 34% 8px 8px;
+  background:linear-gradient(180deg,var(--act2) 0%,var(--act) 48%,transparent 100%);opacity:.9;overflow:hidden}
+.win .sun{left:50%;bottom:6%;width:44%;height:44%;transform:translateX(-50%);border-radius:50%;
+  background:var(--bg2);box-shadow:0 0 0 8px rgba(255,255,255,.22);animation:rise 6s ease-out both}
+@keyframes rise{from{transform:translate(-50%,42%)}to{transform:translate(-50%,0)}}
+.mull-v{left:50%;top:0;bottom:0;width:5px;margin-left:-2.5px;background:var(--ink)}
+.mull-h{left:0;right:0;top:46%;height:5px;background:var(--ink)}
+.ray{left:50%;top:50%;width:4px;height:64%;border-radius:2px;background:var(--act2);opacity:.5;transform-origin:50% 0}
+/* avatar */
+.head{left:50%;top:16%;width:38%;height:38%;margin-left:-19%;border-radius:50%;background:var(--act);opacity:.92}
+.hair{left:50%;top:13%;width:42%;height:22%;margin-left:-21%;border-radius:999px 999px 0 0;background:var(--ink);opacity:.85}
+.torso{left:50%;top:56%;width:66%;height:34%;margin-left:-33%;border-radius:44% 44% 12% 12%/60% 60% 12% 12%;
+  background:var(--panel2);border:4px solid var(--ink);border-bottom:0}
+.gl{top:30%;width:13%;height:13%;border:4px solid var(--bg);border-radius:50%;background:rgba(255,255,255,.35)}
+.gl.l{left:34%} .gl.r{left:53%}
+.glb{left:47%;top:35%;width:6%;height:4px;background:var(--bg)}
+/* speech bubbles */
+.bub{border-radius:24px;border:4px solid var(--ink);background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:800;
+  font-size:clamp(15px,2vw,30px);letter-spacing:.02em}
+.bub::after{content:"";position:absolute;width:0;height:0;border:16px solid transparent}
+.bub.a{left:4%;top:16%;width:56%;height:34%;background:var(--act);color:#04121d}
+.bub.a::after{left:16%;bottom:-30px;border-top-color:var(--act);border-bottom:0}
+.bub.b{right:4%;top:52%;width:52%;height:30%}
+.bub.b::after{right:16%;top:-30px;border-bottom-color:var(--panel2);border-top:0}
+html[data-theme="light"] .bub.a{color:#04241a}
+.dots{display:flex;gap:8px}
+.dots i{position:static;width:12px;height:12px;border-radius:50%;background:currentColor;opacity:.5}
+.slash{left:50%;top:50%;width:112%;height:9px;margin:-4.5px 0 0 -56%;border-radius:6px;background:#f43f5e;
+  transform:rotate(-38deg);box-shadow:0 0 0 4px var(--bg)}
+.ring{left:50%;top:50%;width:78%;height:78%;margin:-39% 0 0 -39%;border:9px solid #f43f5e;border-radius:50%}
+/* bottle */
+.cap{left:50%;top:5%;width:16%;height:6%;margin-left:-8%;border-radius:5px;background:var(--act)}
+.neck{left:50%;top:11%;width:11%;height:7%;margin-left:-5.5%;background:var(--panel2);border:4px solid var(--ink);border-bottom:0}
+.btl{left:50%;top:17%;width:38%;height:70%;margin-left:-19%;border:5px solid var(--ink);
+  border-radius:22% 22% 16% 16%/10% 10% 8% 8%;background:var(--panel);overflow:hidden}
+.btl .wtr{left:0;right:0;bottom:0;height:58%;background:linear-gradient(180deg,var(--act2),var(--act));opacity:.9}
+.btl .wave{left:-25%;right:-25%;top:-14px;height:28px;border-radius:50%;background:var(--bg2);opacity:.35;animation:sway 4.5s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:translateX(-6%)}50%{transform:translateX(6%)}}
+.btl .lbl{left:-1px;right:-1px;top:38%;height:16%;background:var(--ink);opacity:.16}
+.cup{right:2%;bottom:16%;width:0;height:0;border-left:26px solid transparent;border-right:26px solid transparent;
+  border-top:74px solid var(--muted);opacity:.55}
+.cupwrap{right:4%;bottom:14%;width:26%;height:30%}
+/* burger */
+.bun{left:50%;margin-left:-30%;width:60%;border-radius:999px 999px 12px 12px/70% 70% 12px 12px;background:var(--act);height:20%;top:22%}
+.pat{left:50%;margin-left:-31%;width:62%;height:12%;top:42%;border-radius:8px;background:var(--ink);opacity:.8}
+.let{left:50%;margin-left:-33%;width:66%;height:9%;top:54%;border-radius:999px;background:var(--act2)}
+.bot{left:50%;margin-left:-30%;width:60%;height:15%;top:63%;border-radius:10px 10px 999px 999px/10px 10px 60% 60%;background:var(--act);opacity:.85}
+/* cabinet + phones */
+.cab{left:8%;right:8%;top:52%;height:34%;background:var(--panel2);border:5px solid var(--ink);border-radius:10px}
+.cab .shelf{left:6%;right:6%;top:44%;height:5px;background:var(--ink);opacity:.5}
+.leg{bottom:2%;width:6%;height:12%;background:var(--ink);opacity:.7;border-radius:0 0 4px 4px}
+.leg.l{left:12%} .leg.r{right:12%}
+.phone{width:15%;height:26%;border-radius:7px;border:4px solid var(--ink);background:var(--act);top:24%}
+.phone i{position:absolute;left:50%;top:9%;width:34%;height:4px;margin-left:-17%;border-radius:2px;background:rgba(0,0,0,.35)}
+.phone.p1{left:22%;transform:rotate(-6deg)} .phone.p2{left:43%} .phone.p3{left:64%;transform:rotate(7deg)}
+.hand{left:50%;top:6%;width:26%;height:14%;margin-left:-13%;border-radius:999px;background:var(--panel2);border:4px solid var(--ink)}
+/* two people */
+.per{bottom:16%;width:26%}
+.per .h{left:50%;top:0;width:56%;padding-bottom:56%;margin-left:-28%;border-radius:50%;background:var(--act)}
+.per .b{left:50%;top:62%;width:100%;height:46%;margin-left:-50%;border-radius:46% 46% 10px 10px/64% 64% 10px 10px;background:var(--panel2);border:4px solid var(--ink);border-bottom:0}
+.per.a{left:8%;height:52%} .per.b2{right:8%;height:52%}
+.arc{left:26%;right:26%;top:24%;height:22%;border:5px solid var(--act2);border-bottom:0;border-radius:999px 999px 0 0;opacity:.85}
+.heart{left:50%;top:16%;width:12%;height:12%;margin-left:-6%;background:var(--act2);transform:rotate(45deg);border-radius:3px}
+.heart::before,.heart::after{content:"";position:absolute;width:100%;height:100%;background:var(--act2);border-radius:50%}
+.heart::before{left:-50%} .heart::after{top:-50%}
+/* notebook */
+.book{left:14%;right:14%;top:10%;bottom:12%;border:5px solid var(--ink);border-radius:8px 16px 16px 8px;background:var(--panel2)}
+.spine{left:0;top:0;bottom:0;width:12%;background:var(--act);opacity:.85;border-right:4px solid var(--ink)}
+.rule{left:20%;right:12%;height:8px;border-radius:4px;background:var(--ink);opacity:.22}
+.tick{left:20%;width:9%;height:9%;border:5px solid var(--act);border-top:0;border-right:0;transform:rotate(-45deg);border-radius:2px}
+.star{right:8%;bottom:6%;width:30%;height:30%;background:var(--act2);
+  clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.badge{left:50%;bottom:2%;transform:translateX(-50%);background:var(--act);color:#04121d;font:800 clamp(13px,1.3vw,20px) 'Sora';
+  padding:8px 16px;border-radius:999px;white-space:nowrap}
+html[data-theme="light"] .badge{color:#fff}
+/* stairs */
+.stairs{left:6%;right:6%;bottom:14%;top:14%}
+.stp{bottom:0;border-radius:10px;border:4px solid var(--ink);background:var(--panel2);
+  display:flex;align-items:flex-start;justify-content:center;padding-top:10px;
+  font-family:'Sora';font-weight:800;font-size:clamp(16px,2.2vw,34px);color:var(--act2)}
+.stp.s1{left:0;width:23%;height:30%;background:var(--act);color:#04121d;border-color:var(--act2)}
+.stp.s2{left:25.5%;width:23%;height:48%}
+.stp.s3{left:51%;width:23%;height:68%}
+.stp.s4{left:76.5%;width:23%;height:90%}
+html[data-theme="light"] .stp.s1{color:#fff}
+/* bars */
+.bar{bottom:16%;width:14%;border-radius:8px 8px 4px 4px;background:var(--act);opacity:.9}
+.bar.b1{left:10%;height:34%} .bar.b2{left:31%;height:52%;opacity:.75}
+.bar.b3{left:52%;height:70%;opacity:.85} .bar.b4{left:73%;height:88%;background:var(--act2)}
+.axis{left:6%;right:6%;bottom:16%;height:4px;background:var(--ink);opacity:.35;border-radius:2px}
+/* finale */
+.qmark{left:50%;top:50%;width:52%;height:52%;margin:-26% 0 0 -26%;border-radius:50%;background:var(--act);
+  display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:800;
+  font-size:clamp(56px,9vw,130px);color:#04121d;box-shadow:0 0 0 14px var(--panel)}
+html[data-theme="light"] .qmark{color:#fff}
+.conf{width:14px;height:22px;border-radius:3px;opacity:.9;animation:spin 7s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+/* ---------- timer ---------- */
+.timer{display:flex;align-items:center;gap:14px;margin-top:clamp(16px,2.4vh,26px);flex-wrap:wrap}
+.clock{font-family:'Sora';font-weight:800;font-size:clamp(40px,5.4vw,76px);line-height:1;
+  letter-spacing:-.02em;color:var(--act2);font-variant-numeric:tabular-nums}
+.clock.done{color:#fb7185;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+/* ---------- quiz ---------- */
+.quizwrap{width:min(1180px,100%);display:flex;flex-direction:column;gap:clamp(10px,1.6vh,18px)}
+.qgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,1.2vh,14px)}
+.qbtn{text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:14px;color:var(--ink);
+  padding:clamp(10px,1.5vh,16px) clamp(12px,1.4vw,20px);font:500 clamp(14px,1.35vw,21px) 'Inter';
+  cursor:pointer;transition:.18s;display:flex;gap:12px;align-items:flex-start;line-height:1.3}
+.qbtn:hover{border-color:var(--act);transform:translateY(-2px)}
+.qbtn .n{font-family:'Sora';font-weight:800;color:var(--act2);flex:0 0 auto}
+.qbtn.true{border-color:#10b981;background:rgba(16,185,129,.16)}
+.qbtn.false{border-color:#fb7185;background:rgba(251,113,133,.16)}
+.qbtn .why{display:block;margin-top:6px;font-size:.82em;color:var(--muted)}
+.qbtn.true .why,.qbtn.false .why{color:var(--ink);opacity:.85}
+.scorebar{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+.team{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+  border-radius:999px;padding:6px 8px 6px 18px}
+.team .nm{font-weight:700;font-size:clamp(14px,1.3vw,19px)}
+.team .sc{font-family:'Sora';font-weight:800;font-size:clamp(20px,2vw,30px);color:var(--act2);min-width:1.6ch;text-align:center}
+.mini{background:var(--panel2);border:1px solid var(--line);color:var(--ink);width:32px;height:32px;
+  border-radius:50%;font:700 17px 'Inter';cursor:pointer}
+.mini:hover{border-color:var(--act);color:var(--act)}
+/* ---------- footer nav ---------- */
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;align-items:center;justify-content:center;
+  gap:16px;padding:12px 18px;background:linear-gradient(180deg,transparent,rgba(8,14,27,.75) 55%)}
+html[data-theme="light"] .foot{background:linear-gradient(180deg,transparent,rgba(238,243,250,.9) 55%)}
+.dots-nav{display:flex;gap:7px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--line);border:0;cursor:pointer;padding:0;transition:.2s}
+.dot.on{background:var(--act);transform:scale(1.45)}
+.dot.past{background:var(--muted);opacity:.55}
+.counter{font:700 14px 'Inter';color:var(--muted);font-variant-numeric:tabular-nums;min-width:5ch;text-align:center}
+/* ---------- overview ---------- */
+#ov{position:fixed;inset:0;z-index:70;background:rgba(6,11,22,.93);backdrop-filter:blur(10px);
+  display:none;padding:clamp(24px,5vh,64px);overflow:auto}
+html[data-theme="light"] #ov{background:rgba(238,243,250,.95)}
+#ov.open{display:block}
+#ov h3{font-family:'Sora';font-size:22px;margin-bottom:20px;text-align:center}
+.ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;max-width:1200px;margin:0 auto}
+.ovcard{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--act);border-radius:12px;
+  padding:14px 16px;cursor:pointer;text-align:left;color:var(--ink);transition:.18s}
+.ovcard:hover{transform:translateY(-3px);border-color:var(--act)}
+.ovcard .num{font:800 12px 'Sora';color:var(--muted);letter-spacing:.1em}
+.ovcard .tl{font:700 16px 'Inter';margin-top:5px}
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .slide{grid-template-columns:minmax(0,1fr);align-content:center;gap:18px;padding:74px 22px 96px}
+  .art{width:min(58vw,300px);order:-1}
+  .qgrid{grid-template-columns:minmax(0,1fr)}
+  .lead{max-width:none}
+}
+@media (max-height:520px){.art{display:none}}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+  .reveal{opacity:1;transform:none}
+}
+:fullscreen .back-link{display:none}
+</style>
+</head>
+<body data-act="1">
+
+<div id="bg">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="grid"></div><div class="vig"></div>
+</div>
+
+<a class="back-link" href="../">← Tool Hub</a>
+
+<div class="topbar">
+  <div class="seg" role="group" aria-label="Language level">
+    <button id="lvBasic" class="on" onclick="setRegister('basic')">A1–A2</button>
+    <button id="lvPlus" onclick="setRegister('plus')">B1–B2</button>
+  </div>
+  <button class="btn" onclick="toggleSound()" id="sndBtn" title="Sound">🔊</button>
+  <button class="btn" onclick="toggleTheme()" title="Light / dark">◐</button>
+  <button class="btn" onclick="toggleFull()" title="Fullscreen (F)">⛶</button>
+</div>
+
+<div id="deck">
+
+<!-- 1 · TITLE -->
+<section class="slide" data-act="1" data-title="Welcome">
+  <div>
+    <span class="eyebrow">Phil Young's English School</span>
+    <h1>Welcome to<br>a new term.</h1>
+    <p class="lead lv" data-basic="Today we meet, we talk, and we learn how our class works."
+       data-plus="Today we get to know each other and set up how this class is going to run for the whole term."></p>
+    <div class="chips">
+      <span class="chip"><b>Class</b> <span class="field" contenteditable data-field="cls" data-ph="B1 / Tue &amp; Thu"></span></span>
+      <span class="chip"><b>Term</b> <span class="field" contenteditable data-field="term" data-ph="Term 1"></span></span>
+      <span class="chip"><b>Teacher</b> <span class="field" contenteditable data-field="teacher" data-ph="your name"></span></span>
+    </div>
+  </div>
+  <div class="art">
+    <div class="ray" style="transform:rotate(-42deg)"></div>
+    <div class="ray" style="transform:rotate(-14deg)"></div>
+    <div class="ray" style="transform:rotate(14deg)"></div>
+    <div class="ray" style="transform:rotate(42deg)"></div>
+    <div class="win"><div class="sun"></div></div>
+    <div class="mull-v" style="left:50%;top:8%;bottom:14%"></div>
+    <div class="mull-h" style="left:18%;right:18%;top:52%"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 2 · TEACHER -->
+<section class="slide" data-act="1" data-title="Your teacher">
+  <div>
+    <span class="eyebrow">Nice to meet you</span>
+    <h2>I'm <span class="field" contenteditable data-field="teacher2" data-ph="your name"></span>.</h2>
+    <ul class="points">
+      <li><span class="field" contenteditable data-field="fact1" data-ph="I've taught here for ___ years."></span></li>
+      <li><span class="field" contenteditable data-field="fact2" data-ph="Outside class I ___."></span></li>
+      <li><span class="field" contenteditable data-field="fact3" data-ph="One of these three is a lie."></span></li>
+    </ul>
+    <p class="note lv" data-basic="Click a line to write. Your text stays here."
+       data-plus="Click a line to edit it — everything you type is saved on this computer."></p>
+  </div>
+  <div class="art">
+    <div class="torso"></div>
+    <div class="head"></div><div class="hair"></div>
+    <div class="gl l"></div><div class="gl r"></div><div class="glb"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 3 · ICEBREAKER -->
+<section class="slide" data-act="1" data-title="Icebreaker">
+  <div>
+    <span class="eyebrow">In pairs · English only</span>
+    <h2 class="lv" data-basic="Talk to your partner." data-plus="Find out three things."></h2>
+    <ul class="points">
+      <li class="lv" data-basic="What is your name? Where do you live?" data-plus="Who are you, and where are you from?"></li>
+      <li class="lv" data-basic="Why do you study English?" data-plus="What do you want English for — travel, work, games, music?"></li>
+      <li class="lv" data-basic="What is one thing you did in the holidays?" data-plus="What is the best thing you did since the last term?"></li>
+    </ul>
+    <div class="timer">
+      <div class="clock" id="clock">03:00</div>
+      <button class="btn" id="tStart" onclick="timerToggle()">Start</button>
+      <button class="btn" onclick="timerAdd(-30)">−30s</button>
+      <button class="btn" onclick="timerAdd(30)">+30s</button>
+      <button class="btn" onclick="timerReset()">Reset</button>
+    </div>
+    <p class="note lv" data-basic="Then tell the class about your partner."
+       data-plus="When the timer stops, introduce your partner to the class — not yourself."></p>
+  </div>
+  <div class="art">
+    <div class="bub a">HELLO!</div>
+    <div class="bub b"><span class="dots"><i></i><i></i><i></i></span></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 4 · BOTTLE -->
+<section class="slide" data-act="2" data-title="Bring a bottle">
+  <div>
+    <span class="eyebrow">The room · 1 of 3</span>
+    <h2 class="lv" data-basic="Bring your own bottle." data-plus="Bring your own water bottle."></h2>
+    <p class="lead lv" data-basic="The school has no plastic cups. Water is free — the bottle is yours."
+       data-plus="The school doesn't hand out plastic cups any more, so bring a bottle you can refill."></p>
+    <p class="note lv" data-basic="Fill it before class or at the break."
+       data-plus="Fill it before class or at the break, not in the middle of an activity."></p>
+  </div>
+  <div class="art">
+    <div class="cap"></div><div class="neck"></div>
+    <div class="btl"><div class="wtr"><div class="wave"></div></div><div class="lbl"></div></div>
+    <div class="cupwrap"><div class="cup" style="right:auto;bottom:0;left:0"></div><div class="ring" style="width:100%;height:70%;margin:0;left:-14%;top:14%;border-width:7px"></div></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 5 · NO EATING -->
+<section class="slide" data-act="2" data-title="No eating in class">
+  <div>
+    <span class="eyebrow">The room · 2 of 3</span>
+    <h2 class="lv" data-basic="No food in class." data-plus="Please don't eat in class."></h2>
+    <p class="lead lv" data-basic="Eat at the break. Water is fine."
+       data-plus="That's what the break is for. Water is always fine."></p>
+    <p class="note lv" data-basic="Food makes noise and mess — and you cannot speak with a full mouth."
+       data-plus="It's hard to speak English with a full mouth, and the room has to be clean for the next class."></p>
+  </div>
+  <div class="art">
+    <div class="bun"></div><div class="pat"></div><div class="let"></div><div class="bot"></div>
+    <div class="ring"></div><div class="slash"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 6 · PHONES -->
+<section class="slide" data-act="2" data-title="Phones">
+  <div>
+    <span class="eyebrow">The room · 3 of 3</span>
+    <h2 class="lv" data-basic="Phones on the cabinet." data-plus="Phones live on the cabinet."></h2>
+    <ul class="points">
+      <li class="reveal lv" data-step="1" data-basic="Put your phone there at the start of class."
+          data-plus="You put your phone there yourself at the start of class."></li>
+      <li class="reveal lv" data-step="2" data-basic="Take it at the break. Put it back after the break."
+          data-plus="Pick it up at the break, then it goes back for the second half."></li>
+      <li class="reveal lv" data-step="3" data-basic="Take it home! Don't forget it."
+          data-plus="And take it home with you — check the cabinet before you leave."></li>
+    </ul>
+    <p class="note reveal lv" data-step="3" data-basic="The teacher never touches your phone. You put it there, you take it."
+       data-plus="The teacher never touches your phone. You put it down, you pick it up — it stays yours."></p>
+  </div>
+  <div class="art">
+    <div class="hand reveal" data-step="3"></div>
+    <div class="phone p1 reveal" data-step="1"><i></i></div>
+    <div class="phone p2 reveal" data-step="1"><i></i></div>
+    <div class="phone p3 reveal" data-step="2"><i></i></div>
+    <div class="cab"><div class="shelf"></div><div class="leg l"></div><div class="leg r"></div></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 7 · ENGLISH ONLY -->
+<section class="slide" data-act="3" data-title="English only">
+  <div>
+    <span class="eyebrow">How we work · 1 of 3</span>
+    <h2 class="lv" data-basic="English only." data-plus="English only — even when it's hard."></h2>
+    <p class="lead lv" data-basic="Do not know a word? Ask in English."
+       data-plus="Getting stuck is normal. The trick is to get unstuck in English."></p>
+    <div class="chips">
+      <span class="chip">How do you say ___ in English?</span>
+      <span class="chip">What does ___ mean?</span>
+      <span class="chip">Can you repeat that, please?</span>
+      <span class="chip">How do you spell it?</span>
+      <span class="chip">I'm not sure — can you help me?</span>
+    </div>
+    <p class="note lv" data-basic="These sentences stay on the wall all term."
+       data-plus="Learn these five now and you'll never need Portuguese in this room."></p>
+  </div>
+  <div class="art">
+    <div class="bub a">ENGLISH</div>
+    <div class="bub b" style="color:var(--muted)">PT</div>
+    <div class="slash" style="left:52%;top:66%;width:52%;margin-left:0;transform:rotate(-30deg)"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 8 · HELP EACH OTHER -->
+<section class="slide" data-act="3" data-title="Help each other">
+  <div>
+    <span class="eyebrow">How we work · 2 of 3</span>
+    <h2 class="lv" data-basic="Help each other." data-plus="Helping is not cheating."></h2>
+    <p class="lead lv" data-basic="You can ask a classmate. You can explain to a classmate."
+       data-plus="Ask the person next to you, explain something to them — that's how the class gets stronger."></p>
+    <p class="note lv" data-basic="One exception: when I say individual work, you work alone."
+       data-plus="One exception: when I say it's individual work — a test or a writing task — you work on your own."></p>
+  </div>
+  <div class="art">
+    <div class="arc"></div><div class="heart"></div>
+    <div class="per a"><div class="h"></div><div class="b"></div></div>
+    <div class="per b2"><div class="h"></div><div class="b"></div></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 9 · HOMEWORK -->
+<section class="slide" data-act="3" data-title="Homework">
+  <div>
+    <span class="eyebrow">How we work · 3 of 3</span>
+    <h2 class="lv" data-basic="Homework is not optional." data-plus="Homework counts — twice."></h2>
+    <ul class="points">
+      <li class="reveal lv" data-step="1" data-basic="Do it. If you do not, I talk to your parents."
+          data-plus="If it isn't done, your parents hear about it. That's the deal."></li>
+      <li class="reveal lv" data-step="2" data-basic="I look at how good it is, not only if it is finished."
+          data-plus="And I mark how good it is, not just whether it exists. Quality is the point."></li>
+    </ul>
+    <p class="note reveal lv" data-step="2" data-basic="Ten careful sentences beat thirty fast ones."
+       data-plus="Ten careful sentences are worth more here than thirty rushed ones."></p>
+  </div>
+  <div class="art">
+    <div class="book">
+      <div class="spine"></div>
+      <div class="rule" style="top:22%"></div><div class="rule" style="top:38%;right:26%"></div>
+      <div class="rule" style="top:54%"></div><div class="rule" style="top:70%;right:38%"></div>
+      <div class="tick reveal" data-step="1" style="top:14%"></div>
+      <div class="star reveal" data-step="2"></div>
+    </div>
+    <div class="badge reveal" data-step="2">quality &gt; quantity</div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 10 · BEHAVIOUR -->
+<section class="slide" data-act="4" data-title="If there's a problem">
+  <div>
+    <span class="eyebrow">If there's a problem</span>
+    <h2 class="lv" data-basic="Four steps." data-plus="Four steps — and almost everything stops at step one."></h2>
+    <ul class="points">
+      <li class="reveal lv" data-step="1" data-basic="1 · You and me. A quiet talk after class."
+          data-plus="1 · You and me — a quiet one-to-one talk. This is where it normally ends."></li>
+      <li class="reveal lv" data-step="2" data-basic="2 · You and the coordinator."
+          data-plus="2 · You go and talk to the coordinator."></li>
+      <li class="reveal lv" data-step="3" data-basic="3 · We call your parents."
+          data-plus="3 · Your parents get a call."></li>
+      <li class="reveal lv" data-step="4" data-basic="4 · You, your parents, me and the coordinator. All together."
+          data-plus="4 · A meeting: you, your parents, me and the coordinator, in the same room."></li>
+    </ul>
+  </div>
+  <div class="art">
+    <div class="stairs">
+      <div class="stp s1 reveal" data-step="1">1</div>
+      <div class="stp s2 reveal" data-step="2">2</div>
+      <div class="stp s3 reveal" data-step="3">3</div>
+      <div class="stp s4 reveal" data-step="4">4</div>
+    </div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 11 · GRADES -->
+<section class="slide" data-act="4" data-title="Tests &amp; grades">
+  <div>
+    <span class="eyebrow">Tests &amp; grades</span>
+    <h2 class="lv" data-basic="How you pass." data-plus="How the term is scored."></h2>
+    <ul class="points">
+      <li><span class="field" contenteditable data-field="g1" data-ph="Tests this term: ___"></span></li>
+      <li><span class="field" contenteditable data-field="g2" data-ph="Points available: ___"></span></li>
+      <li><span class="field" contenteditable data-field="g3" data-ph="You also get points for: ___"></span></li>
+      <li><span class="field" contenteditable data-field="g4" data-ph="To pass you need: ___"></span></li>
+    </ul>
+    <p class="note lv" data-basic="Write your dates in your notebook now."
+       data-plus="Copy the dates into your notebook now — I won't chase you for them later."></p>
+  </div>
+  <div class="art">
+    <div class="bar b1"></div><div class="bar b2"></div><div class="bar b3"></div><div class="bar b4"></div>
+    <div class="axis"></div>
+    <div class="plinth"></div>
+  </div>
+</section>
+
+<!-- 12 · QUIZ -->
+<section class="slide wide" data-act="5" data-title="Rule or not a rule?">
+  <div class="quizwrap">
+    <div style="text-align:center">
+      <span class="eyebrow" style="justify-content:center">Tap each one · true or false</span>
+      <h2 class="lv" data-basic="Rule or not a rule?" data-plus="Rule or not a rule?"></h2>
+    </div>
+    <div class="scorebar">
+      <div class="team"><span class="nm">Team A</span><button class="mini" onclick="score('a',-1)">−</button><span class="sc" id="scA">0</span><button class="mini" onclick="score('a',1)">+</button></div>
+      <button class="btn" onclick="resetQuiz()">Reset round</button>
+      <div class="team"><span class="nm">Team B</span><button class="mini" onclick="score('b',-1)">−</button><span class="sc" id="scB">0</span><button class="mini" onclick="score('b',1)">+</button></div>
+    </div>
+    <div class="qgrid" id="qgrid"></div>
+  </div>
+</section>
+
+<!-- 13 · CLOSE -->
+<section class="slide wide" data-act="5" data-title="Questions?">
+  <div class="art" style="order:0">
+    <div class="conf" style="left:12%;top:16%;background:var(--act2)"></div>
+    <div class="conf" style="right:14%;top:12%;background:var(--act);animation-duration:9s"></div>
+    <div class="conf" style="left:20%;bottom:16%;background:var(--act);animation-duration:11s"></div>
+    <div class="conf" style="right:18%;bottom:20%;background:var(--act2);animation-duration:8s"></div>
+    <div class="qmark">?</div>
+  </div>
+  <div>
+    <h1 class="lv" data-basic="Any questions?" data-plus="Anything you want to ask?"></h1>
+    <p class="lead lv" style="margin-left:auto;margin-right:auto"
+       data-basic="Ask now — in English. Then we start."
+       data-plus="Ask now, in English. After this, we get to work."></p>
+    <p class="note" style="font-size:clamp(18px,2vw,30px);color:var(--act2);font-weight:600">
+      <span class="field" contenteditable data-field="motto" data-ph="One term. One language. Let's go."></span>
+    </p>
+  </div>
+</section>
+
+</div>
+
+<div class="foot">
+  <button class="btn" onclick="prev()" aria-label="Previous">←</button>
+  <div class="dots-nav" id="dots"></div>
+  <span class="counter" id="counter">1 / 13</span>
+  <button class="btn" onclick="next()" aria-label="Next">→</button>
+  <button class="btn" onclick="toggleOv()" title="All slides (Esc)">☰</button>
+</div>
+
+<div id="ov" onclick="if(event.target.id==='ov')toggleOv()">
+  <h3>All slides</h3>
+  <div class="ovgrid" id="ovgrid"></div>
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+var KEY = 'firstClass_v1';
+var store = { register:'basic', sound:true, fields:{} };
+try { var raw = localStorage.getItem(KEY); if (raw) store = Object.assign(store, JSON.parse(raw)); } catch(e){}
+if (!store.fields) store.fields = {};
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+
+var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+var idx = 0, step = 0;
+
+/* ---------------- audio ---------------- */
+var ac = null;
+function beep(freq, dur, type){
+  if (!store.sound) return;
+  try{
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.16, ac.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + (dur || 0.16));
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + (dur || 0.16) + 0.02);
+  }catch(e){}
+}
+function toggleSound(){
+  store.sound = !store.sound; save();
+  document.getElementById('sndBtn').textContent = store.sound ? '🔊' : '🔇';
+  if (store.sound) beep(660, .12);
+}
+
+/* ---------------- theme ---------------- */
+function toggleTheme(){
+  var h = document.documentElement;
+  var nx = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  h.setAttribute('data-theme', nx);
+  localStorage.setItem('theme', nx);
+}
+function toggleFull(){
+  if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+  else if (document.exitFullscreen) document.exitFullscreen();
+}
+
+/* ---------------- register ---------------- */
+function setRegister(r){
+  store.register = r; save();
+  document.getElementById('lvBasic').classList.toggle('on', r === 'basic');
+  document.getElementById('lvPlus').classList.toggle('on', r === 'plus');
+  var nodes = document.querySelectorAll('.lv');
+  for (var i = 0; i < nodes.length; i++){
+    var el = nodes[i];
+    el.textContent = (r === 'basic') ? el.getAttribute('data-basic') : el.getAttribute('data-plus');
+  }
+}
+
+/* ---------------- editable fields ---------------- */
+function initFields(){
+  var f = document.querySelectorAll('[data-field]');
+  for (var i = 0; i < f.length; i++){
+    (function(el){
+      var k = el.getAttribute('data-field');
+      if (store.fields[k]) el.textContent = store.fields[k];
+      el.addEventListener('input', function(){
+        store.fields[k] = el.textContent.trim();
+        if (k === 'teacher' || k === 'teacher2') mirrorTeacher(k, el.textContent.trim());
+        save();
+      });
+      el.addEventListener('keydown', function(ev){
+        if (ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+        ev.stopPropagation();
+      });
+    })(f[i]);
+  }
+}
+function mirrorTeacher(from, val){
+  var other = from === 'teacher' ? 'teacher2' : 'teacher';
+  var el = document.querySelector('[data-field="' + other + '"]');
+  if (el && el.textContent.trim() !== val){ el.textContent = val; store.fields[other] = val; }
+}
+
+/* ---------------- deck ---------------- */
+function maxStep(s){
+  var r = s.querySelectorAll('.reveal'), m = 0;
+  for (var i = 0; i < r.length; i++){
+    var n = parseInt(r[i].getAttribute('data-step'), 10) || 0;
+    if (n > m) m = n;
+  }
+  return m;
+}
+function paintSteps(){
+  var s = slides[idx], r = s.querySelectorAll('.reveal');
+  for (var i = 0; i < r.length; i++){
+    var n = parseInt(r[i].getAttribute('data-step'), 10) || 0;
+    r[i].classList.toggle('shown', n <= step);
+  }
+}
+function show(n, fullyRevealed){
+  idx = Math.max(0, Math.min(slides.length - 1, n));
+  for (var i = 0; i < slides.length; i++) slides[i].classList.toggle('active', i === idx);
+  document.body.setAttribute('data-act', slides[idx].getAttribute('data-act'));
+  step = fullyRevealed ? maxStep(slides[idx]) : 0;
+  paintSteps();
+  document.getElementById('counter').textContent = (idx + 1) + ' / ' + slides.length;
+  var d = document.getElementById('dots').children;
+  for (var j = 0; j < d.length; j++){
+    d[j].classList.toggle('on', j === idx);
+    d[j].classList.toggle('past', j < idx);
+  }
+}
+function next(){
+  if (step < maxStep(slides[idx])){ step++; paintSteps(); beep(720, .09); return; }
+  if (idx < slides.length - 1){ show(idx + 1, false); beep(520, .1); }
+}
+function prev(){
+  if (step > 0){ step--; paintSteps(); return; }
+  if (idx > 0) show(idx - 1, true);
+}
+function buildNav(){
+  var dots = document.getElementById('dots'), ov = document.getElementById('ovgrid');
+  for (var i = 0; i < slides.length; i++){
+    (function(i){
+      var b = document.createElement('button');
+      b.className = 'dot'; b.title = slides[i].getAttribute('data-title');
+      b.setAttribute('aria-label', 'Slide ' + (i + 1));
+      b.onclick = function(){ show(i, false); };
+      dots.appendChild(b);
+      var c = document.createElement('button');
+      c.className = 'ovcard';
+      c.innerHTML = '<div class="num">' + (i + 1 < 10 ? '0' : '') + (i + 1) + '</div><div class="tl"></div>';
+      c.querySelector('.tl').textContent = slides[i].getAttribute('data-title');
+      c.onclick = function(){ show(i, false); toggleOv(); };
+      ov.appendChild(c);
+    })(i);
+  }
+}
+function toggleOv(){ document.getElementById('ov').classList.toggle('open'); }
+
+document.addEventListener('keydown', function(e){
+  if (e.target && e.target.isContentEditable) return;
+  var k = e.key;
+  if (k === 'ArrowRight' || k === ' ' || k === 'PageDown'){ e.preventDefault(); next(); }
+  else if (k === 'ArrowLeft' || k === 'PageUp'){ e.preventDefault(); prev(); }
+  else if (k === 'Escape'){ toggleOv(); }
+  else if (k === 'f' || k === 'F'){ toggleFull(); }
+  else if (k === 'Home'){ show(0, false); }
+  else if (k === 'End'){ show(slides.length - 1, false); }
+});
+
+/* ---------------- timer ---------------- */
+var tTotal = 180, tLeft = 180, tRun = false, tId = null;
+function fmt(s){
+  var m = Math.floor(s / 60), r = s % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
+}
+function paintClock(){
+  var c = document.getElementById('clock');
+  c.textContent = fmt(Math.max(0, tLeft));
+  c.classList.toggle('done', tLeft <= 0);
+}
+function timerToggle(){
+  tRun = !tRun;
+  document.getElementById('tStart').textContent = tRun ? 'Pause' : 'Start';
+  if (tRun && !tId){
+    tId = setInterval(function(){
+      if (!tRun) return;
+      tLeft--;
+      if (tLeft <= 0){
+        tLeft = 0; tRun = false;
+        document.getElementById('tStart').textContent = 'Start';
+        beep(880, .2); setTimeout(function(){ beep(660, .3); }, 240);
+      }
+      paintClock();
+    }, 1000);
+  }
+}
+function timerAdd(s){ tTotal = Math.max(30, tTotal + s); tLeft = Math.max(0, tLeft + s); paintClock(); }
+function timerReset(){ tRun = false; tLeft = tTotal; document.getElementById('tStart').textContent = 'Start'; paintClock(); }
+
+/* ---------------- quiz ---------------- */
+var QUIZ = [
+  { t: 'You must bring your own bottle.', a: true,  w: 'True. The school has no plastic cups.' },
+  { t: 'You can eat a snack in class if you are quiet.', a: false, w: 'False. Food is for the break.' },
+  { t: 'The teacher takes your phone out of your bag.', a: false, w: 'False. You put it on the cabinet yourself.' },
+  { t: 'You can pick up your phone at the break.', a: true,  w: 'True — and it goes back after the break.' },
+  { t: 'You can speak Portuguese when a word is difficult.', a: false, w: 'False. Ask: "How do you say ___ in English?"' },
+  { t: 'If you never do the homework, your parents are told.', a: true,  w: 'True. Homework is not optional.' },
+  { t: 'Homework only has to be finished, not good.', a: false, w: 'False. Quality is marked too.' },
+  { t: 'You can help a classmate with an exercise.', a: true,  w: 'True — unless I say it is individual work.' },
+  { t: 'The first step for a problem is a call to your parents.', a: false, w: 'False. First: a quiet talk with me.' },
+  { t: 'You can leave your phone here and get it next class.', a: false, w: 'False. Take it home!' }
+];
+function buildQuiz(){
+  var g = document.getElementById('qgrid');
+  g.innerHTML = '';
+  for (var i = 0; i < QUIZ.length; i++){
+    (function(i){
+      var q = QUIZ[i];
+      var b = document.createElement('button');
+      b.className = 'qbtn';
+      b.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="tx"></span>';
+      b.querySelector('.tx').textContent = q.t;
+      b.onclick = function(){
+        if (b.classList.contains('true') || b.classList.contains('false')) return;
+        b.classList.add(q.a ? 'true' : 'false');
+        var w = document.createElement('span');
+        w.className = 'why'; w.textContent = q.w;
+        b.querySelector('.tx').appendChild(w);
+        beep(q.a ? 780 : 300, .18, q.a ? 'sine' : 'triangle');
+      };
+      g.appendChild(b);
+    })(i);
+  }
+}
+function resetQuiz(){ buildQuiz(); scores = { a: 0, b: 0 }; paintScore(); }
+var scores = { a: 0, b: 0 };
+function score(t, n){ scores[t] = Math.max(0, scores[t] + n); paintScore(); beep(n > 0 ? 700 : 380, .1); }
+function paintScore(){
+  document.getElementById('scA').textContent = scores.a;
+  document.getElementById('scB').textContent = scores.b;
+}
+
+/* ---------------- boot ---------------- */
+buildNav();
+initFields();
+buildQuiz();
+setRegister(store.register);
+document.getElementById('sndBtn').textContent = store.sound ? '🔊' : '🔇';
+paintClock();
+show(0, false);
+</script>
+</body>
+</html>
