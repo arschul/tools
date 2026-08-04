@@ -33,6 +33,8 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Shared project catalogue, canonical copy lives in arschul/advanced -->
+<script src="/advanced/projects-data.js"></script>
 <style>
   /* ================= THEME TOKENS =================
      Every colour, font and radius in the app resolves through these.
@@ -570,6 +572,11 @@
   .field input, .field select, .modal select, .modal input{
     width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;
   }
+  /* ...but not tick boxes: those are glyphs, not fields. */
+  .field input[type="checkbox"], .modal input[type="checkbox"],
+  .field input[type="radio"],    .modal input[type="radio"]{
+    width:16px;height:16px;flex:0 0 auto;padding:0;margin:0;border-radius:4px;
+  }
   input, select, textarea{background:var(--surface);color:var(--text);}
   input::placeholder, textarea::placeholder{color:var(--placeholder,#aab2c4);opacity:1;font-style:italic;}
   .swatches{display:flex;gap:8px;flex-wrap:wrap;}
@@ -798,6 +805,10 @@
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
     Calendar
   </button>
+  <button type="button" class="nav-item" data-view="projects" onclick="navigate('projects')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l2 2h7v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="m9 13 2 2 4-4"/></svg></span>
+    Projects
+  </button>
   <button type="button" class="nav-item" data-view="reports" onclick="navigate('reports')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/></svg></span>
     Reports
@@ -834,6 +845,7 @@
   <div id="view-classes" class="view"></div>
   <div id="view-rollcall" class="view"></div>
   <div id="view-calendar" class="view"></div>
+  <div id="view-projects" class="view"></div>
   <div id="view-student" class="view"></div>
   <div id="view-reports" class="view"></div>
   <div id="view-group-report" class="view"></div>
@@ -864,6 +876,9 @@ let state = {
   promises: {},
   pointsLog: [],
   activities: [],
+  projects: [],
+  projOpenId: null,
+  projOpenTeamId: null,
   showArchived: false,
   showDashEC: false,
   // Private lessons
@@ -1848,7 +1863,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog','activities'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog','activities','projects'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -3130,7 +3145,7 @@ document.addEventListener('keydown', (e)=>{
 function navigate(view, params={}){
   Object.assign(state, params);
   state.view = view;
-  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', contacts:'contacts', private:'private', 'priv-student':'private'};
+  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', calendar:'calendar', projects:'projects', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', contacts:'contacts', private:'private', 'priv-student':'private'};
   document.querySelectorAll('.nav-item').forEach(n=>{
     const on = n.dataset.view===navMap[view];
     n.classList.toggle('active', on);
@@ -3157,6 +3172,7 @@ function refreshView(){
   else if(v==='classes') renderClasses();
   else if(v==='rollcall') renderRollCall();
   else if(v==='calendar') renderCalendar();
+  else if(v==='projects') renderProjects();
   else if(v==='student') renderStudentProfile();
   else if(v==='reports') renderReports();
   else if(v==='group-report') renderGroupReport();
@@ -6473,8 +6489,13 @@ function initRcState(s){
       homework: hwToLevel(s.hwAvg),
       vocab: null, grammar: null, port: null
     },
+    includeProjects: true,
     nonce: 0
   };
+}
+function rcSetProjects(on){
+  if(rcState) rcState.includeProjects = !!on;
+  refreshReportTextArea();
 }
 
 function buildReportText(s, lang){
@@ -6605,6 +6626,25 @@ function buildReportText(s, lang){
     });
   }
 
+  // --- projects ---
+  if(s.projects && s.projects.length && (!rcState || rcState.includeProjects !== false)){
+    out.push('');
+    out.push(isPt ? 'PROJETOS' : 'PROJECTS');
+    s.projects.forEach(p=>{
+      const span = p.startDate
+        ? formatDateShort(p.startDate) + (p.endDate ? ' – ' + formatDateShort(p.endDate) : '')
+        : '';
+      out.push(`- ${p.title}${span?` (${span})`:''} · ${isPt?'equipe':'team'}: ${p.team}`);
+      out.push(`    ${isPt?'Etapas':'Stages'}: ${p.stagesDone}/${p.stagesTotal} · ${isPt?'passos':'steps'}: ${p.stepsDone}/${p.stepsTotal}`);
+      const scored = p.criteria.filter(c=>c.score!=null);
+      if(scored.length){
+        const line = scored.map(c=>`${isPt?c.labelPt:c.label} ${c.score}`).join(' · ');
+        out.push(`    ${line}${p.letter?`  → ${p.letter}`:''}`);
+      }
+      if(p.comment) out.push(`    ${p.comment}`);
+    });
+  }
+
   // --- per-activity observations written during grading ---
   if(s.activityNotes && s.activityNotes.length){
     out.push('');
@@ -6709,6 +6749,14 @@ function openReportTextModal(){
       </div>
       <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
     </div>
+
+    ${(lastReportStats.projects||[]).length ? `
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" ${rcState.includeProjects!==false?'checked':''} onchange="rcSetProjects(this.checked)">
+        <span>${isPt?'Incluir projetos':'Include projects'} <span class="meta">(${lastReportStats.projects.length})</span></span>
+      </label>
+    </div>` : ''}
 
     <textarea id="report-text-area" style="width:100%;min-height:260px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
@@ -6901,6 +6949,7 @@ function renderStudentProfile(){
     periods: periodInfo,
     essays: essayInfo,
     toefl: toeflInfo,
+    projects: cls ? projStudentReport(student.id, cls.id, fromVal, toVal) : [],
     activityNotes: cls ? studentActivityGrades(student.id, cls.id)
       .filter(a=>((a.notes||{})[student.id]||'').trim())
       .map(a=>({ date:a.date, description:a.description, skill:a.skill,
@@ -7043,6 +7092,32 @@ function renderStudentProfile(){
         ${block((pt?'Média por ciclo':'Grade avg / cycle')+(gradeTarget?` <span style="font-weight:400;color:var(--muted);">(${pt?'meta':'target'} ${gradeTarget})</span>`:''), gradeS, {target:gradeTarget})}
         ${block(pt?'Pontos / mês':'Points / month (net)', ptsS, {})}
       </div>
+    </div>`;
+    })()}
+    ${(()=>{
+      const pt = state.reportLang==='pt';
+      const prj = lastReportStats.projects||[];
+      if(!prj.length) return '';
+      return `
+    <div class="card section">
+      <h3>🧪 ${pt?'Projetos':'Projects'}</h3>
+      ${prj.map(p=>{
+        const span = p.startDate ? formatDateShort(p.startDate) + (p.endDate?' – '+formatDateShort(p.endDate):'') : '';
+        const scored = p.criteria.filter(c=>c.score!=null);
+        return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+            <b style="font-size:14px;">${esc(p.icon||'')} ${esc(p.title)}</b>
+            <span class="meta">${span?esc(span)+' · ':''}${pt?'equipe':'team'} ${esc(p.team)}</span>
+            ${p.letter?`<span class="badge" style="margin-left:auto;font-size:14px;">${p.letter}</span>`:''}
+          </div>
+          <div class="meta" style="margin-top:4px;">
+            ${pt?'Etapas':'Stages'} ${p.stagesDone}/${p.stagesTotal} · ${pt?'passos':'steps'} ${p.stepsDone}/${p.stepsTotal}
+            ${scored.length?' · '+scored.map(c=>esc(pt?c.labelPt:c.label)+' '+c.score).join(' · '):''}
+          </div>
+          ${p.comment?`<div style="margin-top:5px;font-size:13px;">${esc(p.comment)}</div>`:''}
+        </div>`;
+      }).join('')}
     </div>`;
     })()}
     ${(()=>{
@@ -9295,6 +9370,7 @@ async function init(){
   state.promises = loadKey('promises', {});
   state.pointsLog = loadKey('pointsLog', []);
   state.activities = loadKey('activities', []);
+  state.projects = loadKey('projects', []);
   state.privateStudents = loadKey('privateStudents', []);
   state.privateLessons = loadKey('privateLessons', []);
   state.payments = loadKey('payments', []);
@@ -9318,6 +9394,787 @@ async function init(){
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
   navigate('dashboard');
 }
+
+/* ================= PROJECTS =================
+   Multi-session projects assigned to a class from the Advanced Hub
+   catalogue (/advanced/projects-data.js). This section covers
+   assignment, teams and milestone tracking only; grading and report
+   output are handled separately.
+
+   A run freezes a copy of the catalogue's milestones at assignment
+   time, so editing the catalogue later can never corrupt a run that
+   is already under way.                                            */
+
+const PROJ_COLOURS = ['#2dd4bf','#f59e0b','#818cf8','#f472b6','#34d399','#60a5fa','#fb923c','#a78bfa'];
+
+function projCatalogueReady(){ return typeof ADVANCED_PROJECTS !== 'undefined' && Array.isArray(ADVANCED_PROJECTS); }
+function projCatalogue(){ return projCatalogueReady() ? ADVANCED_PROJECTS : []; }
+function projDef(id){ return projCatalogue().filter(p=>p.id===id)[0] || null; }
+
+function projRuns(){ return Array.isArray(state.projects) ? state.projects : (state.projects = []); }
+function projRun(id){ return projRuns().filter(r=>r.id===id)[0] || null; }
+function saveProjects(){ scheduleSave('projects', state.projects); }
+
+function projStepTotal(run){
+  return (run.milestones||[]).reduce((n,st)=>n+st.steps.length, 0);
+}
+function projTeamDone(run, teamId){
+  const p = (run.progress||{})[teamId] || {};
+  let n = 0;
+  (run.milestones||[]).forEach(st=>st.steps.forEach(s=>{ if(p[String(s.n)]===2) n++; }));
+  return n;
+}
+function projStageDone(run, teamId, stage){
+  const p = (run.progress||{})[teamId] || {};
+  let n = 0;
+  stage.steps.forEach(s=>{ if(p[String(s.n)]===2) n++; });
+  return n;
+}
+function projNextStep(run, teamId){
+  const p = (run.progress||{})[teamId] || {};
+  for(const st of (run.milestones||[])){
+    for(const s of st.steps){ if(p[String(s.n)]!==2) return { stage: st, step: s }; }
+  }
+  return null;
+}
+/* Criteria for a run. Stored on the run at assignment time so grades survive
+   a catalogue edit; older runs and a failed catalogue load fall back safely. */
+const PROJ_FALLBACK_CRITERIA = [
+  { id:'lang',     label:'Language range & accuracy', labelPt:'Linguagem' },
+  { id:'task',     label:'Task completion',           labelPt:'Cumprimento' },
+  { id:'collab',   label:'Collaboration',             labelPt:'Colaboração' },
+  { id:'delivery', label:'Delivery',                  labelPt:'Apresentação' }
+];
+function projCriteria(run){
+  if(run && Array.isArray(run.criteria) && run.criteria.length) return run.criteria;
+  const def = run ? projDef(run.projectId) : null;
+  if(def && typeof projectCriteria === 'function'){
+    return projectCriteria(def).map(c=>({ id:c.id, label:c.label, labelPt:c.labelPt||c.label, project:!!c.project }));
+  }
+  return PROJ_FALLBACK_CRITERIA;
+}
+function projBands(critId){
+  if(typeof PROJECT_RUBRIC === 'undefined') return null;
+  const c = PROJECT_RUBRIC.filter(x=>x.id===critId)[0];
+  return c ? c.bands : null;
+}
+function projStudentScore(run, studentId){
+  const scores = (run.scores||{})[studentId]||{};
+  const crits = projCriteria(run);
+  const vals = crits.map(c=>scores[c.id]).filter(v=>v!=null);
+  if(!vals.length) return { avg:null, letter:null, entered:0, of:crits.length };
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  return { avg, letter:numToLetter(avg), entered:vals.length, of:crits.length };
+}
+/* Everything the report builder needs about one student's projects. */
+function projStudentReport(studentId, classId, fromVal, toVal){
+  return projRuns()
+    .filter(r=>r.classId===classId)
+    .filter(r=>{
+      if(fromVal && r.endDate && r.endDate < fromVal) return false;
+      if(toVal && r.startDate && r.startDate > toVal) return false;
+      return true;
+    })
+    .map(r=>{
+      const team = (r.teams||[]).filter(t=>(t.memberIds||[]).includes(studentId))[0];
+      if(!team) return null;
+      const crits = projCriteria(r);
+      const scores = (r.scores||{})[studentId]||{};
+      const st = projStudentScore(r, studentId);
+      const stagesTotal = (r.milestones||[]).length;
+      const stagesDone = (r.milestones||[]).filter(s=>projStageDone(r, team.id, s)===s.steps.length).length;
+      return {
+        title:r.title, icon:r.icon, startDate:r.startDate, endDate:r.endDate,
+        team:team.name, stagesDone, stagesTotal,
+        stepsDone:projTeamDone(r, team.id), stepsTotal:projStepTotal(r),
+        criteria:crits.map(c=>({ label:c.label, labelPt:c.labelPt||c.label, score:scores[c.id]==null?null:scores[c.id] })),
+        letter:st.letter, comment:((r.comment||{})[studentId]||'').trim()
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>String(b.startDate||'').localeCompare(String(a.startDate||'')));
+}
+
+function projOverallPct(run){
+  const teams = run.teams||[];
+  if(!teams.length) return 0;
+  const total = projStepTotal(run) * teams.length;
+  if(!total) return 0;
+  const done = teams.reduce((n,t)=>n+projTeamDone(run,t.id), 0);
+  return Math.round(done/total*100);
+}
+
+/* Count the class's actual meeting days between two dates, so "Day 4 of 8"
+   means four lessons, not four calendar days. Falls back to weekdays for a
+   class with no timetable set. */
+function projShiftDate(ds, n){
+  const d = new Date(ds+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function projMeetingDays(cls, fromDate, count){
+  const days = cls ? getClassDays(cls) : [];
+  const valid = days.length ? days : [1,2,3,4,5];
+  const out = [];
+  let cur = fromDate, guard = 0;
+  while(out.length < count && guard < 400){
+    const dow = new Date(cur+'T00:00:00').getDay();
+    if(valid.includes(dow) && !getHoliday(cur)) out.push(cur);
+    cur = projShiftDate(cur, 1);
+    guard++;
+  }
+  return out;
+}
+/* Where the class should be today, versus where a team actually is. */
+function projSchedule(run){
+  const cls = classById(run.classId);
+  const total = Math.max(1, Math.round(run.hours || projStepTotal(run)/4));
+  const days = projMeetingDays(cls, run.startDate || todayStr(), total);
+  const today = todayStr();
+  let dayNo = 0;
+  days.forEach(d=>{ if(d <= today) dayNo++; });
+  // Which stage should be in progress on that day, by cumulative stage hours.
+  let acc = 0, expected = 0;
+  (run.milestones||[]).forEach((st,i)=>{ if(dayNo > acc) expected = i; acc += (st.hours||1); });
+  return { dayNo, total: days.length, endDate: days[days.length-1] || null, expectedStage: expected };
+}
+function projTeamStageIdx(run, teamId){
+  const nx = projNextStep(run, teamId);
+  if(!nx) return (run.milestones||[]).length - 1;
+  return (run.milestones||[]).findIndex(st=>st.id===nx.stage.id);
+}
+
+/* ---------- view ---------- */
+function renderProjects(){
+  const el = document.getElementById('view-projects');
+  try{ _renderProjects(el); }
+  catch(e){
+    el.innerHTML = `<div class="card empty-card" style="color:var(--red);">
+      <b>Projects error — please copy this and report it:</b><br><br>
+      <code style="font-size:12px;word-break:break-all;">${esc(e?.stack||e?.message||String(e))}</code>
+    </div>`;
+  }
+}
+
+function _renderProjects(el){
+  if(state.projOpenId && projRun(state.projOpenId)) return _renderProjectBoard(el, projRun(state.projOpenId));
+
+  const runs = projRuns().slice().sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''));
+  const active = runs.filter(r=>r.status!=='archived');
+  const archived = runs.filter(r=>r.status==='archived');
+  const catalogueWarning = projCatalogueReady() ? '' : `
+    <div class="card section" style="border-left:4px solid var(--red);margin-bottom:16px;">
+      <b>Project catalogue not loaded.</b>
+      <p class="meta" style="margin-top:6px;">The dashboard reads the catalogue from
+      <code>/advanced/projects-data.js</code>. Check your connection and reload —
+      existing runs still show below, because each one stores its own copy of the milestones.</p>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="topbar">
+      <div><h1>Projects</h1><div class="meta">Assign a project to a class and track every team's milestones</div></div>
+      <div class="no-print" style="display:flex;gap:10px;">
+        <a class="btn-ghost" href="/advanced/project-lab.html" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;">📖 Browse catalogue</a>
+        <button class="btn-accent" onclick="openAssignProjectModal()" ${projCatalogueReady()?'':'disabled'}>+ Assign a project</button>
+      </div>
+    </div>
+    ${catalogueWarning}
+    ${active.length===0 ? `<div class="card empty-card">
+        No projects assigned yet.${projCatalogueReady()?` There are ${projCatalogue().length} projects in the catalogue — pick one and assign it to a class.`:''}
+      </div>` : `<div class="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
+        ${active.map(projRunCard).join('')}
+      </div>`}
+    ${archived.length ? `
+      <h3 style="margin:26px 0 12px;font-size:14px;color:var(--muted);">Archived</h3>
+      <div class="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
+        ${archived.map(projRunCard).join('')}
+      </div>` : ''}
+  `;
+}
+
+function projRunCard(run){
+  const def = projDef(run.projectId);
+  const cls = classById(run.classId);
+  const pct = projOverallPct(run);
+  const sch = projSchedule(run);
+  const teams = (run.teams||[]).length;
+  const behind = sch.dayNo > 0 && sch.dayNo <= sch.total;
+  return `
+    <div class="card section" style="margin:0;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:flex-start;gap:11px;">
+        <div style="font-size:26px;line-height:1;">${esc(run.icon || def?.icon || '📋')}</div>
+        <div style="flex:1;min-width:0;">
+          <h3 style="margin:0 0 3px;">${esc(run.title || run.projectId)}</h3>
+          <div class="meta">${esc(cls?cls.name:'Class removed')}${run.startDate?` · from ${formatDateShort(run.startDate)}`:''}</div>
+        </div>
+        ${run.status==='archived'?'<span class="badge">Archived</span>':''}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;height:7px;border-radius:4px;background:var(--border);overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:var(--accent);"></div>
+        </div>
+        <b style="font-size:13px;">${pct}%</b>
+      </div>
+      <div class="meta" style="display:flex;flex-wrap:wrap;gap:12px;">
+        <span>${teams} team${teams===1?'':'s'}</span>
+        <span>${projStepTotal(run)} steps</span>
+        ${behind?`<span>Day ${sch.dayNo} of ${sch.total}</span>`
+                :sch.dayNo>sch.total?`<span>Past the planned end</span>`
+                :`<span>Starts ${run.startDate?formatDateShort(run.startDate):'—'}</span>`}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:2px;">
+        <button class="btn-accent small" onclick="openProjectBoard('${run.id}')">Open board</button>
+        <button class="btn-ghost small" onclick="projArchiveToggle('${run.id}')">${run.status==='archived'?'Restore':'Archive'}</button>
+        <button class="btn-ghost small" style="color:var(--red);border-color:var(--red);margin-left:auto;" onclick="projDeleteRun('${run.id}')">Delete</button>
+      </div>
+    </div>`;
+}
+
+function openProjectBoard(id){ state.projOpenId = id; refreshView(); window.scrollTo(0,0); }
+function closeProjectBoard(){ state.projOpenId = null; refreshView(); window.scrollTo(0,0); }
+
+function _renderProjectBoard(el, run){
+  const cls = classById(run.classId);
+  const sch = projSchedule(run);
+  const stages = run.milestones||[];
+  const teams = run.teams||[];
+  const total = projStepTotal(run);
+
+  const grid = !teams.length ? `<div class="card empty-card">No teams yet — add one below.</div>` : `
+    <div class="table-wrap" style="margin-bottom:18px;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr>
+          <th style="text-align:left;padding:10px;">Team</th>
+          ${stages.map((st,i)=>`<th style="padding:10px;text-align:center;font-size:11px;">${i+1}. ${esc(st.name)}</th>`).join('')}
+          <th style="padding:10px;text-align:center;">Overall</th>
+        </tr></thead>
+        <tbody>
+          ${teams.map(t=>{
+            const done = projTeamDone(run, t.id);
+            const pct = total?Math.round(done/total*100):0;
+            const idx = projTeamStageIdx(run, t.id);
+            const late = idx < sch.expectedStage && sch.dayNo>0 && pct<100;
+            return `<tr>
+              <td style="padding:10px;">
+                <span style="display:inline-flex;align-items:center;gap:7px;font-weight:700;">
+                  <span style="width:9px;height:9px;border-radius:50%;background:${esc(t.colour||'#2dd4bf')};"></span>${esc(t.name)}
+                </span>
+                ${late?'<span class="badge" style="margin-left:6px;">behind</span>':''}
+              </td>
+              ${stages.map(st=>{
+                const d = projStageDone(run, t.id, st);
+                const a = st.steps.length;
+                return `<td style="padding:10px;text-align:center;">
+                  <b style="color:${d===a?'var(--accent)':d>0?'var(--amber,#f59e0b)':'var(--muted)'};">${d}/${a}</b>
+                  <div style="height:4px;border-radius:3px;background:var(--border);margin-top:4px;overflow:hidden;"><div style="height:100%;width:${Math.round(d/a*100)}%;background:var(--accent);"></div></div>
+                </td>`;
+              }).join('')}
+              <td style="padding:10px;text-align:center;"><b>${pct}%</b></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="topbar">
+      <div>
+        <button class="btn-ghost small" onclick="closeProjectBoard()" style="margin-bottom:8px;">← All projects</button>
+        <h1>${esc(run.icon||'')} ${esc(run.title||run.projectId)}</h1>
+        <div class="meta">${esc(cls?cls.name:'Class removed')} ·
+          ${run.startDate?formatDateLong(run.startDate):'no start date'}${sch.endDate?` → ${formatDateShort(sch.endDate)}`:''} ·
+          ${sch.dayNo>0?`Day ${Math.min(sch.dayNo,sch.total)} of ${sch.total}`:`starts in ${sch.total} lesson${sch.total===1?'':'s'}`}
+        </div>
+      </div>
+      <div class="no-print" style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="openProjTeamModal('${run.id}')">+ Add team</button>
+      </div>
+    </div>
+
+    ${grid}
+
+    ${projUnassignedPanel(run)}
+
+    ${teams.map(t=>projTeamPanel(run, t)).join('')}
+
+    ${!teams.length?'':`<p class="meta" style="margin-top:18px;">Click a step to cycle it: not started → in progress → done.</p>`}
+  `;
+}
+
+/* Students in the class who are not on any team in this run. */
+function projUnassigned(run){
+  const on = {};
+  (run.teams||[]).forEach(t=>(t.memberIds||[]).forEach(id=>{ on[id]=1; }));
+  return studentsInClass(run.classId).filter(s=>!on[s.id]);
+}
+function projUnassignedPanel(run){
+  const left = projUnassigned(run);
+  if(!left.length || !(run.teams||[]).length) return '';
+  return `
+    <div class="card section" style="margin-bottom:12px;border-left:4px solid var(--amber,#f59e0b);">
+      <h3 style="margin-top:0;">Not in a team yet <span class="meta" style="font-weight:400;">(${left.length})</span></h3>
+      ${left.map(s=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0;">
+          <span style="flex:1;font-size:14px;">${esc(s.name)}</span>
+          <select onchange="projMoveStudent('${run.id}','${s.id}',this.value)" style="width:auto;min-width:150px;padding:5px 8px;font-size:13px;">
+            <option value="">Add to team…</option>
+            ${(run.teams||[]).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>`;
+}
+function projMoveStudent(runId, studentId, teamId){
+  if(!teamId) return;
+  const run = projRun(runId); if(!run) return;
+  (run.teams||[]).forEach(t=>{ t.memberIds = (t.memberIds||[]).filter(id=>id!==studentId); });
+  const target = (run.teams||[]).filter(t=>t.id===teamId)[0];
+  if(target) target.memberIds.push(studentId);
+  saveProjects();
+  refreshView();
+}
+
+function projTeamPanel(run, team){
+  const stages = run.milestones||[];
+  const prog = (run.progress||{})[team.id]||{};
+  const notes = (run.notes||{})[team.id]||{};
+  const total = projStepTotal(run);
+  const done = projTeamDone(run, team.id);
+  const nx = projNextStep(run, team.id);
+  const open = state.projOpenTeamId === team.id;
+  const members = (team.memberIds||[]).map(id=>{
+    const s = state.students.filter(x=>x.id===id)[0];
+    return s ? s.name : null;
+  }).filter(Boolean);
+
+  return `
+  <div class="card section" style="margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:11px;cursor:pointer;" onclick="projToggleTeam('${team.id}')">
+      <span style="width:11px;height:11px;border-radius:50%;background:${esc(team.colour||'#2dd4bf')};flex-shrink:0;"></span>
+      <div style="flex:1;min-width:0;">
+        <h3 style="margin:0;">${esc(team.name)} <span class="meta" style="font-weight:400;">${done}/${total}</span></h3>
+        <div class="meta">${members.length?esc(members.join(', ')):'<i>no members assigned</i>'}</div>
+        ${nx?`<div class="meta" style="margin-top:3px;">Next: <b>${nx.step.n}.</b> ${esc(nx.step.text)}</div>`
+            :`<div class="meta" style="margin-top:3px;color:var(--accent);"><b>All steps complete</b></div>`}
+      </div>
+      <span class="meta">${open?'▾':'▸'}</span>
+    </div>
+    ${!open?'':`
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+          <button class="btn-ghost small" onclick="openProjTeamModal('${run.id}','${team.id}')">Edit team</button>
+          <button class="btn-ghost small" style="color:var(--red);border-color:var(--red);" onclick="projDeleteTeam('${run.id}','${team.id}')">Remove team</button>
+        </div>
+        ${stages.map((st,i)=>{
+          const d = projStageDone(run, team.id, st);
+          return `
+          <div style="margin-bottom:18px;">
+            <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:7px;">
+              <b style="font-size:13px;">${i+1}. ${esc(st.name)}</b>
+              <span class="meta">${d}/${st.steps.length} · ${st.hours}h</span>
+            </div>
+            <div class="meta" style="margin-bottom:8px;font-style:italic;">${esc(st.focus||'')}</div>
+            ${st.steps.map(s=>{
+              const v = prog[String(s.n)]||0;
+              const mark = v===2?'✓':v===1?'◐':'';
+              const col = v===2?'var(--accent)':v===1?'#f59e0b':'var(--muted)';
+              const strike = v===2?'opacity:.6;':'';
+              return `<div onclick="projCycleStep('${run.id}','${team.id}',${s.n})"
+                   style="display:flex;gap:10px;align-items:flex-start;padding:6px 8px;border-radius:7px;cursor:pointer;${strike}"
+                   onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background=''">
+                <span style="flex-shrink:0;width:20px;height:20px;border:1.5px solid ${col};border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:${col};font-weight:700;">${mark}</span>
+                <span style="flex-shrink:0;font-size:11px;color:var(--muted);width:20px;padding-top:2px;">${s.n}</span>
+                <span style="font-size:13.5px;line-height:1.5;">${esc(s.text)}</span>
+              </div>`;
+            }).join('')}
+            <textarea placeholder="Observations for this stage…" rows="2"
+              onchange="projSetNote('${run.id}','${team.id}','${st.id}',this.value)"
+              style="width:100%;margin-top:8px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;">${esc(notes[st.id]||'')}</textarea>
+          </div>`;
+        }).join('')}
+        ${projTeamGrades(run, team)}
+      </div>`}
+  </div>`;
+}
+
+/* Grading is per student, not per team: collaboration and delivery are
+   individual even when the deliverables are shared. */
+function projTeamGrades(run, team){
+  const members = (team.memberIds||[]).map(id=>state.students.filter(x=>x.id===id)[0]).filter(Boolean);
+  if(!members.length) return '';
+  const crits = projCriteria(run);
+  const scores = run.scores||{};
+  const comments = run.comment||{};
+  return `
+    <div style="border-top:1px solid var(--border);padding-top:14px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <b style="font-size:13px;">Grades</b>
+        <span class="meta">1 Below · 2 Approaching · 3 Meets · 4 Exceeds</span>
+        <button class="btn-ghost small" style="margin-left:auto;" onclick="projLogAsActivity('${run.id}','${team.id}')">Log as graded activity</button>
+      </div>
+      ${members.map(s=>{
+        const sc = scores[s.id]||{};
+        const st = projStudentScore(run, s.id);
+        return `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:12px 13px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px;">
+            <b style="font-size:14px;">${esc(s.name)}</b>
+            <span class="meta">${st.entered}/${st.of} scored</span>
+            ${st.letter?`<span class="badge" style="margin-left:auto;font-size:14px;">${st.letter}</span>`:'<span class="meta" style="margin-left:auto;">not graded</span>'}
+          </div>
+          ${crits.map(c=>{
+            const bands = projBands(c.id);
+            const cur = sc[c.id]||null;
+            return `<div style="display:flex;align-items:center;gap:9px;padding:4px 0;">
+              <span style="flex:1;font-size:12.5px;color:${c.project?'var(--accent)':'var(--muted)'};">${esc(c.label)}</span>
+              <span style="display:flex;gap:4px;">
+                ${[1,2,3,4].map(v=>`<button type="button"
+                    title="${esc(bands?bands[v-1]:'')}"
+                    onclick="projSetScore('${run.id}','${s.id}','${c.id}',${v})"
+                    style="width:28px;height:26px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+                      border:1px solid ${cur===v?'var(--accent)':'var(--border)'};
+                      background:${cur===v?'var(--accent)':'transparent'};
+                      color:${cur===v?'#fff':'var(--muted)'};">${v}</button>`).join('')}
+              </span>
+            </div>`;
+          }).join('')}
+          <textarea rows="2" placeholder="Comment for the report card…"
+            onchange="projSetComment('${run.id}','${s.id}',this.value)"
+            style="width:100%;margin-top:9px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;">${esc(comments[s.id]||'')}</textarea>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function projSetScore(runId, studentId, critId, v){
+  const run = projRun(runId); if(!run) return;
+  run.scores = run.scores||{};
+  run.scores[studentId] = run.scores[studentId]||{};
+  if(run.scores[studentId][critId] === v) delete run.scores[studentId][critId];   // tap again to clear
+  else run.scores[studentId][critId] = v;
+  saveProjects();
+  refreshView();
+}
+function projSetComment(runId, studentId, val){
+  const run = projRun(runId); if(!run) return;
+  run.comment = run.comment||{};
+  const t = (val||'').trim();
+  if(t) run.comment[studentId] = t; else delete run.comment[studentId];
+  saveProjects();
+}
+/* Push the finished project into the Activities log so it counts towards the
+   existing skill averages. Opt-in, because not every project should. */
+function projLogAsActivity(runId, teamId){
+  const run = projRun(runId); if(!run) return;
+  const team = (run.teams||[]).filter(t=>t.id===teamId)[0]; if(!team) return;
+  const members = (team.memberIds||[]).filter(id=>projStudentScore(run, id).letter);
+  if(!members.length){ alert('Score at least one student on this team first.'); return; }
+  if(!confirm(`Add "${run.title}" to the Activities log as a speaking activity, with ${members.length} grade(s)?`)) return;
+  const grades = {};
+  members.forEach(id=>{ grades[id] = projStudentScore(run, id).letter; });
+  if(!state.activities) state.activities = [];
+  state.activities.push({ id: uid(), classId: run.classId, date: todayStr(), skill: 'speaking',
+    description: 'Project: ' + run.title + ' (' + team.name + ')', grades, notes: {}, ts: Date.now() });
+  scheduleSave('activities', state.activities);
+  alert('Added to Activities.');
+}
+
+function projToggleTeam(id){
+  state.projOpenTeamId = state.projOpenTeamId===id ? null : id;
+  refreshView();
+}
+
+/* ---------- mutations ---------- */
+function projCycleStep(runId, teamId, n){
+  const run = projRun(runId); if(!run) return;
+  run.progress = run.progress || {};
+  run.progress[teamId] = run.progress[teamId] || {};
+  const cur = run.progress[teamId][String(n)] || 0;
+  const next = (cur + 1) % 3;
+  if(next === 0) delete run.progress[teamId][String(n)];
+  else run.progress[teamId][String(n)] = next;
+  saveProjects();
+  refreshView();
+}
+function projSetNote(runId, teamId, stageId, val){
+  const run = projRun(runId); if(!run) return;
+  run.notes = run.notes || {};
+  run.notes[teamId] = run.notes[teamId] || {};
+  const t = (val||'').trim();
+  if(t) run.notes[teamId][stageId] = t; else delete run.notes[teamId][stageId];
+  saveProjects();
+}
+function projArchiveToggle(id){
+  const run = projRun(id); if(!run) return;
+  run.status = run.status==='archived' ? 'active' : 'archived';
+  saveProjects(); refreshView();
+}
+function projDeleteRun(id){
+  const run = projRun(id); if(!run) return;
+  if(!confirm(`Delete "${run.title||run.projectId}" and all its progress and observations?\n\nThis cannot be undone.`)) return;
+  state.projects = projRuns().filter(r=>r.id!==id);
+  if(state.projOpenId===id) state.projOpenId = null;
+  saveProjects(); refreshView();
+}
+function projDeleteTeam(runId, teamId){
+  const run = projRun(runId); if(!run) return;
+  const t = (run.teams||[]).filter(x=>x.id===teamId)[0];
+  if(!confirm(`Remove ${t?t.name:'this team'} and its progress?`)) return;
+  run.teams = (run.teams||[]).filter(x=>x.id!==teamId);
+  if(run.progress) delete run.progress[teamId];
+  if(run.notes) delete run.notes[teamId];
+  if(state.projOpenTeamId===teamId) state.projOpenTeamId = null;
+  saveProjects(); refreshView();
+}
+
+/* ---------- assign ---------- */
+function openAssignProjectModal(){
+  projAssignPicks = {};
+  if(!projCatalogueReady()){ alert('The project catalogue has not loaded. Check your connection and reload the page.'); return; }
+  const classes = activeClasses();
+  if(!classes.length){ alert('Add a class first.'); return; }
+  const adv = classes.filter(c=>isAdvancedLevel(c.level));
+  const ordered = adv.concat(classes.filter(c=>!isAdvancedLevel(c.level)));
+  const projOpts = projCatalogue().map(p=>
+    `<option value="${p.id}">${p.icon} ${esc(p.title)} — ${esc(p.level)}, ${p.hours}h, ${projectStepCount(p)} steps</option>`).join('');
+  const classOpts = ordered.map(c=>
+    `<option value="${c.id}">${esc(c.name)}${isAdvancedLevel(c.level)?'':' ('+esc(c.level||'')+')'}</option>`).join('');
+
+  showModal(`${sizeModal('md')}
+    <h2>Assign a project</h2>
+    <p class="meta" style="margin:6px 0 18px;">The milestones are copied into this assignment, so later edits to the catalogue will not change a project already under way.</p>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Project</label>
+      <select id="ap-project" onchange="projAssignPreview()" style="width:100%;">${projOpts}</select>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Class</label>
+      <select id="ap-class" onchange="projAssignClassChanged()" style="width:100%;">${classOpts}</select>
+    </div>
+    <div class="modal-row" style="display:flex;gap:12px;margin-bottom:12px;">
+      <div class="field" style="flex:1;">
+        <label>Start date</label>
+        <input type="date" id="ap-start" value="${todayStr()}" onchange="projAssignPreview()" style="width:100%;">
+      </div>
+      <div class="field" style="flex:1;">
+        <label>Number of teams</label>
+        <input type="number" id="ap-teams" min="1" max="12" value="3" onchange="projAssignTeamCount()" style="width:100%;">
+      </div>
+    </div>
+    <div class="card section" id="ap-preview" style="margin-bottom:14px;"></div>
+    <div class="field">
+      <label>Who goes in which team</label>
+      <div id="ap-roster"></div>
+    </div>
+    <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="projAssignConfirm()">Assign project</button>
+    </div>
+  `);
+  projAssignPreview();
+}
+
+/* Team membership is chosen by the teacher, never guessed.
+   projAssignPicks maps studentId -> team index; absent means unassigned. */
+let projAssignPicks = {};
+
+function projAssignTeamN(){
+  const el = document.getElementById('ap-teams');
+  return Math.max(1, Math.min(12, Number(el ? el.value : 3) || 1));
+}
+function projAssignTeamCount(){
+  const n = projAssignTeamN();
+  Object.keys(projAssignPicks).forEach(id=>{ if(projAssignPicks[id] >= n) delete projAssignPicks[id]; });
+  projAssignPreview();
+}
+function projAssignSetPick(studentId, val){
+  if(val === '') delete projAssignPicks[studentId];
+  else projAssignPicks[studentId] = Number(val);
+  projAssignPreview();
+}
+function projAssignClearPicks(){ projAssignPicks = {}; projAssignPreview(); }
+function projAssignSplitEven(){
+  const cls = classById(document.getElementById('ap-class').value);
+  const n = projAssignTeamN();
+  projAssignPicks = {};
+  (cls ? studentsInClass(cls.id) : []).forEach((s,i)=>{ projAssignPicks[s.id] = i % n; });
+  projAssignPreview();
+}
+function projAssignClassChanged(){ projAssignPicks = {}; projAssignPreview(); }
+
+function projAssignPreview(){
+  const box = document.getElementById('ap-preview');
+  const rosterBox = document.getElementById('ap-roster');
+  if(!box) return;
+  const p = projDef(document.getElementById('ap-project').value);
+  const cls = classById(document.getElementById('ap-class').value);
+  const start = document.getElementById('ap-start').value || todayStr();
+  const n = projAssignTeamN();
+  if(!p){ box.innerHTML = ''; if(rosterBox) rosterBox.innerHTML = ''; return; }
+
+  const roster = cls ? studentsInClass(cls.id) : [];
+  const days = projMeetingDays(cls, start, p.hours);
+  const placed = roster.filter(s=>projAssignPicks[s.id]!=null).length;
+
+  box.innerHTML = `
+    <div style="font-size:13px;line-height:1.7;">
+      <b>${p.icon} ${esc(p.title)}</b> — ${esc(p.level)}, ${p.stages.length} stages, ${projectStepCount(p)} steps<br>
+      <span class="meta">${esc(p.hook)}</span><br><br>
+      <b>${p.hours}</b> lessons at one hour a day${days.length?`, ending <b>${formatDateShort(days[days.length-1])}</b>`:''}<br>
+      <b>${placed}</b> of <b>${roster.length}</b> student${roster.length===1?'':'s'} placed into <b>${n}</b> team${n===1?'':'s'}<br>
+      <span class="meta">Suggested team size for this project: ${esc(p.teamSize)}</span>
+    </div>`;
+
+  if(!rosterBox) return;
+  if(!roster.length){ rosterBox.innerHTML = '<p class="meta">This class has no students yet.</p>'; return; }
+
+  const counts = [];
+  for(let i=0;i<n;i++) counts.push(roster.filter(s=>projAssignPicks[s.id]===i).length);
+
+  rosterBox.innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;align-items:center;">
+      ${counts.map((c,i)=>`<span style="font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;
+        border:1px solid ${PROJ_COLOURS[i%PROJ_COLOURS.length]};color:${PROJ_COLOURS[i%PROJ_COLOURS.length]};">Team ${i+1}: ${c}</span>`).join('')}
+      ${placed<roster.length?`<span class="meta">${roster.length-placed} still unassigned</span>`:''}
+    </div>
+    <div style="max-height:270px;overflow:auto;border:1px solid var(--border);border-radius:9px;">
+      ${roster.map((s,idx)=>{
+        const cur = projAssignPicks[s.id];
+        const col = cur!=null ? PROJ_COLOURS[cur%PROJ_COLOURS.length] : null;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;${idx?'border-top:1px solid var(--border);':''}">
+          <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:${col||'transparent'};border:1px solid ${col||'var(--border)'};"></span>
+          <span style="flex:1;font-size:14px;">${esc(s.name)}</span>
+          <select onchange="projAssignSetPick('${s.id}', this.value)" style="width:auto;min-width:132px;padding:5px 8px;font-size:13px;">
+            <option value="" ${cur==null?'selected':''}>— Unassigned</option>
+            ${Array.from({length:n}, (_,i)=>`<option value="${i}" ${cur===i?'selected':''}>Team ${i+1}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:9px;">
+      <button type="button" class="btn-ghost small" onclick="projAssignSplitEven()">Split evenly</button>
+      <button type="button" class="btn-ghost small" onclick="projAssignClearPicks()">Clear all</button>
+    </div>`;
+}
+
+function projAssignConfirm(){
+  const p = projDef(document.getElementById('ap-project').value);
+  const classId = document.getElementById('ap-class').value;
+  const start = document.getElementById('ap-start').value || todayStr();
+  const nTeams = Math.max(1, Math.min(12, Number(document.getElementById('ap-teams').value)||1));
+  if(!p || !classId){ alert('Choose a project and a class.'); return; }
+
+  const roster = studentsInClass(classId);
+  const teams = [];
+  for(let i=0;i<nTeams;i++){
+    teams.push({ id: uid(), name: 'Team '+(i+1), colour: PROJ_COLOURS[i%PROJ_COLOURS.length], memberIds: [] });
+  }
+  // Only the students the teacher actually placed. The rest stay unassigned
+  // and are listed on the board until they are put somewhere.
+  roster.forEach(s=>{
+    const t = projAssignPicks[s.id];
+    if(t!=null && teams[t]) teams[t].memberIds.push(s.id);
+  });
+  const unplaced = roster.length - Object.keys(projAssignPicks).filter(id=>roster.some(s=>s.id===id)).length;
+  if(unplaced > 0 && !confirm(`${unplaced} student${unplaced===1?' is':'s are'} not in a team yet.\n\nAssign the project anyway? You can add them from the board.`)) return;
+
+  const cls = classById(classId);
+  const days = projMeetingDays(cls, start, p.hours);
+
+  const run = {
+    id: uid(),
+    projectId: p.id,
+    projectVersion: p.version || 1,
+    title: p.title,
+    icon: p.icon,
+    level: p.level,
+    hours: p.hours,
+    classId: classId,
+    startDate: start,
+    endDate: days.length ? days[days.length-1] : null,
+    milestones: JSON.parse(JSON.stringify(p.stages)),   // frozen copy
+    criteria: projectCriteria(p).map(c=>({ id:c.id, label:c.label, labelPt:c.labelPt||c.label, project:!!c.project })),
+    teams: teams,
+    progress: {},
+    notes: {},
+    scores: {},
+    comment: {},
+    status: 'active',
+    ts: Date.now()
+  };
+  projRuns().push(run);
+  saveProjects();
+  closeModal();
+  state.projOpenId = run.id;
+  refreshView();
+}
+
+/* ---------- team editor ---------- */
+function openProjTeamModal(runId, teamId){
+  const run = projRun(runId); if(!run) return;
+  const team = teamId ? (run.teams||[]).filter(t=>t.id===teamId)[0] : null;
+  const roster = studentsInClass(run.classId);
+  // A student already on another team in this run is shown but flagged.
+  const taken = {};
+  (run.teams||[]).forEach(t=>{ if(!team || t.id!==team.id) (t.memberIds||[]).forEach(id=>{ taken[id]=t.name; }); });
+
+  showModal(`${sizeModal('md')}
+    <h2>${team?'Edit team':'Add team'}</h2>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Team name</label>
+      <input type="text" id="tm-name" value="${esc(team?team.name:'Team '+((run.teams||[]).length+1))}" style="width:100%;">
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Colour</label>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="tm-colours">
+        ${PROJ_COLOURS.map(c=>`<button type="button" class="swatch" data-c="${c}" onclick="projPickColour('${c}')"
+          style="width:26px;height:26px;border-radius:50%;background:${c};border:2px solid ${ (team?team.colour:PROJ_COLOURS[0])===c ? 'var(--text,#111)' : 'transparent'};cursor:pointer;"></button>`).join('')}
+      </div>
+      <input type="hidden" id="tm-colour" value="${esc(team?team.colour:PROJ_COLOURS[(run.teams||[]).length%PROJ_COLOURS.length])}">
+    </div>
+    <div class="field">
+      <label>Members</label>
+      ${roster.length===0?'<p class="meta">This class has no students yet.</p>':`
+      <div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:9px;padding:8px;margin-top:6px;">
+        ${roster.map(s=>{
+          const on = team && (team.memberIds||[]).includes(s.id);
+          return `<label style="display:flex;align-items:center;gap:10px;padding:7px 6px;font-size:14px;cursor:pointer;border-radius:7px;">
+            <input type="checkbox" class="tm-mem" value="${s.id}" ${on?'checked':''}>
+            <span style="flex:1;text-align:left;">${esc(s.name)}</span>
+            ${taken[s.id]?`<span class="meta" style="white-space:nowrap;">on ${esc(taken[s.id])}</span>`:''}
+          </label>`;
+        }).join('')}
+      </div>`}
+    </div>
+    <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="projSaveTeam('${runId}'${team?`,'${team.id}'`:''})">Save team</button>
+    </div>
+  `);
+}
+function projPickColour(c){
+  const hid = document.getElementById('tm-colour'); if(hid) hid.value = c;
+  document.querySelectorAll('#tm-colours .swatch').forEach(b=>{
+    b.style.borderColor = b.dataset.c===c ? 'var(--text,#111)' : 'transparent';
+  });
+}
+function projSaveTeam(runId, teamId){
+  const run = projRun(runId); if(!run) return;
+  const name = (document.getElementById('tm-name').value||'').trim() || 'Team';
+  const colour = document.getElementById('tm-colour').value || PROJ_COLOURS[0];
+  const members = [...document.querySelectorAll('.tm-mem:checked')].map(i=>i.value);
+  let team = teamId ? (run.teams||[]).filter(t=>t.id===teamId)[0] : null;
+  if(!team){ team = { id: uid(), memberIds: [] }; run.teams = run.teams||[]; run.teams.push(team); }
+  team.name = name; team.colour = colour; team.memberIds = members;
+  // A student can only be on one team per run.
+  (run.teams||[]).forEach(t=>{
+    if(t.id===team.id) return;
+    t.memberIds = (t.memberIds||[]).filter(id=>!members.includes(id));
+  });
+  saveProjects();
+  closeModal();
+  refreshView();
+}
+
 
 /* ---------- session bootstrap ---------- */
 (async function bootstrap(){
