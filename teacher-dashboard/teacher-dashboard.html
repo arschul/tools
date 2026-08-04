@@ -6755,12 +6755,20 @@ function renderStudentProfile(){
   const toVal = state.reportRange.to || cls?.endDate || '';
   const inRange = d => (!fromVal || d>=fromVal) && (!toVal || d<=toVal);
   const records = dedupedRecords.filter(r=>inRange(r.date));
-  // Holidays no longer arrive as records, so they come from the calendar: a
-  // holiday that landed on one of this student's class days during the period.
+  /* Holidays no longer arrive as records, so they come from the calendar: a
+     holiday that landed on one of this student's class days during the period.
+     The calendar holds the whole year ahead, while attendance records only
+     exist for classes that have happened — so future holidays must be excluded
+     or they pile up above the most recent class, out of chronological order
+     with everything around them. A report describes what has happened. */
+  const todayD = todayStr();
   const holidayDates = [...new Set((state.holidays||[]).map(h=>h.date))].filter(d=>{
+    if(d > todayD) return false;
     if(!inRange(d)) return false;
     const c = classForStudentOnDate(student, d);
-    return !!c && getClassDays(c).includes(new Date(d+'T00:00:00').getDay());
+    if(!c || !getClassDays(c).includes(new Date(d+'T00:00:00').getDay())) return false;
+    // Nor before the student's course actually began.
+    return !(c.startDate && d < c.startDate);
   });
 
   // Duration for a record = the duration in effect for *its own class* on *its own date*
