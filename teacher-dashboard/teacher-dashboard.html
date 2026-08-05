@@ -5179,7 +5179,7 @@ function renderRollCall(){
   const prevDate = getPreviousClassDate(cls, date);
   const prevSessionKey = prevDate ? cls.id+'_'+prevDate : null;
   const prevSession = prevSessionKey ? (state.sessions[prevSessionKey]||{}) : {};
-  const hwPending = prevHwPending(students, prevSession, prevDate);
+  const hwPending = prevHwPending(students, prevSession, prevDate, cls.id);
 
   // Only explicitly-completed sessions are read-only (per spec Q5 = option a)
   const locked = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
@@ -5638,11 +5638,13 @@ function hwDueOn(classId, date){
 }
 
 function annotateHwAssigned(sorted){
-  sorted.forEach((r, i)=>{
-    let prevDate = null;
-    for(let j=i+1; j<sorted.length; j++){        // newest-first: later entries are earlier dates
-      if(sorted[j]._classId === r._classId){ prevDate = sorted[j].date; break; }
-    }
+  sorted.forEach(r=>{
+    /* Ask the class schedule what was due, not this student's own record list.
+       Walking the student's records breaks for anyone who joined mid-term or
+       missed a class: their previous *record* may be weeks before their
+       previous *class*, so homework set in between was missed entirely. */
+    const c = classById(r._classId);
+    const prevDate = c ? getPreviousClassDate(c, r.date) : null;
     const text = prevDate ? String(getHomework(r._classId, prevDate) || '').trim() : '';
     r._hwPrevDate = prevDate;
     r._hwAssigned = !!text;                      // false also covers a student's very first class
@@ -5690,6 +5692,7 @@ function annotateLateHw(sorted){
     }
     const target = targetDate ? byDate.get(targetDate) : null;
     if(!target || target === r) return;
+    if(target._hwAssigned === false) return;         // no homework that day to bring late
     if(target._hwLate === 'late') return;            // "brought late" wins a conflict
     target._hwLate = r.lateHwOutcome;
     target._hwLateOn = r.date;
@@ -5701,8 +5704,14 @@ function annotateLateHw(sorted){
    absent that day, or they were present and handed in less than 100%. Returns
    Map(studentId -> {reason:'absent'|'partial', pct, date}). A student with no
    record at all in the previous session never counts as owing anything. */
-function prevHwPending(students, prevSession, prevDate){
+function prevHwPending(students, prevSession, prevDate, classId){
   const map = new Map();
+  if(!prevDate) return map;
+  /* Missing a class only leaves homework owed if homework was actually due
+     that day — i.e. the session before it set some. Without this check a
+     student who missed the very first class, when no homework existed at all,
+     was flagged as owing it. */
+  if(classId && !hwDueOn(classId, prevDate)) return map;
   for(const s of students){
     const pr = prevSession[s.id];
     if(!pr) continue;
