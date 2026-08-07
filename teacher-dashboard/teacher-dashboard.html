@@ -5622,32 +5622,23 @@ function attendanceMonthly(records, maxMonths=8){
 }
 function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
 /* ===== Was homework even set? =====
-   Homework is written on the day it's given and is due the NEXT class, so a
-   session only owes homework if the previous session of the same class had the
-   "Homework to assign (due next class)" field filled in. Sessions with nothing
-   set are marked _hwAssigned:false and stay out of every average.
-   Without this, a class where no homework was given still scored 100% (the
-   roll-call default) or showed a dash that reads, to a parent, as if the
-   student had failed to do it. */
-/* What homework is due at the class meeting on `date` — i.e. whatever was
-   written in the previous meeting's "Homework to assign" box. '' means none. */
+   A session only owes homework if some was set for it. Sessions with none are
+   marked _hwAssigned:false and stay out of every average — otherwise a class
+   where no homework was given still scored 100% (the roll-call default), which
+   reads to a parent as if the student had failed to do it.
+
+   The storage key is the day the homework is DUE, not the day it was given:
+   the "Homework to assign (due next class)" box saves against the next
+   meeting's date. So "Homework due today", the dashboard's "HW due" chip and
+   this helper are all the same direct lookup. */
 function hwDueOn(classId, date){
-  const c = classById(classId);
-  const prev = c ? getPreviousClassDate(c, date) : null;
-  return prev ? String(getHomework(classId, prev) || '').trim() : '';
+  return date ? String(getHomework(classId, date) || '').trim() : '';
 }
 
 function annotateHwAssigned(sorted){
   sorted.forEach(r=>{
-    /* Ask the class schedule what was due, not this student's own record list.
-       Walking the student's records breaks for anyone who joined mid-term or
-       missed a class: their previous *record* may be weeks before their
-       previous *class*, so homework set in between was missed entirely. */
-    const c = classById(r._classId);
-    const prevDate = c ? getPreviousClassDate(c, r.date) : null;
-    const text = prevDate ? String(getHomework(r._classId, prevDate) || '').trim() : '';
-    r._hwPrevDate = prevDate;
-    r._hwAssigned = !!text;                      // false also covers a student's very first class
+    const text = hwDueOn(r._classId, r.date);
+    r._hwAssigned = !!text;                      // no homework set for that class
     if(text) r._hwText = text;
   });
   return sorted;
