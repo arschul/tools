@@ -6828,8 +6828,11 @@ function renderStudentProfile(){
   const present = total - absent;   // attended = present, including those who arrived late
   const totalPhone = records.reduce((sum,r)=>sum+(r.phone||0),0);
   // Classes in this period where the teacher set no homework at all.
-  const noHwCount = records.filter(r=>r._hwAssigned===false).length;
-  const hwRecords = records.filter(r=>hwEffOf(r)!=null);
+  const noHwCount = records.filter(r=>r.attendance!=='absent' && r._hwAssigned===false).length;
+  /* Absences carry no homework figure: the student wasn't there to hand
+     anything in, and what they owe is tracked separately as pending homework.
+     Counting them scored an absence as 100% via the roll-call default. */
+  const hwRecords = records.filter(r=>r.attendance!=='absent' && hwEffOf(r)!=null);
   const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwEffOf(r),0)/hwRecords.length) : null;
   // Same set, ignoring late deliveries — used to show what changed.
   const hwAvgOnTime = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwValueOf(r),0)/hwRecords.length) : null;
@@ -7243,18 +7246,26 @@ function renderStudentProfile(){
                   <td></td>
                   <td colspan="9" style="font-size:12px;color:var(--red);font-style:italic;">${t.missedLabel}: ${esc(lessonNote)}</td>
                 </tr>` : '';
+              /* A student who wasn't there has no English use, participation
+                 or homework to report. Roll call fills those fields with its
+                 defaults for every student on the roster, so without this an
+                 absence read as "Excellent / Great" — praise for a class the
+                 student never attended. The columns are blanked rather than
+                 dropped, so the row still lines up with the ones around it. */
+              const away = r.attendance === 'absent';
+              const blank = `<span style="color:var(--muted);">—</span>`;
               return `
                 <tr>
                   <td>${formatDateShort(r.date)}</td>
                   <td><span class="badge ${attendanceBadgeClass(r.attendance)}">${t.attendanceLabels[r.attendance]||r.attendance}</span></td>
-                  <td>${r.lateMin?r.lateMin+' min':'—'}</td>
-                  <td>${r.leftEarlyMin?r.leftEarlyMin+' min':'—'}</td>
-                  <td>${r.phone||'—'}</td>
-                  <td>${hwCellHtml(r, state.reportLang==='pt')}</td>
-                  <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>${r.lateHwFor?`<span class="late-hw-ref">${formatDateShort(r.lateHwFor)}${r.lateHwPrevPct!=null?` · ${r.lateHwPrevPct}%`:''}</span>`:''}` : '—'}</td>
-                  <td>${r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:'—'}</td>
-                  <td>${r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:'—'}</td>
-                  <td>${r.notes?esc(r.notes):'—'}</td>
+                  <td>${!away && r.lateMin?r.lateMin+' min':blank}</td>
+                  <td>${!away && r.leftEarlyMin?r.leftEarlyMin+' min':blank}</td>
+                  <td>${!away && r.phone?r.phone:blank}</td>
+                  <td>${away ? blank : hwCellHtml(r, state.reportLang==='pt')}</td>
+                  <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>${r.lateHwFor?`<span class="late-hw-ref">${formatDateShort(r.lateHwFor)}${r.lateHwPrevPct!=null?` · ${r.lateHwPrevPct}%`:''}</span>`:''}` : blank}</td>
+                  <td>${!away && r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:blank}</td>
+                  <td>${!away && r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:blank}</td>
+                  <td>${r.notes?esc(r.notes):blank}</td>
                 </tr>${missedRow}`;
             }).join('');
           })()}
@@ -7568,9 +7579,9 @@ function renderGroupReport(){
     const attInfo   = attendanceRate(expected, absent, present, late);
     const attRate   = attInfo.rate;
     const attBasis  = attInfo.basis;
-    const hwRecs    = filtered.filter(r=>hwEffOf(r)!=null);
+    const hwRecs    = filtered.filter(r=>r.attendance!=='absent' && hwEffOf(r)!=null);
     const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>s+hwEffOf(r),0)/hwRecs.length) : null;
-    const phone     = filtered.reduce((s,r)=>s+(r.phone||0),0);
+    const phone     = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.phone||0),0);
     const partRecs  = filtered.filter(r=>r.attendance!=='absent'&&r.participation);
     const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>r.participation==='great').length + partRecs.filter(r=>r.participation==='good').length*0.5)/partRecs.length) : null;
     const absRate   = expected ? Math.round(100*absent/expected) : null;
