@@ -687,7 +687,9 @@
   .cal-cell.today.assess{background:linear-gradient(180deg, var(--assess-tint) 0%, var(--accent-soft) 100%);}
   /* The event tag itself, solid rather than soft, so it outranks class tags. */
   .cal-tag.assess-tag{
-    background:var(--assess-c);color:#fff;border-color:var(--assess-c);
+    background:var(--assess-c);
+    background:color-mix(in srgb, var(--assess-c) 78%, #000);
+    color:#fff;border-color:var(--assess-c);
     font-weight:800;letter-spacing:.2px;padding:3px 7px;
     box-shadow:0 1px 3px rgba(0,0,0,.18);
   }
@@ -7842,14 +7844,30 @@ function exportGradesCsv(){
 /* Tests and reviews change what a day *is*; homework and "other" don't.
    Projects sit in between and get the same emphasis, since a due date matters.
    Returned: the winning type, its colour variable, and the flag emoji. */
-const ASSESS_TYPES = { test:{c:'--red', flag:'✏️', rank:3},
-                       review:{c:'--amber', flag:'🔁', rank:2},
-                       project:{c:'--purple', flag:'📁', rank:1} };
+/* An assessment is coloured by the GROUP it belongs to, matching that class's
+   chip, so a glance tells you whose test it is. The emoji carries the kind of
+   event, which is what colour used to do — otherwise every marked day was red
+   and the grid said "something important" without saying for whom.
+   Events with no class (school-wide) keep a neutral type colour. */
+const ASSESS_TYPES = { test:{fallback:'--red', flag:'✏️', rank:3, label:'Test'},
+                       review:{fallback:'--amber', flag:'🔁', rank:2, label:'Review'},
+                       project:{fallback:'--purple', flag:'📁', rank:1, label:'Project'} };
+// A CSS colour for one event: the class's own colour when it has one.
+function assessColorFor(ev){
+  const c = ev && ev.classId ? classById(ev.classId) : null;
+  if(c && c.color) return c.color;
+  const meta = ASSESS_TYPES[ev && ev.type];
+  return meta ? `var(${meta.fallback})` : 'var(--gray)';
+}
 function assessInfoFor(dateStr){
   let best = null;
   state.events.filter(e=>e.date===dateStr).forEach(e=>{
     const meta = ASSESS_TYPES[e.type];
-    if(meta && (!best || meta.rank > best.rank)) best = { type:e.type, ...meta };
+    if(!meta) return;
+    // Highest-ranked event wins the cell; ties go to the earliest entered.
+    if(!best || meta.rank > best.rank){
+      best = { type:e.type, rank:meta.rank, flag:meta.flag, color:assessColorFor(e) };
+    }
   });
   return best;
 }
@@ -7859,7 +7877,7 @@ function assessCellAttrs(dateStr){
   if(!a) return { cls:'', style:'', flag:'' };
   return {
     cls:'assess',
-    style:`--assess-c:var(${a.c});--assess-tint:color-mix(in srgb, var(${a.c}) 14%, transparent);--assess-ring:color-mix(in srgb, var(${a.c}) 22%, transparent);`,
+    style:`--assess-c:${a.color};--assess-tint:color-mix(in srgb, ${a.color} 14%, transparent);`,
     flag:`<span class="assess-flag" aria-hidden="true">${a.flag}</span>`
   };
 }
@@ -7884,7 +7902,10 @@ function calDayItemsHtml(dateStr){
     }).join(''):''}
     ${eventsToday.map(e=>{
       const meta = ASSESS_TYPES[e.type];
-      return `<div class="cal-tag ${e.type}${meta?' assess-tag':''}"${meta?` style="--assess-c:var(${meta.c});"`:''}>${meta?meta.flag+' ':''}${esc(e.title)}</div>`;
+      if(!meta) return `<div class="cal-tag ${e.type}">${esc(e.title)}</div>`;
+      const col = assessColorFor(e);
+      const owner = e.classId ? classById(e.classId) : null;
+      return `<div class="cal-tag ${e.type} assess-tag" style="--assess-c:${col};" title="${meta.label}${owner?' — '+esc(owner.name):''}">${meta.flag} ${esc(e.title)}</div>`;
     }).join('')}
     ${privToday.map(l=>{
       const st = privStudent(l.studentId);
@@ -7939,11 +7960,11 @@ function calLegendHtml(){
     <div class="cal-legend">
       ${activeClasses().map(c=>`<div class="legend-item"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`).join('')}
       <div class="legend-item"><span class="badge hw">HW</span> Homework due</div>
-      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--red);padding:1px 6px;">✏️ Test</span> Test</div>
-      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--amber);padding:1px 6px;">🔁 Review</span> Review</div>
-      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--purple);padding:1px 6px;">📁 Project</span> Project</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">✏️</span> Test</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">🔁</span> Review</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">📁</span> Project</div>
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
-      <div class="legend-item" style="font-style:italic;">Test, review and project days are outlined on the calendar.</div>
+      <div class="legend-item" style="font-style:italic;">These days are outlined in their group's colour.</div>
       <div class="legend-item">🎉 Holiday</div>
       <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
     </div>`;
