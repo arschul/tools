@@ -3102,6 +3102,7 @@ function closeModal(){
   const root = document.getElementById('modal-root');
   if(!root.firstElementChild) return;
   flushSaves();          // never let an edit sit in the debounce after the modal shuts
+  _pendingCallCtx = null;  // dismissing by Escape or backdrop must not leave it armed
   root.innerHTML = '';
   modalPersistent = false;
   const target = modalLastFocus;
@@ -3507,7 +3508,8 @@ function _renderDashboard(el){
   state.students.filter(s=>{ const c=classById(s.classId); return c && !c.archived; }).forEach(s=>{
     const recs = studentAttendanceRecords(s);
     if(recs.length>=2 && recs[0].attendance==='absent' && recs[1].attendance==='absent' && daysAgo(recs[0].date)<=ALERT_HORIZON){
-      twoInRow.push({id:s.id, name:s.name, classId:s.classId, d1:recs[1].date, d2:recs[0].date});
+      const key = attendanceAlertKey('att2', recs[1].date, recs[0].date);
+      if(!alertHandled(s, key)) twoInRow.push({id:s.id, name:s.name, classId:s.classId, d1:recs[1].date, d2:recs[0].date, key:key});
     }
     for(const r of recs){
       if(daysAgo(r.date) > ASSESS_HORIZON) break;   // sorted newest-first
@@ -3515,11 +3517,19 @@ function _renderDashboard(el){
       const evs = assessmentByDate[r.date];
       if(!evs) continue;
       const m = evs.find(e=> !e.classId || e.classId===r._classId);
-      if(m){ missedAssess.push({id:s.id, name:s.name, classId:s.classId, date:r.date, title:m.title, type:m.type}); break; }
+      if(m){
+        const key = attendanceAlertKey('attmiss', r.date);
+        if(!alertHandled(s, key)) missedAssess.push({id:s.id, name:s.name, classId:s.classId, date:r.date, title:m.title, type:m.type, key:key});
+        break;
+      }
     }
   });
   window._dashTwoRowIds = twoInRow.map(x=>x.id);
   window._dashMissIds = missedAssess.map(x=>x.id);
+  window._dashTwoRowKeys = twoInRow.map(x=>x.key);
+  window._dashMissKeys = missedAssess.map(x=>x.key);
+  window._dashTwoRowWhy = twoInRow.map(x=>`Missed two classes in a row (${formatDateShort(x.d1)} & ${formatDateShort(x.d2)})`);
+  window._dashMissWhy = missedAssess.map(x=>`Absent for a ${eventTypeLabel(x.type).toLowerCase()} on ${formatDateShort(x.date)}${x.title?' — '+x.title:''}`);
 
   const attnDot = classId => { const c=classById(classId); return c?`<span class="color-dot" style="background:${c.color}"></span>`:''; };
   const attnAlertHtml = (twoInRow.length || missedAssess.length) ? `
@@ -3536,7 +3546,10 @@ function _renderDashboard(el){
                 <div class="dash-row-sub">Absent ${formatDateShort(x.d1)} &amp; ${formatDateShort(x.d2)}</div>
               </div>
             </div>
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashTwoRowIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <span style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashTwoRowIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashTwoRowIds[${i}], window._dashTwoRowKeys[${i}], window._dashTwoRowWhy[${i}])" title="Log the call and clear this alert">✓ Done</button>
+            </span>
           </div>`).join('')}` : ''}
       ${missedAssess.length ? `
         <div class="dash-row-sub" style="margin:${twoInRow.length?'12px':'2px'} 0 6px;font-weight:600;">Missed a test or review</div>
@@ -3549,7 +3562,10 @@ function _renderDashboard(el){
                 <div class="dash-row-sub">Absent ${formatDateShort(x.date)}${x.title?' · '+esc(x.title):''}</div>
               </div>
             </div>
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashMissIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+            <span style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashMissIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashMissIds[${i}], window._dashMissKeys[${i}], window._dashMissWhy[${i}])" title="Log the call and clear this alert">✓ Done</button>
+            </span>
           </div>`).join('')}` : ''}
     </div>` : '';
 
@@ -4267,22 +4283,61 @@ function discardContactParents(studentId){
     }
   });
 }
+/* Attendance alerts are derived from the register, not raised by hand, so
+   there is no flag to clear once the call is made. The logged call carries an
+   alertKey instead, and any alert whose key is already in the student's call
+   history stops being shown. A fresh pair of absences produces a new key, so
+   the alert comes back when it should. */
+function attendanceAlertKey(kind){
+  return [kind].concat(Array.prototype.slice.call(arguments, 1)).join(':');
+}
+function alertHandled(student, key){
+  return ((student && student.contactParentsHistory) || []).some(h => h.alertKey === key);
+}
+
+let _pendingCallCtx = null;   // set when logging a call for a derived alert
+function openAttendanceCallModal(studentId, alertKey, reason){
+  const s = anyStudent(studentId);
+  if(!s) return;
+  _pendingCallCtx = { alertKey: alertKey, category: 'Attendance', reason: reason };
+  showModal(`${sizeModal('md')}
+    <h3>☎️ Log Call — ${esc(s.name)}</h3>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 14px;">${esc(reason)} — write a brief summary of the conversation. It appears on the student's report and clears this alert.</p>
+    <div class="field"><label>Call date</label><input id="cp-call-date" type="date" value="${todayStr()}"></div>
+    <div class="field"><label>Summary of conversation</label>
+      <textarea id="cp-summary" rows="4" autofocus style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:13px;" placeholder="e.g. Spoke with mother about the absences. She was unaware and committed to improving attendance."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="cancelPendingCall()">Cancel</button>
+      <button class="btn-accent" onclick="confirmCallDone('${studentId}')">Save &amp; Mark Done</button>
+    </div>
+  `);
+}
+function cancelPendingCall(){ _pendingCallCtx = null; closeModal(); }
+
 function confirmCallDone(studentId){
   const s = anyStudent(studentId);
   if(!s) return;
+  const ctx = _pendingCallCtx;
+  const flag = s.contactParents;
+  if(!ctx && !flag) return;
   const summary = document.getElementById('cp-summary').value.trim();
   const callDate = document.getElementById('cp-call-date').value;
   const isPrivDone = !!privStudent(studentId);
   if(!summary && !isPrivDone){ alert('Please enter a summary of the conversation.'); return; }
   if(!s.contactParentsHistory) s.contactParentsHistory = [];
-  s.contactParentsHistory.unshift({
+  const entry = {
     id: uid(),
     date: callDate,
-    category: s.contactParents.category,
-    reason: s.contactParents.reason,
-    summary
-  });
-  s.contactParents = null;
+    category: ctx ? ctx.category : flag.category,
+    reason: ctx ? ctx.reason : flag.reason,
+    summary: summary
+  };
+  if(ctx && ctx.alertKey) entry.alertKey = ctx.alertKey;
+  s.contactParentsHistory.unshift(entry);
+  _pendingCallCtx = null;
+  // A hand-raised flag is cleared; a derived alert has none to clear.
+  if(flag) s.contactParents = null;
   const isPriv = !!privStudent(studentId);
   if(isPriv) persistPrivate(); else scheduleSave('students', state.students);
   closeModal();
