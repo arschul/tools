@@ -654,6 +654,45 @@
   .cal-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;}
   .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);align-items:center;}
   .legend-item{display:flex;align-items:center;gap:6px;}
+  /* ===== Assessment days =====
+     A test buried among ordinary class tags is easy to walk past, so the whole
+     cell is marked, not just the entry: a tinted face, a thick left edge in the
+     event's colour, a soft ring, and a corner flag. Colour alone would fail for
+     a colour-blind teacher and disappear in print, hence the shape cues too. */
+  .cal-cell.assess{
+    position:relative;
+    border-color:var(--assess-c);
+    border-width:2px;
+    box-shadow:0 0 0 3px var(--assess-ring), 0 4px 14px -6px var(--assess-c);
+    background:linear-gradient(180deg, var(--assess-tint) 0%, transparent 78%);
+  }
+  .cal-cell.assess::before{
+    content:'';position:absolute;left:-2px;top:-2px;bottom:-2px;width:5px;
+    border-radius:10px 0 0 10px;background:var(--assess-c);
+  }
+  .cal-cell.assess .cal-date{color:var(--assess-c);font-weight:800;}
+  /* Corner flag: the emoji sits proud of the cell so it reads at a glance. */
+  .cal-cell.assess .assess-flag{
+    position:absolute;top:-9px;right:-6px;font-size:14px;line-height:1;
+    background:var(--card);border:2px solid var(--assess-c);border-radius:999px;
+    padding:2px 6px;box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:none;
+  }
+  /* Today AND a test: keep the test's identity, don't let the today tint win. */
+  .cal-cell.today.assess{background:linear-gradient(180deg, var(--assess-tint) 0%, var(--accent-soft) 100%);}
+  /* The event tag itself, solid rather than soft, so it outranks class tags. */
+  .cal-tag.assess-tag{
+    background:var(--assess-c);color:#fff;border-color:var(--assess-c);
+    font-weight:800;letter-spacing:.2px;padding:3px 7px;
+    box-shadow:0 1px 3px rgba(0,0,0,.18);
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .cal-cell.assess{animation:assessIn .4s ease-out;}
+    @keyframes assessIn{ from{box-shadow:0 0 0 0 var(--assess-ring);} }
+  }
+  @media print{
+    .cal-cell.assess{box-shadow:none;border-width:2px;background:none;}
+    .cal-tag.assess-tag{background:none;color:#000;border:1.5px solid #000;}
+  }
   .cal-cell.holiday{background:repeating-linear-gradient(45deg, var(--stripe-a) 0 8px, var(--stripe-b) 8px 16px);}
   .cal-tag.holiday-tag{background:var(--purple-soft);color:var(--purple);}
   .cal-tag.priv-tag{background:var(--surface);color:var(--teal);border:1px dashed var(--teal);font-weight:600;cursor:pointer;}
@@ -7798,6 +7837,31 @@ function exportGradesCsv(){
 
 /* ================= CALENDAR ================= */
 // Shared inner-content builder for one calendar day (used by month + week views).
+/* Tests and reviews change what a day *is*; homework and "other" don't.
+   Projects sit in between and get the same emphasis, since a due date matters.
+   Returned: the winning type, its colour variable, and the flag emoji. */
+const ASSESS_TYPES = { test:{c:'--red', flag:'✏️', rank:3},
+                       review:{c:'--amber', flag:'🔁', rank:2},
+                       project:{c:'--purple', flag:'📁', rank:1} };
+function assessInfoFor(dateStr){
+  let best = null;
+  state.events.filter(e=>e.date===dateStr).forEach(e=>{
+    const meta = ASSESS_TYPES[e.type];
+    if(meta && (!best || meta.rank > best.rank)) best = { type:e.type, ...meta };
+  });
+  return best;
+}
+// Inline custom properties so one class can serve every event colour.
+function assessCellAttrs(dateStr){
+  const a = assessInfoFor(dateStr);
+  if(!a) return { cls:'', style:'', flag:'' };
+  return {
+    cls:'assess',
+    style:`--assess-c:var(${a.c});--assess-tint:color-mix(in srgb, var(${a.c}) 14%, transparent);--assess-ring:color-mix(in srgb, var(${a.c}) 22%, transparent);`,
+    flag:`<span class="assess-flag" aria-hidden="true">${a.flag}</span>`
+  };
+}
+
 function calDayItemsHtml(dateStr){
   const dow = new Date(dateStr+'T00:00:00').getDay();
   const holiday = getHoliday(dateStr);
@@ -7816,7 +7880,10 @@ function calDayItemsHtml(dateStr){
       const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
       return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, class plan)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
     }).join(''):''}
-    ${eventsToday.map(e=>`<div class="cal-tag ${e.type}">${esc(e.title)}</div>`).join('')}
+    ${eventsToday.map(e=>{
+      const meta = ASSESS_TYPES[e.type];
+      return `<div class="cal-tag ${e.type}${meta?' assess-tag':''}"${meta?` style="--assess-c:var(${meta.c});"`:''}>${meta?meta.flag+' ':''}${esc(e.title)}</div>`;
+    }).join('')}
     ${privToday.map(l=>{
       const st = privStudent(l.studentId);
       return `<button type="button" class="cal-tag priv-tag" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${st?esc(st.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</button>`;
@@ -7837,9 +7904,11 @@ function renderCalendar(){
     const dateStr = dateToStr(year, month, d);
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
+    const as = holiday ? {cls:'',style:'',flag:''} : assessCellAttrs(dateStr);
     cells += `
-      <div class="cal-cell ${isToday?'today':''} ${holiday?'holiday':''}" onclick="openDayModal('${dateStr}')">
-        <button type="button" class="cal-date" aria-label="${formatDateLong(dateStr)}${holiday?', holiday':''}" onclick="event.stopPropagation();openDayModal('${dateStr}')">${d}</button>
+      <div class="cal-cell ${isToday?'today':''} ${holiday?'holiday':''} ${as.cls}" style="${as.style}" onclick="openDayModal('${dateStr}')">
+        ${as.flag}
+        <button type="button" class="cal-date" aria-label="${formatDateLong(dateStr)}${holiday?', holiday':''}${as.cls?', assessment day':''}" onclick="event.stopPropagation();openDayModal('${dateStr}')">${d}</button>
         <div class="cal-items">${calDayItemsHtml(dateStr)}</div>
       </div>`;
   }
@@ -7868,9 +7937,11 @@ function calLegendHtml(){
     <div class="cal-legend">
       ${activeClasses().map(c=>`<div class="legend-item"><span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`).join('')}
       <div class="legend-item"><span class="badge hw">HW</span> Homework due</div>
-      <div class="legend-item"><span class="badge test">Test</span> Test</div>
-      <div class="legend-item"><span class="badge project">Project</span> Project</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--red);padding:1px 6px;">✏️ Test</span> Test</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--amber);padding:1px 6px;">🔁 Review</span> Review</div>
+      <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--purple);padding:1px 6px;">📁 Project</span> Project</div>
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
+      <div class="legend-item" style="font-style:italic;">Test, review and project days are outlined on the calendar.</div>
       <div class="legend-item">🎉 Holiday</div>
       <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
     </div>`;
@@ -7920,8 +7991,10 @@ function renderCalendarWeek(){
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
     const dnum = Number(dateStr.slice(8,10));
+    const as = holiday ? {cls:'',style:'',flag:''} : assessCellAttrs(dateStr);
     return `
-      <div class="cal-cell week-cell ${isToday?'today':''} ${holiday?'holiday':''}" onclick="openDayModal('${dateStr}')">
+      <div class="cal-cell week-cell ${isToday?'today':''} ${holiday?'holiday':''} ${as.cls}" style="${as.style}" onclick="openDayModal('${dateStr}')">
+        ${as.flag}
         <button type="button" class="cal-date" onclick="event.stopPropagation();openDayModal('${dateStr}')">
           <span style="color:var(--muted);font-weight:600;">${dayNames[i]}</span> ${dnum}
         </button>
