@@ -7913,8 +7913,17 @@ function calDayItemsHtml(dateStr){
   return `
     ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
     ${!holiday?classesToday.map(c=>{
-      const hasInfo = !!(getLessonNote(c.id, dateStr) || getHomework(c.id, dateStr) || getPromise(c.id, dateStr));
-      return `<button type="button" class="cal-tag" title="Open class view (attendance, lesson content, homework, class plan)" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?' •':''}</button>`;
+      /* The dot means "something is written on this day". Spell out which of
+         the three it is, so the mark doesn't need decoding. */
+      const bits = [];
+      if(getPromise(c.id, dateStr)) bits.push('class plan');
+      if(getLessonNote(c.id, dateStr)) bits.push('lesson content');
+      if(getHomework(c.id, dateStr)) bits.push('homework');
+      const hasInfo = bits.length > 0;
+      const tip = hasInfo
+        ? `${c.name} \u2014 has ${bits.join(', ')}. Click to open the class view.`
+        : `${c.name} \u2014 nothing written yet. Click to open the class view.`;
+      return `<button type="button" class="cal-tag" title="${esc(tip)}" style="background:${c.color}22;color:${c.color};border-color:${c.color}55;cursor:pointer;" onclick="event.stopPropagation();goToRollCall('${c.id}','${dateStr}')">${esc(c.name)}${c.time?' '+c.time:''}${hasInfo?` <span aria-hidden="true">\u2022</span>`:''}</button>`;
     }).join(''):''}
     ${eventsToday.map(e=>{
       const meta = ASSESS_TYPES[e.type];
@@ -7980,6 +7989,7 @@ function calLegendHtml(){
       <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">🔁</span> Review</div>
       <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">📁</span> Project</div>
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
+      <div class="legend-item"><span class="cal-tag" style="background:var(--gray-soft);color:var(--gray);padding:1px 6px;">Class \u2022</span> Dot = plan, lesson content or homework written</div>
       <div class="legend-item" style="font-style:italic;">These days are outlined in their group's colour.</div>
       <div class="legend-item">🎉 Holiday</div>
       <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
