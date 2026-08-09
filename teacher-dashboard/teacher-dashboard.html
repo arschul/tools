@@ -641,41 +641,47 @@
   .cal-month-label{font-family:var(--font-head);font-weight:600;font-size:15px;min-width:140px;text-align:center;}
   .cal-grid-wrap{padding:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-  .cal-grid-week .cal-cell{min-height:220px;}
-  @media (max-width:700px){ .cal-grid-week{grid-template-columns:1fr;} .cal-grid-week .cal-cell{min-height:auto;} }
-  .cal-cell{border:1px solid var(--border);border-radius:10px;padding:8px;min-height:90px;cursor:pointer;display:flex;flex-direction:column;gap:4px;}
+  /* Equal rows: without grid-auto-rows every row sizes to its own busiest day,
+     so a week with a test is visibly taller than the one below it. */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;grid-auto-rows:minmax(112px,1fr);}
+  .cal-grid-week{grid-auto-rows:minmax(220px,1fr);}
+  @media (max-width:700px){ .cal-grid-week{grid-template-columns:1fr;grid-auto-rows:auto;} }
+  @media (max-width:700px){ .cal-grid{grid-auto-rows:minmax(84px,1fr);} }
+  /* height:100% makes each cell fill its equal row rather than hug its content. */
+  .cal-cell{border:1px solid var(--border);border-radius:10px;padding:8px;height:100%;min-height:0;cursor:pointer;display:flex;flex-direction:column;gap:4px;overflow:hidden;}
   .cal-cell:hover{border-color:var(--accent);}
   .cal-cell.empty{border:none;cursor:default;background:transparent;}
   .cal-cell.empty:hover{border:none;}
   .cal-cell.today{background:var(--accent-soft);border-color:var(--accent);}
   .cal-date{font-weight:600;font-size:13px;}
-  .cal-items{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
-  .cal-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;}
+  .cal-items{display:flex;flex-direction:column;gap:3px;overflow-y:auto;min-height:0;flex:1;
+             scrollbar-width:thin;}
+  .cal-items::-webkit-scrollbar{width:4px;}
+  .cal-items::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .cal-tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent;flex:0 0 auto;}
   .cal-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--muted);align-items:center;}
   .legend-item{display:flex;align-items:center;gap:6px;}
   /* ===== Assessment days =====
      A test buried among ordinary class tags is easy to walk past, so the whole
-     cell is marked, not just the entry: a tinted face, a thick left edge in the
-     event's colour, a soft ring, and a corner flag. Colour alone would fail for
-     a colour-blind teacher and disappear in print, hence the shape cues too. */
+     cell is marked, not just the entry: a tinted face, a coloured edge stripe
+     and a corner flag. Colour alone would fail for a colour-blind teacher and
+     disappear in print, hence the shape cues too.
+     All emphasis is drawn INSIDE the box — inset shadows, never a thicker
+     border or an outer ring — so a marked day occupies exactly the same space
+     as an ordinary one and the grid stays even. */
   .cal-cell.assess{
     position:relative;
     border-color:var(--assess-c);
-    border-width:2px;
-    box-shadow:0 0 0 3px var(--assess-ring), 0 4px 14px -6px var(--assess-c);
+    box-shadow:inset 0 0 0 1px var(--assess-c), inset 5px 0 0 -1px var(--assess-c);
     background:linear-gradient(180deg, var(--assess-tint) 0%, transparent 78%);
+    padding-left:12px;   /* clears the inset edge stripe */
   }
-  .cal-cell.assess::before{
-    content:'';position:absolute;left:-2px;top:-2px;bottom:-2px;width:5px;
-    border-radius:10px 0 0 10px;background:var(--assess-c);
-  }
-  .cal-cell.assess .cal-date{color:var(--assess-c);font-weight:800;}
-  /* Corner flag: the emoji sits proud of the cell so it reads at a glance. */
+  .cal-cell.assess .cal-date{color:var(--assess-c);font-weight:800;padding-right:18px;}
+  /* Corner flag, inside the cell and level with the date, so overflow can't
+     clip it and it can't push the row taller. */
   .cal-cell.assess .assess-flag{
-    position:absolute;top:-9px;right:-6px;font-size:14px;line-height:1;
-    background:var(--card);border:2px solid var(--assess-c);border-radius:999px;
-    padding:2px 6px;box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:none;
+    position:absolute;top:6px;right:7px;font-size:12px;line-height:1;
+    pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));
   }
   /* Today AND a test: keep the test's identity, don't let the today tint win. */
   .cal-cell.today.assess{background:linear-gradient(180deg, var(--assess-tint) 0%, var(--accent-soft) 100%);}
@@ -685,12 +691,8 @@
     font-weight:800;letter-spacing:.2px;padding:3px 7px;
     box-shadow:0 1px 3px rgba(0,0,0,.18);
   }
-  @media (prefers-reduced-motion: no-preference){
-    .cal-cell.assess{animation:assessIn .4s ease-out;}
-    @keyframes assessIn{ from{box-shadow:0 0 0 0 var(--assess-ring);} }
-  }
   @media print{
-    .cal-cell.assess{box-shadow:none;border-width:2px;background:none;}
+    .cal-cell.assess{box-shadow:inset 0 0 0 2px #000;background:none;}
     .cal-tag.assess-tag{background:none;color:#000;border:1.5px solid #000;}
   }
   .cal-cell.holiday{background:repeating-linear-gradient(45deg, var(--stripe-a) 0 8px, var(--stripe-b) 8px 16px);}
