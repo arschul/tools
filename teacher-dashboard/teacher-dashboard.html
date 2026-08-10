@@ -2117,11 +2117,13 @@ function termsFor(cls, cycle){
 function courseStartFor(cls, cycle){
   const g = state.grades[cls.id];
   const isFirst = !g || !g.cycles || !g.cycles.length || g.cycles[0] === cycle;
-  if(isFirst && cls.startDate){
-    // Guard against a class start recorded after the grades record was made.
-    return (cycle.startedAt && cycle.startedAt < cls.startDate) ? cycle.startedAt : cls.startDate;
-  }
-  return cycle.startedAt || cls.startDate || null;
+  if(!isFirst) return cycle.startedAt || cls.startDate || null;
+  /* Earliest solid evidence that teaching had begun. The class start date is
+     optional, so a class saved without one falls back to its first register
+     entry — the same fallback expectedSessionsForClass already uses. Either
+     beats `startedAt`, which is just when the Grades screen was first opened. */
+  const candidates = [cls.startDate, firstSessionDateOf(cls.id), cycle.startedAt].filter(Boolean);
+  return candidates.length ? candidates.sort()[0] : null;
 }
 
 // Attendance figures for one term, from a student's full record history.
