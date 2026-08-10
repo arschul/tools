@@ -2085,7 +2085,7 @@ function termsFor(cls, cycle){
   if(!cls || !cycle) return [];
   const dates = cycle.testDates || [];
   const today = todayStr();
-  const start = cycle.startedAt || cls.startDate || null;
+  const start = courseStartFor(cls, cycle);
 
   if(isAdvancedLevel(cls.level)){
     const end = dates[finalTestIdx(cls)] || null;
@@ -2106,6 +2106,22 @@ function termsFor(cls, cycle){
   if(cur < 0) cur = out.length - 1;
   out.forEach((p,i)=>{ p.isCurrent = (i===cur); });
   return out;
+}
+
+/* When Term 1 began. `startedAt` is stamped the moment the grades record is
+   first created — which is whenever the teacher first opened the Grades
+   screen, often weeks into the course — so it is not the course start. For the
+   FIRST course of a class, the class's own start date is the truth. Later
+   courses (a repeat of the level, a new year) legitimately begin when they
+   were created, so those keep `startedAt`. */
+function courseStartFor(cls, cycle){
+  const g = state.grades[cls.id];
+  const isFirst = !g || !g.cycles || !g.cycles.length || g.cycles[0] === cycle;
+  if(isFirst && cls.startDate){
+    // Guard against a class start recorded after the grades record was made.
+    return (cycle.startedAt && cycle.startedAt < cls.startDate) ? cycle.startedAt : cls.startDate;
+  }
+  return cycle.startedAt || cls.startDate || null;
 }
 
 // Attendance figures for one term, from a student's full record history.
