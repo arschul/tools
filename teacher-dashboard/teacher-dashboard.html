@@ -2932,9 +2932,12 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
   if(!days.length) return null;
   // A4: if no startDate anywhere, fall back to the first recorded session.
   const startStr = startOverride || cls.startDate || firstSessionDateOf(cls.id);
-  // End fallback: an override, the class end, or today (an ongoing class counts
-  // only sessions up to now, never into the future).
-  const endStr = endOverride || cls.endDate || todayStr();
+  /* Never count into the future. The class end date is where the course
+     finishes, which for an ongoing course is months away — counting those
+     unheld classes as attended inflated the rate badly (a student present
+     once and absent twice read as 94%). Cap the window at today. */
+  const rawEnd = endOverride || cls.endDate || todayStr();
+  const endStr = rawEnd > todayStr() ? todayStr() : rawEnd;
   if(!startStr || !endStr) return null;
   const start = new Date(startStr+'T00:00:00');
   const end = new Date(endStr+'T00:00:00');
