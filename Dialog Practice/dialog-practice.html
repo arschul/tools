@@ -954,15 +954,60 @@ if (typeof window.speechSynthesis !== 'undefined') {
   });
 }
 
+
+/* =========================================================================
+   TTS AUDIO WARM-UP  (fixes clipped first words)
+   Two separate causes, both handled here:
+   1. Classroom output devices (Bluetooth speakers, HDMI/projector audio) power
+      down their DAC when idle and swallow the first ~300ms after waking. A
+      near-silent looping tone keeps the output open so nothing is lost.
+   2. Chrome truncates the head of an utterance when speak() is called in the
+      same tick as cancel(). ttsSpeak() always leaves a gap.
+   Plus a leading comma on every utterance for a short pause before word one.
+   ========================================================================= */
+var __ttsCtx = null;
+function ttsKeepAlive(){
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!__ttsCtx){
+      __ttsCtx = new AC();
+      var osc = __ttsCtx.createOscillator();
+      var gain = __ttsCtx.createGain();
+      gain.gain.value = 0.0001;      // inaudible, but keeps the device awake
+      osc.frequency.value = 30;
+      osc.connect(gain);
+      gain.connect(__ttsCtx.destination);
+      osc.start();
+    }
+    if(__ttsCtx.state === 'suspended') __ttsCtx.resume();
+  } catch(e){}
+}
+['click','keydown','touchstart'].forEach(function(ev){
+  document.addEventListener(ev, ttsKeepAlive, true);
+});
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) ttsKeepAlive();
+});
+
+var TTS_LEAD = ', ';
+function ttsPad(text){ return TTS_LEAD + String(text == null ? '' : text); }
+
+function ttsSpeak(u, delay){
+  ttsKeepAlive();
+  window.speechSynthesis.cancel();
+  setTimeout(function(){ window.speechSynthesis.speak(u); },
+             (delay === undefined || delay === null) ? 160 : delay);
+}
+
 function testVoice(which) {
   const selId = which === 'A' ? 'voiceSelectA' : 'voiceSelectB';
   const idx = document.getElementById(selId).value;
   if (idx === '' || !availableVoices[idx]) return;
-  const u = new SpeechSynthesisUtterance("Hi there! This is a quick voice test.");
+  const u = new SpeechSynthesisUtterance(ttsPad("Hi there! This is a quick voice test."));
   u.voice = availableVoices[idx];
   u.rate = parseFloat(document.getElementById('rateSlider').value);
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+  ttsSpeak(u);
 }
 
 document.getElementById('rateSlider').addEventListener('input', (e) => {
@@ -1282,7 +1327,7 @@ function playConversation() {
     document.getElementById('progressLabel').textContent =
       turns[i].speaker === 'A' ? 'Voice 1 speaking…' : 'Voice 2 speaking…';
 
-    const u = new SpeechSynthesisUtterance(turns[i].text);
+    const u = new SpeechSynthesisUtterance(ttsPad(turns[i].text));
     u.voice = turns[i].speaker === 'A' ? state.voiceA : state.voiceB;
     u.rate = state.rate;
     u.onend = () => speakTurn(i + 1);
@@ -1293,7 +1338,8 @@ function playConversation() {
     window.speechSynthesis.speak(u);
   }
 
-  speakTurn(0);
+  ttsKeepAlive();
+  setTimeout(function(){ speakTurn(0); }, 160);
 }
 
 /* ================= GAME MODE ================= */
@@ -1367,7 +1413,7 @@ function playGameAudio() {
     }
     document.getElementById('gameProgressLabel').textContent =
       turns[i].speaker === 'A' ? 'Voice 1 speaking…' : 'Voice 2 speaking…';
-    const u = new SpeechSynthesisUtterance(turns[i].text);
+    const u = new SpeechSynthesisUtterance(ttsPad(turns[i].text));
     u.voice = turns[i].speaker === 'A' ? state.voiceA : state.voiceB;
     u.rate = state.rate;
     u.onend = () => speakTurn(i + 1);
@@ -1377,7 +1423,8 @@ function playGameAudio() {
     window.speechSynthesis.speak(u);
   }
 
-  speakTurn(0);
+  ttsKeepAlive();
+  setTimeout(function(){ speakTurn(0); }, 160);
 }
 
 function renderQuestionArea() {
