@@ -5855,9 +5855,10 @@ function annotateLateHw(sorted){
   return sorted;
 }
 /* Students who owe homework from the previous class session — either they were
-   absent that day, or they were present and handed in less than 100%. Returns
-   Map(studentId -> {reason:'absent'|'partial', pct, date}). A student with no
-   record at all in the previous session never counts as owing anything. */
+   absent that day, or they handed in nothing at all. A partial score is not
+   owed: the work was done and already marked, so raising it in the register
+   would be noise. Returns Map(studentId -> {reason:'absent'|'none', pct, date}).
+   A student with no record at all in the previous session owes nothing. */
 function prevHwPending(students, prevSession, prevDate, classId){
   const map = new Map();
   if(!prevDate) return map;
@@ -5871,8 +5872,11 @@ function prevHwPending(students, prevSession, prevDate, classId){
     if(!pr) continue;
     if(pr.attendance === 'absent'){ map.set(s.id, {reason:'absent', pct:null, date:prevDate}); continue; }
     if(pr.hw == null) continue;                 // nothing recorded — don't guess
-    const pct = hwValueOf(pr);
-    if(pct < 100) map.set(s.id, {reason:'partial', pct, date:prevDate});
+    /* Only the two cases a teacher has to act on: the student wasn't there to
+       receive or hand in the homework, or handed in nothing at all. A partial
+       score means they did the work and already have their mark for it —
+       flagging it just adds noise to the register. */
+    if(hwValueOf(pr) === 0) map.set(s.id, {reason:'none', pct:0, date:prevDate});
   }
   return map;
 }
@@ -5880,7 +5884,7 @@ function pendingHwLabel(info){
   if(!info) return '';
   return info.reason==='absent'
     ? `was absent${info.date?' on '+formatDateShort(info.date):''}`
-    : `handed in ${info.pct}%${info.date?' on '+formatDateShort(info.date):''}`;
+    : `did not hand in${info.date?' on '+formatDateShort(info.date):''}`;
 }
 function hwMonthly(records, maxMonths=8){
   const by = {};
@@ -6314,7 +6318,7 @@ function renderCompactRoster(cls, students, recFor, hwPending, locked){
       <th title="${hwDue ? 'Due today: '+esc(hwDue) : 'You assigned no homework last class, so nothing is due today — this column stays out of the averages and reports'}">HW%${hwDue?'':`<div style="font-weight:400;font-size:10px;opacity:.75;">not assigned</div>`}</th>
       <th title="English only">English</th>
       <th title="Participation">Particip.</th>
-      ${anyMissed?'<th title="Homework owed from last class (absent, or handed in under 100%)">Prev HW</th>':''}
+      ${anyMissed?'<th title="Homework owed from last class — the student was absent, or handed in nothing">Prev HW</th>':''}
       <th class="cr-notes-h">Notes</th>
       <th></th>
     </tr>`;
