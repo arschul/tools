@@ -467,7 +467,10 @@
   .compact-roster th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:2px solid var(--border);white-space:nowrap;}
   .compact-roster td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
   .compact-roster tr:last-child td{border-bottom:none;}
-  .compact-roster .cr-name{position:sticky;left:0;background:var(--card, var(--surface));font-weight:600;min-width:120px;max-width:170px;overflow:hidden;text-overflow:ellipsis;z-index:1;}
+  .compact-roster .cr-name{position:sticky;left:0;background:var(--card, var(--surface));font-weight:600;min-width:120px;max-width:190px;z-index:1;}
+  /* The reason a student is flagged, said out loud — a bare warning triangle
+     with a tooltip is unreadable on a touch screen and unverifiable at a glance. */
+  .hw-owed{display:block;font-size:10.5px;font-weight:600;color:var(--amber);white-space:normal;line-height:1.25;margin-top:1px;}
   .compact-roster tr.cr-absent td{opacity:.55;}
   .compact-roster tr.cr-absent td.cr-name{opacity:1;color:var(--muted);}
   .cr-pa{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
@@ -2917,6 +2920,17 @@ function classForStudentOnDate(st, dateStr){
 // A4: earliest date this class has any session record for. Used to bound the
 // expected-session window when the class has no explicit startDate, so we don't
 // count expected sessions from before the class actually began.
+// Most recent date this class has any attendance recorded for.
+function lastSessionDateOf(classId){
+  let latest = null;
+  for(const key of Object.keys(state.sessions)){
+    const [cid, date] = splitSessionKey(key);
+    if(cid !== classId) continue;
+    if(!latest || date > latest) latest = date;
+  }
+  return latest;
+}
+
 function firstSessionDateOf(classId){
   let earliest = null;
   for(const key of Object.keys(state.sessions)){
@@ -2932,12 +2946,14 @@ function expectedSessionsForClass(cls, startOverride, endOverride){
   if(!days.length) return null;
   // A4: if no startDate anywhere, fall back to the first recorded session.
   const startStr = startOverride || cls.startDate || firstSessionDateOf(cls.id);
-  /* Never count into the future. The class end date is where the course
-     finishes, which for an ongoing course is months away — counting those
-     unheld classes as attended inflated the rate badly (a student present
-     once and absent twice read as 94%). Cap the window at today. */
+  /* Only count classes that have actually been held. The course end date is
+     months away for an ongoing class, and even today's lesson may not have
+     been taught yet — counting either as attended inflates the rate and makes
+     the headline disagree with the chart beneath it (2 present, 1 absent
+     showing as 75%). The last class with a register is the honest cut-off. */
+  const held = lastSessionDateOf(cls.id);
   const rawEnd = endOverride || cls.endDate || todayStr();
-  const endStr = rawEnd > todayStr() ? todayStr() : rawEnd;
+  const endStr = [rawEnd, todayStr(), held].filter(Boolean).sort()[0];
   if(!startStr || !endStr) return null;
   const start = new Date(startStr+'T00:00:00');
   const end = new Date(endStr+'T00:00:00');
@@ -5755,7 +5771,19 @@ function attendanceMonthly(records, maxMonths=8){
   return Object.keys(by).sort().slice(-maxMonths)
     .map(k=>({ key:k, label:monthShortLabel(k), value: Math.round(100*by[k].p/(by[k].p+by[k].a)), n: by[k].p+by[k].a }));
 }
-function hwValueOf(r){ return typeof r.hw==='number' ? r.hw : (r.hw==='done' ? 100 : 0); }
+/* A homework mark may be stored as a number, as a numeric STRING (older
+   records, restored backups, anything that wrote an input's raw .value), or as
+   the legacy 'done' flag. Treating "100" as a non-number scored a completed
+   assignment as 0 — which then flagged the student as owing it. */
+function hwValueOf(r){
+  const v = r ? r.hw : null;
+  if(typeof v === 'number') return v;
+  if(v === 'done') return 100;
+  if(typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))){
+    return Math.max(0, Math.min(100, Number(v)));
+  }
+  return 0;
+}
 /* ===== Was homework even set? =====
    A session only owes homework if some was set for it. Sessions with none are
    marked _hwAssigned:false and stay out of every average — otherwise a class
@@ -6298,7 +6326,7 @@ function renderCompactRoster(cls, students, recFor, hwPending, locked){
     const hwOutcome = rec?.lateHwOutcome || '';
     return `
     <tr class="${absent?'cr-absent':''}">
-      <td class="cr-name">${esc(s.name)}${missed && !hwOutcome?` <span title="Homework owed — ${esc(pendingHwLabel(pend))}">⚠</span>`:''}</td>
+      <td class="cr-name">${esc(s.name)}${missed && !hwOutcome?`<span class="hw-owed" title="Homework owed — ${esc(pendingHwLabel(pend))}">⚠ ${esc(pendingHwLabel(pend))}</span>`:''}</td>
       <td>
         <div class="cr-pa">
           <button type="button" class="cr-p ${!absent?'on':''}" ${dis} title="Present" onclick="setAttendance('${s.id}','present')">P</button>
