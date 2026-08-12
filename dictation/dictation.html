@@ -884,8 +884,54 @@ voiceSelect.addEventListener('change', () => {
 rateSelect.addEventListener('change', () => lsSet(LS.rate, rateSelect.value));
 strictToggle.addEventListener('change', () => lsSet(LS.strict, strictToggle.checked ? '1' : '0'));
 
+
+/* =========================================================================
+   TTS AUDIO WARM-UP  (fixes clipped first words)
+   Two separate causes, both handled here:
+   1. Classroom output devices (Bluetooth speakers, HDMI/projector audio) power
+      down their DAC when idle and swallow the first ~300ms after waking. A
+      near-silent looping tone keeps the output open so nothing is lost.
+   2. Chrome truncates the head of an utterance when speak() is called in the
+      same tick as cancel(). ttsSpeak() always leaves a gap.
+   Plus a leading comma on every utterance for a short pause before word one.
+   ========================================================================= */
+var __ttsCtx = null;
+function ttsKeepAlive(){
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!__ttsCtx){
+      __ttsCtx = new AC();
+      var osc = __ttsCtx.createOscillator();
+      var gain = __ttsCtx.createGain();
+      gain.gain.value = 0.0001;      // inaudible, but keeps the device awake
+      osc.frequency.value = 30;
+      osc.connect(gain);
+      gain.connect(__ttsCtx.destination);
+      osc.start();
+    }
+    if(__ttsCtx.state === 'suspended') __ttsCtx.resume();
+  } catch(e){}
+}
+['click','keydown','touchstart'].forEach(function(ev){
+  document.addEventListener(ev, ttsKeepAlive, true);
+});
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) ttsKeepAlive();
+});
+
+var TTS_LEAD = ', ';
+function ttsPad(text){ return TTS_LEAD + String(text == null ? '' : text); }
+
+function ttsSpeak(u, delay){
+  ttsKeepAlive();
+  window.speechSynthesis.cancel();
+  setTimeout(function(){ window.speechSynthesis.speak(u); },
+             (delay === undefined || delay === null) ? 160 : delay);
+}
+
 function utterFor(text){
-  const utter = new SpeechSynthesisUtterance(text);
+  const utter = new SpeechSynthesisUtterance(ttsPad(text));
   utter.rate = parseFloat(rateSelect.value) || 1;
   const chosen = voices[parseInt(voiceSelect.value, 10)];
   if(chosen){ utter.voice = chosen; utter.lang = chosen.lang; }
@@ -895,8 +941,7 @@ function utterFor(text){
 
 function speak(text){
   if(!('speechSynthesis' in window) || !text) return;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterFor(text));
+  ttsSpeak(utterFor(text));
 }
 
 // Split into natural dictation chunks: at commas first, then at conjunctions,
@@ -921,6 +966,7 @@ function chunkSentence(s){
 
 function speakChunks(text){
   if(!('speechSynthesis' in window) || !text) return;
+  ttsKeepAlive();
   window.speechSynthesis.cancel();
   const chunks = chunkSentence(text);
   let i = 0;
@@ -931,7 +977,7 @@ function speakChunks(text){
     u.onend = () => setTimeout(sayNext, 700);
     window.speechSynthesis.speak(u);
   };
-  sayNext();
+  setTimeout(sayNext, 160);
 }
 
 /* =========================================================================
