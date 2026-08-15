@@ -5445,7 +5445,8 @@ function renderRollCall(){
       </div>`;
       })()}
       <div class="rollcall-actions">
-        ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()">Mark all present</button>`}
+        ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()" title="Everyone present, then mark the few who missed">Mark all present</button>`}
+        ${locked?'':`<button class="btn-ghost" onclick="markAllAbsent()" title="Everyone absent, then tick off the few who turned up">Mark all absent</button>`}
         <div class="view-seg" role="radiogroup" aria-label="Roster view">
           <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
           <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
@@ -6554,8 +6555,23 @@ function toggleClassView(){
   localStorage.setItem('classViewCollapsed', collapsed ? '0' : '1');
   refreshView();
 }
-function markAllPresent(){
-  studentsInClass(state.rollcall.classId).forEach(s=>{ getCurrentRecord(s.id).attendance='present'; });
+function markAllPresent(){ markAll('present'); }
+/* With a thin class it's quicker to mark everyone absent and tick off the few
+   who turned up. Absence is the consequential state, so this one confirms
+   first — and only when it would overwrite attendance already taken. */
+function markAllAbsent(){
+  const students = studentsInClass(state.rollcall.classId);
+  const key = state.rollcall.classId + '_' + state.rollcall.date;
+  const session = state.sessions[key] || {};
+  const alreadyPresent = students.filter(s => session[s.id] && session[s.id].attendance === 'present').length;
+  if(alreadyPresent && !confirm(
+      `Mark all ${students.length} students absent?\n\n`
+    + `${alreadyPresent} ${alreadyPresent===1?'is':'are'} currently marked present — that will be overwritten. `
+    + `Then tap P for each student who turned up.`)) return;
+  markAll('absent');
+}
+function markAll(value){
+  studentsInClass(state.rollcall.classId).forEach(s=>{ getCurrentRecord(s.id).attendance = value; });
   persistSessions();
   refreshView();
 }
