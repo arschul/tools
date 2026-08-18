@@ -3620,15 +3620,54 @@ function _renderDashboard(el){
       }
     }
   });
+  /* — Essays not written —
+     Advanced classes write two essays per course. An essay day that has passed
+     with no mark against a student needs chasing, and the calendar alert above
+     can't catch it: essay events are created by the grades screen and carry
+     fromGrades, which that check deliberately skips. Absent on the day and
+     present-but-nothing-submitted are separated, because the conversation
+     differs. */
+  const missedEssay = [];
+  activeClasses().filter(c=>essayCountFor(c)).forEach(c=>{
+    const g = state.grades[c.id];
+    const cycle = (g && g.cycles && g.cycles.length) ? g.cycles[g.cycles.length-1] : null;
+    if(!cycle) return;
+    cycleEssays(cycle);
+    const n = essayCountFor(c);
+    studentsInClass(c.id).forEach(s=>{
+      const scores = studentEssays(cycle, s.id, n);
+      for(let i=0;i<n;i++){
+        const due = (cycle.essayDates||[])[i];
+        if(!due || due > todayStr()) continue;              // not written yet
+        if(daysAgo(due) > ASSESS_HORIZON) continue;
+        if(scores[i] != null) continue;                     // marked, nothing owed
+        const key = attendanceAlertKey('essay', cycle.id || cycle.label, i, due);
+        if(alertHandled(s, key)) continue;
+        const rec = (state.sessions[c.id+'_'+due] || {})[s.id];
+        missedEssay.push({
+          id:s.id, name:s.name, classId:c.id, date:due, key:key,
+          label: essayLabelFor(c, i),
+          topic: (cycle.essayTopics||[])[i] || null,
+          wasAbsent: !!(rec && rec.attendance === 'absent')
+        });
+        break;                                              // one row per student
+      }
+    });
+  });
+
   window._dashTwoRowIds = twoInRow.map(x=>x.id);
   window._dashMissIds = missedAssess.map(x=>x.id);
+  window._dashEssayIds = missedEssay.map(x=>x.id);
+  window._dashEssayKeys = missedEssay.map(x=>x.key);
+  window._dashEssayWhy = missedEssay.map(x=>
+    `${x.label} not written \u2014 due ${formatDateShort(x.date)}${x.topic?' \u2014 '+x.topic:''}${x.wasAbsent?' (absent that day)':''}`);
   window._dashTwoRowKeys = twoInRow.map(x=>x.key);
   window._dashMissKeys = missedAssess.map(x=>x.key);
   window._dashTwoRowWhy = twoInRow.map(x=>`Missed two classes in a row (${formatDateShort(x.d1)} & ${formatDateShort(x.d2)})`);
   window._dashMissWhy = missedAssess.map(x=>`Absent for a ${eventTypeLabel(x.type).toLowerCase()} on ${formatDateShort(x.date)}${x.title?' — '+x.title:''}`);
 
   const attnDot = classId => { const c=classById(classId); return c?`<span class="color-dot" style="background:${c.color}"></span>`:''; };
-  const attnAlertHtml = (twoInRow.length || missedAssess.length) ? `
+  const attnAlertHtml = (twoInRow.length || missedAssess.length || missedEssay.length) ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
       <h3>📞 Attendance — contact parents</h3>
       ${twoInRow.length ? `
@@ -3661,6 +3700,22 @@ function _renderDashboard(el){
             <span style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashMissIds[${i}],studentProfileReturn:'reports'})">Report →</button>
               <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashMissIds[${i}], window._dashMissKeys[${i}], window._dashMissWhy[${i}])" title="Log the call and clear this alert">✓ Done</button>
+            </span>
+          </div>`).join('')}` : ''}
+      ${missedEssay.length ? `
+        <div class="dash-row-sub" style="margin:${(twoInRow.length||missedAssess.length)?'12px':'2px'} 0 6px;font-weight:600;">\u270d\ufe0f Essay not written</div>
+        ${missedEssay.map((x,i)=>`
+          <div class="dash-row">
+            <div class="dash-row-left">
+              ${attnDot(x.classId)}
+              <div>
+                <div class="dash-row-title">${esc(x.name)} <span class="badge test" style="margin-left:6px;">${esc(x.label)}</span></div>
+                <div class="dash-row-sub">${x.wasAbsent?'Absent on':'No mark recorded for'} ${formatDateShort(x.date)}${x.topic?' \u00b7 '+esc(x.topic):''}</div>
+              </div>
+            </div>
+            <span style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn-ghost small" onclick="openGradesModal('${x.classId}'); gmSetTab('essays');" title="Enter the essay score">Grades \u2192</button>
+              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashEssayIds[${i}], window._dashEssayKeys[${i}], window._dashEssayWhy[${i}])" title="Log the call and clear this alert">\u2713 Done</button>
             </span>
           </div>`).join('')}` : ''}
     </div>` : '';
