@@ -7782,6 +7782,216 @@ function printContactsReport(){
 }
 
 /* ================= GROUP REPORT ================= */
+
+/* ===== Coordinator briefing =====
+   A written summary of a class to hand to the coordinator. Everything here is
+   already on screen somewhere; the value is in ordering it by what needs a
+   decision — who is failing, who is disappearing, what has already been done
+   about it — rather than making them read a grid of twelve columns.
+   Plain text on purpose: it has to paste into email, WhatsApp or a doc. */
+function buildGroupReportText(lang){
+  const data = window._groupReportExport;
+  if(!data) return '';
+  const isPt = lang === 'pt';
+  const cls = classById(data.classId);
+  const rows = data.rows || [];
+  const L = [];
+  const pct = v => v == null ? (isPt?'—':'n/a') : v + '%';
+  const nm = r => r.s.name;
+
+  // ---------- heading ----------
+  L.push((isPt ? 'RELATÓRIO DE TURMA — ' : 'CLASS REPORT — ') + data.className);
+  const meta = [];
+  if(cls && cls.level) meta.push(cls.level);
+  if(cls && getClassDays(cls).length) meta.push(getClassDays(cls).map(d=>DAY_NAMES[d].slice(0,3)).join('/') + (cls.time ? ' ' + cls.time : ''));
+  meta.push((isPt ? 'Período: ' : 'Period: ')
+    + (data.fromVal ? formatDateShort(data.fromVal) : (isPt?'início':'start'))
+    + ' – ' + (data.toVal ? formatDateShort(data.toVal) : (isPt?'hoje':'today')));
+  meta.push(rows.length + (isPt ? ' alunos' : ' students'));
+  L.push(meta.join(' · '));
+  L.push(isPt ? 'Gerado em ' + formatDateShort(todayStr()) : 'Generated ' + formatDateShort(todayStr()));
+  L.push('');
+
+  // ---------- the numbers a coordinator asks for first ----------
+  const avg = key => { const v = rows.filter(r=>r[key]!=null); return v.length ? Math.round(v.reduce((a,r)=>a+r[key],0)/v.length) : null; };
+  L.push(isPt ? 'RESUMO DA TURMA' : 'CLASS SUMMARY');
+  L.push((isPt?'- Presença média: ':'- Average attendance: ') + pct(avg('attRate')));
+  L.push((isPt?'- Lição de casa: ':'- Homework completion: ') + pct(avg('hwAvg')));
+  L.push((isPt?'- Participação: ':'- Participation: ') + pct(avg('partAvg')));
+  const phoneTotal = rows.reduce((a,r)=>a+(r.phone||0),0);
+  if(phoneTotal) L.push((isPt?'- Uso de celular (turma): ':'- Phone use (class total): ') + phoneTotal);
+  const sessions = rows.length ? Math.max.apply(null, rows.map(r=>r.total)) : 0;
+  L.push((isPt?'- Aulas no período: ':'- Sessions in period: ') + sessions);
+
+  // ---------- grades ----------
+  const g = cls ? state.grades[cls.id] : null;
+  const cycle = (g && g.cycles && g.cycles.length) ? g.cycles[g.cycles.length-1] : null;
+  const adv = cls && isAdvancedLevel(cls.level);
+  const gradeLines = [], failing = [], noGrades = [];
+  if(cls && cycle){
+    rows.forEach(r=>{
+      const st = gradeStatus(cls, cycle, r.s.id);
+      if(!st){ noGrades.push(nm(r)); return; }
+      if(st.under || st.close) failing.push({
+        name: nm(r), under: st.under,
+        // A short form on purpose: the full line is already listed above.
+        short: adv
+          ? ('TOEFL ' + (st.final==null ? (isPt?'não feito':'not taken') : st.final)
+             + ' / ' + (isPt?'meta ':'target ') + st.target)
+          : ((isPt?'média ':'avg ') + st.avg + ' · ' + st.total + '/' + CYCLE_TOTAL_TARGET)
+      });
+      gradeLines.push({ name:nm(r), line:gradeStatusLine(st, lang) });
+    });
+    L.push('');
+    L.push((isPt ? 'NOTAS — ' : 'GRADES — ') + cycle.label);
+    L.push('  ' + (adv
+      ? (isPt ? 'Diagnóstico na primeira semana, TOEFL no fim do período. Meta: '
+              : 'Diagnostic in week one, TOEFL at the end of the term. Target: ')
+        + (TOEFL_TARGETS[cls.level] || '—')
+      : (isPt ? 'Três provas, 240 pontos no total (média 80) para aprovação.'
+              : 'Three tests, 240 points total (average 80) to pass.')));
+    if(gradeLines.length){
+      gradeLines.forEach(x=>L.push('- ' + x.name + ': ' + x.line));
+    } else {
+      L.push(isPt ? '- Nenhuma nota lançada ainda.' : '- No grades entered yet.');
+    }
+    if(noGrades.length) L.push((isPt?'- Sem notas: ':'- No grades yet: ') + noGrades.join(', '));
+  }
+
+  // ---------- essays (Advanced only) ----------
+  if(cls && cycle && essayCountFor(cls)){
+    cycleEssays(cycle);
+    const en = essayCountFor(cls);
+    const written = [], missing = [];
+    rows.forEach(r=>{
+      const es = essayStatus(cls, cycle, r.s.id);
+      const sc = studentEssays(cycle, r.s.id, en);
+      if(es) written.push(nm(r) + ': ' + sc.map(v=>v==null?'—':fmtEssay(v)).join(' / ')
+                          + ' (' + (isPt?'média ':'avg ') + fmtEssay(es.avg) + '/' + ESSAY_MAX + ')');
+      const owed = [];
+      for(let i=0;i<en;i++){
+        const due = (cycle.essayDates||[])[i];
+        if(due && due <= todayStr() && sc[i] == null) owed.push(essayLabelFor(cls, i));
+      }
+      if(owed.length) missing.push(nm(r) + ' (' + owed.join(', ') + ')');
+    });
+    L.push('');
+    L.push(isPt ? 'REDAÇÕES (escala TWE 0–6, mínimo 4)' : 'ESSAYS (TWE scale 0–6, minimum 4)');
+    if(written.length) written.forEach(x=>L.push('- ' + x));
+    else L.push(isPt ? '- Nenhuma nota de redação lançada.' : '- No essay marks entered.');
+    if(missing.length) L.push((isPt?'- NÃO ENTREGARAM: ':'- NOT WRITTEN: ') + missing.join('; '));
+  }
+
+  // ---------- who needs watching ----------
+  const lowAtt = rows.filter(r=>r.attRate != null && r.attRate < 75)
+                     .sort((a,b)=>a.attRate-b.attRate);
+  const lowHw  = rows.filter(r=>r.hwAvg != null && r.hwAvg < 60)
+                     .sort((a,b)=>a.hwAvg-b.hwAvg);
+  const lowPart= rows.filter(r=>r.partAvg != null && r.partAvg < 40)
+                     .sort((a,b)=>a.partAvg-b.partAvg);
+  const phoneHeavy = rows.filter(r=>r.phone >= 3).sort((a,b)=>b.phone-a.phone);
+
+  L.push('');
+  L.push(isPt ? 'PONTOS DE ATENÇÃO' : 'NEEDS ATTENTION');
+  let flagged = false;
+  if(failing.length){
+    flagged = true;
+    L.push(isPt ? '  Notas abaixo do esperado:' : '  Grades below target:');
+    failing.forEach(f=>L.push('  - ' + f.name + ' — ' + f.short
+      + (f.under ? '' : (isPt ? ' [limítrofe]' : ' [borderline]'))));
+  }
+  if(lowAtt.length){
+    flagged = true;
+    L.push(isPt ? '  Presença abaixo de 75%:' : '  Attendance below 75%:');
+    lowAtt.forEach(r=>L.push('  - ' + nm(r) + ' — ' + pct(r.attRate)
+      + ' (' + r.absent + (isPt?' falta(s) em ':' absence(s) of ') + r.total + ')'));
+  }
+  if(lowHw.length){
+    flagged = true;
+    L.push(isPt ? '  Lição de casa abaixo de 60%:' : '  Homework below 60%:');
+    lowHw.forEach(r=>L.push('  - ' + nm(r) + ' — ' + pct(r.hwAvg)));
+  }
+  if(lowPart.length){
+    flagged = true;
+    L.push(isPt ? '  Participação baixa:' : '  Low participation:');
+    lowPart.forEach(r=>L.push('  - ' + nm(r) + ' — ' + pct(r.partAvg)));
+  }
+  if(phoneHeavy.length){
+    flagged = true;
+    L.push(isPt ? '  Uso recorrente de celular:' : '  Repeated phone use:');
+    phoneHeavy.forEach(r=>L.push('  - ' + nm(r) + ' — ' + r.phone + (isPt?' vezes':' times')));
+  }
+  if(!flagged) L.push(isPt ? '  Nada a sinalizar neste período.' : '  Nothing to flag this period.');
+
+  // ---------- contact with families ----------
+  const pending = [], logged = [];
+  rows.forEach(r=>{
+    const st = r.s;
+    if(st.contactParents && st.contactParents.reason)
+      pending.push(nm(r) + ' — ' + st.contactParents.reason);
+    (st.contactParentsHistory || []).forEach(h=>{
+      if(data.fromVal && h.date < data.fromVal) return;
+      if(data.toVal && h.date > data.toVal) return;
+      logged.push(formatDateShort(h.date) + ' — ' + nm(r)
+        + (h.reason ? ' (' + h.reason + ')' : '')
+        + (h.summary ? ': ' + h.summary : ''));
+    });
+  });
+  L.push('');
+  L.push(isPt ? 'CONTATO COM AS FAMÍLIAS' : 'CONTACT WITH FAMILIES');
+  if(logged.length){
+    L.push(isPt ? '  Já realizados:' : '  Calls made:');
+    logged.sort().reverse().forEach(x=>L.push('  - ' + x));
+  }
+  if(pending.length){
+    L.push(isPt ? '  Pendentes:' : '  Still to do:');
+    pending.forEach(x=>L.push('  - ' + x));
+  }
+  if(!logged.length && !pending.length)
+    L.push(isPt ? '  Nenhum contato necessário no período.' : '  No contact needed this period.');
+
+  // ---------- full table, for the record ----------
+  L.push('');
+  L.push(isPt ? 'TODOS OS ALUNOS' : 'ALL STUDENTS');
+  L.push('  ' + (isPt ? 'aluno · presença · faltas · lição · participação'
+                      : 'student · attendance · absences · homework · participation'));
+  rows.forEach(r=>{
+    L.push('- ' + nm(r) + ': ' + pct(r.attRate)
+      + ' · ' + r.absent + (isPt?' falta(s)':' abs')
+      + ' · ' + (isPt?'lição ':'HW ') + pct(r.hwAvg)
+      + ' · ' + (isPt?'part. ':'part. ') + pct(r.partAvg));
+  });
+
+  return L.join('\n');
+}
+
+function openGroupReportTextModal(){
+  if(!window._groupReportExport){ alert('Open a class report first.'); return; }
+  const isPt = state.reportLang === 'pt';
+  const text = buildGroupReportText(state.reportLang);
+  showModal(`${sizeModal('lg sheet')}
+    <h2>${isPt ? 'Relatório para a coordenação' : 'Report for the coordinator'}</h2>
+    <p class="meta" style="margin:6px 0 14px;">${isPt
+      ? 'Resumo escrito da turma. Edite como quiser e copie para o e-mail ou documento.'
+      : 'A written summary of the class. Edit as needed and copy into an email or document.'}</p>
+    <textarea id="group-text-area" style="width:100%;min-height:420px;resize:vertical;font-family:var(--font-mono);font-size:12.5px;line-height:1.55;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-alt);color:var(--text);">${esc(text)}</textarea>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">${isPt ? 'Fechar' : 'Close'}</button>
+      <button class="btn-accent" id="group-copy-btn" onclick="copyGroupReportText()">${isPt ? 'Copiar' : 'Copy'}</button>
+    </div>`);
+}
+
+function copyGroupReportText(){
+  const area = document.getElementById('group-text-area');
+  const btn = document.getElementById('group-copy-btn');
+  const isPt = state.reportLang === 'pt';
+  const done = ()=>{ if(btn){ btn.textContent = isPt?'Copiado ✓':'Copied ✓'; setTimeout(()=>{ if(btn) btn.textContent = isPt?'Copiar':'Copy'; }, 1600); } };
+  const fallback = ()=>{ area.focus(); area.select(); try{ document.execCommand('copy'); done(); }catch(e){ alert(isPt?'Selecione o texto e copie manualmente.':'Select the text and copy manually.'); } };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(area.value).then(done).catch(fallback);
+  } else { fallback(); }
+}
+
 function renderGroupReport(){
   const t = T[state.reportLang];
   const cls = classById(state.reportsSelection.classId);
@@ -7827,7 +8037,7 @@ function renderGroupReport(){
   });
 
   // Stash for CSV export so the file matches exactly what's shown.
-  window._groupReportExport = { className: cls.name, fromVal, toVal, rows };
+  window._groupReportExport = { className: cls.name, classId: cls.id, fromVal, toVal, rows };
 
   // group averages
   const avg = (arr, key) => { const v=arr.filter(r=>r[key]!=null); return v.length?Math.round(v.reduce((s,r)=>s+r[key],0)/v.length):null; };
@@ -7853,6 +8063,7 @@ function renderGroupReport(){
       </div>
       <div style="display:flex;gap:10px;" class="no-print">
         <button class="btn-ghost" onclick="toggleGroupReportLang()">${t.langToggle}</button>
+        <button class="btn-ghost" onclick="openGroupReportTextModal()">📋 ${state.reportLang==='pt'?'Texto':'Written report'}</button>
         <button class="btn-ghost" onclick="exportGroupReportCsv()">⬇ CSV</button>
         <button class="btn-accent" onclick="window.print()">🖨️ ${state.reportLang==='pt'?'Imprimir':'Print'}</button>
       </div>
