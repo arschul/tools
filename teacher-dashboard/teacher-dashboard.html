@@ -5460,10 +5460,26 @@ function renderRollCall(){
         </button>
         <div style="${collapsed?'display:none;':'margin-top:10px;'}">
         ${renderPlanEditor(cls.id, date, { locked, cta:true, label:'📋 Class plan for today', hint:'(your plan for this class — focus points and promises land here)' })}
+        ${(()=>{
+          /* This box is written by the PREVIOUS class: "Homework to assign
+             (due next class)" saves against this date. So an empty box means
+             no homework was set last class, and typing here would assign
+             homework to the wrong day. It stays disabled until something is
+             genuinely due, with an explicit escape hatch for fixing an entry
+             that was never recorded. */
+          const hwSet = !!getHomework(cls.id, date);
+          const dis = locked || (!hwSet && !hwDueUnlocked.has(cls.id+'_'+date));
+          const dueStyle = taStyle + ((dis && !locked) ? 'background:var(--gray-soft);color:var(--muted);cursor:not-allowed;' : '');
+          const note = prevDate
+            ? `No homework was assigned on ${formatDateShort(prevDate)}, so nothing is due today.`
+            : 'No earlier class on record, so nothing is due today.';
+          return `
         <div class="field" style="margin-bottom:10px;">
           <label style="${lbl}">Homework due today ${locked?'':'<span style="font-weight:400;">(what students should hand in today)</span>'}</label>
-          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
-        </div>
+          <textarea rows="2" ${dis?'disabled':''} placeholder="${dis&&!locked?'Nothing due today':'e.g. Workbook p.44\u201345, write 150-word essay'}" style="${dueStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
+          ${dis && !locked ? `<div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;">${note} To set homework, use <b>Homework to assign (due next class)</b>${isPast?'':' below'}. <button type="button" class="linkish" style="text-decoration:underline;" onclick="unlockHwDue('${cls.id}','${date}')">Enter it anyway</button></div>` : ''}
+        </div>`;
+        })()}
         <div class="field" style="margin-bottom:12px;">
           <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
           <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
@@ -5528,6 +5544,15 @@ function setLessonNote(classId, date, val){
   if(val && val.trim()) state.lessonNotes[key] = val;
   else delete state.lessonNotes[key];
   scheduleSave('lessonNotes', state.lessonNotes);
+}
+/* Session-only override for the "Homework due today" box. The box is disabled
+   when nothing was assigned last class, so the teacher can't accidentally use
+   it to assign homework; this lets them force it open to record an assignment
+   that was given but never typed in. Deliberately not persisted. */
+const hwDueUnlocked = new Set();
+function unlockHwDue(classId, date){
+  hwDueUnlocked.add(classId+'_'+date);
+  refreshView();
 }
 function getHomework(classId, date){
   return (state.homework && state.homework[classId+'_'+date]) || '';
