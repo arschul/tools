@@ -5905,6 +5905,21 @@ function hwEffOf(r){
   // with — present, nothing noted, homework done — exactly as attendance does.
   return r.hw == null ? 100 : hwValueOf(r);
 }
+/* English use and participation follow the same rule as homework above. Roll
+   Call shows every present student with "Excellent" and "Great" already
+   selected, so leaving a student untouched IS a judgement — it is the teacher
+   agreeing with the default, not an absence of data. Reporting those rows blank
+   threw that judgement away and made the term look emptier than it was, so the
+   default is filled in here instead. Absent students still return null: they
+   have no English use or participation to report. */
+function englishEffOf(r){
+  if(r.attendance === 'absent') return null;
+  return r.english || 'excellent';
+}
+function partEffOf(r){
+  if(r.attendance === 'absent') return null;
+  return r.participation || 'great';
+}
 /* Two states only: the teacher assigned homework, or the teacher didn't.
    Where homework was assigned there is always a percentage. */
 function hwCellHtml(r, pt){
@@ -7136,10 +7151,10 @@ function renderStudentProfile(){
   const duration = avgDuration; // used for display only
 
   // Participation summary
-  const partRecords = attended.filter(r=>r.participation);
-  const partGreat = partRecords.filter(r=>r.participation==='great').length;
-  const partGood = partRecords.filter(r=>r.participation==='good').length;
-  const partLow = partRecords.filter(r=>r.participation==='low').length;
+  const partRecords = attended.filter(r=>partEffOf(r));
+  const partGreat = partRecords.filter(r=>partEffOf(r)==='great').length;
+  const partGood = partRecords.filter(r=>partEffOf(r)==='good').length;
+  const partLow = partRecords.filter(r=>partEffOf(r)==='low').length;
   const partScore = partRecords.length ? Math.round(100*(partGreat*1 + partGood*0.5)/partRecords.length) : null;
 
   // Time lost equivalent (late + left early + absences), in equivalent classes
@@ -7492,6 +7507,8 @@ function renderStudentProfile(){
           ${(()=>{
             const partLabel = p => p?({great:t.participationLabels.great,good:t.participationLabels.good,low:t.participationLabels.low}[p]):null;
             const partBadge = p => p==='great'?'green':p==='good'?'amber':'red';
+            const engEff = r => englishEffOf(r);
+            const partEff = r => partEffOf(r);
             // Merge records and holiday rows, sort by date descending
             const allRows = [
               ...records.map(r=>({...r, _type:'record'})),
@@ -7509,12 +7526,12 @@ function renderStudentProfile(){
                   <td></td>
                   <td colspan="9" style="font-size:12px;color:var(--red);font-style:italic;">${t.missedLabel}: ${esc(lessonNote)}</td>
                 </tr>` : '';
-              /* A student who wasn't there has no English use, participation
-                 or homework to report. Roll call fills those fields with its
-                 defaults for every student on the roster, so without this an
-                 absence read as "Excellent / Great" — praise for a class the
-                 student never attended. The columns are blanked rather than
-                 dropped, so the row still lines up with the ones around it. */
+              /* A student who wasn't there has no minutes late, phone use or
+                 homework to report, and englishEffOf/partEffOf already return
+                 null for an absence — otherwise the row would read "Excellent /
+                 Great", praise for a class the student never attended. The
+                 columns are blanked rather than dropped, so the row still lines
+                 up with the ones around it. */
               const away = r.attendance === 'absent';
               const blank = `<span style="color:var(--muted);">—</span>`;
               return `
@@ -7526,8 +7543,8 @@ function renderStudentProfile(){
                   <td>${!away && r.phone?r.phone:blank}</td>
                   <td>${away ? blank : hwCellHtml(r, state.reportLang==='pt')}</td>
                   <td>${r.lateHwOutcome ? `<span class="badge ${r.lateHwOutcome==='late'?'green':'red'}">${t.lateHwLabels[r.lateHwOutcome]||r.lateHwOutcome}</span>${r.lateHwFor?`<span class="late-hw-ref">${formatDateShort(r.lateHwFor)}${r.lateHwPrevPct!=null?` · ${r.lateHwPrevPct}%`:''}</span>`:''}` : blank}</td>
-                  <td>${!away && r.english?`<span class="badge ${englishBadgeClass(r.english)}">${t.englishLabels[r.english]||r.english}</span>`:blank}</td>
-                  <td>${!away && r.participation?`<span class="badge ${partBadge(r.participation)}">${partLabel(r.participation)}</span>`:blank}</td>
+                  <td>${engEff(r)?`<span class="badge ${englishBadgeClass(engEff(r))}">${t.englishLabels[engEff(r)]||engEff(r)}</span>`:blank}</td>
+                  <td>${partEff(r)?`<span class="badge ${partBadge(partEff(r))}">${partLabel(partEff(r))}</span>`:blank}</td>
                   <td>${r.notes?esc(r.notes):blank}</td>
                 </tr>${missedRow}`;
             }).join('');
@@ -8055,8 +8072,8 @@ function renderGroupReport(){
     const hwRecs    = filtered.filter(r=>r.attendance!=='absent' && hwEffOf(r)!=null);
     const hwAvg     = hwRecs.length ? Math.round(hwRecs.reduce((s,r)=>s+hwEffOf(r),0)/hwRecs.length) : null;
     const phone     = filtered.filter(r=>r.attendance!=='absent').reduce((s,r)=>s+(r.phone||0),0);
-    const partRecs  = filtered.filter(r=>r.attendance!=='absent'&&r.participation);
-    const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>r.participation==='great').length + partRecs.filter(r=>r.participation==='good').length*0.5)/partRecs.length) : null;
+    const partRecs  = filtered.filter(r=>partEffOf(r));
+    const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>partEffOf(r)==='great').length + partRecs.filter(r=>partEffOf(r)==='good').length*0.5)/partRecs.length) : null;
     const absRate   = expected ? Math.round(100*absent/expected) : null;
     return {s, total, present, late, absent, attRate, attBasis, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
   });
