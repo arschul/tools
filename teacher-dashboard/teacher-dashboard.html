@@ -957,6 +957,7 @@ let state = {
   reportRange: { from: '', to: '' },
   reportsSelection: { classId: '', studentId: '' },
   contactsFilter: { search: '', classId: '' },
+  contactsTab: 'log',        // 'log' | 'messages'
   reportLang: 'en'
 };
 
@@ -3518,7 +3519,7 @@ function _renderDashboard(el){
         <span class="chevron" aria-hidden="true">${state.showDashEC?'▾':'▸'}</span>
         <span class="section-title" style="margin:0;">⭐ English Club (${ecStudents.length})</span>
       </button>
-      <button class="btn-accent small" style="position:absolute;top:14px;right:16px;" onclick="event.stopPropagation();openParentMsgModal()" title="Generate a WhatsApp message for every flagged student, filled in with their own grades and attendance">📱 Message parents</button>
+      <button class="btn-accent small" style="position:absolute;top:14px;right:16px;" onclick="event.stopPropagation();openParentMessages()" title="Generate a WhatsApp message for every flagged student, filled in with their own grades and attendance">📱 Message parents</button>
       ${state.showDashEC ? ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
@@ -3529,7 +3530,7 @@ function _renderDashboard(el){
             </div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button class="icon-btn" onclick="openParentMsgModal([window._dashEcIds[${i}]])" title="Message this student's parents">📱 Msg</button>
+            <button class="icon-btn" onclick="openParentMessages([window._dashEcIds[${i}]])" title="Message this student's parents">📱 Msg</button>
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashEcIds[${i}],studentProfileReturn:'reports'})">Report →</button>
           </div>
         </div>`; }).join('') : ''}
@@ -3930,7 +3931,7 @@ function renderClassCard(c, isArchived){
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
                     </button>
-                    <button class="icon-btn" onclick="openParentMsgModal(['${s.id}'])" title="Message parents — builds a WhatsApp text from this student's grades and attendance">📱</button>
+                    <button class="icon-btn" onclick="openParentMessages(['${s.id}'])" title="Message parents — builds a WhatsApp text from this student's grades and attendance">📱</button>
                     <button class="icon-btn" onclick="openRenameStudentModal('${s.id}')" title="Edit this student's name">✏️ Rename</button>
                     <button class="icon-btn" onclick="openTransferModal('${s.id}')" title="Transfer to another class">⇄ Transfer</button>
                     <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
@@ -4526,7 +4527,7 @@ function toggleEnglishClub(studentId){
 
 const CLUB_DEFAULTS = {
   date: '', from: '14:00', to: '15:00',
-  place: 'na escola', teacher: '',
+  place: 'na escola', teacher: '', role: 'professor',
   kind: 'club', lang: 'pt',
   times: {},          // {eventId: {from,to}} — overrides for Club sessions
   pick: {},           // {studentId: [eventId,...]} — which sessions each student is called to
@@ -4747,16 +4748,6 @@ function pmShortDate(dateStr){
 function pmDayEn(dateStr){
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(dateStr+'T00:00:00').getDay()];
 }
-/* A teacher types their name; Portuguese needs the title in front of it. If
-   they wrote one themselves ("a professora Marina", "Prof. André"), leave it
-   exactly as typed — they know their own gender and how they are addressed. */
-function pmSignaturePt(name){
-  const n = String(name||'').trim();
-  if(!n) return '';
-  if(/profess|^prof\b|^prof\./i.test(n)) return n;
-  if(/^(o|a)\s/i.test(n)) return n;
-  return 'o professor ' + n;
-}
 function pmDayShortPt(dateStr){
   return ['dom','seg','ter','qua','qui','sex','sáb'][new Date(dateStr+'T00:00:00').getDay()];
 }
@@ -4799,9 +4790,10 @@ function pmTextPt(student, cfg){
   const inc = cfg.inc;
   const P = [];
 
+  const role = cfg.role === 'professora' ? 'professora' : 'professor';
   P.push(cfg.teacher
-    ? `Olá! Aqui é ${pmSignaturePt(cfg.teacher)}, de inglês ${doDa} ${f}, da Phil Young's.`
-    : `Olá! Aqui é o professor de inglês ${doDa} ${f}, da Phil Young's.`);
+    ? `Olá! Aqui é ${cfg.teacher}, ${role} de inglês ${doDa} ${f}, da Phil Young's.`
+    : `Olá! Aqui é ${role==='professora'?'a':'o'} ${role} de inglês ${doDa} ${f}, da Phil Young's.`);
 
   /* — desempenho — */
   if(inc.grades && d.st){
@@ -4961,14 +4953,36 @@ function pmTextEn(student, cfg){
   return P.join('\n\n');
 }
 
-/* ---------- the modal ----------
-   The interface is English throughout; only the generated message follows the
-   message-language setting, because that is the part a parent reads. */
-let pmStudentIds = [];      // everyone the modal was opened for
-let pmSelected = new Set(); // whose messages are actually being written right now
+/* ---------- the Message Parents screen ----------
+   Lives as a tab inside Contacts rather than a modal: writing five personalised
+   messages is a sit-down job, and a dialog that tall fights the page it floats
+   over. The interface is English throughout; only the generated message follows
+   the message-language setting, because that is the part a parent reads. */
+let pmExtraIds = [];        // students opened explicitly from a 📱 button
+let pmSelected = null;      // Set of ids being written right now; null = "all"
 let pmShowTimes = false;
 
-function openParentMsgModal(ids){
+function pmFlaggedIds(){
+  return sortByName(state.students.filter(s=>{
+    const c = classById(s.classId);
+    return s.englishClub && c && !c.archived;
+  })).map(s=>s.id);
+}
+/* The roster is whoever is flagged, plus anyone the teacher opened by hand.
+   Marking a message done clears the flag, so students leave the list on their
+   own and nothing has to be reconciled. */
+function pmRoster(){
+  const ids = pmFlaggedIds();
+  pmExtraIds.forEach(id=>{ if(!ids.includes(id) && state.students.some(s=>s.id===id)) ids.push(id); });
+  return sortByName(ids.map(id=>state.students.find(s=>s.id===id)).filter(Boolean)).map(s=>s.id);
+}
+function pmChosen(){
+  const roster = pmRoster();
+  const sel = pmSelected;
+  return roster.map(id=>state.students.find(s=>s.id===id))
+               .filter(s=>s && (!sel || sel.has(s.id)));
+}
+function openParentMessages(ids){
   const cfg = clubSettings();
   if(!cfg.date){
     // Default to the next Friday — the slot the Club actually runs in.
@@ -4976,37 +4990,40 @@ function openParentMsgModal(ids){
     state.clubSettings = Object.assign({}, cfg, { date: dateToStr(d.getFullYear(), d.getMonth(), d.getDate()) });
     scheduleSave('clubSettings', state.clubSettings);
   }
-  const list = (ids && ids.length)
-    ? ids.map(id=>state.students.find(s=>s.id===id)).filter(Boolean)
-    : sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; }));
-  pmStudentIds = list.map(s=>s.id);
-  pmSelected = new Set(pmStudentIds);
+  pmExtraIds = (ids || []).slice();
+  pmSelected = (ids && ids.length) ? new Set(ids) : null;
   pmShowTimes = false;
-  if(!pmStudentIds.length){
-    showModal(`${sizeModal('md')}<h3>📱 Message parents</h3>
-      <div class="card empty-card">No students are flagged for English Club yet. Star a student on the Classes page first.</div>
-      <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Close</button></div>`);
-    return;
-  }
-  showModal(`${sizeModal('lg sheet')}${pmModalHtml()}`);
+  state.contactsTab = 'messages';
+  navigate('contacts');
 }
 
-function pmChosen(){
-  return pmStudentIds.map(id=>state.students.find(s=>s.id===id))
-                     .filter(s=>s && pmSelected.has(s.id));
+function setContactsTab(tab){
+  state.contactsTab = tab === 'messages' ? 'messages' : 'log';
+  refreshView();
+}
+function contactsTabsHtml(active){
+  const n = pmRoster().length;
+  const btn = (k, label, count) => `<button class="btn-ghost small" onclick="setContactsTab('${k}')"
+    style="${active===k?'border-color:var(--accent);color:var(--accent);font-weight:700;':''}">${label}${count!=null?` (${count})`:''}</button>`;
+  return `<div class="no-print" style="display:flex;gap:8px;margin-bottom:16px;">
+    ${btn('log','Contact log')}${btn('messages','Message parents', n)}
+  </div>`;
 }
 
-function pmModalHtml(){
+function renderParentMessages(){
   const cfg = clubSettings();
+  const roster = pmRoster();
   const chosen = pmChosen();
   const chk = (k, label) => `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;white-space:nowrap;">
       <input type="checkbox" ${cfg.inc[k]?'checked':''} onchange="setClubInc('${k}',this.checked)"><span>${label}</span></label>`;
   const sel = `<select style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);"`;
 
-  return `
-    <h3>📱 Message parents <span class="meta" style="font-weight:400;font-size:13px;">· ${chosen.length} of ${pmStudentIds.length} selected</span></h3>
-    <p class="meta" style="margin:0 0 14px;font-size:12px;">Grades, absences, lates and homework are read from the Dashboard. Pick the sessions, pick the students, then copy each message into WhatsApp and mark it Done.</p>
-
+  document.getElementById('view-contacts').innerHTML = `
+    <div class="topbar">
+      <div><h1>Contacts</h1><div class="meta">Write a parent message from the student's own grades, attendance and homework</div></div>
+    </div>
+    ${contactsTabsHtml('messages')}
+    ${!roster.length ? `<div class="card empty-card">No students are flagged for English Club. Star a student on the Classes page, or open one with the 📱 button, to write a message.</div>` : `
     <div class="card section" style="padding:12px 14px;margin-bottom:12px;">
       ${pmSessionsPanelHtml()}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
@@ -5021,8 +5038,12 @@ function pmModalHtml(){
         <input type="text" value="${esc(cfg.place)}" placeholder="Place" onchange="setClubSetting('place',this.value)"
           style="flex:1 1 130px;min-width:110px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
         <input type="text" value="${esc(cfg.teacher)}" placeholder="Your name (optional)" onchange="setClubSetting('teacher',this.value)"
-          title="Just your name — “professor/professora” is added for you. Type it in full (e.g. “a professora Marina”) to override."
+          title="Just your name — the message adds the rest around it."
           style="flex:1 1 150px;min-width:120px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
+        ${sel} onchange="setClubSetting('role',this.value)" title="How you sign off in Portuguese">
+          <option value="professor" ${cfg.role!=='professora'?'selected':''}>professor</option>
+          <option value="professora" ${cfg.role==='professora'?'selected':''}>professora</option>
+        </select>
       </div>
       <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-top:9px;">
         <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Include</span>
@@ -5035,11 +5056,11 @@ function pmModalHtml(){
 
     <div id="pm-list">${chosen.map((s,i)=>pmCardHtml(s,i)).join('')}</div>
 
-    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
+    ${chosen.length ? `<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-bottom:24px;">
       <button class="btn-ghost" onclick="pmRegenerate(true)" title="Rewrites every message — manual edits are lost">↻ Regenerate all</button>
-      <button class="btn-ghost" onclick="closeModal()">Close</button>
       <button class="btn-accent" onclick="pmCopyAll(this)">Copy all</button>
-    </div>`;
+    </div>` : `<div class="card empty-card">No students selected. Pick at least one above.</div>`}
+    `}`;
 }
 
 /* Sessions come from the Calendar. The list stays one line until the teacher
@@ -5066,7 +5087,7 @@ function pmSessionsPanelHtml(){
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">
       <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Sessions</span>
       <span style="font-size:12.5px;flex:1 1 200px;">${esc(summary)}</span>
-      <button class="btn-ghost small" onclick="pmShowTimes=!pmShowTimes;pmRegenerate(true)">${pmShowTimes?'Hide times':'Edit times'}</button>
+      <button class="btn-ghost small" onclick="pmToggleTimes()">${pmShowTimes?'Hide times':'Edit times'}</button>
     </div>
     ${pmShowTimes ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
       ${evs.map(e=>{ const t = clubSessionTime(e); const cl = e.classId?classById(e.classId):null; return `
@@ -5081,17 +5102,20 @@ function pmSessionsPanelHtml(){
     </div>` : ''}
   </div>`;
 }
+function pmToggleTimes(){ pmShowTimes = !pmShowTimes; pmRegenerate(true); }
 
 /* Different groups get different sessions and different framing, so the
    teacher narrows the list here and works one batch at a time. */
 function pmStudentPickerHtml(){
-  if(pmStudentIds.length < 2) return '';
-  const all = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
-  const every = pmSelected.size === all.length;
+  const roster = pmRoster();
+  if(roster.length < 2) return '';
+  const all = roster.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
+  const chosenIds = new Set(pmChosen().map(s=>s.id));
+  const every = chosenIds.size === all.length;
   return `<div class="card section" style="padding:11px 14px;margin-bottom:12px;">
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-right:2px;">Students</span>
-      ${all.map(s=>{ const on = pmSelected.has(s.id); const c = classById(s.classId); return `
+      ${all.map(s=>{ const on = chosenIds.has(s.id); const c = classById(s.classId); return `
         <button class="btn-ghost small" onclick="pmToggleStudent('${s.id}')" title="${esc(c?c.name:'')}"
           style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.55;'}">
           ${on?'✓ ':''}${esc(pmFirstName(s.name))}
@@ -5101,11 +5125,13 @@ function pmStudentPickerHtml(){
   </div>`;
 }
 function pmToggleStudent(id){
-  if(pmSelected.has(id)) pmSelected.delete(id); else pmSelected.add(id);
+  const cur = new Set(pmChosen().map(s=>s.id));
+  if(cur.has(id)) cur.delete(id); else cur.add(id);
+  pmSelected = cur;
   pmRegenerate(true);
 }
 function pmSelectAll(on){
-  pmSelected = on ? new Set(pmStudentIds) : new Set();
+  pmSelected = on ? null : new Set();
   pmRegenerate(true);
 }
 
@@ -5154,24 +5180,21 @@ function pmChipsHtml(s){
 }
 
 /* Only the message bodies are repainted on a settings change. Rebuilding the
-   whole modal would yank focus out of the very field the teacher just edited,
-   and the header controls already hold the new value — they are what changed. */
+   whole screen would yank focus out of the very field the teacher just edited,
+   and the controls already hold the new value — they are what changed. */
 function pmRegenerate(full){
-  const list = document.getElementById('pm-list');
-  if(!list) return;                      // modal not open
+  if(!document.getElementById('pm-list')) return;     // screen not open
   if(full){
-    const root = document.querySelector('#modal-root .modal');
-    const scroll = root ? root.scrollTop : 0;
-    showModal(`${sizeModal('lg sheet')}${pmModalHtml()}`);
-    const r2 = document.querySelector('#modal-root .modal');
-    if(r2) r2.scrollTop = scroll;
+    const y = window.scrollY;
+    renderParentMessages();
+    window.scrollTo(0, y);
     return;
   }
-  list.innerHTML = pmChosen().map((s,i)=>pmCardHtml(s,i)).join('');
+  document.getElementById('pm-list').innerHTML = pmChosen().map((s,i)=>pmCardHtml(s,i)).join('');
 }
 
 /* Marking a message done is the point where it stops being a draft: it goes on
-   the student's record with the date it was sent, and the English Club
+   the student's record with the date and time it was sent, and the English Club
    reminder that raised it is cleared. Undoable, because a mis-click here would
    otherwise mean re-typing the whole thing. */
 function pmMarkDone(studentId, i){
@@ -5202,15 +5225,15 @@ function pmMarkDone(studentId, i){
   if(s.contactParents && s.contactParents.category === category) s.contactParents = null;
   scheduleSave('students', state.students);
 
-  pmStudentIds = pmStudentIds.filter(id=>id!==studentId);
-  pmSelected.delete(studentId);
-  if(pmStudentIds.length) pmRegenerate(true); else closeModal();
+  pmExtraIds = pmExtraIds.filter(id=>id!==studentId);
+  if(pmSelected) pmSelected.delete(studentId);
   refreshView();
 
   showUndoToast(`Logged for ${pmFirstName(s.name)} — English Club reminder cleared`, ()=>{
     s.contactParentsHistory = (s.contactParentsHistory||[]).filter(h=>h.id!==entry.id);
     s.englishClub = before.englishClub;
     s.contactParents = before.contactParents;
+    if(pmSelected) pmSelected.add(studentId);
     scheduleSave('students', state.students);
     refreshView();
   });
@@ -8403,6 +8426,7 @@ function findContactEntry(studentId, entryId, idx){
 }
 
 function renderContacts(){
+  if(state.contactsTab === 'messages'){ renderParentMessages(); return; }
   const q = (state.contactsFilter.search||'').trim().toLowerCase();
   const classFilter = state.contactsFilter.classId||'';
   let rows = allContactRows();
@@ -8433,6 +8457,7 @@ function renderContacts(){
         <button class="btn-accent" onclick="printContactsReport()" ${total?'':'disabled'}>🖨️ Print</button>
       </div>
     </div>
+    ${contactsTabsHtml('log')}
     <div class="card section no-print" style="margin-bottom:16px;">
       <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
         <input type="text" value="${esc(state.contactsFilter.search)}" oninput="setContactsSearch(this.value)" placeholder="Search student…" style="border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:14px;min-width:200px;">
