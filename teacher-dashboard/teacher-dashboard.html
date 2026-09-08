@@ -4744,6 +4744,19 @@ function pmShortDate(dateStr){
   const d = new Date(dateStr+'T00:00:00');
   return pad(d.getDate())+'/'+pad(d.getMonth()+1);
 }
+function pmDayEn(dateStr){
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(dateStr+'T00:00:00').getDay()];
+}
+/* A teacher types their name; Portuguese needs the title in front of it. If
+   they wrote one themselves ("a professora Marina", "Prof. André"), leave it
+   exactly as typed — they know their own gender and how they are addressed. */
+function pmSignaturePt(name){
+  const n = String(name||'').trim();
+  if(!n) return '';
+  if(/profess|^prof\b|^prof\./i.test(n)) return n;
+  if(/^(o|a)\s/i.test(n)) return n;
+  return 'o professor ' + n;
+}
 function pmDayShortPt(dateStr){
   return ['dom','seg','ter','qua','qui','sex','sáb'][new Date(dateStr+'T00:00:00').getDay()];
 }
@@ -4787,7 +4800,7 @@ function pmTextPt(student, cfg){
   const P = [];
 
   P.push(cfg.teacher
-    ? `Olá! Aqui é ${cfg.teacher}, de inglês ${doDa} ${f}, da Phil Young's.`
+    ? `Olá! Aqui é ${pmSignaturePt(cfg.teacher)}, de inglês ${doDa} ${f}, da Phil Young's.`
     : `Olá! Aqui é o professor de inglês ${doDa} ${f}, da Phil Young's.`);
 
   /* — desempenho — */
@@ -4882,7 +4895,9 @@ function pmTextEn(student, cfg){
   const f = pmFirstName(student.name);
   const inc = cfg.inc;
   const P = [];
-  P.push(`Hello! This is ${cfg.teacher || `${f}'s English teacher`}, from Phil Young's.`);
+  P.push(cfg.teacher
+    ? `Hello! This is ${cfg.teacher}, ${f}'s English teacher at Phil Young's.`
+    : `Hello! This is ${f}'s English teacher, from Phil Young's.`);
 
   if(inc.grades && d.st){
     if(d.st.advanced){
@@ -4946,8 +4961,13 @@ function pmTextEn(student, cfg){
   return P.join('\n\n');
 }
 
-/* ---------- the modal ---------- */
-let pmStudentIds = [];
+/* ---------- the modal ----------
+   The interface is English throughout; only the generated message follows the
+   message-language setting, because that is the part a parent reads. */
+let pmStudentIds = [];      // everyone the modal was opened for
+let pmSelected = new Set(); // whose messages are actually being written right now
+let pmShowTimes = false;
+
 function openParentMsgModal(ids){
   const cfg = clubSettings();
   if(!cfg.date){
@@ -4960,8 +4980,10 @@ function openParentMsgModal(ids){
     ? ids.map(id=>state.students.find(s=>s.id===id)).filter(Boolean)
     : sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; }));
   pmStudentIds = list.map(s=>s.id);
+  pmSelected = new Set(pmStudentIds);
+  pmShowTimes = false;
   if(!pmStudentIds.length){
-    showModal(`${sizeModal('md')}<h3>📱 Mensagem aos pais</h3>
+    showModal(`${sizeModal('md')}<h3>📱 Message parents</h3>
       <div class="card empty-card">No students are flagged for English Club yet. Star a student on the Classes page first.</div>
       <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Close</button></div>`);
     return;
@@ -4969,114 +4991,126 @@ function openParentMsgModal(ids){
   showModal(`${sizeModal('lg sheet')}${pmModalHtml()}`);
 }
 
+function pmChosen(){
+  return pmStudentIds.map(id=>state.students.find(s=>s.id===id))
+                     .filter(s=>s && pmSelected.has(s.id));
+}
+
 function pmModalHtml(){
   const cfg = clubSettings();
-  const pt = cfg.lang !== 'en';
-  const students = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
-  const chk = (k, label) => `<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+  const chosen = pmChosen();
+  const chk = (k, label) => `<label style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;white-space:nowrap;">
       <input type="checkbox" ${cfg.inc[k]?'checked':''} onchange="setClubInc('${k}',this.checked)"><span>${label}</span></label>`;
-  const inp = (k, type, label, extra) => `<div class="field" style="margin:0;">
-      <label style="font-size:11px;">${label}</label>
-      <input type="${type}" value="${esc(cfg[k])}" ${extra||''} onchange="setClubSetting('${k}',this.value)"
-        style="width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);"></div>`;
+  const sel = `<select style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);"`;
 
   return `
-    <h3>📱 ${pt?'Mensagem aos pais':'Message to parents'} <span class="meta" style="font-weight:400;font-size:13px;">· ${students.length} ${pt?'aluno(s)':'student(s)'}</span></h3>
-    <p class="meta" style="margin:0 0 14px;font-size:12px;">${pt
-      ? 'As notas, faltas, atrasos e deveres são lidos direto do Dashboard. Ajuste os campos abaixo e copie cada mensagem para o WhatsApp.'
-      : 'Grades, absences, lates and homework are read straight from the Dashboard. Adjust the fields below and copy each message into WhatsApp.'}</p>
+    <h3>📱 Message parents <span class="meta" style="font-weight:400;font-size:13px;">· ${chosen.length} of ${pmStudentIds.length} selected</span></h3>
+    <p class="meta" style="margin:0 0 14px;font-size:12px;">Grades, absences, lates and homework are read from the Dashboard. Pick the sessions, pick the students, then copy each message into WhatsApp and mark it Done.</p>
 
-    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
-      ${pmSessionsPanelHtml(pt, inp)}
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
-        <div style="flex:1 1 160px;">${inp('place','text', pt?'Local':'Place')}</div>
-        <div style="flex:1 1 200px;">${inp('teacher','text', pt?'Assinatura (opcional)':'Signature (optional)','placeholder="ex.: o professor André"')}</div>
+    <div class="card section" style="padding:12px 14px;margin-bottom:12px;">
+      ${pmSessionsPanelHtml()}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
+        ${sel} onchange="setClubSetting('kind',this.value)">
+          <option value="club" ${cfg.kind==='club'?'selected':''}>English Club invitation</option>
+          <option value="update" ${cfg.kind==='update'?'selected':''}>Performance update</option>
+        </select>
+        ${sel} onchange="setClubSetting('lang',this.value)">
+          <option value="pt" ${cfg.lang!=='en'?'selected':''}>Message in Portuguese</option>
+          <option value="en" ${cfg.lang==='en'?'selected':''}>Message in English</option>
+        </select>
+        <input type="text" value="${esc(cfg.place)}" placeholder="Place" onchange="setClubSetting('place',this.value)"
+          style="flex:1 1 130px;min-width:110px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
+        <input type="text" value="${esc(cfg.teacher)}" placeholder="Your name (optional)" onchange="setClubSetting('teacher',this.value)"
+          title="Just your name — “professor/professora” is added for you. Type it in full (e.g. “a professora Marina”) to override."
+          style="flex:1 1 150px;min-width:120px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <select onchange="setClubSetting('kind',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text);">
-          <option value="club" ${cfg.kind==='club'?'selected':''}>${pt?'Convite — English Club':'Invitation — English Club'}</option>
-          <option value="update" ${cfg.kind==='update'?'selected':''}>${pt?'Aviso de desempenho':'Performance update'}</option>
-        </select>
-        <select onchange="setClubSetting('lang',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text);">
-          <option value="pt" ${pt?'selected':''}>Português</option>
-          <option value="en" ${!pt?'selected':''}>English</option>
-        </select>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-left:auto;">
-          ${chk('grades', pt?'Notas':'Grades')}
-          ${chk('attendance', pt?'Faltas':'Absences')}
-          ${chk('late', pt?'Atrasos':'Lates')}
-          ${chk('hw', pt?'Dever':'Homework')}
-          ${chk('part', pt?'Participação':'Participation')}
-          ${chk('norecovery', pt?'Sem recuperação':'No resit')}
-        </div>
+      <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-top:9px;">
+        <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Include</span>
+        ${chk('grades','Grades')}${chk('attendance','Absences')}${chk('late','Lates')}
+        ${chk('hw','Homework')}${chk('part','Participation')}${chk('norecovery','No resit')}
       </div>
     </div>
 
-    <div id="pm-list">${students.map((s,i)=>pmCardHtml(s,i)).join('')}</div>
+    ${pmStudentPickerHtml()}
+
+    <div id="pm-list">${chosen.map((s,i)=>pmCardHtml(s,i)).join('')}</div>
 
     <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
-      <button class="btn-ghost" onclick="pmRegenerate()" title="${pt?'Reescreve todas — edições manuais são perdidas':'Rewrites all — manual edits are lost'}">↻ ${pt?'Regerar todas':'Regenerate all'}</button>
-      <button class="btn-ghost" onclick="closeModal()">${pt?'Fechar':'Close'}</button>
-      <button class="btn-accent" onclick="pmCopyAll(this)">${pt?'Copiar todas':'Copy all'}</button>
+      <button class="btn-ghost" onclick="pmRegenerate(true)" title="Rewrites every message — manual edits are lost">↻ Regenerate all</button>
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn-accent" onclick="pmCopyAll(this)">Copy all</button>
     </div>`;
 }
 
-/* Sessions come from the Calendar. When none are marked there, the modal falls
-   back to a single hand-typed date so the tool still works on a Friday when
-   nobody has filled the Calendar in yet. */
-function pmSessionsPanelHtml(pt, inp){
+/* Sessions come from the Calendar. The list stays one line until the teacher
+   asks to change a time — the times are usually right, and a panel of inputs
+   nobody touches just pushes the messages off the screen. */
+function pmSessionsPanelHtml(){
+  const cfg = clubSettings();
   const evs = clubEvents();
   if(!evs.length){
-    return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
-      <div style="flex:1 1 150px;">${inp('date','date', pt?'Data':'Date')}</div>
-      <div style="flex:0 1 110px;">${inp('from','time', pt?'Início':'From')}</div>
-      <div style="flex:0 1 110px;">${inp('to','time', pt?'Fim':'To')}</div>
-      <div style="flex:2 1 100%;font-size:11.5px;color:var(--muted);">${pt
-        ? 'Nenhum English Club marcado no calendário a partir de hoje. Marque os encontros lá (evento com “English Club” no título) para poder convidar cada aluno para vários de uma vez.'
-        : 'No English Club is marked on the Calendar from today onwards. Add the sessions there (an event with “English Club” in the title) to invite a student to several at once.'}</div>
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Session</span>
+      <input type="date" value="${esc(cfg.date)}" onchange="setClubSetting('date',this.value)"
+        style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
+      <input type="time" value="${esc(cfg.from)}" onchange="setClubSetting('from',this.value)"
+        style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
+      <span class="meta">→</span>
+      <input type="time" value="${esc(cfg.to)}" onchange="setClubSetting('to',this.value)"
+        style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
+      <span class="meta" style="font-size:11px;flex:1 1 100%;">Nothing marked on the Calendar from today. Add events titled “English Club” there to invite students to several at once.</span>
     </div>`;
   }
-  return `<div style="margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">
-      ${pt?'Encontros no calendário':'Sessions on the Calendar'} <span style="font-weight:400;text-transform:none;letter-spacing:0;">· ${pt?'escolha por aluno mais abaixo':'pick per student below'}</span>
+  const summary = evs.map(e=>{ const t = clubSessionTime(e); return `${pmDayEn(e.date)} ${pmShortDate(e.date)} ${t.from}–${t.to}`; }).join(' · ');
+  return `<div>
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">
+      <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Sessions</span>
+      <span style="font-size:12.5px;flex:1 1 200px;">${esc(summary)}</span>
+      <button class="btn-ghost small" onclick="pmShowTimes=!pmShowTimes;pmRegenerate(true)">${pmShowTimes?'Hide times':'Edit times'}</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      ${evs.map(e=>{ const t = clubSessionTime(e); const cl = e.classId ? classById(e.classId) : null; return `
-        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;">
-          <span style="min-width:150px;">📅 ${pt?pmDatePt(e.date):pmDateEn(e.date)}</span>
+    ${pmShowTimes ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+      ${evs.map(e=>{ const t = clubSessionTime(e); const cl = e.classId?classById(e.classId):null; return `
+        <div style="display:flex;align-items:center;gap:7px;font-size:12.5px;">
+          <span style="min-width:96px;">${pmDayEn(e.date)} ${pmShortDate(e.date)}</span>
           <input type="time" value="${esc(t.from)}" onchange="setClubTime('${e.id}','from',this.value)"
-            style="border:1px solid var(--border);border-radius:8px;padding:5px 7px;font-size:12px;background:var(--surface);color:var(--text);">
-          <span class="meta">→</span>
+            style="border:1px solid var(--border);border-radius:7px;padding:4px 6px;font-size:12px;background:var(--surface);color:var(--text);">
           <input type="time" value="${esc(t.to)}" onchange="setClubTime('${e.id}','to',this.value)"
-            style="border:1px solid var(--border);border-radius:8px;padding:5px 7px;font-size:12px;background:var(--surface);color:var(--text);">
-          <span class="meta" style="font-size:11.5px;">${esc(e.title)}${cl?` · ${esc(cl.name)}`:''}</span>
+            style="border:1px solid var(--border);border-radius:7px;padding:4px 6px;font-size:12px;background:var(--surface);color:var(--text);">
+          <span class="meta" style="font-size:11px;">${esc(e.title)}${cl?` · ${esc(cl.name)}`:''}</span>
         </div>`; }).join('')}
-    </div>
+    </div>` : ''}
   </div>`;
 }
 
-function pmChipsHtml(s, pt){
-  const avail = clubEventsFor(s);
-  if(!avail.length) return '';
-  const picked = new Set(pmPicked(s).map(e=>e.id));
-  const allOn = picked.size === avail.length;
-  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:9px;">
-    <span class="meta" style="font-size:11px;">${pt?'Convidar para':'Invite to'} (${picked.size}/${avail.length}):</span>
-    ${avail.map(e=>{ const on = picked.has(e.id); const t = clubSessionTime(e); return `
-      <button class="btn-ghost small" onclick="pmTogglePick('${s.id}','${e.id}')"
-        title="${esc(e.title)} · ${esc(t.from)}–${esc(t.to)}"
-        style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.62;'}">
-        ${on?'✓ ':''}${pt?pmDayShortPt(e.date)+' ':''}${pmShortDate(e.date)}
-      </button>`; }).join('')}
-    <button class="btn-ghost small" onclick="pmPickAll('${s.id}',${allOn?'false':'true'})" style="margin-left:4px;">
-      ${allOn ? (pt?'Limpar':'Clear') : (pt?'Todos':'All')}
-    </button>
+/* Different groups get different sessions and different framing, so the
+   teacher narrows the list here and works one batch at a time. */
+function pmStudentPickerHtml(){
+  if(pmStudentIds.length < 2) return '';
+  const all = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
+  const every = pmSelected.size === all.length;
+  return `<div class="card section" style="padding:11px 14px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-right:2px;">Students</span>
+      ${all.map(s=>{ const on = pmSelected.has(s.id); const c = classById(s.classId); return `
+        <button class="btn-ghost small" onclick="pmToggleStudent('${s.id}')" title="${esc(c?c.name:'')}"
+          style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.55;'}">
+          ${on?'✓ ':''}${esc(pmFirstName(s.name))}
+        </button>`; }).join('')}
+      <button class="btn-ghost small" style="margin-left:4px;" onclick="pmSelectAll(${every?'false':'true'})">${every?'None':'All'}</button>
+    </div>
   </div>`;
+}
+function pmToggleStudent(id){
+  if(pmSelected.has(id)) pmSelected.delete(id); else pmSelected.add(id);
+  pmRegenerate(true);
+}
+function pmSelectAll(on){
+  pmSelected = on ? new Set(pmStudentIds) : new Set();
+  pmRegenerate(true);
 }
 
 function pmCardHtml(s, i){
   const cfg = clubSettings();
-  const pt = cfg.lang !== 'en';
   const d = parentMsgStats(s);
   const cls = d.cls;
   const fem = pmGenderOf(s) === 'f';
@@ -5087,25 +5121,41 @@ function pmCardHtml(s, i){
         <b style="font-size:15px;">${esc(s.name)}</b>
         <span class="meta" style="font-size:12px;">${cls?esc(cls.name)+' · '+esc(cls.level||''):'—'}</span>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <span class="meta" style="font-size:11px;">${pt?'Trata por':'Refer to as'}</span>
-          <button class="btn-ghost small" style="${fem?'':'border-color:var(--accent);color:var(--accent);'}" onclick="pmSetGender('${s.id}','m')">${pt?'ele':'he'}</button>
-          <button class="btn-ghost small" style="${fem?'border-color:var(--accent);color:var(--accent);':''}" onclick="pmSetGender('${s.id}','f')">${pt?'ela':'she'}</button>
+          <span class="meta" style="font-size:11px;">Refer to as</span>
+          <button class="btn-ghost small" style="${fem?'':'border-color:var(--accent);color:var(--accent);'}" onclick="pmSetGender('${s.id}','m')">ele</button>
+          <button class="btn-ghost small" style="${fem?'border-color:var(--accent);color:var(--accent);':''}" onclick="pmSetGender('${s.id}','f')">ela</button>
         </div>
       </div>
       <div class="meta" style="font-size:11.5px;margin-bottom:9px;">${esc(pmFactsLine(d))}</div>
-      ${cfg.kind==='club' ? pmChipsHtml(s, pt) : ''}
+      ${cfg.kind==='club' ? pmChipsHtml(s) : ''}
       <textarea id="pm-txt-${i}" rows="14" style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.55;padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm,8px);background:var(--surface);color:var(--text);">${esc(buildParentMessage(s))}</textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-        <button class="btn-accent small" id="pm-copy-${i}" onclick="pmCopyOne(${i})">${pt?'Copiar':'Copy'}</button>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+        <button class="btn-ghost small" id="pm-copy-${i}" onclick="pmCopyOne(${i})">Copy</button>
+        <button class="btn-accent small" onclick="pmMarkDone('${s.id}',${i})" title="Log this message on the student's report, stamp it with today's date, and clear the English Club reminder">✓ Sent — mark done</button>
       </div>
     </div>`;
 }
 
+function pmChipsHtml(s){
+  const avail = clubEventsFor(s);
+  if(!avail.length) return '';
+  const picked = new Set(pmPicked(s).map(e=>e.id));
+  const allOn = picked.size === avail.length;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:9px;">
+    <span class="meta" style="font-size:11px;">Invite to (${picked.size}/${avail.length}):</span>
+    ${avail.map(e=>{ const on = picked.has(e.id); const t = clubSessionTime(e); return `
+      <button class="btn-ghost small" onclick="pmTogglePick('${s.id}','${e.id}')"
+        title="${esc(e.title)} · ${esc(t.from)}–${esc(t.to)}"
+        style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.62;'}">
+        ${on?'✓ ':''}${pmDayEn(e.date)} ${pmShortDate(e.date)}
+      </button>`; }).join('')}
+    <button class="btn-ghost small" style="margin-left:4px;" onclick="pmPickAll('${s.id}',${allOn?'false':'true'})">${allOn?'Clear':'All'}</button>
+  </div>`;
+}
+
 /* Only the message bodies are repainted on a settings change. Rebuilding the
    whole modal would yank focus out of the very field the teacher just edited,
-   and the header controls already hold the new value — they are what changed.
-   A language or template switch does need the header relabelled, so those two
-   ask for the full repaint explicitly. */
+   and the header controls already hold the new value — they are what changed. */
 function pmRegenerate(full){
   const list = document.getElementById('pm-list');
   if(!list) return;                      // modal not open
@@ -5117,8 +5167,53 @@ function pmRegenerate(full){
     if(r2) r2.scrollTop = scroll;
     return;
   }
-  const students = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
-  list.innerHTML = students.map((s,i)=>pmCardHtml(s,i)).join('');
+  list.innerHTML = pmChosen().map((s,i)=>pmCardHtml(s,i)).join('');
+}
+
+/* Marking a message done is the point where it stops being a draft: it goes on
+   the student's record with the date it was sent, and the English Club
+   reminder that raised it is cleared. Undoable, because a mis-click here would
+   otherwise mean re-typing the whole thing. */
+function pmMarkDone(studentId, i){
+  const s = state.students.find(x=>x.id===studentId);
+  if(!s) return;
+  const ta = document.getElementById('pm-txt-'+i);
+  const text = ta ? ta.value.trim() : buildParentMessage(s);
+  if(!text) return;
+  const cfg = clubSettings();
+  const picks = pmPicked(s);
+  const when = new Date();
+  const stamp = `${pad(when.getDate())}/${pad(when.getMonth()+1)} ${pad(when.getHours())}:${pad(when.getMinutes())}`;
+  const sessions = picks.length
+    ? picks.map(e=>{ const t = clubSessionTime(e); return `${pmShortDate(e.date)} ${t.from}–${t.to}`; }).join(', ')
+    : (cfg.date ? `${pmShortDate(cfg.date)} ${cfg.from}–${cfg.to}` : '');
+  const category = cfg.kind === 'club' ? 'English Club' : 'Grades';
+  const reason = cfg.kind === 'club'
+    ? `WhatsApp invitation sent ${stamp}${picks.length>1?` · ${picks.length} sessions`:''}${sessions?` · ${sessions}`:''}`
+    : `WhatsApp performance update sent ${stamp}`;
+
+  const before = { englishClub: !!s.englishClub, contactParents: s.contactParents || null };
+  if(!s.contactParentsHistory) s.contactParentsHistory = [];
+  const entry = { id: uid(), date: todayStr(), sentAt: when.toISOString(), channel: 'WhatsApp',
+                  category, reason, summary: text };
+  s.contactParentsHistory.unshift(entry);
+  s.englishClub = false;
+  // A hand-raised Contact Parents flag for the same thing is now answered.
+  if(s.contactParents && s.contactParents.category === category) s.contactParents = null;
+  scheduleSave('students', state.students);
+
+  pmStudentIds = pmStudentIds.filter(id=>id!==studentId);
+  pmSelected.delete(studentId);
+  if(pmStudentIds.length) pmRegenerate(true); else closeModal();
+  refreshView();
+
+  showUndoToast(`Logged for ${pmFirstName(s.name)} — English Club reminder cleared`, ()=>{
+    s.contactParentsHistory = (s.contactParentsHistory||[]).filter(h=>h.id!==entry.id);
+    s.englishClub = before.englishClub;
+    s.contactParents = before.contactParents;
+    scheduleSave('students', state.students);
+    refreshView();
+  });
 }
 
 function pmCopyText(text, btn, label){
@@ -5136,17 +5231,14 @@ function pmCopyText(text, btn, label){
 function pmCopyOne(i){
   const ta = document.getElementById('pm-txt-'+i);
   if(!ta) return;
-  const pt = clubSettings().lang !== 'en';
-  pmCopyText(ta.value, document.getElementById('pm-copy-'+i), pt?'Copiado ✓':'Copied ✓');
+  pmCopyText(ta.value, document.getElementById('pm-copy-'+i), 'Copied ✓');
 }
 function pmCopyAll(btn){
-  const pt = clubSettings().lang !== 'en';
-  const parts = pmStudentIds.map((id,i)=>{
-    const s = state.students.find(x=>x.id===id);
+  const parts = pmChosen().map((s,i)=>{
     const ta = document.getElementById('pm-txt-'+i);
-    return `— ${s?s.name:''} —\n${ta?ta.value:''}`;
+    return `— ${s.name} —\n${ta?ta.value:''}`;
   });
-  pmCopyText(parts.join('\n\n\n'), btn, pt?'Copiado ✓':'Copied ✓');
+  pmCopyText(parts.join('\n\n\n'), btn, 'Copied ✓');
 }
 
 /* ---------- transfer student between classes ---------- */
