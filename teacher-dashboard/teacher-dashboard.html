@@ -4528,11 +4528,17 @@ const CLUB_DEFAULTS = {
   date: '', from: '14:00', to: '15:00',
   place: 'na escola', teacher: '',
   kind: 'club', lang: 'pt',
+  times: {},          // {eventId: {from,to}} — overrides for Club sessions
+  pick: {},           // {studentId: [eventId,...]} — which sessions each student is called to
   inc: { grades:true, attendance:true, late:true, hw:true, part:true, norecovery:true }
 };
 function clubSettings(){
   const c = state.clubSettings || {};
-  return Object.assign({}, CLUB_DEFAULTS, c, { inc: Object.assign({}, CLUB_DEFAULTS.inc, c.inc||{}) });
+  return Object.assign({}, CLUB_DEFAULTS, c, {
+    inc: Object.assign({}, CLUB_DEFAULTS.inc, c.inc||{}),
+    times: Object.assign({}, c.times||{}),
+    pick: Object.assign({}, c.pick||{})
+  });
 }
 function setClubSetting(k, v){
   const c = clubSettings();
@@ -4670,6 +4676,99 @@ function buildParentMessage(student){
   return cfg.lang === 'en' ? pmTextEn(student, cfg) : pmTextPt(student, cfg);
 }
 
+/* --- English Club sessions come from the Calendar, not from a second place to
+       keep updated. Any event whose title names the Club counts; an event tied
+       to a class is only offered to that class's students. --- */
+function isClubEvent(e){ return /english\s*club|clube?\s*de\s*ingl/i.test(e && e.title || ''); }
+function clubEvents(){
+  const today = todayStr();
+  return (state.events||[]).filter(e=>isClubEvent(e) && e.date >= today)
+    .sort((a,b)=>a.date.localeCompare(b.date) || String(a.title||'').localeCompare(String(b.title||'')));
+}
+function clubEventsFor(student){
+  return clubEvents().filter(e=>!e.classId || e.classId===student.classId);
+}
+/* A time written into the event title ("English Club 14h-15h") is the teacher's
+   own note and beats the modal default. An explicit edit in the modal beats
+   both. */
+function pmParseTimes(title){
+  const m = /(\d{1,2})\s*[:h]\s*(\d{2})?\s*(?:-|–|—|a|as|às|até|to)\s*(\d{1,2})\s*[:h]?\s*(\d{2})?/i.exec(String(title||''));
+  if(!m) return null;
+  const h1 = Number(m[1]), h2 = Number(m[3]);
+  if(h1 > 23 || h2 > 23) return null;
+  return { from: pad(h1)+':'+(m[2]||'00'), to: pad(h2)+':'+(m[4]||'00') };
+}
+function clubSessionTime(e){
+  const cfg = clubSettings();
+  const saved = (cfg.times||{})[e && e.id];
+  if(saved && saved.from && saved.to) return saved;
+  return pmParseTimes(e && e.title) || { from: cfg.from, to: cfg.to };
+}
+/* Which sessions this student is being called to. Nothing chosen yet defaults
+   to the next one — an invitation to a series is a deliberate act, so it is
+   opted into rather than assumed. */
+function pmPicked(student){
+  const avail = clubEventsFor(student);
+  if(!avail.length) return [];
+  const saved = (clubSettings().pick||{})[student.id];
+  if(Array.isArray(saved)) return avail.filter(e=>saved.includes(e.id));
+  return avail.slice(0,1);
+}
+function clubMutate(fn){
+  const c = clubSettings();
+  fn(c);
+  state.clubSettings = c;
+  scheduleSave('clubSettings', c);
+}
+function setClubTime(eventId, which, val){
+  const ev = (state.events||[]).find(e=>e.id===eventId);
+  const cur = clubSessionTime(ev || {id:eventId});
+  const next = Object.assign({}, cur); next[which] = val;
+  clubMutate(c=>{ c.times = Object.assign({}, c.times, {[eventId]: next}); });
+  pmRegenerate();
+}
+function pmTogglePick(studentId, eventId){
+  const s = state.students.find(x=>x.id===studentId); if(!s) return;
+  const cur = pmPicked(s).map(e=>e.id);
+  const next = cur.includes(eventId) ? cur.filter(id=>id!==eventId) : cur.concat([eventId]);
+  clubMutate(c=>{ c.pick = Object.assign({}, c.pick, {[studentId]: next}); });
+  pmRegenerate();
+}
+function pmPickAll(studentId, on){
+  const s = state.students.find(x=>x.id===studentId); if(!s) return;
+  const next = on ? clubEventsFor(s).map(e=>e.id) : [];
+  clubMutate(c=>{ c.pick = Object.assign({}, c.pick, {[studentId]: next}); });
+  pmRegenerate();
+}
+function pmShortDate(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1);
+}
+function pmDayShortPt(dateStr){
+  return ['dom','seg','ter','qua','qui','sex','sáb'][new Date(dateStr+'T00:00:00').getDay()];
+}
+/* The date block of the message. One session reads as an appointment; several
+   read as a list, because that is what the parent has to put in a diary. */
+function pmSessionsBlock(student, cfg, pt){
+  const picks = pmPicked(student);
+  const place = cfg.place ? `\n📍 ${cfg.place}` : '';
+  if(!picks.length){
+    const d = pt ? (cfg.date ? pmDatePt(cfg.date) : '(defina a data)')
+                 : (cfg.date ? pmDateEn(cfg.date) : '(set the date)');
+    return `📅 ${d}\n🕑 ${pt ? pmHour(cfg.from)+' às '+pmHour(cfg.to) : cfg.from+' – '+cfg.to}${place}`;
+  }
+  if(picks.length === 1){
+    const t = clubSessionTime(picks[0]);
+    const d = pt ? pmDatePt(picks[0].date) : pmDateEn(picks[0].date);
+    return `📅 ${d}\n🕑 ${pt ? pmHour(t.from)+' às '+pmHour(t.to) : t.from+' – '+t.to}${place}`;
+  }
+  return picks.map(e=>{
+    const t = clubSessionTime(e);
+    const d = pt ? pmDatePt(e.date) : pmDateEn(e.date);
+    return `📅 ${d} · ${pt ? pmHour(t.from)+' às '+pmHour(t.to) : t.from+' – '+t.to}`;
+  }).join('\n') + place;
+}
+
 function pmJoin(list, conj){
   if(list.length <= 1) return list[0] || '';
   return list.slice(0,-1).join(', ') + ' ' + conj + ' ' + list[list.length-1];
@@ -4753,14 +4852,20 @@ function pmTextPt(student, cfg){
 
   /* — realidade + convite, no mesmo parágrafo para não alongar — */
   if(cfg.kind === 'club'){
+    const n = pmPicked(student).length;
+    const many = n > 1;
     const real = inc.norecovery
       ? ((d.st && d.st.advanced)
           ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só. O tempo que ainda temos é o que vai decidir o resultado, e foi por isso que montei o English Club: `
           : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações. Foi por isso que montei o English Club: `)
       : `Montei o English Club para ajudar exatamente nisso: `;
-    P.push(real + `um encontro extra, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova.`);
-    P.push(`📅 ${cfg.date ? pmDatePt(cfg.date) : '(defina a data)'}\n🕑 ${pmHour(cfg.from)} às ${pmHour(cfg.to)}${cfg.place?`\n📍 ${cfg.place}`:''}`);
-    P.push(`É gratuito e opcional, mas acho que faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele}? É só confirmar por aqui que eu reservo a vaga.`);
+    P.push(real + (many
+      ? `encontros extras, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova. No caso ${doDa} ${f}, não é uma aula solta: gostaria de contar com ${ele} em ${n} encontros, porque o conteúdo é encadeado e cada um puxa o seguinte.`
+      : `um encontro extra, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova.`));
+    P.push(pmSessionsBlock(student, cfg, true));
+    P.push(many
+      ? `Os encontros são gratuitos e a participação é voluntária, mas essa sequência faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele} nessas datas? É só confirmar por aqui que eu reservo as vagas.`
+      : `É gratuito e opcional, mas acho que faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele}? É só confirmar por aqui que eu reservo a vaga.`);
   } else {
     if(inc.norecovery) P.push((d.st && d.st.advanced)
       ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só, na última aula do curso.`
@@ -4820,14 +4925,19 @@ function pmTextEn(student, cfg){
   }
 
   if(cfg.kind === 'club'){
+    const n = pmPicked(student).length, many = n > 1;
     P.push((inc.norecovery
       ? ((d.st && d.st.advanced)
           ? `There is no resit and no second sitting: the TOEFL is taken once. The time we have left is what decides the result, and that is why I set up the English Club: `
           : `There is no resit exam, so the points have to come from the assessments still ahead. That is why I set up the English Club: `)
       : `I set up the English Club for exactly this: `)
-      + `an extra session outside normal hours to revise the content and practise what comes up in the test.`);
-    P.push(`📅 ${cfg.date?pmDateEn(cfg.date):'(set the date)'}\n🕑 ${cfg.from} – ${cfg.to}${cfg.place?`\n📍 ${cfg.place}`:''}`);
-    P.push(`It is free and optional, but I think it would make a real difference for ${f} right now. Can I count on ${f} being there? Just confirm here and I will save the place.`);
+      + (many
+        ? `extra sessions outside normal hours to revise the content and practise what comes up in the test. For ${f} this is not a one-off: I would like to count on ${f} at ${n} sessions, because the content builds and each one leads into the next.`
+        : `an extra session outside normal hours to revise the content and practise what comes up in the test.`));
+    P.push(pmSessionsBlock(student, cfg, false));
+    P.push(many
+      ? `The sessions are free and attendance is voluntary, but this run would make a real difference for ${f} right now. Can I count on ${f} on those dates? Just confirm here and I will save the places.`
+      : `It is free and optional, but I think it would make a real difference for ${f} right now. Can I count on ${f} being there? Just confirm here and I will save the place.`);
   } else {
     if(inc.norecovery) P.push(`There is no resit exam, so the points have to come from the assessments still ahead.`);
     P.push(`I am happy to talk through what ${f} can do from here. Just message me any time.`);
@@ -4877,12 +4987,10 @@ function pmModalHtml(){
       : 'Grades, absences, lates and homework are read straight from the Dashboard. Adjust the fields below and copy each message into WhatsApp.'}</p>
 
     <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      ${pmSessionsPanelHtml(pt, inp)}
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
-        <div style="flex:1 1 150px;">${inp('date','date', pt?'Data':'Date')}</div>
-        <div style="flex:0 1 110px;">${inp('from','time', pt?'Início':'From')}</div>
-        <div style="flex:0 1 110px;">${inp('to','time', pt?'Fim':'To')}</div>
         <div style="flex:1 1 160px;">${inp('place','text', pt?'Local':'Place')}</div>
-        <div style="flex:1 1 180px;">${inp('teacher','text', pt?'Assinatura (opcional)':'Signature (optional)','placeholder="ex.: o professor André"')}</div>
+        <div style="flex:1 1 200px;">${inp('teacher','text', pt?'Assinatura (opcional)':'Signature (optional)','placeholder="ex.: o professor André"')}</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <select onchange="setClubSetting('kind',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text);">
@@ -4913,6 +5021,59 @@ function pmModalHtml(){
     </div>`;
 }
 
+/* Sessions come from the Calendar. When none are marked there, the modal falls
+   back to a single hand-typed date so the tool still works on a Friday when
+   nobody has filled the Calendar in yet. */
+function pmSessionsPanelHtml(pt, inp){
+  const evs = clubEvents();
+  if(!evs.length){
+    return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+      <div style="flex:1 1 150px;">${inp('date','date', pt?'Data':'Date')}</div>
+      <div style="flex:0 1 110px;">${inp('from','time', pt?'Início':'From')}</div>
+      <div style="flex:0 1 110px;">${inp('to','time', pt?'Fim':'To')}</div>
+      <div style="flex:2 1 100%;font-size:11.5px;color:var(--muted);">${pt
+        ? 'Nenhum English Club marcado no calendário a partir de hoje. Marque os encontros lá (evento com “English Club” no título) para poder convidar cada aluno para vários de uma vez.'
+        : 'No English Club is marked on the Calendar from today onwards. Add the sessions there (an event with “English Club” in the title) to invite a student to several at once.'}</div>
+    </div>`;
+  }
+  return `<div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">
+      ${pt?'Encontros no calendário':'Sessions on the Calendar'} <span style="font-weight:400;text-transform:none;letter-spacing:0;">· ${pt?'escolha por aluno mais abaixo':'pick per student below'}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      ${evs.map(e=>{ const t = clubSessionTime(e); const cl = e.classId ? classById(e.classId) : null; return `
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;">
+          <span style="min-width:150px;">📅 ${pt?pmDatePt(e.date):pmDateEn(e.date)}</span>
+          <input type="time" value="${esc(t.from)}" onchange="setClubTime('${e.id}','from',this.value)"
+            style="border:1px solid var(--border);border-radius:8px;padding:5px 7px;font-size:12px;background:var(--surface);color:var(--text);">
+          <span class="meta">→</span>
+          <input type="time" value="${esc(t.to)}" onchange="setClubTime('${e.id}','to',this.value)"
+            style="border:1px solid var(--border);border-radius:8px;padding:5px 7px;font-size:12px;background:var(--surface);color:var(--text);">
+          <span class="meta" style="font-size:11.5px;">${esc(e.title)}${cl?` · ${esc(cl.name)}`:''}</span>
+        </div>`; }).join('')}
+    </div>
+  </div>`;
+}
+
+function pmChipsHtml(s, pt){
+  const avail = clubEventsFor(s);
+  if(!avail.length) return '';
+  const picked = new Set(pmPicked(s).map(e=>e.id));
+  const allOn = picked.size === avail.length;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:9px;">
+    <span class="meta" style="font-size:11px;">${pt?'Convidar para':'Invite to'} (${picked.size}/${avail.length}):</span>
+    ${avail.map(e=>{ const on = picked.has(e.id); const t = clubSessionTime(e); return `
+      <button class="btn-ghost small" onclick="pmTogglePick('${s.id}','${e.id}')"
+        title="${esc(e.title)} · ${esc(t.from)}–${esc(t.to)}"
+        style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.62;'}">
+        ${on?'✓ ':''}${pt?pmDayShortPt(e.date)+' ':''}${pmShortDate(e.date)}
+      </button>`; }).join('')}
+    <button class="btn-ghost small" onclick="pmPickAll('${s.id}',${allOn?'false':'true'})" style="margin-left:4px;">
+      ${allOn ? (pt?'Limpar':'Clear') : (pt?'Todos':'All')}
+    </button>
+  </div>`;
+}
+
 function pmCardHtml(s, i){
   const cfg = clubSettings();
   const pt = cfg.lang !== 'en';
@@ -4932,6 +5093,7 @@ function pmCardHtml(s, i){
         </div>
       </div>
       <div class="meta" style="font-size:11.5px;margin-bottom:9px;">${esc(pmFactsLine(d))}</div>
+      ${cfg.kind==='club' ? pmChipsHtml(s, pt) : ''}
       <textarea id="pm-txt-${i}" rows="14" style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.55;padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm,8px);background:var(--surface);color:var(--text);">${esc(buildParentMessage(s))}</textarea>
       <div style="display:flex;justify-content:flex-end;margin-top:8px;">
         <button class="btn-accent small" id="pm-copy-${i}" onclick="pmCopyOne(${i})">${pt?'Copiar':'Copy'}</button>
