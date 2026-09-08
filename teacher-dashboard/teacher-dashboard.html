@@ -937,6 +937,7 @@ let state = {
   privateSettings: { overdueThresholdDays: 14 },
   grades: {},
   gradeSettings: { margin: 0 },
+  clubSettings: null,          // English Club invite details — see CLUB_DEFAULTS
   backupMeta: { lastBackupAt: null },
   privView: 'overview',
   privStudentFilter: 'active',
@@ -1909,7 +1910,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','pointsLog','activities','projects'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','pointsLog','activities','projects'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -3512,11 +3513,12 @@ function _renderDashboard(el){
   const ecStudents = sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; }));
   window._dashEcIds = ecStudents.map(s=>s.id);
   const ecHtml = ecStudents.length ? `
-    <div class="card section" style="margin-top:16px;">
+    <div class="card section" style="margin-top:16px;position:relative;">
       <button type="button" class="dash-row-left" aria-expanded="${state.showDashEC}" onclick="state.showDashEC=!state.showDashEC;refreshView();">
         <span class="chevron" aria-hidden="true">${state.showDashEC?'▾':'▸'}</span>
         <span class="section-title" style="margin:0;">⭐ English Club (${ecStudents.length})</span>
       </button>
+      <button class="btn-accent small" style="position:absolute;top:14px;right:16px;" onclick="event.stopPropagation();openParentMsgModal()" title="Generate a WhatsApp message for every flagged student, filled in with their own grades and attendance">📱 Message parents</button>
       ${state.showDashEC ? ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
@@ -3526,7 +3528,10 @@ function _renderDashboard(el){
               <div class="dash-row-sub">${c?esc(c.name):'No class'}</div>
             </div>
           </div>
-          <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashEcIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+          <div style="display:flex;gap:8px;">
+            <button class="icon-btn" onclick="openParentMsgModal([window._dashEcIds[${i}]])" title="Message this student's parents">📱 Msg</button>
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashEcIds[${i}],studentProfileReturn:'reports'})">Report →</button>
+          </div>
         </div>`; }).join('') : ''}
     </div>` : '';
 
@@ -3925,6 +3930,7 @@ function renderClassCard(c, isArchived){
                     <button class="icon-btn ${s.englishClub?'ec-on':''}" onclick="toggleEnglishClub('${s.id}')" title="English Club">
                       ${s.englishClub?'⭐ English Club':'☆ English Club'}
                     </button>
+                    <button class="icon-btn" onclick="openParentMsgModal(['${s.id}'])" title="Message parents — builds a WhatsApp text from this student's grades and attendance">📱</button>
                     <button class="icon-btn" onclick="openRenameStudentModal('${s.id}')" title="Edit this student's name">✏️ Rename</button>
                     <button class="icon-btn" onclick="openTransferModal('${s.id}')" title="Transfer to another class">⇄ Transfer</button>
                     <button class="icon-btn danger" onclick="deleteStudent('${s.id}')">Remove</button>
@@ -4502,6 +4508,485 @@ function toggleEnglishClub(studentId){
   scheduleSave('students', state.students);
   refreshView();
 }
+
+/* ================= PARENT MESSAGE (WhatsApp) =================
+   One place that turns everything the Dashboard already knows about a student
+   — test scores, TOEFL diagnostic vs target, absences, lates, homework,
+   participation — into a short message a teacher can paste straight into
+   WhatsApp. Built for the English Club invitation, but the same generator
+   handles a plain performance update.
+
+   Design notes:
+   · The teacher never types data twice. Every figure is read live from state.
+   · Portuguese is the default: the message goes to parents, not to students.
+   · Gender is a real problem in Portuguese ("do João" / "da Ana", "ele" /
+     "ela"). It is guessed from the first name and stored on the student the
+     moment the teacher corrects it, so it is only ever fixed once.
+   · Manual edits in the textarea are the teacher's; regenerating is explicit.  */
+
+const CLUB_DEFAULTS = {
+  date: '', from: '14:00', to: '15:00',
+  place: 'na escola', teacher: '',
+  kind: 'club', lang: 'pt',
+  inc: { grades:true, attendance:true, late:true, hw:true, part:true, norecovery:true }
+};
+function clubSettings(){
+  const c = state.clubSettings || {};
+  return Object.assign({}, CLUB_DEFAULTS, c, { inc: Object.assign({}, CLUB_DEFAULTS.inc, c.inc||{}) });
+}
+function setClubSetting(k, v){
+  const c = clubSettings();
+  c[k] = v;
+  state.clubSettings = c;
+  scheduleSave('clubSettings', c);
+  pmRegenerate(k==='lang' || k==='kind');
+}
+function setClubInc(k, v){
+  const c = clubSettings();
+  c.inc[k] = !!v;
+  state.clubSettings = c;
+  scheduleSave('clubSettings', c);
+  pmRegenerate();
+}
+
+/* --- Portuguese gender: guess, then let the teacher fix it once. --- */
+const PM_MALE_A = ['luca','joshua','nicola','elias','tobias','matias','mathias','isaias','josias','ariel','gabriel','rafael','noah','jonas','dinha'];
+const PM_FEMALE_NOT_A = ['beatriz','ines','inês','isis','carmen','ester','esther','raquel','rute','ruth','isabel','miriam','mariel','jasmin','jasmim','yasmin','nicole','michele','michelle','danielle','gabrielle','elis','iris','íris','doris','lais','laís','luz','mercedes','solange','madalen'];
+function pmFirstName(name){ return String(name||'').trim().split(/\s+/)[0] || ''; }
+function pmGenderOf(student){
+  if(student.gender === 'f' || student.gender === 'm') return student.gender;
+  const f = pmFirstName(student.name).toLowerCase();
+  if(!f) return 'm';
+  if(PM_FEMALE_NOT_A.includes(f)) return 'f';
+  if(PM_MALE_A.includes(f)) return 'm';
+  return /a$/.test(f) ? 'f' : 'm';
+}
+function pmSetGender(studentId, g){
+  const s = state.students.find(x=>x.id===studentId);
+  if(!s) return;
+  s.gender = g;
+  scheduleSave('students', state.students);
+  pmRegenerate();
+}
+
+/* --- Every figure that could belong in a message, gathered once. --- */
+function parentMsgStats(student){
+  const cls = classById(student.classId);
+  const records = studentAttendanceRecords(student);
+  const total = records.length;
+  const absent = records.filter(r=>r.attendance==='absent').length;
+  const attended = records.filter(r=>r.attendance!=='absent');
+  const present = total - absent;
+  const late = attended.filter(r=>(r.lateMin||0)>0).length;
+  const lateMin = attended.reduce((s,r)=>s+(r.lateMin||0),0);
+
+  /* Expected sessions across every enrollment window, never running past today
+     — a rate that counts classes which have not happened yet is not a rate. */
+  const today = todayStr();
+  const expected = (()=>{
+    let sum = 0, any = false;
+    for(const w of enrollmentsOf(student)){
+      const c = classById(w.classId);
+      if(!c) continue;
+      const wFrom = w.from || c.startDate;
+      const wTo = [w.to, c.endDate, today].filter(Boolean).sort()[0];
+      if(!wFrom || !wTo || wFrom > wTo) continue;
+      const n = expectedSessionsForClass(c, wFrom, wTo);
+      if(n!=null){ sum += n; any = true; }
+    }
+    return any ? sum : null;
+  })();
+  const attRate = attendanceRate(expected, absent, present, late).rate;
+
+  const hwRecords = attended.filter(r=>hwEffOf(r)!=null);
+  const hwAvg = hwRecords.length ? Math.round(hwRecords.reduce((s,r)=>s+hwEffOf(r),0)/hwRecords.length) : null;
+  const hwMissing = records.filter(r=>r._hwLate==='no_hw').length;
+
+  const partRecords = attended.filter(r=>partEffOf(r));
+  const partLow = partRecords.filter(r=>partEffOf(r)==='low').length;
+  const partScore = partRecords.length
+    ? Math.round(100*(partRecords.filter(r=>partEffOf(r)==='great').length
+                    + partRecords.filter(r=>partEffOf(r)==='good').length*0.5)/partRecords.length)
+    : null;
+
+  // Grades — always the class's current (most recent) cycle.
+  let st = null, cycle = null, labels = [];
+  if(cls){
+    const g = classGrades(cls.id);
+    cycle = g.cycles[g.cycles.length-1];
+    st = gradeStatus(cls, cycle, student.id);
+    const n = testCountFor(cls);
+    for(let i=0;i<n;i++) labels.push(testLabelFor(cls, i));
+  }
+  let need = null, remaining = 0, missingPts = null;
+  if(st && !st.advanced){
+    remaining = st.of - st.entered;
+    missingPts = Math.max(0, CYCLE_TOTAL_TARGET - st.total);
+    if(remaining > 0) need = Math.ceil(missingPts / remaining);
+  }
+  const nextTestDate = (cls && cycle && Array.isArray(cycle.testDates))
+    ? cycle.testDates.filter(d=>d && d >= today).sort()[0] || null : null;
+
+  return { cls, cycle, st, labels, need, remaining, missingPts, nextTestDate,
+           expected, total, absent, present, late, lateMin, attRate,
+           hwAvg, hwMissing, partScore, partLow,
+           essays: (cls && cycle) ? studentEssays(cycle, student.id, essayCountFor(cls)) : [] };
+}
+
+/* --- A one-line data digest shown above each message, so the teacher can see
+       at a glance what the generator is working from. --- */
+function pmFactsLine(d){
+  const bits = [];
+  if(d.st){
+    bits.push(d.st.advanced
+      ? `TOEFL ${d.st.diagnostic??'—'}→${d.st.final??'—'} (meta ${d.st.target})`
+      : `${d.st.scores.map(v=>(v==null||v==='')?'—':v).join('/')} · média ${d.st.avg}`);
+  }
+  if(d.attRate!=null) bits.push(`${d.attRate}% presença`);
+  if(d.absent) bits.push(`${d.absent} falta${d.absent>1?'s':''}`);
+  if(d.late) bits.push(`${d.late} atraso${d.late>1?'s':''} (${d.lateMin} min)`);
+  if(d.hwAvg!=null) bits.push(`dever ${d.hwAvg}%`);
+  if(d.hwMissing) bits.push(`${d.hwMissing} sem entregar`);
+  return bits.join(' · ') || 'sem dados registados ainda';
+}
+
+function pmDatePt(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr+'T00:00:00');
+  const dias = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  return `${dias[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth()+1)}`;
+}
+function pmDateEn(dateStr){
+  if(!dateStr) return '';
+  return new Date(dateStr+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+}
+function pmHour(t){ return String(t||'').replace(':00','h').replace(':','h'); }
+
+/* --- The message itself. Short, warm, factual. Only sections that carry a
+       real finding are written, so a student with perfect attendance doesn't
+       get a paragraph about attendance. --- */
+function buildParentMessage(student){
+  const cfg = clubSettings();
+  return cfg.lang === 'en' ? pmTextEn(student, cfg) : pmTextPt(student, cfg);
+}
+
+function pmJoin(list, conj){
+  if(list.length <= 1) return list[0] || '';
+  return list.slice(0,-1).join(', ') + ' ' + conj + ' ' + list[list.length-1];
+}
+
+function pmTextPt(student, cfg){
+  const d = parentMsgStats(student);
+  const f = pmFirstName(student.name);
+  const fem = pmGenderOf(student) === 'f';
+  const o = fem ? 'a' : 'o';
+  const doDa = fem ? 'da' : 'do';
+  const ele = fem ? 'ela' : 'ele';
+  const dele = fem ? 'dela' : 'dele';
+  const ado = fem ? 'ada' : 'ado';
+  const inc = cfg.inc;
+  const P = [];
+
+  P.push(cfg.teacher
+    ? `Olá! Aqui é ${cfg.teacher}, de inglês ${doDa} ${f}, da Phil Young's.`
+    : `Olá! Aqui é o professor de inglês ${doDa} ${f}, da Phil Young's.`);
+
+  /* — desempenho — */
+  if(inc.grades && d.st){
+    if(d.st.advanced){
+      const tgt = d.st.target;
+      if(d.st.final != null){
+        P.push(d.st.under
+          ? `No TOEFL, ${f} ficou com ${d.st.final} pontos. A meta da turma ${d.cls.level} é ${tgt}, então ${ele} ficou ${tgt - d.st.final} pontos abaixo do necessário.`
+          : `No TOEFL, ${f} fez ${d.st.final} pontos, com a meta da turma em ${tgt}.`);
+      } else if(d.st.diagnostic != null){
+        const gap = tgt - d.st.diagnostic;
+        P.push(gap > 0
+          ? `No diagnóstico do início do curso, ${f} fez ${d.st.diagnostic} pontos no TOEFL. A meta da turma ${d.cls.level} é ${tgt}, ou seja, faltam ${gap} pontos até a prova oficial, na última aula do curso.`
+          : `No diagnóstico, ${f} já fez ${d.st.diagnostic} pontos, acima da meta de ${tgt}. Agora é manter e ampliar essa margem até o TOEFL oficial.`);
+      }
+    } else {
+      const done = d.st.entered;
+      const lastLabel = d.labels[done-1] || '';
+      const nome = ({'First Test':'primeiro teste','Second Test':'segundo teste','Third Test':'terceiro teste'})[lastLabel] || 'último teste';
+      const lastScore = d.st.scores.filter(v=>v!=null).slice(-1)[0];
+      if(lastScore != null){
+        let s = `No ${nome}, ${f} ficou com ${lastScore} pontos.`;
+        if(d.remaining > 0){
+          const provas = d.remaining === 1 ? 'na prova que falta' : `em cada uma das ${d.remaining} provas que faltam`;
+          s += (d.need != null && d.need <= 100)
+            ? ` A aprovação exige ${CYCLE_TOTAL_TARGET} pontos somando os três testes, e ${ele} tem ${d.st.total} até agora. Na prática, precisa de cerca de ${d.need} ${provas}.`
+            : ` A aprovação exige ${CYCLE_TOTAL_TARGET} pontos somando os três testes e, pelos números, esse total já não é alcançável. O foco agora é fechar o curso o mais forte possível.`;
+        } else {
+          s += ` A média final ficou em ${d.st.avg}, com ${CYCLE_AVG_TARGET} como mínimo.`;
+        }
+        P.push(s);
+      }
+    }
+  }
+
+  /* — rotina: tudo o que pesa no desempenho, num parágrafo só — */
+  const cl = [];
+  if(inc.attendance && d.absent > 0){
+    cl.push(d.expected
+      ? `faltou a ${d.absent} ${d.absent===1?'aula':'aulas'} das ${d.expected} até agora (${d.attRate}% de presença)`
+      : `tem ${d.absent} ${d.absent===1?'falta':'faltas'} registrada${d.absent===1?'':'s'}`);
+  }
+  if(inc.late && d.late > 0){
+    cl.push(`chegou atras${ado} ${d.late} ${d.late===1?'vez':'vezes'}, somando ${d.lateMin} minutos de aula perdidos`);
+  }
+  if(inc.hw && d.hwMissing > 0){
+    cl.push(`deixou de entregar o dever em ${d.hwMissing} ${d.hwMissing===1?'ocasião':'ocasiões'}`);
+  } else if(inc.hw && d.hwAvg != null && d.hwAvg < 70){
+    cl.push(`está com ${d.hwAvg}% de entrega dos deveres`);
+  }
+  if(inc.part && d.partScore != null && d.partScore < 55){
+    cl.push(`tem participado pouco nas atividades faladas`);
+  }
+  if(cl.length){
+    let s = `Sobre a rotina: ${f} ${pmJoin(cl, 'e')}.`;
+    if(d.absent > 0 || d.late > 0) s += ` Aula perdida pesa muito, porque o conteúdo segue em frente.`;
+    P.push(s);
+  } else if(d.total > 0){
+    P.push(`Do lado positivo, frequência e deveres ${doDa} ${f} estão em dia. A base está lá, falta transformar isso em nota.`);
+  }
+
+  /* — realidade + convite, no mesmo parágrafo para não alongar — */
+  if(cfg.kind === 'club'){
+    const real = inc.norecovery
+      ? ((d.st && d.st.advanced)
+          ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só. O tempo que ainda temos é o que vai decidir o resultado, e foi por isso que montei o English Club: `
+          : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações. Foi por isso que montei o English Club: `)
+      : `Montei o English Club para ajudar exatamente nisso: `;
+    P.push(real + `um encontro extra, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova.`);
+    P.push(`📅 ${cfg.date ? pmDatePt(cfg.date) : '(defina a data)'}\n🕑 ${pmHour(cfg.from)} às ${pmHour(cfg.to)}${cfg.place?`\n📍 ${cfg.place}`:''}`);
+    P.push(`É gratuito e opcional, mas acho que faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele}? É só confirmar por aqui que eu reservo a vaga.`);
+  } else {
+    if(inc.norecovery) P.push((d.st && d.st.advanced)
+      ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só, na última aula do curso.`
+      : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações.`);
+    P.push(`Estou à disposição para combinar o que ${ele} pode fazer daqui para frente. Qualquer coisa, é só chamar por aqui.`);
+  }
+
+  P.push(`Obrigado!`);
+  return P.join('\n\n');
+}
+
+function pmTextEn(student, cfg){
+  const d = parentMsgStats(student);
+  const f = pmFirstName(student.name);
+  const inc = cfg.inc;
+  const P = [];
+  P.push(`Hello! This is ${cfg.teacher || `${f}'s English teacher`}, from Phil Young's.`);
+
+  if(inc.grades && d.st){
+    if(d.st.advanced){
+      if(d.st.final != null){
+        P.push(`On the TOEFL, ${f} scored ${d.st.final}. The target for ${d.cls.level} is ${d.st.target}${d.st.under?`, which leaves ${f} ${d.st.target-d.st.final} points short`:''}.`);
+      } else if(d.st.diagnostic != null){
+        const gap = d.st.target - d.st.diagnostic;
+        P.push(gap > 0
+          ? `On the diagnostic at the start of the course, ${f} scored ${d.st.diagnostic}. The target for ${d.cls.level} is ${d.st.target}, so there are ${gap} points to cover before the official test in the last class.`
+          : `On the diagnostic, ${f} already scored ${d.st.diagnostic}, above the ${d.st.target} target. The job now is to hold and widen that margin.`);
+      }
+    } else {
+      const lastScore = d.st.scores.filter(v=>v!=null).slice(-1)[0];
+      if(lastScore != null){
+        let s = `On the ${d.labels[d.st.entered-1] || 'last test'}, ${f} scored ${lastScore}.`;
+        if(d.remaining > 0){
+          s += (d.need != null && d.need <= 100)
+            ? ` Passing takes ${CYCLE_TOTAL_TARGET} points across the three tests and the total so far is ${d.st.total}, so that means about ${d.need} on each of the ${d.remaining} test${d.remaining===1?'':'s'} still to come.`
+            : ` Passing takes ${CYCLE_TOTAL_TARGET} points across the three tests, and that total is no longer reachable. The aim now is to finish the course as strongly as possible.`;
+        } else {
+          s += ` The final average is ${d.st.avg}, against a minimum of ${CYCLE_AVG_TARGET}.`;
+        }
+        P.push(s);
+      }
+    }
+  }
+
+  const cl = [];
+  if(inc.attendance && d.absent > 0) cl.push(d.expected ? `has missed ${d.absent} of ${d.expected} classes so far (${d.attRate}% attendance)` : `has ${d.absent} recorded absence${d.absent===1?'':'s'}`);
+  if(inc.late && d.late > 0) cl.push(`has arrived late ${d.late} time${d.late===1?'':'s'}, losing ${d.lateMin} minutes of class`);
+  if(inc.hw && d.hwMissing > 0) cl.push(`did not hand in homework on ${d.hwMissing} occasion${d.hwMissing===1?'':'s'}`);
+  else if(inc.hw && d.hwAvg != null && d.hwAvg < 70) cl.push(`is at ${d.hwAvg}% on homework`);
+  if(inc.part && d.partScore != null && d.partScore < 55) cl.push(`speaks up rarely in class`);
+  if(cl.length){
+    let s = `On the day-to-day: ${f} ${pmJoin(cl, 'and')}.`;
+    if(d.absent > 0 || d.late > 0) s += ` A missed lesson costs a lot, because the content moves on.`;
+    P.push(s);
+  } else if(d.total > 0){
+    P.push(`On the positive side, ${f}'s attendance and homework are both on track. The foundation is there — it needs to turn into marks.`);
+  }
+
+  if(cfg.kind === 'club'){
+    P.push((inc.norecovery
+      ? ((d.st && d.st.advanced)
+          ? `There is no resit and no second sitting: the TOEFL is taken once. The time we have left is what decides the result, and that is why I set up the English Club: `
+          : `There is no resit exam, so the points have to come from the assessments still ahead. That is why I set up the English Club: `)
+      : `I set up the English Club for exactly this: `)
+      + `an extra session outside normal hours to revise the content and practise what comes up in the test.`);
+    P.push(`📅 ${cfg.date?pmDateEn(cfg.date):'(set the date)'}\n🕑 ${cfg.from} – ${cfg.to}${cfg.place?`\n📍 ${cfg.place}`:''}`);
+    P.push(`It is free and optional, but I think it would make a real difference for ${f} right now. Can I count on ${f} being there? Just confirm here and I will save the place.`);
+  } else {
+    if(inc.norecovery) P.push(`There is no resit exam, so the points have to come from the assessments still ahead.`);
+    P.push(`I am happy to talk through what ${f} can do from here. Just message me any time.`);
+  }
+  P.push(`Thank you!`);
+  return P.join('\n\n');
+}
+
+/* ---------- the modal ---------- */
+let pmStudentIds = [];
+function openParentMsgModal(ids){
+  const cfg = clubSettings();
+  if(!cfg.date){
+    // Default to the next Friday — the slot the Club actually runs in.
+    const d = new Date(); d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7));
+    state.clubSettings = Object.assign({}, cfg, { date: dateToStr(d.getFullYear(), d.getMonth(), d.getDate()) });
+    scheduleSave('clubSettings', state.clubSettings);
+  }
+  const list = (ids && ids.length)
+    ? ids.map(id=>state.students.find(s=>s.id===id)).filter(Boolean)
+    : sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.englishClub && c && !c.archived; }));
+  pmStudentIds = list.map(s=>s.id);
+  if(!pmStudentIds.length){
+    showModal(`${sizeModal('md')}<h3>📱 Mensagem aos pais</h3>
+      <div class="card empty-card">No students are flagged for English Club yet. Star a student on the Classes page first.</div>
+      <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Close</button></div>`);
+    return;
+  }
+  showModal(`${sizeModal('lg sheet')}${pmModalHtml()}`);
+}
+
+function pmModalHtml(){
+  const cfg = clubSettings();
+  const pt = cfg.lang !== 'en';
+  const students = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
+  const chk = (k, label) => `<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap;">
+      <input type="checkbox" ${cfg.inc[k]?'checked':''} onchange="setClubInc('${k}',this.checked)"><span>${label}</span></label>`;
+  const inp = (k, type, label, extra) => `<div class="field" style="margin:0;">
+      <label style="font-size:11px;">${label}</label>
+      <input type="${type}" value="${esc(cfg[k])}" ${extra||''} onchange="setClubSetting('${k}',this.value)"
+        style="width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);"></div>`;
+
+  return `
+    <h3>📱 ${pt?'Mensagem aos pais':'Message to parents'} <span class="meta" style="font-weight:400;font-size:13px;">· ${students.length} ${pt?'aluno(s)':'student(s)'}</span></h3>
+    <p class="meta" style="margin:0 0 14px;font-size:12px;">${pt
+      ? 'As notas, faltas, atrasos e deveres são lidos direto do Dashboard. Ajuste os campos abaixo e copie cada mensagem para o WhatsApp.'
+      : 'Grades, absences, lates and homework are read straight from the Dashboard. Adjust the fields below and copy each message into WhatsApp.'}</p>
+
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+        <div style="flex:1 1 150px;">${inp('date','date', pt?'Data':'Date')}</div>
+        <div style="flex:0 1 110px;">${inp('from','time', pt?'Início':'From')}</div>
+        <div style="flex:0 1 110px;">${inp('to','time', pt?'Fim':'To')}</div>
+        <div style="flex:1 1 160px;">${inp('place','text', pt?'Local':'Place')}</div>
+        <div style="flex:1 1 180px;">${inp('teacher','text', pt?'Assinatura (opcional)':'Signature (optional)','placeholder="ex.: o professor André"')}</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <select onchange="setClubSetting('kind',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text);">
+          <option value="club" ${cfg.kind==='club'?'selected':''}>${pt?'Convite — English Club':'Invitation — English Club'}</option>
+          <option value="update" ${cfg.kind==='update'?'selected':''}>${pt?'Aviso de desempenho':'Performance update'}</option>
+        </select>
+        <select onchange="setClubSetting('lang',this.value)" style="border:1px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--text);">
+          <option value="pt" ${pt?'selected':''}>Português</option>
+          <option value="en" ${!pt?'selected':''}>English</option>
+        </select>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-left:auto;">
+          ${chk('grades', pt?'Notas':'Grades')}
+          ${chk('attendance', pt?'Faltas':'Absences')}
+          ${chk('late', pt?'Atrasos':'Lates')}
+          ${chk('hw', pt?'Dever':'Homework')}
+          ${chk('part', pt?'Participação':'Participation')}
+          ${chk('norecovery', pt?'Sem recuperação':'No resit')}
+        </div>
+      </div>
+    </div>
+
+    <div id="pm-list">${students.map((s,i)=>pmCardHtml(s,i)).join('')}</div>
+
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
+      <button class="btn-ghost" onclick="pmRegenerate()" title="${pt?'Reescreve todas — edições manuais são perdidas':'Rewrites all — manual edits are lost'}">↻ ${pt?'Regerar todas':'Regenerate all'}</button>
+      <button class="btn-ghost" onclick="closeModal()">${pt?'Fechar':'Close'}</button>
+      <button class="btn-accent" onclick="pmCopyAll(this)">${pt?'Copiar todas':'Copy all'}</button>
+    </div>`;
+}
+
+function pmCardHtml(s, i){
+  const cfg = clubSettings();
+  const pt = cfg.lang !== 'en';
+  const d = parentMsgStats(s);
+  const cls = d.cls;
+  const fem = pmGenderOf(s) === 'f';
+  return `
+    <div class="card section" style="padding:14px 16px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+        ${cls?`<span class="color-dot" style="background:${cls.color}"></span>`:''}
+        <b style="font-size:15px;">${esc(s.name)}</b>
+        <span class="meta" style="font-size:12px;">${cls?esc(cls.name)+' · '+esc(cls.level||''):'—'}</span>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <span class="meta" style="font-size:11px;">${pt?'Trata por':'Refer to as'}</span>
+          <button class="btn-ghost small" style="${fem?'':'border-color:var(--accent);color:var(--accent);'}" onclick="pmSetGender('${s.id}','m')">${pt?'ele':'he'}</button>
+          <button class="btn-ghost small" style="${fem?'border-color:var(--accent);color:var(--accent);':''}" onclick="pmSetGender('${s.id}','f')">${pt?'ela':'she'}</button>
+        </div>
+      </div>
+      <div class="meta" style="font-size:11.5px;margin-bottom:9px;">${esc(pmFactsLine(d))}</div>
+      <textarea id="pm-txt-${i}" rows="14" style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.55;padding:11px;border:1px solid var(--border);border-radius:var(--radius-sm,8px);background:var(--surface);color:var(--text);">${esc(buildParentMessage(s))}</textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+        <button class="btn-accent small" id="pm-copy-${i}" onclick="pmCopyOne(${i})">${pt?'Copiar':'Copy'}</button>
+      </div>
+    </div>`;
+}
+
+/* Only the message bodies are repainted on a settings change. Rebuilding the
+   whole modal would yank focus out of the very field the teacher just edited,
+   and the header controls already hold the new value — they are what changed.
+   A language or template switch does need the header relabelled, so those two
+   ask for the full repaint explicitly. */
+function pmRegenerate(full){
+  const list = document.getElementById('pm-list');
+  if(!list) return;                      // modal not open
+  if(full){
+    const root = document.querySelector('#modal-root .modal');
+    const scroll = root ? root.scrollTop : 0;
+    showModal(`${sizeModal('lg sheet')}${pmModalHtml()}`);
+    const r2 = document.querySelector('#modal-root .modal');
+    if(r2) r2.scrollTop = scroll;
+    return;
+  }
+  const students = pmStudentIds.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
+  list.innerHTML = students.map((s,i)=>pmCardHtml(s,i)).join('');
+}
+
+function pmCopyText(text, btn, label){
+  const done = ()=>{ if(btn){ const old = btn.textContent; btn.textContent = label; setTimeout(()=>{ if(btn) btn.textContent = old; }, 1500); } };
+  const fallback = ()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('Select the text and copy manually.'); }
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
+  else fallback();
+}
+function pmCopyOne(i){
+  const ta = document.getElementById('pm-txt-'+i);
+  if(!ta) return;
+  const pt = clubSettings().lang !== 'en';
+  pmCopyText(ta.value, document.getElementById('pm-copy-'+i), pt?'Copiado ✓':'Copied ✓');
+}
+function pmCopyAll(btn){
+  const pt = clubSettings().lang !== 'en';
+  const parts = pmStudentIds.map((id,i)=>{
+    const s = state.students.find(x=>x.id===id);
+    const ta = document.getElementById('pm-txt-'+i);
+    return `— ${s?s.name:''} —\n${ta?ta.value:''}`;
+  });
+  pmCopyText(parts.join('\n\n\n'), btn, pt?'Copiado ✓':'Copied ✓');
+}
+
 /* ---------- transfer student between classes ---------- */
 function openTransferModal(studentId){
   const st = state.students.find(x=>x.id===studentId);
@@ -9945,6 +10430,7 @@ async function init(){
   state.privateSettings = loadKey('privateSettings', { overdueThresholdDays: 14 });
   state.grades = loadKey('grades', {});
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
+  state.clubSettings = loadKey('clubSettings', null);
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   sortStudentStore();
