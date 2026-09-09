@@ -586,6 +586,77 @@
   .swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
   .swatch.on{border-color:var(--text);}
 
+  /* ===== Roll Call: BEFORE / NOW / AFTER tabs ===== */
+  .rc-tabs{display:flex;gap:6px;background:var(--gray-soft);padding:5px;border-radius:14px;margin-bottom:14px;}
+  .rc-tab{flex:1;border:none;background:none;font-family:inherit;cursor:pointer;padding:9px 8px;border-radius:10px;
+          color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.15;
+          transition:background .15s,color .15s;}
+  .rc-tab .rc-tab-k{font-size:13px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;}
+  .rc-tab .rc-tab-s{font-size:11px;font-weight:600;opacity:.8;white-space:nowrap;}
+  .rc-tab:hover:not(.on){color:var(--text);}
+  .rc-tab.on{background:var(--card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.14);}
+  .rc-panel{padding:16px 18px;margin-bottom:14px;}
+  .rc-panel-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);
+                 border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:14px;}
+  .rc-panel-head b{color:var(--text);}
+  .rc-sec{margin-bottom:16px;}
+  .rc-sec:last-child{margin-bottom:0;}
+  .rc-sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+                margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+  .rc-sec-label .rc-edit{margin-left:auto;font-size:11px;text-transform:none;letter-spacing:0;}
+  .rc-read{font-size:15px;line-height:1.55;overflow-wrap:anywhere;}
+  .rc-read a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;font-weight:600;}
+  .rc-read a:hover{opacity:.72;}
+  .rc-read ul,.rc-read ol{padding-left:22px;margin:4px 0;}
+  .rc-read li{margin:2px 0;}
+  .rc-none{font-size:13px;color:var(--muted);font-style:italic;line-height:1.5;}
+  .rc-plan{border:2px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:14px 16px;
+           font-size:16px;line-height:1.6;}
+  .rc-plan.rc-none{border-style:dashed;background:none;border-color:var(--border);}
+  .rc-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .rc-chip{font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;background:var(--gray-soft);color:var(--text);}
+  .rc-chip.abs{background:var(--red-soft);color:var(--red);}
+  .rc-chip.late{background:var(--amber-soft);color:var(--amber);}
+  .rc-note-row{font-size:13px;line-height:1.5;padding:5px 0;border-bottom:1px solid var(--border);}
+  .rc-note-row:last-child{border-bottom:none;}
+  .rc-note-row b{font-weight:700;}
+  @media (max-width:700px){
+    .rc-tab{padding:8px 4px;}
+    .rc-tab .rc-tab-k{font-size:12px;}
+    .rc-panel{padding:14px;}
+  }
+  /* ===== Class log: cumulative attendance matrix ===== */
+  .log-tabs{display:inline-flex;gap:4px;background:var(--gray-soft);padding:4px;border-radius:10px;}
+  .log-tabs button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;
+                   border-radius:7px;color:var(--muted);cursor:pointer;}
+  .log-tabs button.on{background:var(--card);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.12);}
+  .am-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;
+           max-height:56vh;max-height:calc(58vh / var(--ui-scale,1));}
+  .am{border-collapse:separate;border-spacing:0;font-size:13px;}
+  .am th,.am td{padding:6px 4px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap;}
+  .am thead th{position:sticky;top:0;z-index:3;background:var(--card);border-bottom:2px solid var(--border);
+               font-size:11px;color:var(--muted);font-weight:700;}
+  .am .am-name{position:sticky;left:0;z-index:2;background:var(--card);text-align:left;font-weight:600;
+               min-width:148px;max-width:210px;padding-left:12px;overflow:hidden;text-overflow:ellipsis;}
+  .am thead .am-name{z-index:5;}
+  .am .am-tot{position:sticky;right:0;z-index:2;background:var(--card);border-left:2px solid var(--border);
+              font-weight:700;min-width:82px;}
+  .am thead .am-tot{z-index:5;}
+  .am td.am-cell{width:36px;min-width:36px;}
+  .am th.am-cell{cursor:pointer;}
+  .am .am-d{font-size:13px;font-weight:800;color:var(--text);}
+  .am .am-m{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;}
+  .am-c{color:#1c7c3c;font-weight:800;font-size:16px;}
+  .am-x{color:#b3261e;font-weight:800;font-size:16px;}
+  .am-l{color:var(--amber);font-weight:800;font-size:16px;}
+  .am-na{color:var(--border);}
+  .am tbody tr:hover td{background:var(--gray-soft);}
+  .am tbody tr:hover td.am-name,.am tbody tr:hover td.am-tot{background:var(--gray-soft);}
+  .am tfoot td{position:sticky;bottom:0;z-index:3;background:var(--card);border-top:2px solid var(--border);
+               border-bottom:none;font-weight:700;font-size:12px;color:var(--muted);}
+  .am tfoot td.am-name{z-index:4;}
+  .am-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px;align-items:center;}
+
   /* roll call */
   .rollcall-controls{display:flex;gap:10px;flex-wrap:wrap;}
   .rollcall-controls select, .rollcall-controls input{border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:#fff;}
@@ -947,6 +1018,7 @@ let state = {
   view: 'dashboard',
   rollcall: { classId: null, date: todayStr() },
   rollcallShowAll: false,   // when true, Roll Call dropdown lists all classes (for makeups)
+  rcTab: 'now',             // Roll Call panel: 'before' | 'now' | 'after'
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
   calView: 'month',
   calWeekStart: null,
@@ -3284,6 +3356,7 @@ function refreshView(){
 function goToRollCall(classId, date){
   state.rollcall.classId = classId;
   state.rollcall.date = date;
+  state.rcTab = 'now';
   state.openDrawer = null;
   // If the target class isn't scheduled on that weekday (a makeup opened from
   // the calendar/dashboard), reveal the full list so it stays selectable.
@@ -4023,10 +4096,157 @@ function toggleClassExpand(classId){
 
 /* ===== D1: Class Log — chronological teaching history for one class ===== */
 let clLogClassId = null, clLogFrom = '', clLogTo = '', clLogOnlyTaken = false;
-function openClassLogModal(classId){
+/* clLogTab: 'log' = the diary of what was taught, 'attendance' = the cumulative
+   register (students x dates). clLogUpto caps the register at the session the
+   modal was opened from, so "up to that class" means exactly that. */
+let clLogTab = 'log', clLogUpto = '';
+function openClassLogModal(classId, upto){
   clLogClassId = classId;
   clLogFrom = ''; clLogTo = ''; clLogOnlyTaken = false;
+  clLogTab = 'log';
+  clLogUpto = upto || '';
   renderClassLogModal();
+}
+function clSetLogTab(t){ clLogTab = (t==='attendance'?'attendance':'log'); renderClassLogModal(); }
+
+/* Every date this class demonstrably ran, up to and including `upto`.
+   Two sources, unioned: dates that carry data of any kind, and every scheduled
+   weekday since the course started (a lesson with nothing typed still happened
+   — the same assumption expectedSessionsForClass makes). sessionHappened then
+   filters out holidays, off-schedule dates with no evidence, and the future. */
+function classRegisterDates(classId, upto){
+  const cls = classById(classId);
+  if(!cls) return [];
+  const set = new Set();
+  for(const store of [state.sessions, state.sessionMeta, state.lessonNotes, state.homework, state.promises]){
+    if(!store) continue;
+    for(const k of Object.keys(store)){
+      const [cid, d] = splitSessionKey(k);
+      if(cid === classId) set.add(d);
+    }
+  }
+  const bound = [upto || todayStr(), todayStr()].sort()[0];
+  const days = getClassDays(cls);
+  const startStr = cls.startDate || firstSessionDateOf(classId);
+  if(days.length && startStr){
+    let d = new Date(startStr + 'T00:00:00');
+    const end = new Date(bound + 'T00:00:00');
+    let guard = 0;
+    while(d <= end && guard++ < 900){
+      const ds = dateToStr(d.getFullYear(), d.getMonth(), d.getDate());
+      if(days.includes(d.getDay())) set.add(ds);
+      d.setDate(d.getDate() + 1);
+    }
+  }
+  return [...set].filter(d => d <= bound && sessionHappened(classId, d)).sort();
+}
+
+/* The register itself. Untouched students resolve to Present — the same rule
+   Roll Call displays and every report already counts — so a lesson where only
+   the two absentees were ticked reads correctly here instead of looking blank. */
+function attendanceMatrix(classId, fromVal, toVal, upto){
+  let dates = classRegisterDates(classId, toVal || upto);
+  if(fromVal) dates = dates.filter(d => d >= fromVal);
+  const rosterByDate = {};
+  const ids = new Set(studentsInClass(classId).map(s => s.id));
+  dates.forEach(d => {
+    const r = sessionRosterIds(classId, d);
+    rosterByDate[d] = new Set(r);
+    r.forEach(id => ids.add(id));
+  });
+  const students = sortByName([...ids].map(id => state.students.find(s => s.id === id)).filter(Boolean));
+  const cellOf = (sid, d) => {
+    if(!rosterByDate[d] || !rosterByDate[d].has(sid)) return null;   // not enrolled that day
+    const rec = (state.sessions[classId + '_' + d] || {})[sid];
+    return (rec && rec.attendance) || 'present';                     // default-present
+  };
+  return { dates, students, cellOf };
+}
+
+function renderAttendanceMatrix(){
+  const cls = classById(clLogClassId);
+  if(!cls) return '';
+  const { dates, students, cellOf } = attendanceMatrix(clLogClassId, clLogFrom, clLogTo, clLogUpto);
+  if(!dates.length) return `<div class="empty">No classes have been held in this period yet, so there is no register to show.</div>`;
+  if(!students.length) return `<div class="empty">No students in this class yet.</div>`;
+  const mark = a => a === 'absent' ? `<span class="am-x" title="Absent">✗</span>`
+                  : a === 'late'   ? `<span class="am-l" title="Late">✓</span>`
+                  :                  `<span class="am-c" title="Present">✓</span>`;
+  const colTotals = dates.map(d => {
+    let p = 0, a = 0;
+    students.forEach(s => { const v = cellOf(s.id, d); if(v === 'absent') a++; else if(v) p++; });
+    return { p, a };
+  });
+  let gP = 0, gA = 0;
+  const rows = students.map(s => {
+    let p = 0, a = 0;
+    const tds = dates.map(d => {
+      const v = cellOf(s.id, d);
+      if(!v) return `<td class="am-cell am-na" title="Not enrolled">·</td>`;
+      if(v === 'absent') a++; else p++;
+      return `<td class="am-cell">${mark(v)}</td>`;
+    }).join('');
+    gP += p; gA += a;
+    const tot = p + a;
+    const pct = tot ? Math.round(100 * p / tot) : null;
+    return `<tr>
+      <td class="am-name" title="${esc(s.name)}"><button type="button" class="linkish" style="font-weight:600;"
+        onclick="closeModal();navigate('student',{studentProfileId:'${s.id}',studentProfileReturn:'rollcall'})">${esc(s.name)}</button></td>
+      ${tds}
+      <td class="am-tot"><span class="am-c">${p}</span> / <span class="am-x">${a}</span>${pct!=null?`<div style="font-size:10px;font-weight:600;color:var(--muted);">${pct}%</div>`:''}</td>
+    </tr>`;
+  }).join('');
+  const gTot = gP + gA;
+  return `
+    <div class="am-wrap">
+      <table class="am">
+        <thead><tr>
+          <th class="am-name">Student</th>
+          ${dates.map(d=>{
+            const dt = new Date(d + 'T00:00:00');
+            return `<th class="am-cell" title="${formatDateLong(d)}" onclick="closeModal();goToRollCall('${clLogClassId}','${d}')">
+              <div class="am-d">${dt.getDate()}</div>
+              <div class="am-m">${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]}</div></th>`;
+          }).join('')}
+          <th class="am-tot">P / A</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td class="am-name">Present that day</td>
+          ${colTotals.map(t=>`<td class="am-cell">${t.p}</td>`).join('')}
+          <td class="am-tot"><span class="am-c">${gP}</span> / <span class="am-x">${gA}</span></td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div class="am-legend">
+      <span><span class="am-c">✓</span> present</span>
+      <span><span class="am-l">✓</span> late</span>
+      <span><span class="am-x">✗</span> absent</span>
+      <span><span class="am-na">·</span> not enrolled</span>
+      <span style="margin-left:auto;">${dates.length} class${dates.length===1?'':'es'} · ${students.length} student${students.length===1?'':'s'} · ${gTot?Math.round(100*gP/gTot):0}% overall attendance</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px;">
+      Cumulative up to ${formatDateLong(dates[dates.length-1])}. Students not explicitly ticked count as present — the same rule Roll Call and the reports use. Tap a name for the full profile, or a date to open that register.
+    </div>`;
+}
+
+function exportRegisterCsv(){
+  const cls = classById(clLogClassId);
+  if(!cls) return;
+  const { dates, students, cellOf } = attendanceMatrix(clLogClassId, clLogFrom, clLogTo, clLogUpto);
+  const header = ['Student'].concat(dates).concat(['Present','Absent','Attendance %']);
+  const data = [header].concat(students.map(s=>{
+    let p = 0, a = 0;
+    const cells = dates.map(d=>{
+      const v = cellOf(s.id, d);
+      if(!v) return '';
+      if(v === 'absent'){ a++; return 'A'; }
+      p++; return v === 'late' ? 'L' : 'P';
+    });
+    const tot = p + a;
+    return [s.name].concat(cells).concat([p, a, tot ? Math.round(100*p/tot) + '%' : '']);
+  }));
+  downloadCsv(`register-${slugify(cls.name)}-${todayStr()}.csv`, data);
 }
 function clSetRange(which, val){ if(which==='from') clLogFrom = val||''; else clLogTo = val||''; renderClassLogModal(); }
 function clResetRange(){ clLogFrom=''; clLogTo=''; renderClassLogModal(); }
@@ -4125,7 +4345,11 @@ function renderClassLogModal(){
   showModal(`${sizeModal('xl sheet')}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <h3 style="margin:0;"><span class="color-dot" style="background:${c.color}"></span>📋 Class Log — ${esc(c.name)}</h3>
-      <span style="font-size:12px;color:var(--muted);">${rows.length} entr${rows.length===1?'y':'ies'}</span>
+      <div class="log-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="${clLogTab!=='attendance'}" class="${clLogTab!=='attendance'?'on':''}" onclick="clSetLogTab('log')">📓 What we did</button>
+        <button type="button" role="tab" aria-selected="${clLogTab==='attendance'}" class="${clLogTab==='attendance'?'on':''}" onclick="clSetLogTab('attendance')">✓ Attendance</button>
+      </div>
+      <span style="font-size:12px;color:var(--muted);">${clLogTab==='attendance'?'cumulative register':rows.length+' entr'+(rows.length===1?'y':'ies')}</span>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;">
       <label style="font-size:13px;font-weight:600;color:var(--muted);">Period:</label>
@@ -4133,13 +4357,13 @@ function renderClassLogModal(){
       <span style="color:var(--muted);font-size:13px;">–</span>
       <input type="date" value="${clLogTo}" onchange="clSetRange('to',this.value)">
       <button class="btn-ghost small" onclick="clResetRange()">All time</button>
-      <button class="btn-ghost small" onclick="exportClassLogCsv()">⬇ Export CSV</button>
-      ${prepCount?`<button class="btn-ghost small ${clLogOnlyTaken?'':''}" aria-pressed="${clLogOnlyTaken}"
+      <button class="btn-ghost small" onclick="${clLogTab==='attendance'?'exportRegisterCsv()':'exportClassLogCsv()'}">⬇ Export CSV</button>
+      ${clLogTab!=='attendance' && prepCount?`<button class="btn-ghost small ${clLogOnlyTaken?'':''}" aria-pressed="${clLogOnlyTaken}"
         style="${clLogOnlyTaken?'border-color:var(--accent);color:var(--accent);':''}"
         title="Hide dates that haven\u2019t happened yet (prepared ahead)"
         onclick="clToggleOnlyTaken()">${clLogOnlyTaken?'✓ ':''}Hide planned</button>`:''}
     </div>
-    ${body}
+    ${clLogTab==='attendance' ? renderAttendanceMatrix() : body}
     <div class="modal-actions"><button class="btn-accent" onclick="closeModal()">Done</button></div>
   `, true);
 }
@@ -6178,7 +6402,7 @@ function renderRollCall(){
             title="${nav.next?'Next class \u2014 '+formatDateLong(nav.next)+' (Alt+\u2192)':'No later class for '+esc(cls.name)}"
             onclick="navRollcallSession(1)">\u2192</button>
         </div>
-        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}')" title="Class log — full teaching history for this class">📋 Log</button>
+        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}','${date}')" title="Class log — lesson history and the cumulative attendance register">📋 Log</button>
         ${cls.pointsEnabled?`<button type="button" class="btn-ghost small" onclick="openPointsModal('${cls.id}')" title="Class points scoreboard">🏆 Points</button>`:''}
       </div>
     </div>
@@ -6195,105 +6419,143 @@ function renderRollCall(){
         return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">🔒 Lock (complete)</button></div>`;
       })()}
       ${(()=>{
+        /* ===== BEFORE / NOW / AFTER =====
+           Roll Call is open for the whole lesson, so it is organised as three
+           panels rather than one long scroll. Everything written BEFORE the
+           class (the plan, the homework that was set last time) is read-only
+           here with live links: mid-lesson you consult it, you don't rewrite
+           it. Changes of plan go in "What we did"; anything for next time goes
+           in AFTER. An Edit escape hatch exists on each read-only block so a
+           mistake can still be fixed without leaving the register. */
         const taStyle = `width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;box-sizing:border-box;resize:vertical;${locked?'background:var(--gray-soft);':''}`;
         const taStyleNext = taStyle.replace('background:var(--gray-soft);','');
-        const lbl = 'font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;';
         const nextDate = getNextClassDate(cls, date);
-        const isPast = date < todayStr();
-        // C1: on the phone (roll-call device) the roster is the priority, so the
-        // Class View collapses by default on narrow screens. An explicit toggle,
-        // once used, is remembered per-device.
-        const pref = localStorage.getItem('classViewCollapsed');
-        const narrow = window.matchMedia('(max-width: 700px)').matches;
-        const collapsed = pref===null ? narrow : pref==='1';
-        const hwT = getHomework(cls.id,date), prT = getPromise(cls.id,date), lnT = getLessonNote(cls.id,date);
-        const summaryBits = [
-          prT?'📋 Plan':'', hwT?'📘 HW due':'', lnT?'📝 Content':''
-        ].filter(Boolean);
-        const summary = summaryBits.length ? summaryBits.join(' · ') : 'Nothing recorded yet';
-        return `
-      <div class="card" style="margin-bottom:14px;padding:16px 18px;">
-        <button type="button" aria-expanded="${!collapsed}" onclick="toggleClassView()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;">
-          <span style="font-weight:700;font-size:14px;">Class View</span>
-          <span style="display:flex;align-items:center;gap:10px;">
-            ${collapsed?`<span style="font-size:12px;color:var(--muted);font-weight:600;">${summary}</span>`:''}
-            <span aria-hidden="true" style="color:var(--muted);">${collapsed?'▸':'▾'}</span>
-          </span>
-        </button>
-        <div style="${collapsed?'display:none;':'margin-top:10px;'}">
-        ${renderPlanEditor(cls.id, date, { locked, cta:true, label:'📋 Class plan for today', hint:'(your plan for this class — focus points and promises land here)' })}
-        ${(()=>{
-          /* This box is written by the PREVIOUS class: "Homework to assign
-             (due next class)" saves against this date. So an empty box means
-             no homework was set last class, and typing here would assign
-             homework to the wrong day. It stays disabled until something is
-             genuinely due, with an explicit escape hatch for fixing an entry
-             that was never recorded. */
-          const hwSet = !!getHomework(cls.id, date);
-          const dis = locked || (!hwSet && !hwDueUnlocked.has(cls.id+'_'+date));
-          const dueStyle = taStyle + ((dis && !locked) ? 'background:var(--gray-soft);color:var(--muted);cursor:not-allowed;' : '');
-          const note = prevDate
-            ? `No homework was assigned on ${formatDateShort(prevDate)}, so nothing is due today.`
-            : 'No earlier class on record, so nothing is due today.';
-          return `
-        <div class="field" style="margin-bottom:10px;">
-          <label style="${lbl}">Homework due today ${locked?'':'<span style="font-weight:400;">(what students should hand in today)</span>'}</label>
-          <textarea rows="2" ${dis?'disabled':''} placeholder="${dis&&!locked?'Nothing due today':'e.g. Workbook p.44\u201345, write 150-word essay'}" style="${dueStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(getHomework(cls.id, date))}</textarea>
-          ${dis && !locked ? `<div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;">${note} To set homework, use <b>Homework to assign (due next class)</b>${isPast?'':' below'}. <button type="button" class="linkish" style="text-decoration:underline;" onclick="unlockHwDue('${cls.id}','${date}')">Enter it anyway</button></div>` : ''}
-        </div>`;
-        })()}
-        <div class="field" style="margin-bottom:12px;">
-          <label style="${lbl}">What we did ${locked?'':'<span style="font-weight:400;">(lesson content \u2014 shown on absent reports)</span>'}</label>
-          <textarea rows="2" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>
-        </div>
-        <div class="field" style="margin-bottom:12px;">
-          <label style="${lbl}">Activities <span style="font-weight:400;">(graded A–F per student — grading stays open after class)</span></label>
-          ${activitiesFor(cls.id, date).map(a=>{
-            const g = Object.keys(a.grades||{}).length, avg = activityAvg(a), sk = skillMeta(a.skill);
-            const nNotes = Object.values(a.notes||{}).filter(v=>(v||'').trim()).length;
-            return `
-            <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
-              <span>${sk.emoji}</span>
-              <span style="flex:1;text-align:left;">${esc(a.description)}</span>
-              <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${nNotes?` · ✎ ${nNotes}`:''}${avg!=null?` · avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
-            </button>`;
-          }).join('')}
-          <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">🎯 New activity</button>
-        </div>
-        ${nextDate && !isPast ? `
-        <div style="border-top:1px dashed var(--border);padding-top:12px;">
-          <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Next class \u2014 ${formatDateLong(nextDate)}</div>
-          <div class="field" style="margin-bottom:10px;">
-            <label style="${lbl}">Homework to assign <span style="font-weight:400;">(due next class)</span></label>
-            <textarea rows="2" placeholder="e.g. Workbook p.46, study irregular verbs" style="${taStyleNext}" oninput="setHomework('${cls.id}','${nextDate}', this.value)">${esc(getHomework(cls.id, nextDate))}</textarea>
+        const isFuture = date > todayStr();
+        const isToday  = date === todayStr();
+        const key = cls.id + '_' + date;
+        const tab = ['before','now','after'].includes(state.rcTab) ? state.rcTab : 'now';
+        const sub = t => `<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">${t}</span>`;
+        const sec = (label, body, action) =>
+          `<div class="rc-sec"><div class="rc-sec-label">${label}${action?`<span class="rc-edit">${action}</span>`:''}</div>${body}</div>`;
+        const none = t => `<div class="rc-none">${t}</div>`;
+        const read = html => `<div class="rc-read">${html}</div>`;
+        const editBtn = (on, offCmd, onCmd) =>
+          `<button type="button" class="linkish" style="text-decoration:underline;font-weight:700;" onclick="${on?offCmd:onCmd}">${on?'\u2713 Done':'\u270F\uFE0F Edit'}</button>`;
+
+        /* ---------------- BEFORE: what happened last time ---------------- */
+        const beforePanel = ()=>{
+          if(!prevDate) return `<div class="card rc-panel">${none('No earlier class on record for '+esc(cls.name)+'.')}</div>`;
+          const pAbs   = students.filter(s=>(prevSession[s.id]||{}).attendance==='absent');
+          const pLate  = students.filter(s=>(prevSession[s.id]||{}).attendance==='late');
+          const pNotes = students.map(s=>[s, ((prevSession[s.id]||{}).notes||'').trim()]).filter(x=>x[1]);
+          const pContent = getLessonNote(cls.id, prevDate);
+          const pPlan    = getPromise(cls.id, prevDate);
+          const hwToday  = getHomework(cls.id, date);
+          const owing = [...hwPending.keys()].map(id=>students.find(s=>s.id===id)).filter(Boolean);
+          return `<div class="card rc-panel">
+            <div class="rc-panel-head">Last class \u2014 <b>${formatDateLong(prevDate)}</b>
+              <button type="button" class="linkish" style="margin-left:auto;text-decoration:underline;"
+                onclick="goToRollCall('${cls.id}','${prevDate}')">open that register \u2192</button></div>
+            ${sec('\uD83D\uDCDD What we did last class', pContent?read(planReadHtml(pContent)):none('Nothing was recorded.'))}
+            ${sec('\uD83D\uDCD8 Homework assigned '+sub('(due today)'), hwToday?read(planReadHtml(hwToday)):none('No homework was assigned.'))}
+            ${sec('\uD83D\uDEAA Absent last class', (pAbs.length||pLate.length)
+              ? `<div class="rc-chips">${pAbs.map(s=>`<span class="rc-chip abs">${esc(s.name)}</span>`).join('')}${pLate.map(s=>`<span class="rc-chip late">${esc(s.name)} \u00b7 late</span>`).join('')}</div>`
+              : none('Everyone was present.'))}
+            ${owing.length ? sec('\u26A0\uFE0F Still owing homework',
+              `<div class="rc-chips">${owing.map(s=>`<span class="rc-chip late">${esc(s.name)}</span>`).join('')}</div>`) : ''}
+            ${pNotes.length ? sec('\uD83D\uDDD2\uFE0F Notes from last class',
+              pNotes.map(([s,n])=>`<div class="rc-note-row"><b>${esc(s.name)}:</b> ${esc(n)}</div>`).join('')) : ''}
+            ${sec('\uD83D\uDCCB Last class plan', pPlan?read(planReadHtml(pPlan)):none('No plan was written.'))}
+          </div>`;
+        };
+
+        /* ---------------- NOW: plan, content, register ---------------- */
+        const nowPanel = ()=>{
+          const planVal = getPromise(cls.id, date);
+          const planEd  = !locked && (isFuture || planUnlocked.has(key));
+          const hwVal   = getHomework(cls.id, date);
+          const hwEd    = !locked && hwDueUnlocked.has(key);
+          return `<div class="card rc-panel">
+            ${sec('\uD83D\uDCCB Class plan for today',
+              planEd
+                ? renderPlanEditor(cls.id, date, { cta:true, label:'' })
+                : (planVal
+                    ? `<div class="rc-plan rc-read">${planReadHtml(planVal)}</div>`
+                    : `<div class="rc-plan rc-none">No plan written for today. Set it from the previous class\u2019s <b>After</b> tab \u2014 or tap Edit.</div>`),
+              locked ? '' : editBtn(planEd, `lockPlan('${cls.id}','${date}')`, `unlockPlan('${cls.id}','${date}')`))}
+            ${sec('\uD83D\uDCD8 Homework due today',
+              hwEd
+                ? `<textarea rows="2" placeholder="e.g. Workbook p.44\u201345, write 150-word essay" style="${taStyle}" oninput="setHomework('${cls.id}','${date}', this.value)">${esc(hwVal)}</textarea>`
+                : (hwVal
+                    ? read(planReadHtml(hwVal))
+                    : none(prevDate
+                        ? `No homework was assigned on ${formatDateShort(prevDate)}, so nothing is due today.`
+                        : 'No earlier class on record, so nothing is due today.')),
+              locked ? '' : editBtn(hwEd, `lockHwDue('${cls.id}','${date}')`, `unlockHwDue('${cls.id}','${date}')`))}
+            ${sec('\uD83D\uDCDD What we did '+sub('(lesson content \u2014 shown on absent reports)'),
+              `<textarea rows="3" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>`)}
+            ${sec('\uD83C\uDFAF Activities '+sub('(graded A\u2013F per student \u2014 grading stays open after class)'), `
+              ${activitiesFor(cls.id, date).map(a=>{
+                const g = Object.keys(a.grades||{}).length, avg = activityAvg(a), sk = skillMeta(a.skill);
+                const nNotes = Object.values(a.notes||{}).filter(v=>(v||'').trim()).length;
+                return `
+                <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
+                  <span>${sk.emoji}</span>
+                  <span style="flex:1;text-align:left;">${esc(a.description)}</span>
+                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${nNotes?` \u00b7 \u270E ${nNotes}`:''}${avg!=null?` \u00b7 avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
+                </button>`;
+              }).join('')}
+              <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">\uD83C\uDFAF New activity</button>`)}
           </div>
-          ${renderPlanEditor(cls.id, nextDate, { label:'Plan for next class', hint:'(promises, focus points, anything to prepare \u2014 becomes that day\u2019s class plan)' })}
-        </div>` : (isPast && nextDate && (getHomework(cls.id,nextDate)||getPromise(cls.id,nextDate)) ? `
-        <div style="border-top:1px dashed var(--border);padding-top:12px;font-size:13px;color:var(--muted);">
-          <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--text);">Assigned for next class (${formatDateShort(nextDate)})</div>
-          ${getHomework(cls.id,nextDate)?`<div><b>Homework:</b> ${esc(getHomework(cls.id,nextDate))}</div>`:''}
-          ${getPromise(cls.id,nextDate)?`<div><b>Planned:</b> ${planDisplayHtml(getPromise(cls.id,nextDate))}</div>`:''}
-        </div>`:'')}
+          <div class="rollcall-actions">
+            ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()" title="Everyone present, then mark the few who missed">Mark all present</button>`}
+            ${locked?'':`<button class="btn-ghost" onclick="markAllAbsent()" title="Everyone absent, then tick off the few who turned up">Mark all absent</button>`}
+            <div class="view-seg" role="radiogroup" aria-label="Roster view">
+              <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
+              <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
+            </div>
+            <button type="button" id="rc-save-btn" class="btn-ghost small save-btn"
+              onclick="saveNowClicked('rc-save-btn','rc-save-msg')">\uD83D\uDCBE Save</button>
+            <span id="rc-save-msg" class="save-msg"></span>
+            <span class="save-indicator"></span>
+          </div>
+          <div class="card roster-list ${locked?'locked-session':''}">
+            ${loadUi().rollView==='compact'
+              ? renderCompactRoster(cls, students, recFor, hwPending, locked)
+              : students.map(s=>renderRosterRow(s, recFor(s), hwPending.get(s.id)||null, locked)).join('')}
+          </div>`;
+        };
+
+        /* ---------------- AFTER: set up the next lesson ---------------- */
+        const afterPanel = ()=>{
+          if(!nextDate) return `<div class="card rc-panel">${none('No further class is scheduled for '+esc(cls.name)+'.')}</div>`;
+          return `<div class="card rc-panel">
+            <div class="rc-panel-head">Next class \u2014 <b>${formatDateLong(nextDate)}</b>
+              <button type="button" class="linkish" style="margin-left:auto;text-decoration:underline;"
+                onclick="goToRollCall('${cls.id}','${nextDate}')">open that register \u2192</button></div>
+            ${sec('\uD83D\uDCD8 Homework to assign '+sub('(due next class)'),
+              `<textarea rows="3" placeholder="e.g. Workbook p.46, study irregular verbs" style="${taStyleNext}" oninput="setHomework('${cls.id}','${nextDate}', this.value)">${esc(getHomework(cls.id, nextDate))}</textarea>`)}
+            ${sec('\uD83D\uDCCB Plan, promise or reminder for next class '+sub('(becomes that day\u2019s class plan)'),
+              renderPlanEditor(cls.id, nextDate, { label:'' }))}
+            ${isToday && !locked ? `
+            <div class="rc-sec" style="border-top:1px dashed var(--border);padding-top:14px;">
+              <button class="btn-accent" onclick="toggleSessionCompleted('${cls.id}','${date}')">\u2713 Complete today\u2019s session</button>
+              <div style="font-size:12px;color:var(--muted);margin-top:8px;">Locks the register and counts today toward reports.</div>
+            </div>` : ''}
+          </div>`;
+        };
+
+        return `
+      <div class="rc-tabs" role="tablist" aria-label="Lesson stage">
+        <button type="button" role="tab" aria-selected="${tab==='before'}" class="rc-tab ${tab==='before'?'on':''}" onclick="setRcTab('before')">
+          <span class="rc-tab-k">Before</span><span class="rc-tab-s">${prevDate?formatDateShort(prevDate):'\u2014'}</span></button>
+        <button type="button" role="tab" aria-selected="${tab==='now'}" class="rc-tab ${tab==='now'?'on':''}" onclick="setRcTab('now')">
+          <span class="rc-tab-k">Now</span><span class="rc-tab-s">${formatDateShort(date)}</span></button>
+        <button type="button" role="tab" aria-selected="${tab==='after'}" class="rc-tab ${tab==='after'?'on':''}" onclick="setRcTab('after')">
+          <span class="rc-tab-k">After</span><span class="rc-tab-s">${nextDate?formatDateShort(nextDate):'\u2014'}</span></button>
       </div>
-      </div>`;
+      ${tab==='before' ? beforePanel() : tab==='after' ? afterPanel() : nowPanel()}`;
       })()}
-      <div class="rollcall-actions">
-        ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()" title="Everyone present, then mark the few who missed">Mark all present</button>`}
-        ${locked?'':`<button class="btn-ghost" onclick="markAllAbsent()" title="Everyone absent, then tick off the few who turned up">Mark all absent</button>`}
-        <div class="view-seg" role="radiogroup" aria-label="Roster view">
-          <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
-          <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
-        </div>
-        <button type="button" id="rc-save-btn" class="btn-ghost small save-btn"
-          onclick="saveNowClicked('rc-save-btn','rc-save-msg')">💾 Save</button>
-        <span id="rc-save-msg" class="save-msg"></span>
-        <span class="save-indicator"></span>
-      </div>
-      <div class="card roster-list ${locked?'locked-session':''}">
-        ${loadUi().rollView==='compact'
-          ? renderCompactRoster(cls, students, recFor, hwPending, locked)
-          : students.map(s=>renderRosterRow(s, recFor(s), hwPending.get(s.id)||null, locked)).join('')}
-      </div>
     ` : !holiday ? `<div class="card empty-card">No students in this class yet. Add students in <button type="button" class="linkish" onclick="navigate('classes')">Classes &amp; Students</button>.</div>` : ''}
   `;
 }
@@ -6314,6 +6576,20 @@ function setLessonNote(classId, date, val){
 const hwDueUnlocked = new Set();
 function unlockHwDue(classId, date){
   hwDueUnlocked.add(classId+'_'+date);
+  refreshView();
+}
+function lockHwDue(classId, date){
+  hwDueUnlocked.delete(classId+'_'+date);
+  refreshView();
+}
+/* Same idea for the class plan: read-only during the lesson (so a stray tap on
+   a projected screen can't rewrite it, and so pasted links stay clickable),
+   with a per-session unlock for genuine corrections. Not persisted. */
+const planUnlocked = new Set();
+function unlockPlan(classId, date){ planUnlocked.add(classId+'_'+date); refreshView(); }
+function lockPlan(classId, date){ planUnlocked.delete(classId+'_'+date); refreshView(); }
+function setRcTab(t){
+  state.rcTab = ['before','now','after'].includes(t) ? t : 'now';
   refreshView();
 }
 function getHomework(classId, date){
@@ -6351,7 +6627,7 @@ function htmlToPlain(html){
 function looksLikeHtml(val){ return /<[a-z][\s\S]*>/i.test(val||''); }
 // Whitelist sanitizer: only formatting tags/attrs the toolbar can produce
 // (plus what sensible pasting yields). Everything else is unwrapped to text.
-const PLAN_TAGS = new Set(['B','STRONG','I','EM','U','S','STRIKE','BR','DIV','P','UL','OL','LI','SPAN','FONT','H1','H2','H3','BLOCKQUOTE']);
+const PLAN_TAGS = new Set(['A','B','STRONG','I','EM','U','S','STRIKE','BR','DIV','P','UL','OL','LI','SPAN','FONT','H1','H2','H3','BLOCKQUOTE']);
 function sanitizePlanHtml(html){
   if(!html) return '';
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -6369,6 +6645,12 @@ function sanitizePlanHtml(html){
         for(const attr of Array.from(child.attributes)){
           const n = attr.name.toLowerCase();
           if(n === 'size' && child.tagName === 'FONT') continue;
+          // Links survive sanitising, but only with a safe scheme — the plan is
+          // the one place a teacher pastes a slide deck or video URL.
+          if(n === 'href' && child.tagName === 'A'){
+            const v = (attr.value || '').trim();
+            if(/^(https?:|mailto:|tel:|\/|#)/i.test(v)) continue;
+          }
           if(n === 'style'){
             // keep only font-size / font-weight / font-style / text-decoration
             const kept = attr.value.split(';').map(s=>s.trim()).filter(s=>
@@ -6390,6 +6672,68 @@ function sanitizePlanHtml(html){
 function planDisplayHtml(val){
   if(!val) return '';
   return looksLikeHtml(val) ? sanitizePlanHtml(val) : esc(val).replace(/\n/g,'<br>');
+}
+/* Read-only rendering of a plan / homework note: sanitised HTML, bare URLs
+   turned into real links, and every link opened in a new tab so tapping one
+   mid-lesson never navigates the dashboard away from the register. */
+const URL_RE = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/g;
+function autolinkHtml(html){
+  if(!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node)=>{
+    for(const child of Array.from(node.childNodes)){
+      if(child.nodeType === Node.TEXT_NODE){
+        const t = child.nodeValue || '';
+        URL_RE.lastIndex = 0;
+        if(!URL_RE.test(t)) continue;
+        URL_RE.lastIndex = 0;
+        const frag = doc.createDocumentFragment();
+        let last = 0, m;
+        while((m = URL_RE.exec(t))){
+          if(m.index > last) frag.appendChild(doc.createTextNode(t.slice(last, m.index)));
+          let raw = m[0], trail = '';
+          const tm = raw.match(/[).,;:!?\]]+$/);
+          if(tm){ trail = tm[0]; raw = raw.slice(0, raw.length - trail.length); }
+          const a = doc.createElement('a');
+          a.setAttribute('href', /^www\./i.test(raw) ? 'https://' + raw : raw);
+          a.textContent = raw;
+          frag.appendChild(a);
+          if(trail) frag.appendChild(doc.createTextNode(trail));
+          last = m.index + m[0].length;
+        }
+        if(last < t.length) frag.appendChild(doc.createTextNode(t.slice(last)));
+        node.replaceChild(frag, child);
+      } else if(child.nodeType === Node.ELEMENT_NODE && child.tagName !== 'A'){
+        walk(child);
+      }
+    }
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+function planReadHtml(val){
+  if(!val) return '';
+  const doc = new DOMParser().parseFromString(autolinkHtml(planDisplayHtml(val)), 'text/html');
+  doc.querySelectorAll('a[href]').forEach(a=>{
+    a.setAttribute('target','_blank');
+    a.setAttribute('rel','noopener noreferrer');
+  });
+  return doc.body.innerHTML;
+}
+function planLink(){
+  const sel = window.getSelection();
+  const txt = sel ? String(sel) : '';
+  let url = prompt(txt ? 'Link URL for \u201c' + txt + '\u201d' : 'Link URL', 'https://');
+  if(!url) return;
+  url = url.trim();
+  if(!url || url === 'https://') return;
+  if(!/^(https?:|mailto:|tel:)/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+  if(txt){
+    document.execCommand('createLink', false, url);
+  } else {
+    const safe = url.replace(/[&<>"]/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    document.execCommand('insertHTML', false, '<a href="' + safe + '">' + safe + '</a>&nbsp;');
+  }
 }
 function savePlanFromEditor(classId, date, el){
   const html = sanitizePlanHtml(el.innerHTML);
@@ -6415,6 +6759,9 @@ function renderPlanEditor(classId, date, opts){
       ${btn('Underline','underline','','<u>U</u>')}
       ${btn('Strikethrough','strikeThrough','','<s>S</s>')}
       <span class="plan-tb-sep"></span>
+      <button type="button" class="plan-tb-btn" title="Insert link" onmousedown="event.preventDefault()" onclick="planLink()">\u{1F517}</button>
+      ${btn('Remove link','unlink','','\u26D3')}
+      <span class="plan-tb-sep"></span>
       ${btn('Small text','fontSize','2','<span style="font-size:11px;">A</span>')}
       ${btn('Normal text','fontSize','3','A')}
       ${btn('Large text','fontSize','5','<span style="font-size:17px;font-weight:600;">A</span>')}
@@ -6426,7 +6773,7 @@ function renderPlanEditor(classId, date, opts){
     </div>`;
   return `
     <div class="field" style="margin-bottom:${cta?'14px':'10px'};">
-      <label style="font-size:${cta?'13px':'12px'};font-weight:${cta?'800':'600'};color:${cta?'var(--accent)':'var(--muted)'};margin-bottom:6px;display:block;">${label}${hint&&!locked?` <span style="font-weight:400;color:var(--muted);">${hint}</span>`:''}</label>
+      ${label?`<label style="font-size:${cta?'13px':'12px'};font-weight:${cta?'800':'600'};color:${cta?'var(--accent)':'var(--muted)'};margin-bottom:6px;display:block;">${label}${hint&&!locked?` <span style="font-weight:400;color:var(--muted);">${hint}</span>`:''}</label>`:''}
       <div style="${boxStyle}">
         ${toolbar}
         <div id="${eid}" class="plan-editor" contenteditable="${!locked}" data-placeholder="Write or paste your class plan here…"
@@ -7440,6 +7787,7 @@ function setRollcallClass(classId){
   }
   state.rollcall.classId = classId;
   state.openDrawer = null;
+  state.rcTab = 'now';   // a different class always opens on its register
   refreshView();
 }
 /* Previous / next scheduled session of a class, used by both the Roll Call
@@ -7462,6 +7810,7 @@ function navRollcallSession(dir){
 function setRollcallDate(date){
   state.rollcall.date = date;
   state.openDrawer = null;
+  state.rcTab = 'now';
   state.rollcallShowAll = false;   // a new date starts from the clean scheduled list
   const dow = new Date(date+'T00:00:00').getDay();
   const cls = classById(state.rollcall.classId);
