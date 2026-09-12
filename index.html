@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- HUBGEN:theme start -->
+  <script>
+    (function(){try{var k="arschul:theme",v=localStorage.getItem(k);
+      if(!v){var old=["hub-theme","theme","gh-theme","adv-theme","reviews-theme","worksheets-theme"];
+        for(var i=0;i<old.length;i++){var o=localStorage.getItem(old[i]);if(o){v=o;break;}}
+        v=v||"dark";localStorage.setItem(k,v);}
+      var m=(v==="system")?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):v;
+      document.documentElement.setAttribute("data-theme",m);}catch(e){}})();
+  </script>
+<!-- HUBGEN:theme end -->
     <title>Tool Hub</title>
+<!-- HUBGEN:head start -->
+  <meta name="description" content="Classroom tools for planning, writing and assessment.">
+  <link rel="icon" href="https://arschul.github.io/assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Tool Hub">
+  <meta property="og:description" content="Classroom tools for planning, writing and assessment.">
+  <meta property="og:url" content="https://arschul.github.io/tools/">
+  <link rel="stylesheet" href="https://arschul.github.io/assets/hub.v2.css">
+  <script defer src="https://arschul.github.io/assets/hub.v2.js"></script>
+  <style>:root{--hub-bg:var(--background);--hub-surface:var(--card);--hub-ink:var(--foreground);--hub-ink-soft:var(--muted-foreground);--hub-rule:var(--border);--hub-accent:var(--primary);--hub-radius:var(--radius);--hub-font-display:'Montserrat', sans-serif;--hub-font-ui:'Open Sans', sans-serif;}</style>
+<!-- HUBGEN:head end -->
+<style>
+  /* fallback if the shared stylesheet fails to load — structure only */
+  .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:1rem;}
+  .hub-card{display:flex;flex-direction:column;gap:.45rem;padding:1.1rem 1.25rem;
+    border:1px solid currentColor;border-radius:10px;text-decoration:none;color:inherit;opacity:.95;}
+  .hub-card[hidden]{display:none;}
+  .hub-card__title{margin:0;font-size:1.02rem;}
+  .hub-card__blurb{margin:0;font-size:.86rem;line-height:1.5;}
+</style>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&family=Open+Sans:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -390,7 +420,9 @@
 </head>
 <body>
 
-    <a class="main-hub-link" href="https://arschul.github.io/">← Main Hub</a>
+    <!-- HUBGEN:backlink start -->
+  <a class="hub-backlink" href="https://arschul.github.io/">← Classroom Hub</a>
+<!-- HUBGEN:backlink end -->
 
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">
         <span class="sun">☀️</span>
@@ -403,290 +435,178 @@
             <p>Classroom tools and resources for EFL teaching.</p>
         </header>
 
-        <div class="search-box fade-in">
-            <input type="text" class="search-input" placeholder="Search for tools..." id="searchInput" oninput="filterTools()">
-        </div>
-
-
-        <section class="section fade-in">
-            <h2 class="section-title featured-title">⭐ Featured</h2>
-            <div class="links-grid">
-                <div class="link-card featured-card" data-name="teacher dashboard classes roll call reports" onclick="goToLink('teacher-dashboard/teacher-dashboard.html')">
-                    <div class="icon">📊</div>
-                    <div class="content">
-                        <h4>Teacher Dashboard</h4>
-                        <p>Manage classes &amp; students, take roll call, log observations, and generate printable attendance reports.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="section fade-in">
-            <h2 class="section-title">🧰 Tools</h2>
-            <div class="links-grid" id="toolsGrid">
-
-                <div class="link-card" data-name="aura tracker" onclick="goToLink('aura-tracker/aura-tracker.html')">
-                    <div class="icon">🏛️</div>
-                    <div class="content">
-                        <h4>Aura Tracker</h4>
-                        <p>No cap · Fully transparent · Based on vibes.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="dialog simulator tts conversation listening speaking practice" onclick="goToLink('Dialog%20Practice/dialog-practice.html')">
-                    <div class="icon">🎧</div>
-                    <div class="content">
-                        <h4>Dialog Simulator</h4>
-                        <p>Text-to-speech conversations by CEFR level, A1–B2.</p>
-                    </div>
-                </div>
-                
-                <div class="link-card" data-name="before  after writing" onclick="goToLink('before-after-writing/before-after-writing.html')">
-                    <div class="icon">🏛️</div>
-                    <div class="content">
-                        <h4>Before & After Writing</h4>
-                        <p>From poor-written to polished with a few changes.</p>
-                    </div>
-                </div>
-                
-                <div class="link-card" data-name="classroom toolkit" onclick="goToLink('efl-classroom-toolkit/efl-classroom-toolkit.html')">
-                    <div class="icon">🏛️</div>
-                    <div class="content">
-                        <h4>Classroom Toolkit</h4>
-                        <p>Various tools to deal with class management.</p>
-                    </div>
-                </div>
-                
-                <div class="link-card" data-name="competition" onclick="goToLink('competition/competition.html')">
-                    <div class="icon">⚔</div>
-                    <div class="content">
-                        <h4>Competition</h4>
-                        <p>Duel matches league-style.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="dictation drill listening spelling" onclick="goToLink('dictation/dictation.html')">
-                    <div class="icon">🎧</div>
-                    <div class="content">
-                        <h4>Dictation Drill</h4>
-                        <p>Listen and type what you hear, solo practice or team game.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="efl reader reading texts a1 a2 b1 b2" onclick="goToLink('reading/reader.html')">
-                    <div class="icon">📖</div>
-                    <div class="content">
-                        <h4>EFL Reader</h4>
-                        <p>Graded reading passages with word highlighting, topic filters, and comprehension questions.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="first class term rules welcome introduction start of term policies phones homework behavior icebreaker day one" onclick="goToLink('first-class/first-class.html')">
-                    <div class="icon">👋</div>
-                    <div class="content">
-                        <h4>First Class</h4>
-                        <p>Start-of-term rules deck with illustrated slides, an icebreaker timer, and a rules quiz.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="idea deck" onclick="goToLink('ideadeck/ideadeck.html')">
-                    <div class="icon">🎙️</div>
-                    <div class="content">
-                        <h4>Idea Deck</h4>
-                        <p>Prepare your pitch and deliver.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="listening cloze gap fill tts comprehension weak forms dictation a1 a2 b1 b2" onclick="goToLink('listening-cloze/listening-cloze.html')">
-                    <div class="icon">🎧</div>
-                    <div class="content">
-                        <h4>Listening Cloze</h4>
-                        <p>Hear a passage, fill the gaps. Listen-first mode, sentence replay, and team play.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="pronunciation trainer phonemic chart ipa minimal pairs connected speech accent us uk a1 a2 b1 b2" onclick="goToLink('pronunciation-trainer/pronunciation-trainer.html')">
-                    <div class="icon">🗣️</div>
-                    <div class="content">
-                        <h4>Pronunciation Trainer</h4>
-                        <p>Interactive phonemic chart, minimal-pair listening, and connected-speech drills (US/UK).</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="irregular verbs" onclick="goToLink('irregular/irregular.html')">
-                    <div class="icon">📚</div>
-                    <div class="content">
-                        <h4>Irregular Verbs</h4>
-                        <p>Flashcards can help memorize verb forms.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="mad libs" onclick="goToLink('mad-libs-efl/mad-libs-efl.html')">
-                    <div class="icon">🤪</div>
-                    <div class="content">
-                        <h4>Mad Libs</h4>
-                        <p>Create funny stories one word at a time.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="oral assessment" onclick="goToLink('efl-oral-assessment/efl-oral-assessment.html')">
-                    <div class="icon">🎙️</div>
-                    <div class="content">
-                        <h4>Oral Assessment</h4>
-                        <p>Oral rubrics for student scoring.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="placement test oral interview conversation cefr level starter basic intermediate private students where to start" onclick="goToLink('placement-test.html')">
-                    <div class="icon">📋</div>
-                    <div class="content">
-                        <h4>Placement Test</h4>
-                        <p>Conversation-based placement across 9 levels, Starter to Intermediate 4.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="pop quiz grammar generator match fill mistake unscramble teams solo cefr a1 a2 b1 b2 grammarhub" onclick="goToLink('pop-quiz/pop-quiz.html')">
-                    <div class="icon">⚡</div>
-                    <div class="content">
-                        <h4>Pop Quiz</h4>
-                        <p>Instant grammar quizzes from 31 GrammarHub topics. Projected team play or solo self-check; filter by level, topic and type.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="questions" onclick="goToLink('questions/questions.html')">
-                    <div class="icon">❔</div>
-                    <div class="content">
-                        <h4>Questions</h4>
-                        <p>Browse through our question bank</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="recipe rumble food cooking ingredients kitchen recipe speaking vocabulary teams game" onclick="goToLink('efl-recipe-challenge/efl-recipe-challenge.html')">
-                    <div class="icon">😋</div>
-                    <div class="content">
-                        <h4>Recipe Rumble</h4>
-                        <p>Teams spin for random ingredients, then write and pitch a dish.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="report card tool" onclick="goToLink('reportcards/reportcards.html')">
-                    <div class="icon">📝</div>
-                    <div class="content">
-                        <h4>Report Card Tool</h4>
-                        <p>Student assessment made easy.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="roleplay spinner" onclick="goToLink('roleplay-spinner/roleplay-spinner.html')">
-                    <div class="icon">🎭</div>
-                    <div class="content">
-                        <h4>Roleplay Spinner</h4>
-                        <p>Create improv scenarios on the go.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="story spark writing creative narrative plot character prompt starter cefr" onclick="goToLink('story-spark/story-spark.html')">
-                    <div class="icon">✨</div>
-                    <div class="content">
-                        <h4>Story Spark</h4>
-                        <p>Roll a character, a goal, an obstacle and a twist, then write it in four beats. A1–B2.</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="thermometer" onclick="goToLink('thermometer/thermometer.html')">
-                    <div class="icon">🌡</div>
-                    <div class="content">
-                        <h4>Thermometer</h4>
-                        <p>English only, please!</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="this or that" onclick="goToLink('spinner/spinner.html')">
-                    <div class="icon">❔</div>
-                    <div class="content">
-                        <h4>This or that?</h4>
-                        <p>Would you rather...?</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="toefl correction score calculator itp listening structure reading conversion" onclick="goToLink('toefl-correction/toefl-correction.html')">
-                    <div class="icon">✓</div>
-                    <div class="content">
-                        <h4>TOEFL Correction</h4>
-                        <p>Convert correct answers per section into a TOEFL score</p>
-                    </div>
-                </div>
-
-                <div class="link-card" data-name="writing scaffold" onclick="goToLink('writing-scaffold/writing-scaffold.html')">
-                    <div class="icon">📓</div>
-                    <div class="content">
-                        <h4>Writing Scaffold</h4>
-                        <p>Writing made easy with sentence starters, connectors and a word bank.</p>
-                    </div>
-                </div>
-                
-            </div>
-        </section>
+        <!-- HUBGEN:cards start -->
+  <div class="hub-toolbar">
+    <div class="hub-toolbar__row">
+      <input type="search" class="hub-search" id="searchInput" placeholder="Search tools — press / to jump here" aria-label="Search tools" autocomplete="off">
+    </div>
+    <div class="hub-toolbar__row hub-toolbar__row--facets">
+      <button type="button" class="hub-clear" hidden>Clear all</button>
+    </div>
+    <div class="hub-toolbar__row"><span class="hub-count"></span></div>
+  </div>
+  <div class="hub-grid">
+      <a class="hub-card is-featured" href="teacher-dashboard/teacher-dashboard.html" data-id="teacher-dashboard" data-levels="" data-skills="admin" data-mode="teacher" data-prep="none" data-time="short" data-search="teacher dashboard manage classes &amp; students, take roll call, log observations, and generate printable attendance reports. attendance call classes grades observations reports roll students">
+        <span class="hub-card__icon" aria-hidden="true">📊</span>
+        <h3 class="hub-card__title">Teacher Dashboard</h3>
+        <p class="hub-card__blurb">Manage classes &amp; students, take roll call, log observations, and generate printable attendance reports.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">teacher</span></div>
+      </a>
+      <a class="hub-card" href="aura-tracker/aura-tracker.html" data-id="aura-tracker" data-levels="" data-skills="admin" data-mode="whole-class" data-prep="none" data-time="short" data-search="aura tracker no cap · fully transparent · based on vibes. behavior points tracker vibes">
+        <span class="hub-card__icon" aria-hidden="true">🏛️</span>
+        <h3 class="hub-card__title">Aura Tracker</h3>
+        <p class="hub-card__blurb">No cap · Fully transparent · Based on vibes.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="before-after-writing/before-after-writing.html" data-id="before-after-writing" data-levels="A1 A2 B1 B2" data-skills="writing" data-mode="team" data-prep="none" data-time="medium" data-search="before &amp; after writing from poor-written to polished with a few changes. editing find improve mode paragraphs revision">
+        <span class="hub-card__icon" aria-hidden="true">🏛️</span>
+        <h3 class="hub-card__title">Before &amp; After Writing</h3>
+        <p class="hub-card__blurb">From poor-written to polished with a few changes.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">team</span></div>
+      </a>
+      <a class="hub-card" href="efl-classroom-toolkit/efl-classroom-toolkit.html" data-id="efl-classroom-toolkit" data-levels="" data-skills="admin" data-mode="whole-class" data-prep="none" data-time="short" data-search="classroom toolkit various tools to deal with class management. class groups management noise picker random timer">
+        <span class="hub-card__icon" aria-hidden="true">🏛️</span>
+        <h3 class="hub-card__title">Classroom Toolkit</h3>
+        <p class="hub-card__blurb">Various tools to deal with class management.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="competition/competition.html" data-id="competition" data-levels="" data-skills="admin" data-mode="team" data-prep="setup" data-time="medium" data-search="competition duel matches league-style. duels league scoring tournament">
+        <span class="hub-card__icon" aria-hidden="true">⚔</span>
+        <h3 class="hub-card__title">Competition</h3>
+        <p class="hub-card__blurb">Duel matches league-style.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">team</span><span class="hub-chip hub-chip--prep">setup</span></div>
+      </a>
+      <a class="hub-card" href="Dialog%20Practice/dialog-practice.html" data-id="dialog-practice" data-levels="A1 A2 B1 B2" data-skills="listening speaking" data-mode="whole-class" data-prep="none" data-time="medium" data-search="dialog simulator text-to-speech conversations by cefr level, a1–b2. conversations dialog dialogues play role simulator tts">
+        <span class="hub-card__icon" aria-hidden="true">🎧</span>
+        <h3 class="hub-card__title">Dialog Simulator</h3>
+        <p class="hub-card__blurb">Text-to-speech conversations by CEFR level, A1–B2.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="dictation/dictation.html" data-id="dictation" data-levels="A1 A2 B1 B2" data-skills="listening writing" data-mode="solo" data-prep="none" data-time="medium" data-search="dictation drill listen and type what you hear, solo practice or team game. dictation spelling tts typing">
+        <span class="hub-card__icon" aria-hidden="true">🎧</span>
+        <h3 class="hub-card__title">Dictation Drill</h3>
+        <p class="hub-card__blurb">Listen and type what you hear, solo practice or team game.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+      <a class="hub-card" href="reading/reader.html" data-id="reading" data-levels="A1 A2 B1 B2" data-skills="reading" data-mode="solo" data-prep="none" data-time="medium" data-search="efl reader graded reading passages with word highlighting, topic filters, and comprehension questions. comprehension efl graded highlighting passages reader topics">
+        <span class="hub-card__icon" aria-hidden="true">📖</span>
+        <h3 class="hub-card__title">EFL Reader</h3>
+        <p class="hub-card__blurb">Graded reading passages with word highlighting, topic filters, and comprehension questions.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+      <a class="hub-card" href="first-class/first-class.html" data-id="first-class" data-levels="A1 A2 B1 B2" data-skills="speaking" data-mode="whole-class" data-prep="none" data-time="long" data-search="first class start-of-term rules deck with illustrated slides, an icebreaker timer, and a rules quiz. day homework icebreaker of one phones policies rules start term">
+        <span class="hub-card__icon" aria-hidden="true">👋</span>
+        <h3 class="hub-card__title">First Class</h3>
+        <p class="hub-card__blurb">Start-of-term rules deck with illustrated slides, an icebreaker timer, and a rules quiz.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="ideadeck/ideadeck.html" data-id="ideadeck" data-levels="A1 A2 B1 B2" data-skills="speaking" data-mode="solo" data-prep="none" data-time="medium" data-search="idea deck prepare your pitch and deliver. deck idea pitch presentation prompts">
+        <span class="hub-card__icon" aria-hidden="true">🎙️</span>
+        <h3 class="hub-card__title">Idea Deck</h3>
+        <p class="hub-card__blurb">Prepare your pitch and deliver.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+      <a class="hub-card" href="irregular/irregular.html" data-id="irregular" data-levels="A1 A2 B1" data-skills="grammar" data-mode="solo" data-prep="none" data-time="medium" data-search="irregular verbs flashcards can help memorize verb forms. flashcards irregular participle past verbs">
+        <span class="hub-card__icon" aria-hidden="true">📚</span>
+        <h3 class="hub-card__title">Irregular Verbs</h3>
+        <p class="hub-card__blurb">Flashcards can help memorize verb forms.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+      <a class="hub-card" href="listening-cloze/listening-cloze.html" data-id="listening-cloze" data-levels="A1 A2 B1 B2" data-skills="listening" data-mode="whole-class" data-prep="none" data-time="medium" data-search="listening cloze hear a passage, fill the gaps. listen-first mode, sentence replay, and team play. cloze fill forms gap replay tts weak">
+        <span class="hub-card__icon" aria-hidden="true">🎧</span>
+        <h3 class="hub-card__title">Listening Cloze</h3>
+        <p class="hub-card__blurb">Hear a passage, fill the gaps. Listen-first mode, sentence replay, and team play.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="mad-libs-efl/mad-libs-efl.html" data-id="mad-libs-efl" data-levels="A1 A2 B1 B2 C1" data-skills="grammar writing" data-mode="whole-class" data-prep="none" data-time="medium" data-search="mad libs create funny stories one word at a time. adjectives libs mad nouns of parts silly speech stories verbs">
+        <span class="hub-card__icon" aria-hidden="true">🤪</span>
+        <h3 class="hub-card__title">Mad Libs</h3>
+        <p class="hub-card__blurb">Create funny stories one word at a time.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--level">C1</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="efl-oral-assessment/efl-oral-assessment.html" data-id="efl-oral-assessment" data-levels="" data-skills="assessment" data-mode="teacher" data-prep="none" data-time="short" data-search="oral assessment oral rubrics for student scoring. assessment oral rubric scoring speaking">
+        <span class="hub-card__icon" aria-hidden="true">🎙️</span>
+        <h3 class="hub-card__title">Oral Assessment</h3>
+        <p class="hub-card__blurb">Oral rubrics for student scoring.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">teacher</span></div>
+      </a>
+      <a class="hub-card" href="placement-test.html" data-id="placement-test" data-levels="" data-skills="assessment" data-mode="teacher" data-prep="none" data-time="medium" data-search="placement test conversation-based placement across 9 levels, starter to intermediate 4. interview levels new placement starter students">
+        <span class="hub-card__icon" aria-hidden="true">📋</span>
+        <h3 class="hub-card__title">Placement Test</h3>
+        <p class="hub-card__blurb">Conversation-based placement across 9 levels, Starter to Intermediate 4.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">teacher</span></div>
+      </a>
+      <a class="hub-card" href="pop-quiz/pop-quiz.html" data-id="pop-quiz" data-levels="A1 A2 B1 B2" data-skills="grammar" data-mode="team" data-prep="none" data-time="medium" data-search="pop quiz instant grammar quizzes from 31 grammarhub topics. projected team play or solo self-check; filter by level, topic and type. fill generator grammarhub match pop quiz unscramble">
+        <span class="hub-card__icon" aria-hidden="true">⚡</span>
+        <h3 class="hub-card__title">Pop Quiz</h3>
+        <p class="hub-card__blurb">Instant grammar quizzes from 31 GrammarHub topics. Projected team play or solo self-check; filter by level, topic and type.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">team</span></div>
+      </a>
+      <a class="hub-card" href="pronunciation-trainer/pronunciation-trainer.html" data-id="pronunciation-trainer" data-levels="A1 A2 B1 B2" data-skills="speaking listening" data-mode="whole-class" data-prep="none" data-time="medium" data-search="pronunciation trainer interactive phonemic chart, minimal-pair listening, and connected-speech drills (us/uk). accent chart connected ipa minimal pairs phonemic speech uk us">
+        <span class="hub-card__icon" aria-hidden="true">🗣️</span>
+        <h3 class="hub-card__title">Pronunciation Trainer</h3>
+        <p class="hub-card__blurb">Interactive phonemic chart, minimal-pair listening, and connected-speech drills (US/UK).</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="questions/questions.html" data-id="questions" data-levels="A1 A2 B1 B2" data-skills="speaking" data-mode="whole-class" data-prep="none" data-time="medium" data-search="questions browse through our question bank bank conversation discussion question starters">
+        <span class="hub-card__icon" aria-hidden="true">❔</span>
+        <h3 class="hub-card__title">Questions</h3>
+        <p class="hub-card__blurb">Browse through our question bank</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="efl-recipe-challenge/efl-recipe-challenge.html" data-id="efl-recipe-challenge" data-levels="A1 A2 B1" data-skills="speaking writing" data-mode="team" data-prep="none" data-time="medium" data-search="recipe rumble teams spin for random ingredients, then write and pitch a dish. cooking food ingredients kitchen pitch recipe rumble">
+        <span class="hub-card__icon" aria-hidden="true">😋</span>
+        <h3 class="hub-card__title">Recipe Rumble</h3>
+        <p class="hub-card__blurb">Teams spin for random ingredients, then write and pitch a dish.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--mode">team</span></div>
+      </a>
+      <a class="hub-card" href="reportcards/reportcards.html" data-id="reportcards" data-levels="" data-skills="assessment" data-mode="teacher" data-prep="none" data-time="short" data-search="report card tool student assessment made easy. assessment cards comments grades report student">
+        <span class="hub-card__icon" aria-hidden="true">📝</span>
+        <h3 class="hub-card__title">Report Card Tool</h3>
+        <p class="hub-card__blurb">Student assessment made easy.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">teacher</span></div>
+      </a>
+      <a class="hub-card" href="roleplay-spinner/roleplay-spinner.html" data-id="roleplay-spinner" data-levels="A1 A2 B1 B2" data-skills="speaking" data-mode="team" data-prep="none" data-time="medium" data-search="roleplay spinner create improv scenarios on the go. improv play role scenarios situations">
+        <span class="hub-card__icon" aria-hidden="true">🎭</span>
+        <h3 class="hub-card__title">Roleplay Spinner</h3>
+        <p class="hub-card__blurb">Create improv scenarios on the go.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">team</span></div>
+      </a>
+      <a class="hub-card" href="story-spark/story-spark.html" data-id="story-spark" data-levels="A1 A2 B1 B2" data-skills="writing" data-mode="solo" data-prep="none" data-time="medium" data-search="story spark roll a character, a goal, an obstacle and a twist, then write it in four beats. a1–b2. character creative plot prompts twist writing">
+        <span class="hub-card__icon" aria-hidden="true">✨</span>
+        <h3 class="hub-card__title">Story Spark</h3>
+        <p class="hub-card__blurb">Roll a character, a goal, an obstacle and a twist, then write it in four beats. A1–B2.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+      <a class="hub-card" href="thermometer/thermometer.html" data-id="thermometer" data-levels="A1 A2 B1 B2" data-skills="admin" data-mode="whole-class" data-prep="none" data-time="short" data-search="thermometer english only, please! behavior english l1 monitoring only portuguese">
+        <span class="hub-card__icon" aria-hidden="true">🌡</span>
+        <h3 class="hub-card__title">Thermometer</h3>
+        <p class="hub-card__blurb">English only, please!</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="spinner/spinner.html" data-id="spinner" data-levels="" data-skills="speaking" data-mode="whole-class" data-prep="none" data-time="medium" data-search="this or that? would you rather...? dilemmas discussion or rather that this would you">
+        <span class="hub-card__icon" aria-hidden="true">❔</span>
+        <h3 class="hub-card__title">This or that?</h3>
+        <p class="hub-card__blurb">Would you rather...?</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">whole-class</span></div>
+      </a>
+      <a class="hub-card" href="toefl-correction/toefl-correction.html" data-id="toefl-correction" data-levels="" data-skills="assessment" data-mode="teacher" data-prep="none" data-time="short" data-search="toefl correction convert correct answers per section into a toefl score calculator conversion itp score sections toefl">
+        <span class="hub-card__icon" aria-hidden="true">✓</span>
+        <h3 class="hub-card__title">TOEFL Correction</h3>
+        <p class="hub-card__blurb">Convert correct answers per section into a TOEFL score</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--mode">teacher</span></div>
+      </a>
+      <a class="hub-card" href="writing-scaffold/writing-scaffold.html" data-id="writing-scaffold" data-levels="A1 A2 B1 B2 C1" data-skills="writing" data-mode="solo" data-prep="none" data-time="long" data-search="writing scaffold writing made easy with sentence starters, connectors and a word bank. bank connectors prompts sentence starters word">
+        <span class="hub-card__icon" aria-hidden="true">📓</span>
+        <h3 class="hub-card__title">Writing Scaffold</h3>
+        <p class="hub-card__blurb">Writing made easy with sentence starters, connectors and a word bank.</p>
+        <div class="hub-card__meta"><span class="hub-chip hub-chip--level">A1</span><span class="hub-chip hub-chip--level">A2</span><span class="hub-chip hub-chip--level">B1</span><span class="hub-chip hub-chip--level">B2</span><span class="hub-chip hub-chip--level">C1</span><span class="hub-chip hub-chip--mode">solo</span></div>
+      </a>
+  </div>
+  <p class="hub-empty" hidden>Nothing matches those filters. <button type="button" class="hub-clear">Clear all</button></p>
+<!-- HUBGEN:cards end -->
     </div>
 
-    <script>
-        function goToLink(linkFile) {
-            window.location.href = linkFile;
-        }
-
-        function filterTools() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const cards = document.querySelectorAll('.link-card');
-
-            cards.forEach(card => {
-                const toolName = card.getAttribute('data-name').toLowerCase();
-                const toolTitle = card.querySelector('h4').textContent.toLowerCase();
-                const toolDescription = card.querySelector('p').textContent.toLowerCase();
-
-                if (toolName.includes(searchTerm) ||
-                    toolTitle.includes(searchTerm) ||
-                    toolDescription.includes(searchTerm)) {
-                    card.style.display = 'flex';
-                    card.style.animation = 'fadeIn 0.3s ease-out';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const current = html.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            localStorage.setItem('theme', next);
-        }
-
-        // Restore saved theme on load
-        (function() {
-            const saved = localStorage.getItem('theme');
-            if (saved) {
-                document.documentElement.setAttribute('data-theme', saved);
-            }
-        })();
-
-        // Add staggered animation to cards on load
-        document.addEventListener('DOMContentLoaded', function() {
-            const cards = document.querySelectorAll('.link-card');
-            cards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.1}s`;
-                card.classList.add('fade-in');
-            });
-        });
-
-        // Add keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === '/') {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
-        });
-    </script>
 </body>
 </html>
 
