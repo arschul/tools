@@ -932,7 +932,7 @@
     <div class="form-row">
       <label>Team names <span style="color:var(--text-muted);font-size:0.78rem;font-weight:400">(tap to edit)</span></label>
       <div class="team-names-grid" id="teamNamesGrid"></div>
-      <button class="tool-btn" style="margin-top:10px;font-size:0.78rem;padding:6px 14px" onclick="resetTeamNames()">↺ Reset to colour names</button>
+      <button class="tool-btn" style="margin-top:10px;font-size:0.78rem;padding:6px 14px" onclick="resetTeamNames()">↺ Reset to color names</button>
     </div>
 
     <div class="form-row" style="margin-bottom:0">
@@ -1280,7 +1280,7 @@ const LANGUAGE_BANK = {
 // Flat list built from categories (used as fallback)
 const INGREDIENTS = INGREDIENT_CATEGORIES.flatMap(c => c.items);
 
-// Neon colours read well on the dark theme; the light variants keep contrast on white.
+// Neon colors read well on the dark theme; the light variants keep contrast on white.
 const TEAM_THEMES = [
   { color: '#ff6b35', glow: '#ff6b3544', colorLight: '#d94f18', glowLight: '#d94f1826', emoji: '🔴', name: 'Team Red' },
   { color: '#00e5ff', glow: '#00e5ff44', colorLight: '#0e7490', glowLight: '#0e749026', emoji: '🔵', name: 'Team Blue' },
@@ -1292,7 +1292,7 @@ const TEAM_THEMES = [
 
 // ===== THEME =====
 function isLight() { return document.documentElement.getAttribute('data-theme') === 'light'; }
-// Theme-correct team colour / glow — used everywhere instead of team.color
+// Theme-correct team color / glow — used everywhere instead of team.color
 function tc(t) { return isLight() ? (t.colorLight || t.color) : t.color; }
 function tg(t) { return isLight() ? (t.glowLight || t.glow) : t.glow; }
 
@@ -1310,7 +1310,7 @@ function paintThemeToggle() {
   if (btn) btn.textContent = isLight() ? '☀️' : '🌙';
 }
 
-// Team colours are written inline, so the active screen has to be redrawn on toggle
+// Team colors are written inline, so the active screen has to be redrawn on toggle
 function refreshThemedScreens() {
   const active = document.querySelector('.screen.active');
   if (!active || teams.length === 0) return;
