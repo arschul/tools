@@ -425,7 +425,7 @@
       <button class="cefr-tab" data-level="B1" onclick="switchLevel('B1')">B1 — Intermediate</button>
       <button class="cefr-tab" data-level="B2" onclick="switchLevel('B2')">B2 — Upper-Intermediate</button>
     </div>
-    <p class="cefr-description" id="cefrDesc">Short, simple tasks — greetings, colours, numbers, basic questions.</p>
+    <p class="cefr-description" id="cefrDesc">Short, simple tasks — greetings, colors, numbers, basic questions.</p>
     <h2>🎲 Pick exactly 10 challenges</h2>
     <div class="selection-info">Selected: <span id="selCount">0</span> / 10</div>
     <div class="consequences-grid" id="consequencesGrid"></div>
@@ -492,10 +492,10 @@
 <script>
 const CEFR_DATA = {
   A1: {
-    desc: "Short, simple tasks — greetings, colours, numbers, basic questions.",
+    desc: "Short, simple tasks — greetings, colors, numbers, basic questions.",
     tasks: [
       { emoji: "👋", text: "Say hello and goodbye using 3 different greetings in English" },
-      { emoji: "🎨", text: "Name 8 colours and point to something that colour in the room" },
+      { emoji: "🎨", text: "Name 8 colors and point to something that color in the room" },
       { emoji: "🔢", text: "Count from 1 to 20 out loud, then count backwards from 10" },
       { emoji: "🏠", text: "Name 5 rooms in a house and one object you find in each" },
       { emoji: "👨‍👩‍👧", text: "Introduce your family using 'This is my…' and simple adjectives" },
@@ -509,9 +509,9 @@ const CEFR_DATA = {
       { emoji: "❓", text: "Answer 'What's your name?', 'How old are you?' and 'Where are you from?'" },
       { emoji: "🤸", text: "Name 5 body parts and mime an action using each one" },
       { emoji: "🛒", text: "Say the price of 5 classroom objects as if you're in a shop" },
-      { emoji: "🍽️", text: "Name your 3 favourite foods and say 'I like…' or 'I don't like…'" },
+      { emoji: "🍽️", text: "Name your 3 favorite foods and say 'I like…' or 'I don't like…'" },
       { emoji: "🚗", text: "Name 6 means of transport in English" },
-      { emoji: "🔵", text: "Describe 3 objects using colour + shape + size (e.g. 'a big red circle')" },
+      { emoji: "🔵", text: "Describe 3 objects using color + shape + size (e.g. 'a big red circle')" },
       { emoji: "📍", text: "Say where things are using: on, in, under, next to, behind" },
       { emoji: "😊", text: "Express 5 emotions in English and make a face for each one" },
       { emoji: "🌍", text: "Name 6 countries and say 'I'm from…' as if you were from each one" },
@@ -529,7 +529,7 @@ const CEFR_DATA = {
       { emoji: "🤝", text: "Introduce yourself as if meeting a new English-speaking friend — name, age, city, hobbies" },
       { emoji: "🛒", text: "Role-play buying 3 items in a shop, asking for the price and paying" },
       { emoji: "🏖️", text: "Describe your last holiday or a holiday you'd love to take" },
-      { emoji: "🎵", text: "Name your favourite singer and say 3 things about them in English" },
+      { emoji: "🎵", text: "Name your favorite singer and say 3 things about them in English" },
       { emoji: "👨‍👩‍👧", text: "Describe a member of your family — what they look like and what they do" },
       { emoji: "🌦️", text: "Compare the weather today with yesterday using past and present tense" },
       { emoji: "🎬", text: "Name a film you've seen and say what it's about in 3 sentences" },
@@ -537,18 +537,18 @@ const CEFR_DATA = {
       { emoji: "🍳", text: "List the ingredients for a simple meal and explain briefly how to make it" },
       { emoji: "📖", text: "Read 5 sentences from a simple English text aloud, clearly and slowly" },
       { emoji: "🏆", text: "Say 2 things you're good at and 2 things you'd like to improve" },
-      { emoji: "🤸", text: "Describe your favourite sport or hobby and how often you do it" },
+      { emoji: "🤸", text: "Describe your favorite sport or hobby and how often you do it" },
       { emoji: "📞", text: "Role-play a phone call making a reservation at a restaurant" },
       { emoji: "🌟", text: "Share one thing that happened to you recently using past tense" },
       { emoji: "🎂", text: "Describe what you did on your last birthday" },
       { emoji: "🧳", text: "Pack a suitcase for a beach trip — say each item out loud in English" },
       { emoji: "💬", text: "Have a 1-minute small-talk conversation with a classmate in English" },
-      { emoji: "✉️", text: "Dictate a short message to a friend cancelling plans — in English" },
-      { emoji: "🌆", text: "Describe your neighbourhood using 'there is / there are'" },
+      { emoji: "✉️", text: "Dictate a short message to a friend canceling plans — in English" },
+      { emoji: "🌆", text: "Describe your neighborhood using 'there is / there are'" },
       { emoji: "🎯", text: "Say 3 things you did last weekend using simple past tense" },
       { emoji: "🌍", text: "Name a country, say where it is, and share one fact about it" },
       { emoji: "🐾", text: "Describe your pet (or dream pet) — appearance, personality, habits" },
-      { emoji: "📺", text: "Name your favourite TV show and say what it's about in English" },
+      { emoji: "📺", text: "Name your favorite TV show and say what it's about in English" },
     ]
   },
   B1: {
@@ -558,7 +558,7 @@ const CEFR_DATA = {
       { emoji: "🎙️", text: "Interview a classmate for 2 minutes about their dream job" },
       { emoji: "🧠", text: "Explain how something works (e.g. recycling, voting, the internet) in English" },
       { emoji: "🗣️", text: "Share your opinion on social media: is it good or bad for teenagers?" },
-      { emoji: "📰", text: "Summarise a piece of news you read or heard recently — in English" },
+      { emoji: "📰", text: "Summarize a piece of news you read or heard recently — in English" },
       { emoji: "🎭", text: "Act out a scene at a job interview with a classmate — in English only" },
       { emoji: "🧩", text: "Explain what 3 common English idioms mean and use each in a sentence" },
       { emoji: "🌍", text: "Describe a cultural difference between Brazil and an English-speaking country" },
@@ -576,7 +576,7 @@ const CEFR_DATA = {
       { emoji: "🚀", text: "You've just returned from another country — describe what surprised you most" },
       { emoji: "🌈", text: "Compare life in a big city vs. a small town — give pros and cons" },
       { emoji: "🏠", text: "Describe your dream home — where, what it looks like, why you'd love it" },
-      { emoji: "🧑‍🍳", text: "Explain how to cook your favourite dish step by step in English" },
+      { emoji: "🧑‍🍳", text: "Explain how to cook your favorite dish step by step in English" },
       { emoji: "📻", text: "Be a radio presenter — deliver a 1-minute news bulletin in English" },
       { emoji: "🎪", text: "Perform a 45-second commercial for a made-up product — make it convincing!" },
     ]
@@ -589,7 +589,7 @@ const CEFR_DATA = {
       { emoji: "📊", text: "Explain a complex concept (e.g. inflation, climate policy) to the class in simple English" },
       { emoji: "🎭", text: "Improvise a 2-minute scene with a partner based on a situation the class gives you" },
       { emoji: "📝", text: "Dictate a well-structured short paragraph giving advice on a modern dilemma" },
-      { emoji: "🌍", text: "Analyse a cultural stereotype about Brazil and challenge or confirm it with evidence" },
+      { emoji: "🌍", text: "Analyze a cultural stereotype about Brazil and challenge or confirm it with evidence" },
       { emoji: "🔍", text: "Explain the difference between 3 confusable English words and use each in context" },
       { emoji: "💡", text: "Pitch a startup idea to the class in 90 seconds — product, market, and value" },
       { emoji: "🎬", text: "Give a film critique — theme, characters, message — in 2 minutes" },
@@ -603,7 +603,7 @@ const CEFR_DATA = {
       { emoji: "🤖", text: "Argue for or against artificial intelligence replacing human jobs — 2 minutes" },
       { emoji: "✈️", text: "Describe a cross-cultural misunderstanding (real or imagined) and what could have been done differently" },
       { emoji: "🎙️", text: "Interview a classmate as if they were a famous expert in their dream field" },
-      { emoji: "🏆", text: "Give a 90-second acceptance speech for a fictional award, with humour and gratitude" },
+      { emoji: "🏆", text: "Give a 90-second acceptance speech for a fictional award, with humor and gratitude" },
       { emoji: "🔮", text: "Speculate about what daily life will look like in 50 years — justify your predictions" },
       { emoji: "🧑‍⚖️", text: "Present one side of an ethical dilemma (e.g. privacy vs. security) and defend it" },
       { emoji: "📣", text: "Give constructive feedback to a classmate's presentation — diplomatically and in English" },
@@ -614,7 +614,7 @@ const CEFR_DATA = {
 };
 
 const CEFR_DESCS = {
-  A1: "Short, simple tasks — greetings, colours, numbers, basic questions.",
+  A1: "Short, simple tasks — greetings, colors, numbers, basic questions.",
   A2: "Simple descriptions and familiar topics — routines, preferences, basic stories.",
   B1: "Extended interaction on familiar topics — opinions, narratives, explanations.",
   B2: "Complex ideas, abstract topics, structured arguments — near-fluent interaction."
