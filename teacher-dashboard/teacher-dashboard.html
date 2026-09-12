@@ -33,11 +33,11 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Shared project catalogue, canonical copy lives in arschul/advanced -->
+<!-- Shared project catalog, canonical copy lives in arschul/advanced -->
 <script src="/advanced/projects-data.js"></script>
 <style>
   /* ================= THEME TOKENS =================
-     Every colour, font and radius in the app resolves through these.
+     Every color, font and radius in the app resolves through these.
      A theme is a block below that overrides them; nothing else changes.
   */
   :root{
@@ -737,8 +737,8 @@
   .legend-item{display:flex;align-items:center;gap:6px;}
   /* ===== Assessment days =====
      A test buried among ordinary class tags is easy to walk past, so the whole
-     cell is marked, not just the entry: a tinted face, a coloured edge stripe
-     and a corner flag. Colour alone would fail for a colour-blind teacher and
+     cell is marked, not just the entry: a tinted face, a colored edge stripe
+     and a corner flag. Color alone would fail for a color-blind teacher and
      disappear in print, hence the shape cues too.
      All emphasis is drawn INSIDE the box — inset shadows, never a thicker
      border or an outer ring — so a marked day occupies exactly the same space
@@ -2880,7 +2880,7 @@ function sessionRosterIds(classId, date){
 }
 // What we know about a student on a date they weren't explicitly marked: they
 // were present (the app's default), and nothing else was observed. hw/english/
-// participation stay null so they can't inflate homework or behaviour averages.
+// participation stay null so they can't inflate homework or behavior averages.
 function assumedRecord(){
   return { attendance:'present', lateMin:0, leftEarlyMin:0, phone:0,
            hw:null, english:null, participation:null, notes:'', _assumed:true };
@@ -3457,7 +3457,7 @@ function _renderDashboard(el){
 
   // — Today's private lessons (shown even on school holidays; completed ones stay visible) —
   const privTodayList = state.privateLessons
-    .filter(l=>l.date===today && l.status!=='cancelled')
+    .filter(l=>l.date===today && l.status!=='canceled')
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   window._dashPrivTodayIds = privTodayList.map(l=>l.studentId);
   const privTodayHtml = privTodayList.map((l,i)=>`
@@ -4432,7 +4432,7 @@ function openClassModal(classId){
     </div>
     <div class="field"><label>Color</label>
       <div class="swatches">
-        ${PALETTE.map(col=>`<button type="button" class="swatch ${ (c?c.color===col:col===PALETTE[0]) ?'on':''}" style="background:${col}" aria-label="Colour ${col}" aria-pressed="${ (c?c.color===col:col===PALETTE[0]) }" onclick="selectSwatch(this,'${col}')"></button>`).join('')}
+        ${PALETTE.map(col=>`<button type="button" class="swatch ${ (c?c.color===col:col===PALETTE[0]) ?'on':''}" style="background:${col}" aria-label="Color ${col}" aria-pressed="${ (c?c.color===col:col===PALETTE[0]) }" onclick="selectSwatch(this,'${col}')"></button>`).join('')}
       </div>
       <input type="hidden" id="cm-color" value="${c?.color||PALETTE[0]}">
     </div>
@@ -5163,8 +5163,8 @@ function pmTextEn(student, cfg){
           : `There is no resit exam, so the points have to come from the assessments still ahead. That is why I set up the English Club: `)
       : `I set up the English Club for exactly this: `)
       + (many
-        ? `extra sessions outside normal hours to revise the content and practise what comes up in the test. For ${f} this is not a one-off: I would like to count on ${f} at ${n} sessions, because the content builds and each one leads into the next.`
-        : `an extra session outside normal hours to revise the content and practise what comes up in the test.`));
+        ? `extra sessions outside normal hours to revise the content and practice what comes up in the test. For ${f} this is not a one-off: I would like to count on ${f} at ${n} sessions, because the content builds and each one leads into the next.`
+        : `an extra session outside normal hours to revise the content and practice what comes up in the test.`));
     P.push(pmSessionsBlock(student, cfg, false));
     P.push(many
       ? `The sessions are free and attendance is voluntary, but this run would make a real difference for ${f} right now. Can I count on ${f} on those dates? Just confirm here and I will save the places.`
@@ -5845,7 +5845,7 @@ function gmTestEntry(c, cycle, students, n, target){
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">The coloured figure under each box is that section's converted score — it appears as soon as you enter that section, on its own. The final score needs all three.${target?` Target for this level: <b>${target}</b>.`:''}</div>`;
+    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;">The colored figure under each box is that section's converted score — it appears as soon as you enter that section, on its own. The final score needs all three.${target?` Target for this level: <b>${target}</b>.`:''}</div>`;
 }
 
 // Final score cell: a real score once all three sections are in, otherwise an
@@ -6420,7 +6420,7 @@ function renderRollCall(){
       })()}
       ${(()=>{
         /* ===== BEFORE / NOW / AFTER =====
-           Roll Call is open for the whole lesson, so it is organised as three
+           Roll Call is open for the whole lesson, so it is organized as three
            panels rather than one long scroll. Everything written BEFORE the
            class (the plan, the homework that was set last time) is read-only
            here with live links: mid-lesson you consult it, you don't rewrite
@@ -7841,7 +7841,7 @@ function openRollCallNav(){
    levels x six phrasings, in Brazilian Portuguese, written in a teacher's
    first-person voice and woven into paragraphs by rcCommentLines() so the
    block reads as a letter home rather than a list of graded labels.
-   Behaviour and homework levels are auto-selected from measured
+   Behavior and homework levels are auto-selected from measured
    participation/homework; vocab, grammar and Portuguese use are not measured
    here, so they stay off unless the teacher sets them, rather than putting an
    unsupported grade on an official document.
@@ -7853,7 +7853,7 @@ const RC_COMMENTS = {"vocab": {"1": ["Tenho notado que {n} trava quando falta a 
 const RC_LEVEL_LABELS_PT = {1:'Precisa melhorar muito',2:'Precisa melhorar',3:'Regular',4:'Muito Bom',5:'Excelente'};
 const RC_LEVEL_LABELS_EN = {1:'Needs much improvement',2:'Needs improvement',3:'Satisfactory',4:'Very good',5:'Excellent'};
 const RC_CAT_LABELS = {
-  behavior:{pt:'Comportamento',en:'Behaviour'},
+  behavior:{pt:'Comportamento',en:'Behavior'},
   homework:{pt:'Lição de casa',en:'Homework'},
   vocab:{pt:'Vocabulário',en:'Vocabulary'},
   grammar:{pt:'Gramática',en:'Grammar'},
@@ -8160,7 +8160,7 @@ function openReportTextModal(){
   const text = buildReportText(lastReportStats, lang);
   const autoNote = isPt
     ? 'Comportamento e lição de casa vêm dos dados. Vocabulário, gramática e português são opcionais. O texto sai como um bilhete em primeira pessoa, com o primeiro nome do aluno. Use ↻ Outra redação para trocar as frases.'
-    : 'Behaviour and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment reads as a short letter in the teacher\'s voice, using the student\'s first name, and is written in Portuguese for a Brazilian report card. Use ↻ Reword to swap the phrasing.';
+    : 'Behavior and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment reads as a short letter in the teacher\'s voice, using the student\'s first name, and is written in Portuguese for a Brazilian report card. Use ↻ Reword to swap the phrasing.';
 
   showModal(`${sizeModal('lg sheet')}
     <h2>${isPt?'Texto para o boletim':'Report card text'}</h2>
@@ -9387,16 +9387,16 @@ function exportGradesCsv(){
 // Shared inner-content builder for one calendar day (used by month + week views).
 /* Tests and reviews change what a day *is*; homework and "other" don't.
    Projects sit in between and get the same emphasis, since a due date matters.
-   Returned: the winning type, its colour variable, and the flag emoji. */
-/* An assessment is coloured by the GROUP it belongs to, matching that class's
+   Returned: the winning type, its color variable, and the flag emoji. */
+/* An assessment is colored by the GROUP it belongs to, matching that class's
    chip, so a glance tells you whose test it is. The emoji carries the kind of
-   event, which is what colour used to do — otherwise every marked day was red
+   event, which is what color used to do — otherwise every marked day was red
    and the grid said "something important" without saying for whom.
-   Events with no class (school-wide) keep a neutral type colour. */
+   Events with no class (school-wide) keep a neutral type color. */
 const ASSESS_TYPES = { test:{fallback:'--red', flag:'✏️', rank:3, label:'Test'},
                        review:{fallback:'--amber', flag:'🔁', rank:2, label:'Review'},
                        project:{fallback:'--purple', flag:'📁', rank:1, label:'Project'} };
-// A CSS colour for one event: the class's own colour when it has one.
+// A CSS color for one event: the class's own color when it has one.
 function assessColorFor(ev){
   const c = ev && ev.classId ? classById(ev.classId) : null;
   if(c && c.color) return c.color;
@@ -9415,7 +9415,7 @@ function assessInfoFor(dateStr){
   });
   return best;
 }
-// Inline custom properties so one class can serve every event colour.
+// Inline custom properties so one class can serve every event color.
 function assessCellAttrs(dateStr){
   const a = assessInfoFor(dateStr);
   if(!a) return { cls:'', style:'', flag:'' };
@@ -9436,7 +9436,7 @@ function calDayItemsHtml(dateStr){
     return true;
   }));
   const eventsToday = state.events.filter(e=>e.date===dateStr);
-  const privToday = state.privateLessons.filter(l=>l.date===dateStr && l.status!=='cancelled')
+  const privToday = state.privateLessons.filter(l=>l.date===dateStr && l.status!=='canceled')
     .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   return `
     ${holiday?`<div class="cal-tag holiday-tag">🎉 ${esc(holiday.label)}</div>`:''}
@@ -9518,7 +9518,7 @@ function calLegendHtml(){
       <div class="legend-item"><span class="cal-tag assess-tag" style="--assess-c:var(--gray);padding:1px 6px;">📁</span> Project</div>
       <div class="legend-item"><span class="badge other">Other</span> Other</div>
       <div class="legend-item"><span class="cal-tag" style="background:var(--gray-soft);color:var(--gray);padding:1px 6px;">Class \u2022</span> Dot = plan, lesson content or homework written</div>
-      <div class="legend-item" style="font-style:italic;">These days are outlined in their group's colour.</div>
+      <div class="legend-item" style="font-style:italic;">These days are outlined in their group's color.</div>
       <div class="legend-item">🎉 Holiday</div>
       <div class="legend-item"><span class="cal-tag priv-tag" style="padding:1px 6px;">👤</span> Private lesson</div>
     </div>`;
@@ -9650,7 +9650,7 @@ function openDayModal(dateStr){
         const st = privStudent(l.studentId);
         return `<div class="modal-row">
           <span>👤 <b>${st?esc(st.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
-            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
+            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='canceled'?'other':'hw'}">${l.status}</span></span>
           <button class="btn-ghost small" onclick="closeModal();openRescheduleModal(window._dayPrivIds[${i}])">Reschedule</button>
         </div>`;
       }).join('') : `<div class="empty">No private lessons.</div>`}
@@ -9733,7 +9733,7 @@ function removeHoliday(dateStr){
 /* =========================================================
    PRIVATE LESSONS MODULE
    ========================================================= */
-const PRIV_STATUSES = ['scheduled','completed','no-show','cancelled'];
+const PRIV_STATUSES = ['scheduled','completed','no-show','canceled'];
 const RECUR_HORIZON_WEEKS = 8;
 const SKILLS = [
   { key:'speaking', label:'Speaking', abbr:'Spk' },
@@ -9752,7 +9752,7 @@ function gradeTier(letter){
   return 'none';
 }
 const PT_SK_PREFIX = 'efl-dashboard:placement:';
-const PT_QB = {"Starter":[{"tests":"be statements and yes/no questions, subject pronouns","outcome":"Introduce yourself with be"},{"tests":"a/an, singular and plural nouns, this/that/these/those","outcome":"Identify objects near and far"},{"tests":"There is / There are, prepositions of place","outcome":"Say where things are"},{"tests":"Simple present statements (I/you vs. he/she + -s)","outcome":"Talk about work and study"},{"tests":"Yes/no questions and short answers with do/does","outcome":"Ask and answer yes/no questions"},{"tests":"Adverbs of frequency (always, usually, sometimes, never)","outcome":"Say how often you do things"},{"tests":"can / can't for ability","outcome":"Talk about abilities"},{"tests":"Present progressive (am/is/are + -ing)","outcome":"Describe actions happening now"}],"Basic 1":[{"tests":"Information questions with be","outcome":"Ask and answer information questions with be"},{"tests":"Possessive adjectives and possessive 's","outcome":"Talk about family with possessives"},{"tests":"Articles a, an, and no article with jobs","outcome":"Talk about jobs with articles"},{"tests":"like / love / hate + -ing","outcome":"Express likes and dislikes"},{"tests":"The imperative for instructions","outcome":"Give step-by-step instructions"},{"tests":"Simple present information questions, daily routine","outcome":"Describe your daily routine"},{"tests":"There is / There are with some/any, places vocabulary","outcome":"Describe your neighborhood"},{"tests":"Present progressive vs. simple present","outcome":"Contrast routines with current actions"}],"Basic 2":[{"tests":"Adverbs of manner (well, badly, carefully, fast)","outcome":"Say how people do things"},{"tests":"Countable and uncountable nouns with much/many","outcome":"Talk about quantities of food"},{"tests":"Verb + infinitive or gerund (want to, enjoy -ing, plan to)","outcome":"Talk about travel wishes"},{"tests":"should / could for advice and suggestions","outcome":"Give travel advice"},{"tests":"Simple past affirmative (regular and irregular verbs)","outcome":"Narrate your day in the past"},{"tests":"Simple past negatives and questions","outcome":"Ask and answer about the past"},{"tests":"Going to for plans and intentions","outcome":"Talk about plans"},{"tests":"Comparative adjectives (-er / more... than)","outcome":"Compare places"}],"Basic 3":[{"tests":"Past progressive","outcome":"Describe a past moment in progress"},{"tests":"Past progressive vs. simple past with when/while","outcome":"Tell an interrupted-action story"},{"tests":"Quantifiers (much, many, a lot of), enough / too","outcome":"Talk about money and quantity"},{"tests":"Used to for past habits","outcome":"Talk about past habits"},{"tests":"(not) as...as comparisons","outcome":"Compare people with as...as"},{"tests":"Superlative adjectives","outcome":"Talk about extremes with superlatives"},{"tests":"Modals of request and permission (can/could/may)","outcome":"Make polite requests"},{"tests":"Present perfect with for / since / ever / never","outcome":"Talk about experiences and duration"}],"Basic 4":[{"tests":"Present perfect with already / yet / just","outcome":"Talk about what's done and not done"},{"tests":"Gerund phrases as subject","outcome":"Talk about activities as subjects"},{"tests":"Verb + gerund or infinitive (decide to, keep -ing, avoid -ing)","outcome":"Talk about decisions and habits"},{"tests":"Future forms (will, going to, present continuous for future)","outcome":"Talk about future plans and predictions"},{"tests":"Future possibility and certainty (might, could, will definitely)","outcome":"Speculate about the future"},{"tests":"Zero and first conditional","outcome":"Talk about causes and real plans"},{"tests":"Second conditional","outcome":"Imagine hypothetical situations"},{"tests":"Simple present and simple past passive","outcome":"Talk about products with passives"}],"Intermediate 1":[{"tests":"Stative and dynamic verbs (think/see vs. thinking/looking)","outcome":"Contrast states and actions"},{"tests":"Expressing ability (can, could, be able to, manage to)","outcome":"Talk about achieved abilities"},{"tests":"Tag questions","outcome":"Confirm information with tags"},{"tests":"Future time clauses (when, as soon as, before, after, until)","outcome":"Sequence future actions"},{"tests":"Present perfect progressive (have been doing)","outcome":"Talk about ongoing activities"},{"tests":"Wishes and hopes (I wish + past, I hope + will)","outcome":"Express wishes and hopes"},{"tests":"Past perfect with by the time / already / yet","outcome":"Sequence past events"},{"tests":"Defining relative clauses (who, which, that, where)","outcome":"Define things with relative clauses"}],"Intermediate 2":[{"tests":"Should / shouldn't have + past participle","outcome":"Express regrets about the past"},{"tests":"Third conditional","outcome":"Imagine a different past"},{"tests":"Indirect questions","outcome":"Ask polite indirect questions"},{"tests":"So / such / too / enough","outcome":"Emphasize with so/such/too/enough"},{"tests":"Modals of deduction (must, might, could, can't + be)","outcome":"Speculate with modals of deduction"},{"tests":"Reported speech (statements and questions)","outcome":"Report what people said"},{"tests":"Causatives (have / get something done)","outcome":"Talk about services with causatives"},{"tests":"Passive voice in progressive and perfect tenses","outcome":"Describe changes with passives"}],"Intermediate 3":[{"tests":"Adjective order (opinion-size-age-shape-colour-origin-material)","outcome":"Describe objects with ordered adjectives"},{"tests":"Quantifiers: both, neither, either, all, none, each","outcome":"Talk about pairs and groups"},{"tests":"Obligation, permission, prohibition (must, mustn't, be allowed to, don't have to)","outcome":"Explain rules and obligations"},{"tests":"Verbs + gerund/infinitive with change in meaning (stop, remember, try, forget)","outcome":"Contrast stop/remember + gerund or infinitive"},{"tests":"Be / get used to + gerund","outcome":"Talk about adapting to change"},{"tests":"Past perfect vs. past perfect progressive","outcome":"Describe background to a past moment"},{"tests":"Prefer / would prefer / would rather","outcome":"Express preferences"},{"tests":"Creating emphasis (cleft sentences: What I love is..., It's...that...)","outcome":"Create emphasis with cleft sentences"}],"Intermediate 4":[{"tests":"Past modals of deduction (must have, might have, can't have + past participle)","outcome":"Deduce about the past"},{"tests":"Verb + object + infinitive (encourage/expect/want/advise someone to do)","outcome":"Talk about influence and expectations"},{"tests":"Non-defining relative clauses","outcome":"Add extra information with clauses"},{"tests":"Noun clauses as subjects (What concerns me is..., The fact that...)","outcome":"Front ideas with noun clauses"},{"tests":"Gerund as object of preposition (interested in doing, good at doing, tired of doing)","outcome":"Talk about interests after prepositions"},{"tests":"Phrasal-prepositional verbs (put off, look forward to, put up with, get around to)","outcome":"Talk about procrastination and anticipation"},{"tests":"Future passive (will be done, will have been done)","outcome":"Predict with future passives"},{"tests":"Verb phrases of intention (intend to, be committed to, be determined to, give up on)","outcome":"Express commitment and intention"}]};
+const PT_QB = {"Starter":[{"tests":"be statements and yes/no questions, subject pronouns","outcome":"Introduce yourself with be"},{"tests":"a/an, singular and plural nouns, this/that/these/those","outcome":"Identify objects near and far"},{"tests":"There is / There are, prepositions of place","outcome":"Say where things are"},{"tests":"Simple present statements (I/you vs. he/she + -s)","outcome":"Talk about work and study"},{"tests":"Yes/no questions and short answers with do/does","outcome":"Ask and answer yes/no questions"},{"tests":"Adverbs of frequency (always, usually, sometimes, never)","outcome":"Say how often you do things"},{"tests":"can / can't for ability","outcome":"Talk about abilities"},{"tests":"Present progressive (am/is/are + -ing)","outcome":"Describe actions happening now"}],"Basic 1":[{"tests":"Information questions with be","outcome":"Ask and answer information questions with be"},{"tests":"Possessive adjectives and possessive 's","outcome":"Talk about family with possessives"},{"tests":"Articles a, an, and no article with jobs","outcome":"Talk about jobs with articles"},{"tests":"like / love / hate + -ing","outcome":"Express likes and dislikes"},{"tests":"The imperative for instructions","outcome":"Give step-by-step instructions"},{"tests":"Simple present information questions, daily routine","outcome":"Describe your daily routine"},{"tests":"There is / There are with some/any, places vocabulary","outcome":"Describe your neighborhood"},{"tests":"Present progressive vs. simple present","outcome":"Contrast routines with current actions"}],"Basic 2":[{"tests":"Adverbs of manner (well, badly, carefully, fast)","outcome":"Say how people do things"},{"tests":"Countable and uncountable nouns with much/many","outcome":"Talk about quantities of food"},{"tests":"Verb + infinitive or gerund (want to, enjoy -ing, plan to)","outcome":"Talk about travel wishes"},{"tests":"should / could for advice and suggestions","outcome":"Give travel advice"},{"tests":"Simple past affirmative (regular and irregular verbs)","outcome":"Narrate your day in the past"},{"tests":"Simple past negatives and questions","outcome":"Ask and answer about the past"},{"tests":"Going to for plans and intentions","outcome":"Talk about plans"},{"tests":"Comparative adjectives (-er / more... than)","outcome":"Compare places"}],"Basic 3":[{"tests":"Past progressive","outcome":"Describe a past moment in progress"},{"tests":"Past progressive vs. simple past with when/while","outcome":"Tell an interrupted-action story"},{"tests":"Quantifiers (much, many, a lot of), enough / too","outcome":"Talk about money and quantity"},{"tests":"Used to for past habits","outcome":"Talk about past habits"},{"tests":"(not) as...as comparisons","outcome":"Compare people with as...as"},{"tests":"Superlative adjectives","outcome":"Talk about extremes with superlatives"},{"tests":"Modals of request and permission (can/could/may)","outcome":"Make polite requests"},{"tests":"Present perfect with for / since / ever / never","outcome":"Talk about experiences and duration"}],"Basic 4":[{"tests":"Present perfect with already / yet / just","outcome":"Talk about what's done and not done"},{"tests":"Gerund phrases as subject","outcome":"Talk about activities as subjects"},{"tests":"Verb + gerund or infinitive (decide to, keep -ing, avoid -ing)","outcome":"Talk about decisions and habits"},{"tests":"Future forms (will, going to, present continuous for future)","outcome":"Talk about future plans and predictions"},{"tests":"Future possibility and certainty (might, could, will definitely)","outcome":"Speculate about the future"},{"tests":"Zero and first conditional","outcome":"Talk about causes and real plans"},{"tests":"Second conditional","outcome":"Imagine hypothetical situations"},{"tests":"Simple present and simple past passive","outcome":"Talk about products with passives"}],"Intermediate 1":[{"tests":"Stative and dynamic verbs (think/see vs. thinking/looking)","outcome":"Contrast states and actions"},{"tests":"Expressing ability (can, could, be able to, manage to)","outcome":"Talk about achieved abilities"},{"tests":"Tag questions","outcome":"Confirm information with tags"},{"tests":"Future time clauses (when, as soon as, before, after, until)","outcome":"Sequence future actions"},{"tests":"Present perfect progressive (have been doing)","outcome":"Talk about ongoing activities"},{"tests":"Wishes and hopes (I wish + past, I hope + will)","outcome":"Express wishes and hopes"},{"tests":"Past perfect with by the time / already / yet","outcome":"Sequence past events"},{"tests":"Defining relative clauses (who, which, that, where)","outcome":"Define things with relative clauses"}],"Intermediate 2":[{"tests":"Should / shouldn't have + past participle","outcome":"Express regrets about the past"},{"tests":"Third conditional","outcome":"Imagine a different past"},{"tests":"Indirect questions","outcome":"Ask polite indirect questions"},{"tests":"So / such / too / enough","outcome":"Emphasize with so/such/too/enough"},{"tests":"Modals of deduction (must, might, could, can't + be)","outcome":"Speculate with modals of deduction"},{"tests":"Reported speech (statements and questions)","outcome":"Report what people said"},{"tests":"Causatives (have / get something done)","outcome":"Talk about services with causatives"},{"tests":"Passive voice in progressive and perfect tenses","outcome":"Describe changes with passives"}],"Intermediate 3":[{"tests":"Adjective order (opinion-size-age-shape-color-origin-material)","outcome":"Describe objects with ordered adjectives"},{"tests":"Quantifiers: both, neither, either, all, none, each","outcome":"Talk about pairs and groups"},{"tests":"Obligation, permission, prohibition (must, mustn't, be allowed to, don't have to)","outcome":"Explain rules and obligations"},{"tests":"Verbs + gerund/infinitive with change in meaning (stop, remember, try, forget)","outcome":"Contrast stop/remember + gerund or infinitive"},{"tests":"Be / get used to + gerund","outcome":"Talk about adapting to change"},{"tests":"Past perfect vs. past perfect progressive","outcome":"Describe background to a past moment"},{"tests":"Prefer / would prefer / would rather","outcome":"Express preferences"},{"tests":"Creating emphasis (cleft sentences: What I love is..., It's...that...)","outcome":"Create emphasis with cleft sentences"}],"Intermediate 4":[{"tests":"Past modals of deduction (must have, might have, can't have + past participle)","outcome":"Deduce about the past"},{"tests":"Verb + object + infinitive (encourage/expect/want/advise someone to do)","outcome":"Talk about influence and expectations"},{"tests":"Non-defining relative clauses","outcome":"Add extra information with clauses"},{"tests":"Noun clauses as subjects (What concerns me is..., The fact that...)","outcome":"Front ideas with noun clauses"},{"tests":"Gerund as object of preposition (interested in doing, good at doing, tired of doing)","outcome":"Talk about interests after prepositions"},{"tests":"Phrasal-prepositional verbs (put off, look forward to, put up with, get around to)","outcome":"Talk about procrastination and anticipation"},{"tests":"Future passive (will be done, will have been done)","outcome":"Predict with future passives"},{"tests":"Verb phrases of intention (intend to, be committed to, be determined to, give up on)","outcome":"Express commitment and intention"}]};
 const PT_URL = 'https://arschul.github.io/tools/placement-test.html';
 
 /* ---------- private helpers ---------- */
@@ -9838,7 +9838,7 @@ function addLpToNextClass(lpId, studentId){
 }
 function nextLessonAfter(studentId, date, excludeId){
   return state.privateLessons
-    .filter(x=>x.studentId===studentId && x.id!==excludeId && x.status!=='cancelled' && x.date>date)
+    .filter(x=>x.studentId===studentId && x.id!==excludeId && x.status!=='canceled' && x.date>date)
     .sort((a,b)=> a.date===b.date ? (a.time||'').localeCompare(b.time||'') : a.date.localeCompare(b.date))[0] || null;
 }
 function nextPrivLesson(studentId){
@@ -10121,7 +10121,7 @@ function privScheduleHtml(){
       <div class="cal-items">
         ${todays.map(l=>{
           const s = privStudent(l.studentId);
-          const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='cancelled'?'var(--gray)':'var(--sched)';
+          const col = l.status==='completed'?'var(--green)':l.status==='no-show'?'var(--red)':l.status==='canceled'?'var(--gray)':'var(--sched)';
           return `<button type="button" class="cal-tag" style="background:${col}22;color:${col};border-color:${col}55;cursor:pointer;" title="Click to reschedule" onclick="event.stopPropagation();openRescheduleModal('${l.id}')">👤 ${s?esc(s.name.split(' ')[0]):'?'}${l.time?' '+l.time:''}</button>`;
         }).join('')}
       </div>
@@ -10146,7 +10146,7 @@ function privScheduleHtml(){
       <div class="legend-item"><span class="color-dot" style="background:var(--sched)"></span>Scheduled</div>
       <div class="legend-item"><span class="color-dot" style="background:var(--green)"></span>Completed</div>
       <div class="legend-item"><span class="color-dot" style="background:var(--red)"></span>No-show</div>
-      <div class="legend-item"><span class="color-dot" style="background:var(--gray)"></span>Cancelled</div>
+      <div class="legend-item"><span class="color-dot" style="background:var(--gray)"></span>Canceled</div>
     </div>
   `;
 }
@@ -10421,7 +10421,7 @@ function openRescheduleModal(lessonId){
     <div class="field"><label>Status</label>
       <div class="pill-group">
         ${PRIV_STATUSES.map(st=>{
-          const cl = st==='completed'?'green':st==='no-show'?'red':st==='cancelled'?'':'amber';
+          const cl = st==='completed'?'green':st==='no-show'?'red':st==='canceled'?'':'amber';
           return `<button type="button" class="pill ${cl} ${l.status===st?'on':''}" aria-pressed="${l.status===st}" onclick="rsSetStatus(this,'${st}')">${st}</button>`;
         }).join('')}
       </div>
@@ -10677,7 +10677,7 @@ function openPrivDayModal(dateStr){
         const s = privStudent(l.studentId);
         return `<div class="modal-row">
           <span>👤 <b>${s?esc(s.name):'—'}</b>${l.time?' · '+l.time:''} · ${l.duration}min
-            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></span>
+            <span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='canceled'?'other':'hw'}">${l.status}</span></span>
           <button class="btn-ghost small" onclick="closeModal();openRescheduleModal(window._privDayIds[${i}])">Reschedule</button>
         </div>`;
       }).join('') : `<div class="empty">No lessons.</div>`}
@@ -10708,7 +10708,7 @@ function renderPrivStudent(){
   const place = latestPlacement(s.id);
   const completed = lessons.filter(l=>l.status==='completed').length;
   const noshow = lessons.filter(l=>l.status==='no-show').length;
-  const cancelled = lessons.filter(l=>l.status==='cancelled').length;
+  const cancelled = lessons.filter(l=>l.status==='canceled').length;
   window._privLessonIds = lessons.map(l=>l.id);
   window._privPayIds2 = pays.map(p=>p.id);
   window._privCpIds = cps.map(c=>c.id);
@@ -10744,7 +10744,7 @@ function renderPrivStudent(){
     <div class="stat-row">
       <div class="card stat"><div class="stat-num">${completed}</div><div class="stat-label">Completed</div></div>
       <div class="card stat"><div class="stat-num">${noshow}</div><div class="stat-label">No-shows</div></div>
-      <div class="card stat"><div class="stat-num">${cancelled}</div><div class="stat-label">Cancelled</div></div>
+      <div class="card stat"><div class="stat-num">${canceled}</div><div class="stat-label">Canceled</div></div>
       <div class="card stat"><div class="stat-num" style="font-size:20px;background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:${balanceColor(led.balance)};color:${balanceColor(led.balance)};">${balanceText(led.balance)}</div><div class="stat-label">Balance</div></div>
       <div class="card stat"><div class="stat-num">${lps.length?lpDone+'/'+lps.length:'—'}</div><div class="stat-label">Learning points</div></div>
     </div>
@@ -10841,7 +10841,7 @@ function renderPrivStudent(){
           <td>${formatDateShort(l.date)}</td>
           <td>${l.time||'—'}</td>
           <td>${l.duration} min</td>
-          <td><span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='cancelled'?'other':'hw'}">${l.status}</span></td>
+          <td><span class="badge ${l.status==='completed'?'green':l.status==='no-show'?'red':l.status==='canceled'?'other':'hw'}">${l.status}</span></td>
           <td>${esc(l.notes||'\u2014')}${l.homework?`<div style="font-size:12px;color:var(--muted);">HW due: ${esc(l.homework)}</div>`:''}${l.promise?`<div style="font-size:12px;color:var(--muted);">Promised: ${esc(l.promise)}</div>`:''}</td>
           <td class="no-print" style="white-space:nowrap;">
             ${l.status==='scheduled' && l.date<=todayStr()?`
@@ -11105,7 +11105,7 @@ async function init(){
   dataReady = true;   // writes unlocked only now
   renderSaveState();  // paint the Save buttons / indicators from the moment writing is possible
 
-  cleanupEmptySessions();   // drop empty sessions left by older view-creates-data behaviour
+  cleanupEmptySessions();   // drop empty sessions left by older view-creates-data behavior
 
   // refresh recurring placeholders for active students on load
   state.privateStudents.filter(x=>x.status==='active').forEach(regenerateRecurring);
@@ -11114,12 +11114,12 @@ async function init(){
 
 /* ================= PROJECTS =================
    Multi-session projects assigned to a class from the Advanced Hub
-   catalogue (/advanced/projects-data.js). This section covers
+   catalog (/advanced/projects-data.js). This section covers
    assignment, teams and milestone tracking only; grading and report
    output are handled separately.
 
-   A run freezes a copy of the catalogue's milestones at assignment
-   time, so editing the catalogue later can never corrupt a run that
+   A run freezes a copy of the catalog's milestones at assignment
+   time, so editing the catalog later can never corrupt a run that
    is already under way.                                            */
 
 const PROJ_COLOURS = ['#2dd4bf','#f59e0b','#818cf8','#f472b6','#34d399','#60a5fa','#fb923c','#a78bfa'];
@@ -11155,7 +11155,7 @@ function projNextStep(run, teamId){
   return null;
 }
 /* Criteria for a run. Stored on the run at assignment time so grades survive
-   a catalogue edit; older runs and a failed catalogue load fall back safely. */
+   a catalog edit; older runs and a failed catalog load fall back safely. */
 const PROJ_FALLBACK_CRITERIA = [
   { id:'lang',     label:'Language range & accuracy', labelPt:'Linguagem' },
   { id:'task',     label:'Task completion',           labelPt:'Cumprimento' },
@@ -11281,8 +11281,8 @@ function _renderProjects(el){
   const archived = runs.filter(r=>r.status==='archived');
   const catalogueWarning = projCatalogueReady() ? '' : `
     <div class="card section" style="border-left:4px solid var(--red);margin-bottom:16px;">
-      <b>Project catalogue not loaded.</b>
-      <p class="meta" style="margin-top:6px;">The dashboard reads the catalogue from
+      <b>Project catalog not loaded.</b>
+      <p class="meta" style="margin-top:6px;">The dashboard reads the catalog from
       <code>/advanced/projects-data.js</code>. Check your connection and reload —
       existing runs still show below, because each one stores its own copy of the milestones.</p>
     </div>`;
@@ -11291,13 +11291,13 @@ function _renderProjects(el){
     <div class="topbar">
       <div><h1>Projects</h1><div class="meta">Assign a project to a class and track every team's milestones</div></div>
       <div class="no-print" style="display:flex;gap:10px;">
-        <a class="btn-ghost" href="/advanced/project-lab.html" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;">📖 Browse catalogue</a>
+        <a class="btn-ghost" href="/advanced/project-lab.html" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;">📖 Browse catalog</a>
         <button class="btn-accent" onclick="openAssignProjectModal()" ${projCatalogueReady()?'':'disabled'}>+ Assign a project</button>
       </div>
     </div>
     ${catalogueWarning}
     ${active.length===0 ? `<div class="card empty-card">
-        No projects assigned yet.${projCatalogueReady()?` There are ${projCatalogue().length} projects in the catalogue — pick one and assign it to a class.`:''}
+        No projects assigned yet.${projCatalogueReady()?` There are ${projCatalogue().length} projects in the catalog — pick one and assign it to a class.`:''}
       </div>` : `<div class="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
         ${active.map(projRunCard).join('')}
       </div>`}
@@ -11646,7 +11646,7 @@ function projDeleteTeam(runId, teamId){
 /* ---------- assign ---------- */
 function openAssignProjectModal(){
   projAssignPicks = {};
-  if(!projCatalogueReady()){ alert('The project catalogue has not loaded. Check your connection and reload the page.'); return; }
+  if(!projCatalogueReady()){ alert('The project catalog has not loaded. Check your connection and reload the page.'); return; }
   const classes = activeClasses();
   if(!classes.length){ alert('Add a class first.'); return; }
   const adv = classes.filter(c=>isAdvancedLevel(c.level));
@@ -11658,7 +11658,7 @@ function openAssignProjectModal(){
 
   showModal(`${sizeModal('md')}
     <h2>Assign a project</h2>
-    <p class="meta" style="margin:6px 0 18px;">The milestones are copied into this assignment, so later edits to the catalogue will not change a project already under way.</p>
+    <p class="meta" style="margin:6px 0 18px;">The milestones are copied into this assignment, so later edits to the catalog will not change a project already under way.</p>
     <div class="field" style="margin-bottom:12px;">
       <label>Project</label>
       <select id="ap-project" onchange="projAssignPreview()" style="width:100%;">${projOpts}</select>
@@ -11841,12 +11841,12 @@ function openProjTeamModal(runId, teamId){
       <input type="text" id="tm-name" value="${esc(team?team.name:'Team '+((run.teams||[]).length+1))}" style="width:100%;">
     </div>
     <div class="field" style="margin-bottom:14px;">
-      <label>Colour</label>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="tm-colours">
+      <label>Color</label>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="tm-colors">
         ${PROJ_COLOURS.map(c=>`<button type="button" class="swatch" data-c="${c}" onclick="projPickColour('${c}')"
           style="width:26px;height:26px;border-radius:50%;background:${c};border:2px solid ${ (team?team.colour:PROJ_COLOURS[0])===c ? 'var(--text,#111)' : 'transparent'};cursor:pointer;"></button>`).join('')}
       </div>
-      <input type="hidden" id="tm-colour" value="${esc(team?team.colour:PROJ_COLOURS[(run.teams||[]).length%PROJ_COLOURS.length])}">
+      <input type="hidden" id="tm-color" value="${esc(team?team.colour:PROJ_COLOURS[(run.teams||[]).length%PROJ_COLOURS.length])}">
     </div>
     <div class="field">
       <label>Members</label>
@@ -11869,19 +11869,19 @@ function openProjTeamModal(runId, teamId){
   `);
 }
 function projPickColour(c){
-  const hid = document.getElementById('tm-colour'); if(hid) hid.value = c;
-  document.querySelectorAll('#tm-colours .swatch').forEach(b=>{
+  const hid = document.getElementById('tm-color'); if(hid) hid.value = c;
+  document.querySelectorAll('#tm-colors .swatch').forEach(b=>{
     b.style.borderColor = b.dataset.c===c ? 'var(--text,#111)' : 'transparent';
   });
 }
 function projSaveTeam(runId, teamId){
   const run = projRun(runId); if(!run) return;
   const name = (document.getElementById('tm-name').value||'').trim() || 'Team';
-  const colour = document.getElementById('tm-colour').value || PROJ_COLOURS[0];
+  const colour = document.getElementById('tm-color').value || PROJ_COLOURS[0];
   const members = [...document.querySelectorAll('.tm-mem:checked')].map(i=>i.value);
   let team = teamId ? (run.teams||[]).filter(t=>t.id===teamId)[0] : null;
   if(!team){ team = { id: uid(), memberIds: [] }; run.teams = run.teams||[]; run.teams.push(team); }
-  team.name = name; team.colour = colour; team.memberIds = members;
+  team.name = name; team.colour = color; team.memberIds = members;
   // A student can only be on one team per run.
   (run.teams||[]).forEach(t=>{
     if(t.id===team.id) return;
