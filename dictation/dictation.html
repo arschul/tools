@@ -524,7 +524,7 @@
    Frames are grammatical skeletons; fillers only vary vocabulary, so every
    combination stays correct. Fillers are checked for semantic fit with their
    frame, and words with US/UK spelling splits (colour, realise, neighbour,
-   centre, maths, cancelled...) are avoided so no student is marked down for
+   center, math, canceled...) are avoided so no student is marked down for
    the variety they were taught.
    ========================================================================= */
 
@@ -945,7 +945,7 @@ function speak(text){
 }
 
 // Split into natural dictation chunks: at commas first, then at conjunctions,
-// merging anything shorter than three words into its neighbour.
+// merging anything shorter than three words into its neighbor.
 function chunkSentence(s){
   let parts = String(s).split(/,\s*/).map((p,i,arr) => i < arr.length-1 ? p + ',' : p);
   const out = [];
