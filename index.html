@@ -21,8 +21,8 @@
   <meta property="og:title" content="Tool Hub">
   <meta property="og:description" content="Classroom tools for planning, writing and assessment.">
   <meta property="og:url" content="https://arschul.github.io/tools/">
-  <link rel="stylesheet" href="https://arschul.github.io/assets/hub.v2.css">
-  <script defer src="https://arschul.github.io/assets/hub.v2.js"></script>
+  <link rel="stylesheet" href="https://arschul.github.io/assets/hub.v3.css">
+  <script defer src="https://arschul.github.io/assets/hub.v3.js"></script>
   <style>:root{--hub-bg:var(--background);--hub-surface:var(--card);--hub-ink:var(--foreground);--hub-ink-soft:var(--muted-foreground);--hub-rule:var(--border);--hub-accent:var(--primary);--hub-radius:var(--radius);--hub-font-display:'Montserrat', sans-serif;--hub-font-ui:'Open Sans', sans-serif;}</style>
 <!-- HUBGEN:head end -->
 <style>
@@ -183,24 +183,7 @@
             margin-bottom: 3rem;
         }
 
-        .section-title {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            font-size: 1.5rem;
-            color: var(--foreground);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
 
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 24px;
-            background: var(--primary);
-            border-radius: 2px;
-        }
 
         .games-grid {
             display: grid;
@@ -277,55 +260,11 @@
             transform: scale(1.05);
         }
 
-        .links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
 
-        .link-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.25rem;
-            box-shadow: var(--shadow);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
 
-        .link-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--accent);
-        }
 
-        .link-card .icon {
-            width: 40px;
-            height: 40px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent-foreground);
-            font-weight: 600;
-            flex-shrink: 0;
-        }
 
-        .link-card .content h4 {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 600;
-            color: var(--foreground);
-            margin-bottom: 0.25rem;
-        }
 
-        .link-card .content p {
-            color: var(--muted-foreground);
-            font-size: 0.875rem;
-        }
 
         .featured-card {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -354,39 +293,10 @@
             border-color: transparent;
         }
 
-        .section-title.featured-title {
-            margin-bottom: 0.75rem;
-        }
 
-        .search-box {
-            background: var(--card);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow);
-        }
 
-        .search-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: calc(var(--radius) - 0.25rem);
-            font-size: 1rem;
-            background: var(--background);
-            color: var(--foreground);
-            transition: all 0.2s ease;
-        }
 
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--ring);
-        }
 
-        .search-input::placeholder {
-            color: var(--muted-foreground);
-        }
 
         @media (max-width: 768px) {
             .header h1 {
