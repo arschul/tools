@@ -328,6 +328,87 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     * { animation: none !important; transition: none !important; }
     .rolling .reel-text { opacity: 1; filter: none; }
   }
+
+  /* ===== mode bar ===== */
+  .modebar { display: flex; gap: .45rem; justify-content: center; margin: 0 0 1.1rem; }
+  .modebtn {
+    font: inherit; font-weight: 800; font-size: .88rem; letter-spacing: .01em;
+    padding: .5rem 1.1rem; border-radius: 999px; cursor: pointer;
+    border: 2px solid var(--line); background: var(--panel); color: var(--ink-soft);
+  }
+  .modebtn.on { border-color: var(--hard); color: var(--ink); box-shadow: 0 3px 0 var(--shadow); }
+
+  /* ===== team draft ===== */
+  .td-head { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-bottom: .9rem; }
+  .td-badge {
+    font-weight: 900; font-size: 1.05rem; padding: .35rem .8rem; border-radius: 10px;
+    background: var(--ink); color: var(--paper);
+  }
+  .td-sub { color: var(--ink-soft); font-size: .9rem; }
+  .td-spacer { flex: 1; }
+  .td-timer { font-variant-numeric: tabular-nums; font-weight: 900; font-size: 1.2rem; }
+  .td-timer.low { color: var(--pink); }
+
+  .td-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .8rem; }
+  .td-row .ctl-label { min-width: 8.5rem; }
+
+  .td-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: .8rem; }
+  .td-col { border: 2px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+  .td-col-head {
+    padding: .45rem .7rem; font-weight: 900; color: #fff; display: flex; justify-content: space-between;
+    align-items: center; gap: .4rem; font-size: .95rem;
+  }
+  .td-col-body { padding: .55rem; display: flex; flex-direction: column; gap: .45rem; }
+
+  .td-card {
+    text-align: left; font: inherit; font-size: .95rem; line-height: 1.3; cursor: pointer;
+    padding: .55rem .65rem; border-radius: 10px; border: 2px solid var(--line);
+    background: var(--paper); color: var(--ink);
+  }
+  .td-card:hover { transform: translateY(-1px); border-color: var(--ink-soft); }
+  .td-card.picked { border-width: 3px; font-weight: 700; }
+  .td-card.dim { opacity: .38; }
+  .td-done { font-size: .8rem; font-weight: 800; opacity: .9; }
+
+  .td-slot {
+    display: flex; gap: .5rem; align-items: flex-start; padding: .45rem .55rem;
+    border-radius: 10px; border: 2px solid var(--line); background: var(--paper); cursor: pointer;
+  }
+  .td-slot.sel { border-color: var(--pink); box-shadow: 0 0 0 3px var(--shadow); }
+  .td-slot .tag {
+    font-size: .62rem; font-weight: 900; letter-spacing: .08em; color: var(--ink-soft);
+    min-width: 3.6rem; padding-top: .15rem;
+  }
+  .td-slot .txt { flex: 1; font-size: .92rem; line-height: 1.3; }
+
+  .td-mini { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .35rem; }
+  .td-chip {
+    font: inherit; font-size: .74rem; font-weight: 800; padding: .25rem .55rem; border-radius: 999px;
+    border: 2px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+  }
+  .td-chip:disabled { opacity: .35; cursor: not-allowed; }
+
+  .td-left-pile { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .td-left-card {
+    font: inherit; font-size: .82rem; padding: .3rem .55rem; border-radius: 8px; cursor: pointer;
+    border: 2px dashed var(--line); background: var(--paper); color: var(--ink-soft);
+  }
+  .td-left-card:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+  .td-pending { border-left: 4px solid var(--yellow); padding: .5rem .7rem; border-radius: 8px;
+                background: var(--paper); margin-bottom: .45rem; font-size: .9rem; }
+  .td-phrases { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .td-phrase { font-size: .84rem; padding: .28rem .6rem; border-radius: 999px;
+               background: var(--paper); border: 2px solid var(--line); color: var(--ink); }
+
+  .td-story { border: 2px solid var(--line); border-radius: 14px; padding: .8rem; background: var(--panel); }
+  .td-story .sent { font-size: 1.05rem; line-height: 1.45; margin: .4rem 0 .6rem; }
+  .td-score { display: flex; align-items: center; gap: .5rem; }
+  .td-score .num { font-weight: 900; font-size: 1.5rem; min-width: 2rem; text-align: center; }
+  .td-win { outline: 4px solid var(--yellow); }
+  .td-note { font-size: .82rem; color: var(--ink-soft); margin-top: .4rem; }
+  .td-crit { font-size: .86rem; color: var(--ink-soft); line-height: 1.6; }
+
 </style>
 </head>
 <body>
@@ -340,10 +421,15 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
 
 <header>
   <h1>Story<em>Spark</em></h1>
-  <p class="hide-on-big">Roll a story. Lock the bits you like. Write the rest.</p>
+  <p class="hide-on-big" id="tagline">Roll a story. Lock the bits you like. Write the rest.</p>
 </header>
 
-<div class="wrap">
+<div class="modebar hide-on-big">
+  <button class="modebtn on" id="mb-quick" onclick="setMode('quick')">⚡ Quick Spark</button>
+  <button class="modebtn" id="mb-team" onclick="setMode('team')">👥 Team Draft</button>
+</div>
+
+<div class="wrap" id="quickWrap">
 
   <div class="panel hide-on-big">
     <div class="control-split">
@@ -408,6 +494,127 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   </div>
 </div>
 
+<div class="wrap" id="teamWrap" style="display:none">
+
+  <!-- ---------- SETUP ---------- -->
+  <div class="panel td-panel" id="td-setup">
+    <div class="panel-title">Team draft · setup</div>
+
+    <div class="td-row">
+      <div class="ctl-label">Teams</div>
+      <div class="chip-row" id="tdTeamCount"></div>
+    </div>
+
+    <div class="td-row" style="align-items:flex-start">
+      <div class="ctl-label">Team names</div>
+      <div class="chip-row" id="tdTeamNames" style="flex:1"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Level</div>
+      <div class="chip-row" id="tdLevelRow"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Flavor</div>
+      <div class="chip-row" id="tdGenreRow"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Cards per team</div>
+      <div class="chip-row" id="tdDealRow"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Rounds</div>
+      <div class="chip-row" id="tdWhereRow"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Reroll tokens</div>
+      <div class="chip-row" id="tdTokenRow"></div>
+    </div>
+
+    <div class="td-row">
+      <div class="ctl-label">Round timer</div>
+      <div class="chip-row" id="tdTimerRow"></div>
+    </div>
+
+    <div class="td-note" id="tdSetupNote"></div>
+    <button class="roll-btn" onclick="tdStart()">🚀 Deal round 1</button>
+  </div>
+
+  <!-- ---------- DRAFT ---------- -->
+  <div class="panel td-panel" id="td-draft" style="display:none">
+    <div class="td-head">
+      <span class="td-badge" id="tdRoundBadge">Round 1</span>
+      <span class="td-sub" id="tdRoundHint"></span>
+      <span class="td-spacer"></span>
+      <span class="td-timer" id="tdTimer" style="display:none">0:00</span>
+      <button class="btn-sm" id="tdTimerBtn" style="display:none" onclick="tdToggleTimer()">Start timer</button>
+      <button class="btn-sm" onclick="tdRedeal()">↺ Redeal round</button>
+      <button class="btn-sm" onclick="tdQuit()">Quit</button>
+    </div>
+    <div class="td-grid" id="tdDraftGrid"></div>
+    <div class="btn-row" style="margin-top:.9rem">
+      <button class="roll-btn" id="tdNextBtn" onclick="tdNextRound()">Next round →</button>
+    </div>
+  </div>
+
+  <!-- ---------- TRADE ---------- -->
+  <div class="panel td-panel" id="td-trade" style="display:none">
+    <div class="td-head">
+      <span class="td-badge">Negotiation</span>
+      <span class="td-sub">Tap one of your cards, then offer it to another team — or spend a token on the leftovers pile.</span>
+      <span class="td-spacer"></span>
+      <button class="btn-sm" onclick="tdQuit()">Quit</button>
+    </div>
+
+    <div class="panel" style="margin-bottom:.9rem">
+      <div class="panel-title">Useful language</div>
+      <div class="td-phrases" id="tdPhrases"></div>
+    </div>
+
+    <div id="tdPendingWrap" style="margin-bottom:.9rem"></div>
+
+    <div class="td-grid" id="tdTradeGrid"></div>
+
+    <div class="panel" style="margin-top:.9rem">
+      <div class="panel-title">Leftovers pile <span class="mono" id="tdLeftCount" style="opacity:.65"></span></div>
+      <div class="td-left-pile" id="tdLeftovers"></div>
+      <div class="td-note">Select one of your cards first, then click a leftover card of the same type. Costs one token.</div>
+    </div>
+
+    <div class="btn-row" style="margin-top:.9rem">
+      <button class="roll-btn" onclick="tdToStories()">Lock it in → stories</button>
+    </div>
+  </div>
+
+  <!-- ---------- STORIES ---------- -->
+  <div class="panel td-panel" id="td-story" style="display:none">
+    <div class="td-head">
+      <span class="td-badge">Stories</span>
+      <span class="td-sub">Each team writes or tells their story. Score them together at the end.</span>
+      <span class="td-spacer"></span>
+      <button class="btn-sm" onclick="tdPrintAll()">Print sheets</button>
+      <button class="btn-sm" onclick="tdBackToTrade()">← Back to trading</button>
+      <button class="btn-sm" onclick="tdQuit()">New game</button>
+    </div>
+
+    <div class="panel" style="margin-bottom:.9rem">
+      <div class="panel-title">Scoring suggestions</div>
+      <div class="td-crit">
+        Used all their cards <b>+1</b> &nbsp;·&nbsp; each bonus word used <b>+1</b> &nbsp;·&nbsp;
+        tense stayed consistent <b>+1</b> &nbsp;·&nbsp; class vote for the best ending <b>+2</b>
+      </div>
+    </div>
+
+    <div class="td-grid" id="tdStoryGrid"></div>
+    <div id="tdWinner" style="margin-top:.9rem;text-align:center;font-weight:900;font-size:1.1rem"></div>
+  </div>
+
+</div>
+
 <div id="printSheet"></div>
 
 <script>
@@ -438,6 +645,40 @@ var DATA = {};
 
 /* ---- A1 -------------------------------------------------- */
 DATA.A1 = {
+  where: [
+    e("in a small kitchen", ["everyday"]),
+    e("at the bus stop", ["everyday"]),
+    e("in the school gym", ["school"]),
+    e("in the school library", ["school","mystery"]),
+    e("on a very old bus", ["everyday","mystery"]),
+    e("in a big supermarket", ["everyday"]),
+    e("at a birthday party", ["everyday","school"]),
+    e("in the park after school", ["school","everyday"]),
+    e("in a dark forest", ["fantasy","spooky"]),
+    e("in a tall castle", ["fantasy"]),
+    e("in a magic shop", ["fantasy"]),
+    e("on a small island", ["fantasy","mystery"]),
+    e("in an empty house", ["spooky"]),
+    e("in a cold basement", ["spooky"]),
+    e("in an old hospital", ["spooky","mystery"]),
+    e("in a graveyard at night", ["spooky"]),
+    e("on a space station", ["scifi"]),
+    e("on a red planet", ["scifi"]),
+    e("in a robot factory", ["scifi"]),
+    e("inside a very big machine", ["scifi","fantasy"]),
+    e("in a police station", ["mystery"]),
+    e("in a hotel with no guests", ["mystery","spooky"]),
+    e("in a train station at midnight", ["mystery","spooky"]),
+    e("in a museum after closing time", ["mystery","school"]),
+    e("on the school roof", ["school"]),
+    e("in the cafeteria", ["school","everyday"]),
+    e("at the swimming pool", ["everyday","school"]),
+    e("in an elevator between two floors", ["everyday","mystery"]),
+    e("in a pizza restaurant", ["everyday"]),
+    e("under a very big tree", ["fantasy","everyday"]),
+    e("in a cave near the sea", ["fantasy","mystery"]),
+    e("on a boat in a storm", ["fantasy","spooky"])
+  ],
   who: [
     e("A very hungry dragon", ["fantasy"]),
     e("A cat who hates water", ["everyday","fantasy"]),
@@ -464,7 +705,13 @@ DATA.A1 = {
     e("A pilot who is scared of clouds", ["everyday","scifi"]),
     e("A fish who wants to walk", ["fantasy"]),
     e("A phone that talks too much", ["scifi","everyday"]),
-    e("A clown who is not funny", ["everyday"])
+    e("A clown who is not funny", ["everyday"]),
+    e("A chef who hates vegetables", ["everyday"]),
+    e("A goalkeeper with cold hands", ["school","everyday"]),
+    e("An astronaut who forgets everything", ["scifi"]),
+    e("A skeleton who loves dancing", ["spooky","fantasy"]),
+    e("A librarian with a secret map", ["mystery","school"]),
+    e("A king with no crown", ["fantasy"])
   ],
   wants: [
     e("wants to win a big prize", ["everyday","school"]),
@@ -492,7 +739,13 @@ DATA.A1 = {
     e("wants to visit a strange planet", ["scifi"]),
     e("wants to find out who took the cookies", ["mystery","school"]),
     e("wants to break a world record", ["everyday","school"]),
-    e("wants to fix a broken robot", ["scifi"])
+    e("wants to fix a broken robot", ["scifi"]),
+    e("wants to find a lost dog", ["everyday","mystery"]),
+    e("wants to open a strange box", ["mystery","spooky"]),
+    e("wants to fly to the moon", ["scifi","fantasy"]),
+    e("wants to make a new friend", ["school","everyday"]),
+    e("wants to cook a perfect cake", ["everyday"]),
+    e("wants to sleep for ten hours", ["everyday","spooky"])
   ],
   but: [
     e("but the door is locked", ["mystery","everyday"]),
@@ -520,7 +773,13 @@ DATA.A1 = {
     e("but the food is horrible", ["everyday"]),
     e("but a very big cat is in the way", ["fantasy","everyday"]),
     e("but they are allergic to flowers", ["everyday"]),
-    e("but the key is at the bottom of a lake", ["fantasy","mystery"])
+    e("but the key is at the bottom of a lake", ["fantasy","mystery"]),
+    e("but they have no money", ["everyday","school"]),
+    e("but they are very very slow", ["everyday","fantasy"]),
+    e("but they cannot read the map", ["mystery","fantasy"]),
+    e("but they are scared of the dark", ["spooky"]),
+    e("but they always forget the plan", ["mystery","school"]),
+    e("but they only have five minutes", ["school","scifi"])
   ],
   twist: [
     e("Someone films the whole thing.", ["everyday","school"]),
@@ -542,7 +801,19 @@ DATA.A1 = {
     e("Somebody is already there.", ["mystery","spooky"]),
     e("The bag is completely empty.", ["mystery","everyday"]),
     e("They hear a very loud noise outside.", ["spooky","everyday"]),
-    e("Everything turns green.", ["scifi","fantasy"])
+    e("Everything turns green.", ["scifi","fantasy"]),
+    e("The door opens by itself.", ["spooky","mystery"]),
+    e("Everybody starts to sing.", ["everyday","school"]),
+    e("The dog can talk now.", ["fantasy","everyday"]),
+    e("It starts to rain inside the house.", ["fantasy","spooky"]),
+    e("A robot knocks on the window.", ["scifi"]),
+    e("The teacher knows everything.", ["school"]),
+    e("They find a key under the desk.", ["mystery","school"]),
+    e("The bus goes the wrong way.", ["everyday","mystery"]),
+    e("Their phone rings, but nobody is there.", ["spooky","mystery"]),
+    e("A star falls into the garden.", ["scifi","fantasy"]),
+    e("Their best friend has the same shoes.", ["everyday","school"]),
+    e("The lights go out for one minute.", ["spooky","scifi"])
   ],
   words: {
     everyday: ["late","noisy","hungry","lucky","street","money","secret","friend","tired","loud","empty","shoe"],
@@ -558,6 +829,40 @@ DATA.A1 = {
 
 /* ---- A2 -------------------------------------------------- */
 DATA.A2 = {
+  where: [
+    e("in a crowded shopping mall", ["everyday"]),
+    e("in the back of a taxi", ["everyday","mystery"]),
+    e("at a noisy street market", ["everyday"]),
+    e("in an apartment on the top floor", ["everyday","spooky"]),
+    e("in the school science lab", ["school","scifi"]),
+    e("during a school field trip", ["school"]),
+    e("in the locker room before a big game", ["school","everyday"]),
+    e("in detention after class", ["school"]),
+    e("in a forest with no phone signal", ["spooky","fantasy"]),
+    e("in a village that is not on any map", ["fantasy","mystery"]),
+    e("in a tower full of clocks", ["fantasy","scifi"]),
+    e("at the edge of a frozen lake", ["fantasy","spooky"]),
+    e("in a house where the power keeps dying", ["spooky"]),
+    e("in an old theater after midnight", ["spooky","mystery"]),
+    e("in a hospital hallway at three in the morning", ["spooky","mystery"]),
+    e("in a tunnel under the city", ["spooky","scifi"]),
+    e("on a spaceship with a broken engine", ["scifi"]),
+    e("in a city where it never stops raining", ["scifi","mystery"]),
+    e("in a laboratory nobody is allowed to enter", ["scifi","mystery"]),
+    e("on a beach on another planet", ["scifi","fantasy"]),
+    e("in a hotel room with two doors", ["mystery","spooky"]),
+    e("in a locked office on the weekend", ["mystery","everyday"]),
+    e("on a night train to nowhere", ["mystery","spooky"]),
+    e("in a lost and found room", ["mystery","everyday"]),
+    e("at a campsite in the middle of nowhere", ["everyday","spooky"]),
+    e("on the last bus home", ["everyday","mystery"]),
+    e("in a kitchen five minutes before the guests arrive", ["everyday"]),
+    e("in an elevator that stops between floors", ["everyday","spooky"]),
+    e("at a wedding where nobody knows the bride", ["everyday","mystery"]),
+    e("in a library that is about to close", ["school","mystery"]),
+    e("in a garage full of broken machines", ["scifi","everyday"]),
+    e("in a stadium with empty seats", ["everyday","spooky"])
+  ],
   who: [
     e("A nervous magician with sweaty hands", ["fantasy","everyday"]),
     e("A skateboarder who is scared of hills", ["everyday","school"]),
@@ -584,7 +889,13 @@ DATA.A2 = {
     e("A vlogger who films everything, even breakfast", ["everyday","school"]),
     e("A spy with a very loud laugh", ["mystery"]),
     e("A robot dog that only listens on Fridays", ["scifi","everyday"]),
-    e("A girl who collects other people's lost keys", ["mystery","everyday"])
+    e("A girl who collects other people's lost keys", ["mystery","everyday"]),
+    e("A waiter who never remembers orders", ["everyday"]),
+    e("A time traveler with a broken watch", ["scifi","fantasy"]),
+    e("A magician whose tricks always fail", ["fantasy","everyday"]),
+    e("A night guard who falls asleep", ["mystery","spooky"]),
+    e("A photographer who is afraid of people", ["everyday","mystery"]),
+    e("A class president nobody voted for", ["school"])
   ],
   wants: [
     e("wants to win the school talent show", ["school"]),
@@ -612,7 +923,13 @@ DATA.A2 = {
     e("wants to survive the school camping trip", ["school","everyday"]),
     e("wants to become invisible for one day", ["fantasy","scifi"]),
     e("wants to stop a robot from telling the truth", ["scifi"]),
-    e("wants to get the last ticket to a sold-out concert", ["everyday","school"])
+    e("wants to get the last ticket to a sold-out concert", ["everyday","school"]),
+    e("wants to win the school talent show", ["school"]),
+    e("wants to return a ring they did not pay for", ["mystery"]),
+    e("wants to fix an old machine", ["scifi","everyday"]),
+    e("wants to survive one night alone", ["spooky"]),
+    e("wants to break a family record", ["everyday","school"]),
+    e("wants to find out who left the note", ["mystery","school"])
   ],
   but: [
     e("but they are terrified of the dark", ["spooky"]),
@@ -640,7 +957,13 @@ DATA.A2 = {
     e("but they are extremely bad at running", ["everyday","school"]),
     e("but they promised their mother they would stay home", ["everyday","spooky"]),
     e("but the price is something they cannot pay", ["fantasy","everyday"]),
-    e("but their phone keeps sending messages by itself", ["scifi","spooky"])
+    e("but their phone keeps sending messages by itself", ["scifi","spooky"]),
+    e("but they promised to keep it a secret", ["mystery","everyday"]),
+    e("but they have already tried twice", ["school","everyday"]),
+    e("but they are allergic to almost everything", ["everyday","fantasy"]),
+    e("but they lost the instructions", ["scifi","everyday"]),
+    e("but they are terrible at lying", ["mystery","school"]),
+    e("but they only have one battery left", ["scifi","spooky"])
   ],
   twist: [
     e("Somebody films it and puts it online.", ["everyday","school"]),
@@ -662,7 +985,19 @@ DATA.A2 = {
     e("Somebody has cleaned the room.", ["mystery","spooky"]),
     e("It starts snowing indoors.", ["fantasy"]),
     e("The cat has been listening to everything.", ["fantasy","mystery"]),
-    e("The clock says it is yesterday.", ["scifi","spooky"])
+    e("The clock says it is yesterday.", ["scifi","spooky"]),
+    e("The lights go out and nobody moves.", ["spooky","mystery"]),
+    e("A stranger says their name.", ["mystery","spooky"]),
+    e("The machine starts working on its own.", ["scifi"]),
+    e("Their photo is on the front page.", ["everyday","mystery"]),
+    e("The test answers appear on the board.", ["school"]),
+    e("Someone has already solved the puzzle.", ["mystery"]),
+    e("The map shows a room that does not exist.", ["fantasy","mystery"]),
+    e("They wake up one hour in the past.", ["scifi","fantasy"]),
+    e("Everyone else disappears for ten seconds.", ["scifi","spooky"]),
+    e("Their little brother knew the whole time.", ["everyday","school"]),
+    e("The door locks from the outside.", ["spooky"]),
+    e("A second letter arrives with no name on it.", ["mystery","everyday"])
   ],
   words: {
     everyday: ["awkward","embarrassing","promise","argument","neighbor","excuse","delivery","stubborn","crowd","borrow","complain","luckily"],
@@ -678,6 +1013,40 @@ DATA.A2 = {
 
 /* ---- B1 -------------------------------------------------- */
 DATA.B1 = {
+  where: [
+    e("in a town where everyone knows everyone", ["everyday","mystery"]),
+    e("backstage twenty minutes before the show", ["school","everyday"]),
+    e("in a newsroom on a slow day", ["mystery","everyday"]),
+    e("at a school reunion nobody wanted", ["school","everyday"]),
+    e("in a courtroom with one empty chair", ["mystery"]),
+    e("in an airport during a very long delay", ["everyday","mystery"]),
+    e("in a hospital waiting room at dawn", ["everyday","spooky"]),
+    e("on a film set where things keep going wrong", ["everyday","spooky"]),
+    e("in a monastery high in the mountains", ["fantasy","mystery"]),
+    e("in a kingdom that has lost its map", ["fantasy"]),
+    e("in a forest that grows back overnight", ["fantasy","spooky"]),
+    e("at a market where nothing has a price", ["fantasy","mystery"]),
+    e("in a lighthouse during a storm", ["spooky","mystery"]),
+    e("in a hotel that closes forever tomorrow", ["spooky","everyday"]),
+    e("in a house that has been empty for ten years", ["spooky"]),
+    e("in a chapel full of unlit candles", ["spooky","fantasy"]),
+    e("on a research station in the Antarctic", ["scifi","spooky"]),
+    e("in a city under a glass dome", ["scifi"]),
+    e("in a repair bay on the dark side of the moon", ["scifi"]),
+    e("in a server room nobody has entered since Friday", ["scifi","mystery"]),
+    e("in a police archive full of unsolved cases", ["mystery"]),
+    e("in a hotel where every guest has the same name", ["mystery","spooky"]),
+    e("in an apartment that was sold twice", ["mystery","everyday"]),
+    e("on a ferry that is running three hours late", ["mystery","everyday"]),
+    e("in a locker room after a lost final", ["school"]),
+    e("in an exam hall with one missing candidate", ["school","mystery"]),
+    e("in a university lab after hours", ["school","scifi"]),
+    e("at a debate competition in another city", ["school"]),
+    e("in a cafe that closes at midnight", ["everyday","mystery"]),
+    e("on a long drive with no radio signal", ["everyday","spooky"]),
+    e("in a flooded basement", ["spooky","everyday"]),
+    e("in a stadium the night before the final", ["everyday","school"])
+  ],
   who: [
     e("A ridiculously overconfident magician", ["fantasy","everyday"]),
     e("A vampire who has gone completely vegan", ["spooky"]),
@@ -704,7 +1073,13 @@ DATA.B1 = {
     e("An astronaut who is afraid of silence", ["scifi"]),
     e("A comedian who has completely run out of jokes", ["everyday","school"]),
     e("A collector of things nobody else wants", ["mystery","everyday"]),
-    e("A translator who has started improving what people say", ["everyday","mystery"])
+    e("A translator who has started improving what people say", ["everyday","mystery"]),
+    e("A ghostwriter who has never been thanked", ["mystery","everyday"]),
+    e("A referee who hates making decisions", ["everyday","school"]),
+    e("A weather scientist who is never believed", ["scifi","mystery"]),
+    e("An understudy who has waited three years", ["school","everyday"]),
+    e("A locksmith who is scared of small spaces", ["mystery","spooky"]),
+    e("A translator who has started inventing lines", ["mystery","everyday"])
   ],
   wants: [
     e("wants to win a bet that has got completely out of hand", ["everyday","school"]),
@@ -732,7 +1107,13 @@ DATA.B1 = {
     e("wants to get an apology out of somebody impossible", ["everyday","school"]),
     e("wants to keep a promise made to somebody who is no longer around", ["spooky","everyday"]),
     e("wants to win the competition without cheating this time", ["school","everyday"]),
-    e("wants to find out what the neighbors do at three in the morning", ["mystery","spooky"])
+    e("wants to find out what the neighbors do at three in the morning", ["mystery","spooky"]),
+    e("wants to prove that an old story was true", ["mystery","fantasy"]),
+    e("wants to sell an invention before it fails", ["scifi","everyday"]),
+    e("wants to apologize after fifteen years", ["everyday"]),
+    e("wants to leave town before morning", ["mystery","spooky"]),
+    e("wants to win back a place on the team", ["school","everyday"]),
+    e("wants to keep a promise nobody remembers", ["fantasy","everyday"])
   ],
   but: [
     e("but they have completely lost their nerve", ["everyday","school"]),
@@ -760,7 +1141,13 @@ DATA.B1 = {
     e("but the door they need is on a map that no longer exists", ["fantasy","mystery"]),
     e("but they have been asleep for much longer than they thought", ["scifi","spooky"]),
     e("but the deadline is the same day as the wedding", ["everyday","school"]),
-    e("but somebody is doing exactly the same thing, one step ahead", ["mystery","scifi"])
+    e("but somebody is doing exactly the same thing, one step ahead", ["mystery","scifi"]),
+    e("but they gave their word to someone else", ["mystery","everyday"]),
+    e("but they are the only witness", ["mystery"]),
+    e("but they have run out of excuses", ["school","everyday"]),
+    e("but they cannot go back the way they came", ["fantasy","spooky"]),
+    e("but they have been lying since the beginning", ["mystery"]),
+    e("but they are running out of time and money", ["everyday","scifi"])
   ],
   twist: [
     e("Somebody films the entire thing and posts it before midnight.", ["everyday","school"]),
@@ -782,7 +1169,19 @@ DATA.B1 = {
     e("The clock in the hall is running backwards.", ["scifi","spooky"]),
     e("A message arrives from an account that was deleted.", ["scifi","spooky"]),
     e("It works, and that is exactly the problem.", ["fantasy","scifi"]),
-    e("Nobody else can see it.", ["spooky","fantasy"])
+    e("Nobody else can see it.", ["spooky","fantasy"]),
+    e("The witness changes their story completely.", ["mystery"]),
+    e("The recording contains a voice nobody recognizes.", ["mystery","spooky"]),
+    e("The building they are standing in is not on the plans.", ["mystery","scifi"]),
+    e("Someone has been reading their messages for weeks.", ["mystery","everyday"]),
+    e("The experiment works, but only once.", ["scifi"]),
+    e("The door they locked is now wide open.", ["spooky"]),
+    e("Their name appears on a list from thirty years ago.", ["spooky","mystery"]),
+    e("The rival team offers them a deal.", ["school","everyday"]),
+    e("The storm cuts the town off until Monday.", ["everyday","spooky"]),
+    e("A second version of the letter says the opposite.", ["mystery","fantasy"]),
+    e("The person they were looking for finds them first.", ["mystery","spooky"]),
+    e("The clock in the hall is two hours fast.", ["spooky","scifi"])
   ],
   words: {
     everyday: ["reluctantly","apparently","betrayal","apology","reputation","overwhelmed","confess","sarcastic","relieved","interfere","exhausted","admit"],
@@ -798,6 +1197,40 @@ DATA.B1 = {
 
 /* ---- B2 -------------------------------------------------- */
 DATA.B2 = {
+  where: [
+    e("in a boardroom where the decision has already been made", ["everyday","scifi"]),
+    e("in a newsroom four minutes before deadline", ["mystery","everyday"]),
+    e("at an inquiry that nobody expects to reach a conclusion", ["mystery"]),
+    e("in a gallery on the night of the opening", ["everyday","mystery"]),
+    e("in a border town where the trains have stopped", ["mystery","spooky"]),
+    e("in a hospital running on emergency power", ["spooky","scifi"]),
+    e("in an embassy during a blackout", ["mystery","scifi"]),
+    e("on the last flight out before the airport closes", ["everyday","spooky"]),
+    e("in a city built over the ruins of an older one", ["fantasy","mystery"]),
+    e("in a library where certain shelves are forbidden", ["fantasy","spooky"]),
+    e("in the court of a kingdom that no longer exists", ["fantasy"]),
+    e("on a road that appears only in winter", ["fantasy","spooky"]),
+    e("in a house where the clocks disagree", ["spooky","mystery"]),
+    e("in a hotel that keeps one room permanently reserved", ["spooky","mystery"]),
+    e("at the end of a long, unlit corridor", ["spooky"]),
+    e("in a theater that burned down and reopened", ["spooky","everyday"]),
+    e("on a colony ship eleven years from anywhere", ["scifi"]),
+    e("in an archive that answers questions by itself", ["scifi","mystery"]),
+    e("in a quarantined district behind a fence", ["scifi","spooky"]),
+    e("in a facility where all the clocks are wrong", ["scifi","spooky"]),
+    e("in a cold case unit with one box left", ["mystery"]),
+    e("at a memorial where nobody speaks first", ["spooky","mystery"]),
+    e("in an apartment left exactly as its owner had it", ["mystery","spooky"]),
+    e("on a ferry crossing in thick fog", ["mystery","spooky"]),
+    e("in a dorm the week before final exams", ["school"]),
+    e("in a staff meeting that has already run three hours", ["school","everyday"]),
+    e("in a research lab whose funding ends on Friday", ["school","scifi"]),
+    e("at a national competition in a language they barely speak", ["school","everyday"]),
+    e("in a kitchen after every guest has gone home", ["everyday","spooky"]),
+    e("in a taxi taking a route they do not recognize", ["everyday","mystery"]),
+    e("in a stadium being taken apart the morning after", ["everyday","fantasy"]),
+    e("in a waiting room where the appointment never comes", ["everyday","spooky"])
+  ],
   who: [
     e("A pathologically honest diplomat", ["everyday","mystery"]),
     e("An immortal who is thoroughly bored of it", ["fantasy","spooky"]),
@@ -824,7 +1257,13 @@ DATA.B2 = {
     e("A locksmith with a very selective conscience", ["mystery","everyday"]),
     e("A time traveler under strict instructions to change nothing", ["scifi"]),
     e("A biographer who has fallen out with their subject", ["mystery","everyday"]),
-    e("A perfectionist forced to improvise", ["everyday","school"])
+    e("A perfectionist forced to improvise", ["everyday","school"]),
+    e("A negotiator who has never lost until now", ["mystery","everyday"]),
+    e("An archivist who has quietly rewritten the records", ["mystery","school"]),
+    e("A prodigy who peaked at fourteen", ["school","everyday"]),
+    e("A diplomat with nothing left to trade", ["mystery","scifi"]),
+    e("A biographer who no longer trusts their subject", ["everyday","mystery"]),
+    e("A whistleblower with one file and no proof", ["mystery","scifi"])
   ],
   wants: [
     e("wants to deliver an apology eleven years overdue", ["everyday","school"]),
@@ -852,7 +1291,13 @@ DATA.B2 = {
     e("wants to win an argument that stopped mattering years ago", ["everyday","school"]),
     e("wants to identify the person in the photograph before anyone else does", ["mystery","spooky"]),
     e("wants to make the machine admit that it was wrong", ["scifi"]),
-    e("wants to hold the family together for one more evening", ["everyday","mystery"])
+    e("wants to hold the family together for one more evening", ["everyday","mystery"]),
+    e("wants to withdraw a statement before it is published", ["mystery","everyday"]),
+    e("wants to finish what someone else abandoned", ["fantasy","scifi"]),
+    e("wants to be believed just once", ["mystery","everyday"]),
+    e("wants to hand back a prize they never earned", ["school","everyday"]),
+    e("wants to reach the surface before the power fails", ["scifi","spooky"]),
+    e("wants to break a pattern nobody else has noticed", ["mystery","fantasy"])
   ],
   but: [
     e("but they have staked their reputation on the opposite position", ["school","mystery"]),
@@ -880,7 +1325,13 @@ DATA.B2 = {
     e("but the cost is paid by somebody who never agreed to it", ["fantasy","scifi"]),
     e("but the town has decided, collectively, to move on", ["spooky","everyday"]),
     e("but doing it well and doing it right are no longer the same thing", ["everyday","school"]),
-    e("but somebody has already published the ending", ["scifi","mystery"])
+    e("but somebody has already published the ending", ["scifi","mystery"]),
+    e("but they are the reason it went wrong", ["mystery","everyday"]),
+    e("but they signed something they never read", ["mystery","scifi"]),
+    e("but they have already been replaced", ["scifi","everyday"]),
+    e("but they can no longer separate memory from rumor", ["spooky","mystery"]),
+    e("but they owe everything to the person in their way", ["everyday","mystery"]),
+    e("but every version of the plan ends the same way", ["scifi","fantasy"])
   ],
   twist: [
     e("The footage exists, and it has been online since Tuesday.", ["everyday","scifi"]),
@@ -902,7 +1353,19 @@ DATA.B2 = {
     e("Their phone rings from a number that belongs to them.", ["scifi","spooky"]),
     e("The other person has been rehearsing this conversation too.", ["everyday","school"]),
     e("Nothing happens at all, which is far worse.", ["spooky","scifi"]),
-    e("Somebody says thank you, and means it.", ["everyday","fantasy"])
+    e("Somebody says thank you, and means it.", ["everyday","fantasy"]),
+    e("The evidence points back at the person who reported it.", ["mystery"]),
+    e("Their alibi belongs to somebody else.", ["mystery","spooky"]),
+    e("The system has been running unsupervised for months.", ["scifi","mystery"]),
+    e("The warning was sent before the accident happened.", ["scifi","spooky"]),
+    e("Everyone else received a different set of instructions.", ["scifi","mystery"]),
+    e("The only surviving copy has been edited.", ["mystery","school"]),
+    e("The town agreed, years ago, never to mention it.", ["spooky","mystery"]),
+    e("They are offered exactly what they wanted, on impossible terms.", ["fantasy","everyday"]),
+    e("The door was never locked.", ["spooky"]),
+    e("The person they trusted takes the credit publicly.", ["everyday","school"]),
+    e("The map is accurate, but it is fifty years out of date.", ["fantasy","mystery"]),
+    e("The recording keeps playing after the room is empty.", ["spooky"])
   ],
   words: {
     everyday: ["reluctance","ambivalent","pretext","fraught","inadvertently","reticent","candour","complicit","contrition","estranged","gracious","concede"],
@@ -956,6 +1419,7 @@ var BEATS = [
 ];
 
 var SLOTS = [
+  { id: "where", tag: "WHERE" },
   { id: "who",   tag: "WHO" },
   { id: "wants", tag: "WANTS" },
   { id: "but",   tag: "BUT" },
@@ -971,8 +1435,8 @@ var KEY = "storySpark.v2";
 var state = {
   level: "A2",
   genre: "all",
-  spark: { who: "", wants: "", but: "", twist: "" },
-  locks: { who: false, wants: false, but: false, twist: false },
+  spark: { where: "", who: "", wants: "", but: "", twist: "" },
+  locks: { where: false, who: false, wants: false, but: false, twist: false },
   title: "",
   words: [],
   beats: { start: "", problem: "", worst: "", ending: "" },
@@ -996,7 +1460,9 @@ function load() {
     state.level = s.level;
     state.genre = s.genre || "all";
     state.spark = s.spark;
-    state.locks = s.locks || { who: false, wants: false, but: false, twist: false };
+    SLOTS.forEach(function (sl) { if (!state.spark[sl.id]) state.spark[sl.id] = pickSlot(sl.id); });
+    state.locks = s.locks || {};
+    SLOTS.forEach(function (sl) { if (typeof state.locks[sl.id] !== "boolean") state.locks[sl.id] = false; });
     state.title = s.title || "";
     state.words = s.words || [];
     state.beats = s.beats || { start: "", problem: "", worst: "", ending: "" };
@@ -1148,10 +1614,18 @@ function clearBeats() {
   save();
 }
 
-function sparkSentence() {
-  var s = state.spark;
-  return s.who + " " + s.wants + ", " + s.but + ". And then: " + s.twist;
+function capFirst(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; }
+function lowFirst(t) { return t ? t.charAt(0).toLowerCase() + t.slice(1) : ""; }
+
+function composeSpark(sp) {
+  if (sp.where) {
+    return capFirst(sp.where) + ", " + lowFirst(sp.who) + " " + sp.wants + ", " +
+           sp.but + ". And then: " + sp.twist;
+  }
+  return sp.who + " " + sp.wants + ", " + sp.but + ". And then: " + sp.twist;
 }
+
+function sparkSentence() { return composeSpark(state.spark); }
 
 function storyText() {
   var out = state.title + "\n\n" + sparkSentence() + "\n\n";
@@ -1192,11 +1666,17 @@ function printSheet() {
 
 /* ---- Spark box ------------------------------------------- */
 
+function copySpark(sp) {
+  var out = {};
+  SLOTS.forEach(function (sl) { out[sl.id] = sp[sl.id] || ""; });
+  return out;
+}
+
 function addToBox() {
   var entry = {
     level: state.level,
     text: sparkSentence(),
-    spark: { who: state.spark.who, wants: state.spark.wants, but: state.spark.but, twist: state.spark.twist },
+    spark: copySpark(state.spark),
     title: state.title,
     fav: false
   };
@@ -1211,7 +1691,8 @@ function addToBox() {
 function restoreSpark(i) {
   var b = state.box[i];
   if (!b) return;
-  state.spark = { who: b.spark.who, wants: b.spark.wants, but: b.spark.but, twist: b.spark.twist };
+  state.spark = copySpark(b.spark);
+  SLOTS.forEach(function (sl) { if (!state.spark[sl.id]) state.spark[sl.id] = ""; });
   state.title = b.title;
   renderMachine();
   save();
@@ -1369,11 +1850,592 @@ function addToBoxInit() {
   state.box.unshift({
     level: state.level,
     text: sparkSentence(),
-    spark: { who: state.spark.who, wants: state.spark.wants, but: state.spark.but, twist: state.spark.twist },
+    spark: copySpark(state.spark),
     title: state.title,
     fav: false
   });
 }
+
+/* ===========================================================
+   Team Draft mode
+   =========================================================== */
+
+var TD_KEY = "storySpark.v3.team";
+var MODE_KEY = "storySpark.mode";
+
+var TEAM_COLORS = [
+  { name: "Red",    c: "#E8436F" },
+  { name: "Blue",   c: "#3F60E8" },
+  { name: "Teal",   c: "#0E9488" },
+  { name: "Amber",  c: "#C98200" },
+  { name: "Violet", c: "#8B4BE0" },
+  { name: "Green",  c: "#3E9B46" }
+];
+
+var PHRASES = {
+  A1: ["Can we swap?", "I want this card.", "Do you want this one?", "OK, deal!", "No, sorry.", "This one is better for us.", "Please?"],
+  A2: ["Would you swap with us?", "We really need a WHO card.", "What about this one instead?", "That's a good deal.", "Sorry, we want to keep it.", "Let us think about it.", "Is that your final offer?"],
+  B1: ["Would you swap your X for our Y?", "I'll give you this if you give me that.", "That's not a great deal for us.", "How about this instead?", "We'd rather keep ours, thanks.", "Deal — but only if you also give us...", "You're not going to get a better offer."],
+  B2: ["I'd be willing to trade X for Y.", "What would it take to get that card?", "We're not desperate, but we could be persuaded.", "That works for us, on one condition.", "I'll pass, thanks — ours fits our story better.", "Let's meet in the middle.", "Take it or leave it."]
+};
+
+var td = {
+  started: false,
+  phase: "setup",
+  level: "A2",
+  genre: "all",
+  numTeams: 3,
+  deal: 4,
+  useWhere: true,
+  tokens: 1,
+  timerLen: 0,
+  teams: [],
+  order: [],
+  round: 0,
+  hands: [],
+  decks: {},
+  leftovers: {},
+  pending: [],
+  sel: null,
+  scored: false
+};
+
+var tdTick = null, tdLeft = 0, tdRunning = false;
+
+/* ---- helpers --------------------------------------------- */
+
+function tdShuffle(a) {
+  var out = a.slice();
+  for (var i = out.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = out[i]; out[i] = out[j]; out[j] = t;
+  }
+  return out;
+}
+
+function tdOrderSlots() {
+  return td.useWhere ? ["where", "who", "wants", "but", "twist"] : ["who", "wants", "but", "twist"];
+}
+
+function tdTagOf(slot) {
+  for (var i = 0; i < SLOTS.length; i++) { if (SLOTS[i].id === slot) return SLOTS[i].tag; }
+  return slot.toUpperCase();
+}
+
+function tdPool(slot) {
+  var all = DATA[td.level][slot];
+  var need = td.numTeams * td.deal;
+  if (td.genre === "all") return tdShuffle(all.map(function (x) { return x.t; }));
+  var hit = all.filter(function (x) { return x.g.indexOf(td.genre) !== -1; }).map(function (x) { return x.t; });
+  var rest = all.filter(function (x) { return x.g.indexOf(td.genre) === -1; }).map(function (x) { return x.t; });
+  if (hit.length >= need) return tdShuffle(hit);
+  return tdShuffle(hit).concat(tdShuffle(rest));
+}
+
+function tdToppedUp() {
+  if (td.genre === "all") return false;
+  var need = td.numTeams * td.deal, short = false;
+  tdOrderSlots().forEach(function (slot) {
+    var hit = DATA[td.level][slot].filter(function (x) { return x.g.indexOf(td.genre) !== -1; });
+    if (hit.length < need) short = true;
+  });
+  return short;
+}
+
+function tdWords(n) {
+  var w = DATA[td.level].words, merged = [];
+  if (td.genre !== "all" && w[td.genre]) merged = w[td.genre].slice();
+  else { for (var k in w) { if (w.hasOwnProperty(k)) merged = merged.concat(w[k]); } }
+  merged = tdShuffle(merged);
+  return merged.slice(0, n);
+}
+
+function tdTitle() {
+  return "The " + pick(TITLE_ADJ) + " " + pick(TITLE_NOUN) + " of " + pick(TITLE_PLACE);
+}
+
+function tdSave() {
+  try { localStorage.setItem(TD_KEY, JSON.stringify(td)); } catch (err) {}
+}
+
+function tdLoadState() {
+  try {
+    var raw = localStorage.getItem(TD_KEY);
+    if (!raw) return false;
+    var s = JSON.parse(raw);
+    if (!s || !s.started) return false;
+    for (var k in s) { if (s.hasOwnProperty(k)) td[k] = s[k]; }
+    return true;
+  } catch (err) { return false; }
+}
+
+function tdBeep(freq, dur) {
+  try {
+    var C = window.AudioContext || window.webkitAudioContext;
+    if (!C) return;
+    if (!tdBeep.ctx) tdBeep.ctx = new C();
+    var ctx = tdBeep.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "triangle";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + dur + 0.02);
+  } catch (err) {}
+}
+
+/* ---- mode switching -------------------------------------- */
+
+function setMode(m) {
+  document.getElementById("quickWrap").style.display = (m === "quick") ? "" : "none";
+  document.getElementById("teamWrap").style.display = (m === "team") ? "" : "none";
+  document.getElementById("mb-quick").classList.toggle("on", m === "quick");
+  document.getElementById("mb-team").classList.toggle("on", m === "team");
+  document.getElementById("tagline").textContent = (m === "quick")
+    ? "Roll a story. Lock the bits you like. Write the rest."
+    : "Deal the cards. Every team chooses, then everybody haggles.";
+  try { localStorage.setItem(MODE_KEY, m); } catch (err) {}
+  if (m === "team") tdRender();
+}
+
+/* ---- setup ----------------------------------------------- */
+
+function tdChips(host, items, current, fn) {
+  document.getElementById(host).innerHTML = items.map(function (it) {
+    return '<button class="chip' + (String(it.v) === String(current) ? " active" : "") +
+           '" data-v="' + esc(String(it.v)) + '">' + esc(it.label) + '</button>';
+  }).join("");
+  Array.prototype.forEach.call(document.querySelectorAll("#" + host + " .chip"), function (b) {
+    b.addEventListener("click", function () { fn(b.dataset.v); });
+  });
+}
+
+function tdRenderSetup() {
+  tdChips("tdTeamCount", [2, 3, 4, 5, 6].map(function (n) { return { v: n, label: n + " teams" }; }),
+    td.numTeams, function (v) { td.numTeams = Number(v); tdSyncTeams(); tdRenderSetup(); tdSave(); });
+
+  tdChips("tdLevelRow", LEVELS.map(function (l) { return { v: l, label: l }; }),
+    td.level, function (v) { td.level = v; tdRenderSetup(); tdSave(); });
+
+  tdChips("tdGenreRow", GENRES.map(function (g) { return { v: g.id, label: g.icon + " " + g.label }; }),
+    td.genre, function (v) { td.genre = v; tdRenderSetup(); tdSave(); });
+
+  tdChips("tdDealRow", [3, 4, 5].map(function (n) { return { v: n, label: n + " cards" }; }),
+    td.deal, function (v) { td.deal = Number(v); tdRenderSetup(); tdSave(); });
+
+  tdChips("tdWhereRow", [{ v: "1", label: "5 rounds (with WHERE)" }, { v: "0", label: "4 rounds" }],
+    td.useWhere ? "1" : "0", function (v) { td.useWhere = (v === "1"); tdRenderSetup(); tdSave(); });
+
+  tdChips("tdTokenRow", [0, 1, 2].map(function (n) { return { v: n, label: n === 1 ? "1 token" : n + " tokens" }; }),
+    td.tokens, function (v) { td.tokens = Number(v); tdRenderSetup(); tdSave(); });
+
+  tdChips("tdTimerRow", [{ v: 0, label: "Off" }, { v: 45, label: "45s" }, { v: 90, label: "90s" }],
+    td.timerLen, function (v) { td.timerLen = Number(v); tdRenderSetup(); tdSave(); });
+
+  document.getElementById("tdTeamNames").innerHTML = td.teams.map(function (t, i) {
+    return '<input class="td-nameinput" data-i="' + i + '" value="' + esc(t.name) + '" maxlength="16" ' +
+           'style="font:inherit;font-weight:700;font-size:.85rem;padding:.35rem .55rem;border-radius:8px;' +
+           'border:2px solid ' + t.color + ';background:var(--paper);color:var(--ink);width:8.5rem">';
+  }).join("");
+  Array.prototype.forEach.call(document.querySelectorAll("#tdTeamNames .td-nameinput"), function (inp) {
+    inp.addEventListener("input", function () {
+      td.teams[Number(inp.dataset.i)].name = inp.value || TEAM_COLORS[Number(inp.dataset.i)].name;
+      tdSave();
+    });
+  });
+
+  var note = "Deck: " + (td.numTeams * td.deal) + " cards dealt per round, out of 32 per level.";
+  if (tdToppedUp()) note += " Not enough " + td.genre + " cards for that many teams — the deck is topped up from the other flavors.";
+  document.getElementById("tdSetupNote").textContent = note;
+}
+
+function tdSyncTeams() {
+  var out = [];
+  for (var i = 0; i < td.numTeams; i++) {
+    out.push(td.teams[i] || {
+      name: TEAM_COLORS[i].name, color: TEAM_COLORS[i].c,
+      cards: {}, tokens: td.tokens, score: 0, title: "", words: []
+    });
+    out[i].color = TEAM_COLORS[i].c;
+  }
+  td.teams = out;
+}
+
+/* ---- game flow ------------------------------------------- */
+
+function tdStart() {
+  tdSyncTeams();
+  td.order = tdOrderSlots();
+  td.decks = {};
+  td.leftovers = {};
+  td.order.forEach(function (slot) {
+    td.decks[slot] = tdPool(slot);
+    td.leftovers[slot] = [];
+  });
+  td.teams.forEach(function (t) { t.cards = {}; t.tokens = td.tokens; t.score = 0; t.title = ""; t.words = []; });
+  td.round = 0;
+  td.pending = [];
+  td.sel = null;
+  td.scored = false;
+  td.started = true;
+  tdDealRound();
+  td.phase = "draft";
+  tdRender();
+  tdSave();
+}
+
+function tdDealRound() {
+  var slot = td.order[td.round];
+  td.hands = [];
+  for (var i = 0; i < td.numTeams; i++) {
+    var hand = [];
+    for (var j = 0; j < td.deal; j++) {
+      if (!td.decks[slot].length) td.decks[slot] = tdPool(slot);
+      hand.push(td.decks[slot].shift());
+    }
+    td.hands.push({ cards: hand, picked: -1 });
+  }
+  tdStopTimer();
+  tdLeft = td.timerLen;
+  tdBeep(520, 0.08);
+}
+
+function tdRedeal() {
+  if (!confirm("Deal this round again? Current choices for this round are lost.")) return;
+  tdDealRound();
+  tdRender();
+  tdSave();
+}
+
+function tdPick(ti, ci) {
+  td.hands[ti].picked = (td.hands[ti].picked === ci) ? -1 : ci;
+  tdBeep(td.hands[ti].picked === -1 ? 300 : 660, 0.07);
+  tdRenderDraft();
+  tdSave();
+}
+
+function tdAllPicked() {
+  return td.hands.every(function (h) { return h.picked >= 0; });
+}
+
+function tdNextRound() {
+  if (!tdAllPicked()) return;
+  var slot = td.order[td.round];
+  td.hands.forEach(function (h, ti) {
+    td.teams[ti].cards[slot] = h.cards[h.picked];
+    h.cards.forEach(function (c, ci) { if (ci !== h.picked) td.leftovers[slot].push(c); });
+  });
+  td.round++;
+  tdStopTimer();
+  if (td.round >= td.order.length) {
+    td.phase = "trade";
+    tdBeep(780, 0.16);
+  } else {
+    tdDealRound();
+  }
+  tdRender();
+  tdSave();
+}
+
+/* ---- trading --------------------------------------------- */
+
+function tdSelect(ti, slot) {
+  if (td.sel && td.sel.ti === ti && td.sel.slot === slot) td.sel = null;
+  else td.sel = { ti: ti, slot: slot };
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdOffer(toTi) {
+  if (!td.sel) return;
+  var from = td.sel;
+  if (from.ti === toTi) return;
+  td.pending.push({ fromTi: from.ti, toTi: toTi, slot: from.slot });
+  td.sel = null;
+  tdBeep(600, 0.07);
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdAccept(i) {
+  var p = td.pending[i];
+  if (!p) return;
+  var a = td.teams[p.fromTi].cards[p.slot];
+  td.teams[p.fromTi].cards[p.slot] = td.teams[p.toTi].cards[p.slot];
+  td.teams[p.toTi].cards[p.slot] = a;
+  td.pending.splice(i, 1);
+  tdBeep(880, 0.12);
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdReject(i) {
+  td.pending.splice(i, 1);
+  tdBeep(220, 0.1);
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdReroll(ti, slot) {
+  var t = td.teams[ti];
+  if (t.tokens <= 0) return;
+  if (!td.decks[slot].length) td.decks[slot] = tdShuffle(td.leftovers[slot].splice(0));
+  if (!td.decks[slot].length) td.decks[slot] = tdPool(slot);
+  var old = t.cards[slot];
+  t.cards[slot] = td.decks[slot].shift();
+  td.leftovers[slot].push(old);
+  t.tokens--;
+  tdBeep(500, 0.09);
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdClaim(slot, idx) {
+  if (!td.sel || td.sel.slot !== slot) {
+    alert("Select one of your own " + tdTagOf(slot) + " cards first.");
+    return;
+  }
+  var t = td.teams[td.sel.ti];
+  if (t.tokens <= 0) { alert(t.name + " has no tokens left."); return; }
+  var taken = td.leftovers[slot][idx];
+  td.leftovers[slot][idx] = t.cards[slot];
+  t.cards[slot] = taken;
+  t.tokens--;
+  td.sel = null;
+  tdBeep(740, 0.1);
+  tdRenderTrade();
+  tdSave();
+}
+
+function tdToStories() {
+  td.teams.forEach(function (t) {
+    if (!t.title) t.title = tdTitle();
+    if (!t.words || !t.words.length) t.words = tdWords(3);
+  });
+  td.phase = "story";
+  tdBeep(920, 0.18);
+  tdRender();
+  tdSave();
+}
+
+function tdBackToTrade() { td.phase = "trade"; tdRender(); tdSave(); }
+
+function tdScore(ti, d) {
+  td.teams[ti].score = Math.max(0, td.teams[ti].score + d);
+  td.scored = true;
+  tdRenderStories();
+  tdSave();
+}
+
+function tdQuit() {
+  if (!confirm("End this game and go back to setup?")) return;
+  tdStopTimer();
+  td.started = false;
+  td.phase = "setup";
+  td.sel = null;
+  tdRender();
+  tdSave();
+}
+
+/* ---- timer ------------------------------------------------ */
+
+function tdFmt(s) {
+  var m = Math.floor(s / 60), r = s % 60;
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+
+function tdPaintTimer() {
+  var el = document.getElementById("tdTimer");
+  var btn = document.getElementById("tdTimerBtn");
+  if (!el || !btn) return;
+  if (!td.timerLen) { el.style.display = "none"; btn.style.display = "none"; return; }
+  el.style.display = "";
+  btn.style.display = "";
+  el.textContent = tdFmt(tdLeft);
+  el.classList.toggle("low", tdLeft <= 10);
+  btn.textContent = tdRunning ? "Pause" : (tdLeft === td.timerLen ? "Start timer" : "Resume");
+}
+
+function tdToggleTimer() {
+  if (tdRunning) { tdStopTimer(); tdPaintTimer(); return; }
+  if (tdLeft <= 0) tdLeft = td.timerLen;
+  tdRunning = true;
+  tdTick = setInterval(function () {
+    tdLeft--;
+    if (tdLeft <= 0) { tdLeft = 0; tdStopTimer(); tdBeep(320, 0.4); }
+    tdPaintTimer();
+  }, 1000);
+  tdPaintTimer();
+}
+
+function tdStopTimer() {
+  if (tdTick) clearInterval(tdTick);
+  tdTick = null;
+  tdRunning = false;
+}
+
+/* ---- rendering -------------------------------------------- */
+
+function tdRender() {
+  ["setup", "draft", "trade", "story"].forEach(function (p) {
+    document.getElementById("td-" + p).style.display = (td.phase === p) ? "" : "none";
+  });
+  if (td.phase === "setup") { tdSyncTeams(); tdRenderSetup(); }
+  if (td.phase === "draft") tdRenderDraft();
+  if (td.phase === "trade") tdRenderTrade();
+  if (td.phase === "story") tdRenderStories();
+}
+
+function tdRenderDraft() {
+  var slot = td.order[td.round];
+  document.getElementById("tdRoundBadge").textContent =
+    "Round " + (td.round + 1) + " of " + td.order.length + " · " + tdTagOf(slot);
+  document.getElementById("tdRoundHint").textContent =
+    "Every team reads their " + td.deal + " cards and keeps exactly one.";
+
+  document.getElementById("tdDraftGrid").innerHTML = td.hands.map(function (h, ti) {
+    var t = td.teams[ti];
+    var cards = h.cards.map(function (c, ci) {
+      var cls = "td-card" + (h.picked === ci ? " picked" : (h.picked >= 0 ? " dim" : ""));
+      var st = (h.picked === ci) ? ' style="border-color:' + t.color + '"' : "";
+      return '<button class="' + cls + '"' + st + ' onclick="tdPick(' + ti + ',' + ci + ')">' + esc(c) + '</button>';
+    }).join("");
+    return '<div class="td-col">' +
+             '<div class="td-col-head" style="background:' + t.color + '">' +
+               '<span>' + esc(t.name) + '</span>' +
+               '<span class="td-done">' + (h.picked >= 0 ? "✓ chosen" : "choosing…") + '</span>' +
+             '</div>' +
+             '<div class="td-col-body">' + cards + '</div>' +
+           '</div>';
+  }).join("");
+
+  var ready = tdAllPicked();
+  var btn = document.getElementById("tdNextBtn");
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? "1" : "0.4";
+  btn.textContent = (td.round + 1 >= td.order.length) ? "Go to negotiation →" : "Next round →";
+  tdPaintTimer();
+}
+
+function tdRenderTrade() {
+  document.getElementById("tdPhrases").innerHTML = (PHRASES[td.level] || []).map(function (p) {
+    return '<span class="td-phrase">' + esc(p) + '</span>';
+  }).join("");
+
+  document.getElementById("tdTradeGrid").innerHTML = td.teams.map(function (t, ti) {
+    var rows = td.order.map(function (slot) {
+      var selected = td.sel && td.sel.ti === ti && td.sel.slot === slot;
+      var offers = "";
+      if (selected) {
+        offers = '<div class="td-mini">' + td.teams.map(function (o, oi) {
+          if (oi === ti) return "";
+          return '<button class="td-chip" onclick="tdOffer(' + oi + ')">offer to ' + esc(o.name) + '</button>';
+        }).join("") + '</div>';
+      }
+      return '<div>' +
+               '<div class="td-slot' + (selected ? " sel" : "") + '" onclick="tdSelect(' + ti + ',\'' + slot + '\')">' +
+                 '<span class="tag">' + tdTagOf(slot) + '</span>' +
+                 '<span class="txt">' + esc(t.cards[slot] || "—") + '</span>' +
+                 '<button class="td-chip" title="Reroll (1 token)" ' + (t.tokens <= 0 ? "disabled" : "") +
+                   ' onclick="event.stopPropagation();tdReroll(' + ti + ',\'' + slot + '\')">🎲</button>' +
+               '</div>' + offers +
+             '</div>';
+    }).join("");
+    return '<div class="td-col">' +
+             '<div class="td-col-head" style="background:' + t.color + '">' +
+               '<span>' + esc(t.name) + '</span>' +
+               '<span class="td-done">' + t.tokens + ' token' + (t.tokens === 1 ? "" : "s") + '</span>' +
+             '</div>' +
+             '<div class="td-col-body">' + rows + '</div>' +
+           '</div>';
+  }).join("");
+
+  var pw = document.getElementById("tdPendingWrap");
+  if (!td.pending.length) {
+    pw.innerHTML = '<div class="td-note">No offers on the table yet.</div>';
+  } else {
+    pw.innerHTML = td.pending.map(function (p, i) {
+      return '<div class="td-pending"><b>' + esc(td.teams[p.fromTi].name) + '</b> offers their ' +
+             tdTagOf(p.slot) + ' to <b>' + esc(td.teams[p.toTi].name) + '</b> — straight swap.' +
+             '<div class="td-mini">' +
+               '<button class="td-chip" onclick="tdAccept(' + i + ')">✓ Accept</button>' +
+               '<button class="td-chip" onclick="tdReject(' + i + ')">✕ Reject</button>' +
+             '</div></div>';
+    }).join("");
+  }
+
+  var total = 0;
+  var html = td.order.map(function (slot) {
+    var pile = td.leftovers[slot] || [];
+    total += pile.length;
+    if (!pile.length) return "";
+    return '<div style="width:100%;margin:.3rem 0 .1rem;font-size:.72rem;font-weight:900;letter-spacing:.08em;color:var(--ink-soft)">' +
+           tdTagOf(slot) + '</div>' +
+           pile.map(function (c, i) {
+             return '<button class="td-left-card" onclick="tdClaim(\'' + slot + '\',' + i + ')">' + esc(c) + '</button>';
+           }).join("");
+  }).join("");
+  document.getElementById("tdLeftovers").innerHTML = html || '<div class="td-note">Nothing here yet.</div>';
+  document.getElementById("tdLeftCount").textContent = total ? "(" + total + ")" : "";
+}
+
+function tdSentenceFor(t) { return composeSpark(t.cards); }
+
+function tdRenderStories() {
+  var best = 0;
+  td.teams.forEach(function (t) { if (t.score > best) best = t.score; });
+
+  document.getElementById("tdStoryGrid").innerHTML = td.teams.map(function (t, ti) {
+    var win = td.scored && best > 0 && t.score === best;
+    return '<div class="td-story' + (win ? " td-win" : "") + '">' +
+             '<div style="font-weight:900;color:' + t.color + '">' + esc(t.name) + '</div>' +
+             '<div style="font-family:inherit;font-weight:800;opacity:.85">' + esc(t.title) + '</div>' +
+             '<div class="sent">' + esc(tdSentenceFor(t)) + '</div>' +
+             '<div class="td-mini">' + t.words.map(function (w) {
+               return '<span class="td-phrase">' + esc(w) + '</span>';
+             }).join("") + '</div>' +
+             '<div class="td-score" style="margin-top:.6rem">' +
+               '<button class="td-chip" onclick="tdScore(' + ti + ',-1)">−</button>' +
+               '<span class="num">' + t.score + '</span>' +
+               '<button class="td-chip" onclick="tdScore(' + ti + ',1)">+</button>' +
+             '</div>' +
+           '</div>';
+  }).join("");
+
+  var w = document.getElementById("tdWinner");
+  if (!td.scored || best === 0) { w.textContent = ""; return; }
+  var winners = td.teams.filter(function (t) { return t.score === best; }).map(function (t) { return t.name; });
+  w.textContent = (winners.length > 1 ? "🏆 Tied: " : "🏆 Winner: ") + winners.join(" & ");
+}
+
+function tdPrintAll() {
+  var rules = "";
+  for (var i = 0; i < 4; i++) { rules += '<div class="rule"></div>'; }
+  var html = td.teams.map(function (t) {
+    var out = '<h2>' + esc(t.title) + '</h2>';
+    out += '<div class="p-spark"><b>' + esc(t.name) + '</b><br>' + esc(tdSentenceFor(t)) +
+           '<br><b>Bonus words:</b> ' + esc(t.words.join("  ·  ")) + '</div>';
+    BEATS.forEach(function (b) {
+      out += '<div class="p-beat"><b>' + b.name + '</b> &nbsp;<span>' + esc(b.q) + '</span>' + rules + '</div>';
+    });
+    return out;
+  }).join('<div style="page-break-after:always"></div>');
+  document.getElementById("printSheet").innerHTML = html;
+  window.print();
+}
+
+/* ---- boot ------------------------------------------------- */
+
+(function tdInit() {
+  tdLoadState();
+  tdSyncTeams();
+  if (!td.started) td.phase = "setup";
+  var m = "quick";
+  try { m = localStorage.getItem(MODE_KEY) || "quick"; } catch (err) {}
+  setMode(m === "team" ? "team" : "quick");
+})();
+
 </script>
 </body>
 </html>
