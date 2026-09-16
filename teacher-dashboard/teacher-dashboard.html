@@ -468,6 +468,26 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .act-letter.on.gm{background:var(--accent);}
   .act-letter.on.gf{background:#b3261e;}
   @media (max-width:700px){ .act-letter{width:36px;height:34px;} }
+  /* Oral rubric grid — compact whole-class scoring, Roll Call Compact conventions */
+  .rub-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--radius-sm);}
+  table.rub-grid{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;}
+  table.rub-grid th,table.rub-grid td{padding:5px 7px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;}
+  table.rub-grid th{position:sticky;top:0;z-index:2;background:var(--surface);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center;}
+  table.rub-grid th.rub-name,table.rub-grid td.rub-name{position:sticky;left:0;z-index:3;background:var(--surface);text-align:left;min-width:132px;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
+  table.rub-grid th.rub-name{z-index:4;}
+  table.rub-grid tr.rub-absent td{opacity:.6;}
+  .rub-seg{display:flex;gap:2px;justify-content:center;}
+  .rub-l{width:22px;height:24px;border:1px solid var(--border);border-radius:5px;background:none;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted);padding:0;}
+  .rub-l:hover{border-color:var(--accent);}
+  .rub-l.on{color:#fff;border-color:transparent;}
+  .rub-l.on.ga{background:#1c7c3c;} .rub-l.on.gm{background:var(--accent);} .rub-l.on.gf{background:#b3261e;}
+  .rub-overall{font-weight:700;text-align:center;font-size:15px;}
+  .rub-note{width:170px;min-width:150px;font-family:inherit;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);}
+  .rub-note.has-note{border-color:var(--accent);}
+  .rub-wt{width:64px;text-align:center;}
+  .rub-bands td{font-size:12px;white-space:normal;line-height:1.45;}
+  @media (max-width:700px){ .rub-l{width:26px;height:28px;} .rub-note{width:140px;min-width:130px;} }
+  @media print{ .rub-wrap{overflow:visible;} }
   /* Roll Call view toggle + compact roster */
   .view-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;}
   .view-seg button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;color:var(--muted);}
@@ -1003,6 +1023,7 @@ let state = {
   promises: {},
   pointsLog: [],
   activities: [],
+  rubricSettings: null,        // oral-rubric weight presets — see DEFAULT_RUBRIC_PRESETS
   projects: [],
   projOpenId: null,
   projOpenTeamId: null,
@@ -1956,6 +1977,36 @@ function openSettingsModal(){
       </div>
     </div>
 
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Oral rubric</h3>
+    <div class="card section" style="padding:14px 16px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+        Weight presets for rubric activities (${ORAL_CRITERIA.map(c=>c.label).join(' · ')}).
+        A new activity starts from the default preset; its weights stay editable inside the activity.
+      </div>
+      ${rubricSettings().presets.map(p=>{
+        const n = normalizeWeights(p.weights);
+        return `
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;${rubricSettings().defaultId===p.id?'border-left:4px solid var(--accent);':''}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <input type="text" value="${esc(p.name)}" style="flex:1;font-weight:600;" onchange="renameRubricPreset('${p.id}', this.value)">
+            <button type="button" class="btn-ghost small" onclick="setDefaultRubricPreset('${p.id}')" ${rubricSettings().defaultId===p.id?'disabled':''}>${rubricSettings().defaultId===p.id?'Default':'Make default'}</button>
+            <button type="button" class="icon-btn danger" onclick="deleteRubricPreset('${p.id}')" title="Delete preset">🗑</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            ${ORAL_CRITERIA.map(c=>`
+              <label style="font-size:12px;color:var(--muted);">${c.short}<br>
+                <input type="number" min="0" step="5" class="rub-wt" value="${n.raw[c.id]}" onchange="setRubricPresetWeight('${p.id}','${c.id}', this.value)">
+                <span style="font-size:11px;">${Math.round(n.pct[c.id])}%</span>
+              </label>`).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-ghost small" onclick="addRubricPreset()">+ New preset</button>
+        <button class="btn-ghost small" onclick="openBandKey(rubricSettings().defaultTier)">📖 Descriptors</button>
+      </div>
+    </div>
+
     <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Private lessons</h3>
     <div class="card section" style="padding:14px 16px;">
       <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
@@ -1980,6 +2031,33 @@ function openSettingsModal(){
    Independent of Supabase — a local file the teacher controls.
    The state keys in BACKUP_KEYS + backupMeta are the full source of truth.
 */
+function _withPresets(fn){
+  const rs = rubricSettings();
+  const next = { ...rs, presets: rs.presets.map(p=>({ ...p, weights:{ ...p.weights } })) };
+  fn(next);
+  saveRubricSettings(next);
+  openSettingsModal();
+}
+function addRubricPreset(){
+  _withPresets(rs=>{ rs.presets.push({ id: uid(), name: 'New preset', weights: { ...DEFAULT_RUBRIC_WEIGHTS } }); });
+}
+function renameRubricPreset(id, name){
+  _withPresets(rs=>{ const p = rs.presets.find(x=>x.id===id); if(p) p.name = (name||'').trim() || p.name; });
+}
+function setRubricPresetWeight(id, critId, val){
+  _withPresets(rs=>{ const p = rs.presets.find(x=>x.id===id); if(p) p.weights[critId] = Math.max(0, Number(val)||0); });
+}
+function setDefaultRubricPreset(id){ _withPresets(rs=>{ rs.defaultId = id; }); }
+function deleteRubricPreset(id){
+  const rs = rubricSettings();
+  if(rs.presets.length <= 1){ alert('Keep at least one preset.'); return; }
+  const p = rs.presets.find(x=>x.id===id);
+  if(p && !confirm(`Delete the preset "${p.name}"? Activities already graded keep their own weights.`)) return;
+  _withPresets(next=>{
+    next.presets = next.presets.filter(x=>x.id!==id);
+    if(next.defaultId===id) next.defaultId = next.presets[0].id;
+  });
+}
 function setGradeMargin(v){
   state.gradeSettings.margin = Math.max(0, Number(v)||0);
   scheduleSave('gradeSettings', state.gradeSettings);
@@ -1993,7 +2071,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','pointsLog','activities','projects'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','pointsLog','activities','rubricSettings','projects'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -6512,7 +6590,7 @@ function renderRollCall(){
                 <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
                   <span>${sk.emoji}</span>
                   <span style="flex:1;text-align:left;">${esc(a.description)}</span>
-                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${g} graded${nNotes?` \u00b7 \u270E ${nNotes}`:''}${avg!=null?` \u00b7 avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
+                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${isRubricActivity(a)?'\uD83C\uDF99 rubric \u00b7 ':''}${g} graded${nNotes?` \u00b7 \u270E ${nNotes}`:''}${avg!=null?` \u00b7 avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
                 </button>`;
               }).join('')}
               <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">\uD83C\uDFAF New activity</button>`)}
@@ -7316,6 +7394,188 @@ function numToLetter(n){
   if(n==null || isNaN(n)) return null;
   return ACTIVITY_LETTERS[4 - Math.min(4, Math.max(0, Math.round(n)))];
 }
+
+/* ============ ORAL RUBRIC — criterion-level A–F inside Activities ============
+   A rubric activity grades five criteria per student instead of one letter.
+   The overall letter is DERIVED (weighted mean of A=4…F=0, round half-up) and
+   written back to a.grades[studentId], so every existing read — class average,
+   skill averages, profile card, printed report — keeps working untouched and
+   activities without a rubric render exactly as before. Weights live on the
+   activity itself (editable per activity), seeded from a preset in Settings. */
+const ORAL_CRITERIA = [
+  { id:'vocabulary',    label:'Vocabulary',    pt:'Vocabulário', short:'Vocab' },
+  { id:'grammar',       label:'Grammar',       pt:'Gramática',   short:'Gram'  },
+  { id:'pronunciation', label:'Pronunciation', pt:'Pronúncia',   short:'Pron'  },
+  { id:'fluency',       label:'Fluency',       pt:'Fluência',    short:'Flu'   },
+  { id:'task',          label:'Task',          pt:'Tarefa',      short:'Task'  },
+];
+const RUBRIC_TIERS = [
+  { id:'basic',        label:'Basic',        pt:'Básico'        },
+  { id:'intermediate', label:'Intermediate', pt:'Intermediário' },
+  { id:'advanced',     label:'Advanced',     pt:'Avançado'      },
+];
+const DEFAULT_RUBRIC_WEIGHTS = { vocabulary:20, grammar:20, pronunciation:20, fluency:20, task:20 };
+/* Band descriptors: [English, Portuguese] per criterion × tier × letter.
+   Shown on the grading grid, in the descriptor key, and on the student report. */
+const ORAL_BANDS = {
+  vocabulary:{
+    basic:{
+      A:["Uses the unit's words accurately and reaches beyond them","Usa as palavras da unidade com precisão e vai além delas"],
+      B:["Unit words used correctly; little variety beyond them","Usa as palavras da unidade corretamente; pouca variedade além delas"],
+      C:["Basic words only; gaps filled with gestures or Portuguese","Apenas palavras básicas; lacunas preenchidas com gestos ou português"],
+      D:["Frequent word searches; meaning often unclear","Procura palavras com frequência; sentido muitas vezes confuso"],
+      F:["Too few words to complete the task","Palavras insuficientes para completar a tarefa"]},
+    intermediate:{
+      A:["Wide range, precise choices, some natural collocations","Repertório amplo, escolhas precisas, colocações naturais"],
+      B:["Good range; occasional imprecise or repeated choices","Bom repertório; escolhas às vezes imprecisas ou repetidas"],
+      C:["Everyday words repeated; avoids topics needing new vocabulary","Repete palavras do dia a dia; evita temas que exigem vocabulário novo"],
+      D:["Range too narrow for the topic; paraphrases simple ideas","Repertório estreito para o tema; parafraseia ideias simples"],
+      F:["Cannot sustain the topic in English","Não sustenta o tema em inglês"]},
+    advanced:{
+      A:["Precise and idiomatic; register fits the topic throughout","Preciso e idiomático; registro adequado ao tema o tempo todo"],
+      B:["Strong range; register slips on less familiar topics","Bom repertório; registro escorrega em temas menos familiares"],
+      C:["Adequate but plain; idiom and collocation often off","Adequado, porém simples; idiomatismo e colocação frequentemente imprecisos"],
+      D:["Noticeably below level; leans on basic synonyms","Bem abaixo do nível; apoia-se em sinônimos básicos"],
+      F:["Range blocks the task at this level","O repertório impede a tarefa neste nível"]}},
+  grammar:{
+    basic:{
+      A:["Target structures correct; errors do not affect meaning","Estruturas-alvo corretas; erros não afetam o sentido"],
+      B:["Target structures mostly right; slips in third person or word order","Estruturas-alvo quase sempre corretas; deslizes em terceira pessoa ou ordem das palavras"],
+      C:["Simple sentences hold; the target structure often fails","Frases simples se sustentam; a estrutura-alvo falha com frequência"],
+      D:["Errors in basic forms make the meaning hard to follow","Erros em formas básicas dificultam o entendimento"],
+      F:["No control of the structures needed","Sem domínio das estruturas necessárias"]},
+    intermediate:{
+      A:["Handles complex sentences; errors rare and self-corrected","Domina frases complexas; erros raros e autocorrigidos"],
+      B:["Attempts complex forms, mostly successfully","Tenta formas complexas, com bons resultados"],
+      C:["Safe with simple forms; avoids tenses beyond the basics","Seguro em formas simples; evita tempos além do básico"],
+      D:["Persistent tense or agreement errors obscure the point","Erros persistentes de tempo ou concordância prejudicam a mensagem"],
+      F:["Grammar breaks down in any extended turn","A gramática colapsa em qualquer fala mais longa"]},
+    advanced:{
+      A:["Full range including subordination; errors negligible","Repertório completo, incluindo subordinação; erros insignificantes"],
+      B:["Wide range; occasional lapse in complex constructions","Amplo repertório; lapsos ocasionais em construções complexas"],
+      C:["Reliable but simplified; avoids complex structures","Confiável, porém simplificado; evita estruturas complexas"],
+      D:["Errors from a lower level recur at this stage","Erros de nível inferior reaparecem nesta etapa"],
+      F:["Control insufficient for the level","Domínio insuficiente para o nível"]}},
+  pronunciation:{
+    basic:{
+      A:["Clear and easy to follow; key sounds and word stress right","Claro e fácil de acompanhar; sons-chave e sílaba tônica corretos"],
+      B:["Clear overall; a few sounds or stresses off","Claro no geral; alguns sons ou tônicas incorretos"],
+      C:["Understandable with effort; Portuguese sounds transfer","Compreensível com esforço; transferência de sons do português"],
+      D:["The listener has to ask for repetition often","O ouvinte precisa pedir repetição com frequência"],
+      F:["Largely unintelligible","Praticamente ininteligível"]},
+    intermediate:{
+      A:["Consistently clear; stress and linking sound natural","Consistentemente claro; tonicidade e ligações naturais"],
+      B:["Clear; some words carry the wrong stress","Claro; algumas palavras com tônica errada"],
+      C:["Understandable; flat rhythm, endings dropped","Compreensível; ritmo monótono, terminações omitidas"],
+      D:["Frequent breakdowns on familiar words","Falhas frequentes em palavras conhecidas"],
+      F:["Cannot be followed without repetition","Não é possível acompanhar sem repetição"]},
+    advanced:{
+      A:["Near-effortless clarity; intonation carries meaning","Clareza quase natural; entonação carrega o sentido"],
+      B:["Clear with a light accent; minor stress slips","Claro, com leve sotaque; pequenos deslizes de tônica"],
+      C:["Intelligible but effortful; weak connected speech","Inteligível, mas exige atenção; fala conectada fraca"],
+      D:["Pronunciation distracts from otherwise good English","A pronúncia distrai de um inglês por outro lado bom"],
+      F:["Clarity insufficient for the level","Clareza insuficiente para o nível"]}},
+  fluency:{
+    basic:{
+      A:["Speaks in connected sentences with short natural pauses","Fala em frases conectadas, com pausas curtas e naturais"],
+      B:["Keeps going; pauses to plan and recovers alone","Mantém a fala; pausa para planejar e se recupera sozinho"],
+      C:["Short answers; needs prompting to continue","Respostas curtas; precisa de estímulo para continuar"],
+      D:["Long silences; relies on the teacher to keep it going","Silêncios longos; depende do professor para continuar"],
+      F:["Cannot sustain a spoken turn","Não sustenta um turno de fala"]},
+    intermediate:{
+      A:["Comfortable flow; hesitates over content, not language","Fluxo confortável; hesita pelo conteúdo, não pela língua"],
+      B:["Generally fluent; some restarts on harder ideas","Geralmente fluente; alguns recomeços em ideias difíceis"],
+      C:["Frequent pauses and repetition; the message arrives slowly","Pausas e repetições frequentes; a mensagem chega devagar"],
+      D:["Halting; the listener finishes the thought","Entrecortado; o ouvinte completa o raciocínio"],
+      F:["The turn collapses without help","O turno colapsa sem ajuda"]},
+    advanced:{
+      A:["Fluent and spontaneous; manages the conversation","Fluente e espontâneo; conduz a conversa"],
+      B:["Fluent; occasional searching on abstract points","Fluente; busca palavras em pontos abstratos"],
+      C:["Keeps going but noticeably slower than the level asks","Mantém a fala, porém mais lento do que o nível exige"],
+      D:["Hesitation breaks the line of argument","A hesitação quebra a linha de argumentação"],
+      F:["Cannot hold an extended turn","Não sustenta um turno longo"]}},
+  task:{
+    basic:{
+      A:["Does everything asked and adds detail","Faz tudo o que foi pedido e acrescenta detalhes"],
+      B:["Does what was asked; detail is thin","Faz o que foi pedido; poucos detalhes"],
+      C:["Part of the task done; drifts off the prompt","Parte da tarefa feita; foge do enunciado"],
+      D:["The task is barely addressed","A tarefa é mal cumprida"],
+      F:["Task not attempted in English","Tarefa não realizada em inglês"]},
+    intermediate:{
+      A:["Fully on task, well organized, responds to the other speaker","Totalmente na tarefa, bem organizado, responde ao interlocutor"],
+      B:["On task; organization or interaction could be tighter","Na tarefa; organização ou interação poderiam ser melhores"],
+      C:["Covers the basics; ignores part of the prompt","Cobre o básico; ignora parte do enunciado"],
+      D:["Off task, or too short to judge","Fora da tarefa, ou curto demais para avaliar"],
+      F:["Task not completed","Tarefa não concluída"]},
+    advanced:{
+      A:["Task fully met with a clear line of argument","Tarefa cumprida com linha de argumentação clara"],
+      B:["Task met; the argument is occasionally loose","Tarefa cumprida; argumentação às vezes solta"],
+      C:["Content adequate but underdeveloped for the level","Conteúdo adequado, porém pouco desenvolvido para o nível"],
+      D:["Misses the point of the prompt","Não atinge o objetivo do enunciado"],
+      F:["Task not completed at this level","Tarefa não concluída neste nível"]}},
+};
+const DEFAULT_RUBRIC_PRESETS = [
+  { id:'balanced',     name:'Balanced',     weights:{ ...DEFAULT_RUBRIC_WEIGHTS } },
+  { id:'conversation', name:'Conversation', weights:{ vocabulary:20, grammar:15, pronunciation:15, fluency:30, task:20 } },
+  { id:'presentation', name:'Presentation', weights:{ vocabulary:20, grammar:20, pronunciation:20, fluency:15, task:25 } },
+];
+function rubricSettings(){
+  const s = state.rubricSettings || {};
+  return { presets: (s.presets && s.presets.length) ? s.presets : DEFAULT_RUBRIC_PRESETS.map(p=>({ ...p, weights:{ ...p.weights } })),
+           defaultId: s.defaultId || 'balanced', defaultTier: s.defaultTier || 'basic' };
+}
+function saveRubricSettings(s){ state.rubricSettings = s; scheduleSave('rubricSettings', s); }
+function rubricPreset(id){ const rs = rubricSettings(); return rs.presets.find(p=>p.id===id) || rs.presets[0]; }
+function tierMeta(id){ return RUBRIC_TIERS.find(t=>t.id===id) || RUBRIC_TIERS[0]; }
+function bandText(critId, tier, letter, pt){
+  const b = ((ORAL_BANDS[critId]||{})[tier||'basic']||{})[letter];
+  return b ? (pt ? b[1] : b[0]) : '';
+}
+/* Weights are stored raw and normalized at read time, so editing one weight
+   never silently rewrites the others (the standalone tool's old bug). */
+function normalizeWeights(w){
+  const out = {}; let total = 0;
+  for(const c of ORAL_CRITERIA){ const v = Math.max(0, Number((w||{})[c.id] ?? 0)); out[c.id] = v; total += v; }
+  if(!total){ for(const c of ORAL_CRITERIA) out[c.id] = 20; total = 100; }
+  const pct = {};
+  for(const c of ORAL_CRITERIA) pct[c.id] = out[c.id] / total * 100;
+  return { raw: out, pct, total };
+}
+function activityWeights(a){
+  return normalizeWeights((a && a.weights) || rubricPreset(rubricSettings().defaultId).weights);
+}
+/* Weighted mean over the criteria actually graded — a half-finished rubric is
+   scored on what is there, never on zeros for what is not. */
+function rubricOverallNum(rub, weights){
+  const w = normalizeWeights(weights).raw;
+  let s = 0, wt = 0;
+  for(const c of ORAL_CRITERIA){
+    const n = letterToNum((rub||{})[c.id]);
+    if(n==null) continue;
+    s += n * w[c.id]; wt += w[c.id];
+  }
+  return wt ? s/wt : null;
+}
+function rubricOverallLetter(rub, weights){ return numToLetter(rubricOverallNum(rub, weights)); }
+function rubricCount(rub){ return ORAL_CRITERIA.filter(c=>(rub||{})[c.id]).length; }
+function isRubricActivity(a){ return !!a && a.mode === 'rubric'; }
+/* Per-criterion averages across every rubric activity the student has, so the
+   profile and the report can show where speaking is strong and where it is not. */
+function studentCriterionAverages(studentId, classId){
+  const acc = {};
+  for(const a of (state.activities||[])){
+    if(a.classId!==classId || !isRubricActivity(a)) continue;
+    const rub = (a.rubric||{})[studentId]; if(!rub) continue;
+    for(const c of ORAL_CRITERIA){
+      const n = letterToNum(rub[c.id]); if(n==null) continue;
+      acc[c.id] = acc[c.id] || {s:0,n:0};
+      acc[c.id].s += n; acc[c.id].n++;
+    }
+  }
+  const out = {};
+  for(const k of Object.keys(acc)) out[k] = { avg: acc[k].s/acc[k].n, letter: numToLetter(acc[k].s/acc[k].n), n: acc[k].n };
+  return out;
+}
 function activitiesFor(classId, date){
   return (state.activities||[])
     .filter(a=>a.classId===classId && (!date || a.date===date))
@@ -7351,7 +7611,18 @@ function startActivity(classId, date){
   const description = (document.getElementById('act-desc')?.value || '').trim();
   if(!description){ alert('Give the activity a short description — it\u2019s how you\u2019ll recognize it later.'); return; }
   if(!state.activities) state.activities = [];
+  const mode = document.querySelector('input[name="act-mode"]:checked')?.value || 'quick';
   const a = { id: uid(), classId, date, skill, description, grades: {}, ts: Date.now() };
+  if(mode === 'rubric'){
+    const rs = rubricSettings();
+    const tier = document.getElementById('act-tier')?.value || rs.defaultTier;
+    const presetId = document.getElementById('act-preset')?.value || rs.defaultId;
+    a.mode = 'rubric';
+    a.tier = tier;
+    a.rubric = {};
+    a.weights = { ...rubricPreset(presetId).weights };
+    if(rs.defaultTier !== tier || rs.defaultId !== presetId) saveRubricSettings({ ...rs, defaultTier: tier, defaultId: presetId });
+  }
   state.activities.push(a);
   saveActivitiesStore();
   openActivityGrading(a.id);
@@ -7400,6 +7671,139 @@ function setActivityField(activityId, field, val){
   a[field] = field==='description' ? val : val;
   saveActivitiesStore();
 }
+/* ---------- rubric mutators ---------- */
+function syncRubricOverall(a, studentId){
+  const rub = (a.rubric||{})[studentId];
+  const L = rubricCount(rub) ? rubricOverallLetter(rub, a.weights) : null;
+  a.grades = a.grades || {};
+  if(L) a.grades[studentId] = L; else delete a.grades[studentId];
+  return L;
+}
+function setRubricGrade(activityId, studentId, critId, letter){
+  const a = activityById(activityId);
+  if(!a) return;
+  a.rubric = a.rubric || {};
+  a.rubric[studentId] = a.rubric[studentId] || {};
+  if(a.rubric[studentId][critId] === letter) delete a.rubric[studentId][critId];  // tap again to clear
+  else a.rubric[studentId][critId] = letter;
+  if(!rubricCount(a.rubric[studentId])) delete a.rubric[studentId];
+  syncRubricOverall(a, studentId);
+  saveActivitiesStore();
+  refreshRubricRow(a, studentId);
+}
+function setActivityWeight(activityId, critId, val){
+  const a = activityById(activityId);
+  if(!a) return;
+  a.weights = { ...activityWeights(a).raw, [critId]: Math.max(0, Number(val)||0) };
+  Object.keys(a.rubric||{}).forEach(sid=>syncRubricOverall(a, sid));
+  saveActivitiesStore();
+  openActivityGrading(a.id, true);
+}
+function resetActivityWeights(activityId){
+  const a = activityById(activityId);
+  if(!a) return;
+  a.weights = { ...rubricPreset(rubricSettings().defaultId).weights };
+  Object.keys(a.rubric||{}).forEach(sid=>syncRubricOverall(a, sid));
+  saveActivitiesStore();
+  openActivityGrading(a.id, true);
+}
+function setActivityTier(activityId, tier){
+  const a = activityById(activityId);
+  if(!a) return;
+  a.tier = tier;
+  saveActivitiesStore();
+  openActivityGrading(a.id, true);
+}
+/* Repaint one row only — a half-typed observation elsewhere keeps its caret. */
+function refreshRubricRow(a, studentId){
+  const rub = (a.rubric||{})[studentId] || {};
+  for(const c of ORAL_CRITERIA){
+    const seg = document.getElementById('rubseg-'+a.id+'-'+studentId+'-'+c.id);
+    if(!seg) return openActivityGrading(a.id, true);
+    seg.querySelectorAll('.rub-l').forEach(btn=>{
+      const L = btn.getAttribute('data-letter');
+      btn.className = 'rub-l' + (rub[c.id]===L ? ' on '+(L==='A'?'ga':L==='F'?'gf':'gm') : '');
+    });
+  }
+  const cell = document.getElementById('rubov-'+a.id+'-'+studentId);
+  if(cell){
+    const L = (a.grades||{})[studentId] || null;
+    cell.textContent = L || '—';
+    cell.style.color = L==='A'?'#1c7c3c' : L==='F'?'#b3261e' : L?'var(--accent)':'var(--muted)';
+    cell.title = L ? `${rubricCount(rub)}/${ORAL_CRITERIA.length} criteria graded` : 'No criteria graded yet';
+  }
+  const foot = document.getElementById('actfoot-'+a.id);
+  if(foot){
+    const graded = Object.keys(a.grades||{}).length;
+    const avg = activityAvg(a);
+    foot.innerHTML = `<span>${graded}/${studentsInClass(a.classId).length} graded</span>`
+      + (avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:'');
+  }
+}
+/* The band descriptors for the chosen tier, both languages — open in class to
+   settle a borderline call, or print and hand to the students. */
+function openBandKey(tier){
+  const tm = tierMeta(tier);
+  showModal(`${sizeModal('lg sheet')}
+    <h3 style="margin-bottom:2px;">📖 Rubric descriptors — ${tm.label} / ${tm.pt}</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">What each letter means for each criterion at this tier.</div>
+    <div class="pill-group" style="margin-bottom:12px;">
+      ${RUBRIC_TIERS.map(t=>`<button type="button" class="pill ${t.id===tm.id?'on':''}" onclick="openBandKey('${t.id}')">${t.label}</button>`).join('')}
+    </div>
+    ${ORAL_CRITERIA.map(c=>`
+      <div class="card section" style="padding:12px 14px;margin-bottom:10px;">
+        <h3 style="font-size:14px;margin-bottom:6px;">${c.label} <span style="color:var(--muted);font-weight:400;">/ ${c.pt}</span></h3>
+        <table class="rub-bands" style="width:100%;"><tbody>
+          ${ACTIVITY_LETTERS.map(L=>`
+            <tr>
+              <td style="width:26px;font-weight:700;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};vertical-align:top;">${L}</td>
+              <td>${esc(bandText(c.id, tm.id, L, false))}<div style="color:var(--muted);">${esc(bandText(c.id, tm.id, L, true))}</div></td>
+            </tr>`).join('')}
+        </tbody></table>
+      </div>`).join('')}
+    <div class="modal-actions">
+      <button class="btn-ghost no-print" onclick="window.print()">🖨 Print</button>
+      <button class="btn-accent" onclick="closeModal()">Done</button>
+    </div>
+  `, true);
+}
+/* Compact whole-class grid: one row per student, one column per criterion. */
+function renderRubricGrid(a, students, dim){
+  const rows = students.map(s=>{
+    const rub = (a.rubric||{})[s.id] || {};
+    const note = (a.notes||{})[s.id] || '';
+    const L = (a.grades||{})[s.id] || null;
+    return `
+    <tr class="${dim?'rub-absent':''}">
+      <td class="rub-name" title="${esc(s.name)}">${esc(s.name)}${dim?' <span style="font-size:10px;color:var(--muted);">(abs)</span>':''}</td>
+      ${ORAL_CRITERIA.map(c=>`
+        <td>
+          <div class="rub-seg" id="rubseg-${a.id}-${s.id}-${c.id}">
+            ${ACTIVITY_LETTERS.map(LL=>`
+              <button type="button" data-letter="${LL}" class="rub-l ${rub[c.id]===LL?'on '+(LL==='A'?'ga':LL==='F'?'gf':'gm'):''}"
+                title="${esc(c.label)} ${LL} — ${esc(bandText(c.id, a.tier, LL, false))}"
+                onclick="setRubricGrade('${a.id}','${s.id}','${c.id}','${LL}')">${LL}</button>`).join('')}
+          </div>
+        </td>`).join('')}
+      <td class="rub-overall" id="rubov-${a.id}-${s.id}"
+          style="color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':L?'var(--accent)':'var(--muted)'};"
+          title="${L?`${rubricCount(rub)}/${ORAL_CRITERIA.length} criteria graded`:'No criteria graded yet'}">${L||'—'}</td>
+      <td><input type="text" id="actnote-${a.id}-${s.id}" class="rub-note ${note.trim()?'has-note':''}"
+        value="${esc(note)}" placeholder="observation (report)" oninput="setActivityNote('${a.id}','${s.id}', this.value)"></td>
+    </tr>`;
+  }).join('');
+  const w = activityWeights(a).pct;
+  return `
+  <div class="rub-wrap"><table class="rub-grid">
+    <thead><tr>
+      <th class="rub-name">Student</th>
+      ${ORAL_CRITERIA.map(c=>`<th title="${esc(c.label)} — ${Math.round(w[c.id])}% of the overall letter">${c.short}<div style="font-weight:400;opacity:.75;">${Math.round(w[c.id])}%</div></th>`).join('')}
+      <th title="Weighted mean of the criteria graded">Overall</th>
+      <th class="rub-name" style="position:static;text-align:left;">Observation</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
 function deleteActivity(activityId){
   const idx = (state.activities||[]).findIndex(a=>a.id===activityId);
   if(idx<0) return;
@@ -7417,9 +7821,17 @@ function deleteActivity(activityId){
   refreshView();
 }
 /* Step 1 — describe the activity */
+function toggleActivityMode(){
+  const rubric = document.querySelector('input[name="act-mode"]:checked')?.value === 'rubric';
+  const box = document.getElementById('act-rubric-opts');
+  if(box) box.style.display = rubric ? '' : 'none';
+  // An oral rubric is a speaking rubric — save the extra click, but let it be changed.
+  if(rubric){ const sp = document.querySelector('input[name="act-skill"][value="speaking"]'); if(sp) sp.checked = true; }
+}
 function openActivityModal(classId, date){
   const c = classById(classId);
   if(!c) return;
+  const rs = rubricSettings();
   showModal(`${sizeModal('md')}
     <h3 style="margin-bottom:2px;">🎯 New activity</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${esc(c.name)} · ${formatDateLong(date)}</div>
@@ -7430,6 +7842,36 @@ function openActivityModal(classId, date){
             <input type="radio" name="act-skill" value="${sk.id}" ${i===0?'checked':''}>
             <span>${sk.emoji} ${sk.label}</span>
           </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>How you'll grade it</label>
+      <div class="act-skill-row">
+        <label class="act-skill-opt">
+          <input type="radio" name="act-mode" value="quick" checked onchange="toggleActivityMode()">
+          <span>🅰 One letter</span>
+        </label>
+        <label class="act-skill-opt">
+          <input type="radio" name="act-mode" value="rubric" onchange="toggleActivityMode()">
+          <span>🎙️ Oral rubric (5 criteria)</span>
+        </label>
+      </div>
+    </div>
+    <div id="act-rubric-opts" style="display:none;">
+      <div class="field-row">
+        <div class="field" style="flex:1;"><label>Descriptor tier</label>
+          <select id="act-tier">
+            ${RUBRIC_TIERS.map(t=>`<option value="${t.id}" ${rs.defaultTier===t.id?'selected':''}>${t.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" style="flex:1;"><label>Weights</label>
+          <select id="act-preset">
+            ${rs.presets.map(p=>`<option value="${p.id}" ${rs.defaultId===p.id?'selected':''}>${esc(p.name)} — ${ORAL_CRITERIA.map(c=>Math.round(normalizeWeights(p.weights).pct[c.id])).join('/')}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin:-6px 0 12px;">
+        Vocabulary / Grammar / Pronunciation / Fluency / Task. Weights stay editable inside the activity.
+        <button type="button" class="linkish" onclick="openBandKey(document.getElementById('act-tier').value)">See descriptors</button>
       </div>
     </div>
     <div class="field"><label>Description</label>
@@ -7454,6 +7896,7 @@ function openActivityGrading(activityId){
   const isAbsent = s => session[s.id]?.attendance==='absent';
   const present = roster.filter(s=>!isAbsent(s));
   const absent = roster.filter(isAbsent);
+  if(isRubricActivity(a)) return openRubricGrading(a, c, sk, present, absent, roster);
   const row = (s, dim) => {
     const note = (a.notes||{})[s.id] || '';
     return `
@@ -7489,6 +7932,61 @@ function openActivityGrading(activityId){
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${absent.length}) — grade if they hand it in later</summary>
         ${absent.map(s=>row(s,true)).join('')}
       </details>`:''}
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);">
+      <span id="actfoot-${a.id}" style="display:flex;gap:10px;">
+        <span>${graded}/${roster.length} graded</span>
+        ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
+      </span>
+      <button class="icon-btn danger" style="margin-left:auto;" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-accent" onclick="closeModal();refreshView();">Done</button>
+    </div>
+  `, true);
+}
+/* Step 2, rubric mode — compact whole-class grid + per-activity weights. */
+function openRubricGrading(a, c, sk, present, absent, roster){
+  const graded = Object.keys(a.grades||{}).length;
+  const avg = activityAvg(a);
+  const w = activityWeights(a);
+  const tm = tierMeta(a.tier);
+  showModal(`${sizeModal('xl sheet')}
+    <h3 style="margin-bottom:2px;">🎙️ ${esc(a.description)}</h3>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')} · ${formatDateLong(a.date)} · ${sk.label} · ${tm.label} descriptors</div>
+    <div class="field-row" style="margin-bottom:12px;">
+      <div class="field" style="flex:1;margin-bottom:0;"><label>Description</label>
+        <input type="text" value="${esc(a.description)}" style="width:100%;" oninput="setActivityField('${a.id}','description', this.value)"></div>
+      <div class="field" style="margin-bottom:0;"><label>Skill</label>
+        <select onchange="setActivityField('${a.id}','skill', this.value);openActivityGrading('${a.id}')">
+          ${ACTIVITY_SKILLS.map(x=>`<option value="${x.id}" ${a.skill===x.id?'selected':''}>${x.emoji} ${x.label}</option>`).join('')}
+        </select></div>
+      <div class="field" style="margin-bottom:0;"><label>Tier</label>
+        <select onchange="setActivityTier('${a.id}', this.value)">
+          ${RUBRIC_TIERS.map(t=>`<option value="${t.id}" ${(a.tier||'basic')===t.id?'selected':''}>${t.label}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">
+      <span>STUDENTS ${a.date===todayStr()?'PRESENT TODAY':'PRESENT'} <span style="font-weight:400;">— tap a letter again to clear it · hover a letter for its descriptor</span></span>
+      <button type="button" class="btn-ghost small" style="margin-left:auto;" onclick="openBandKey('${a.tier||'basic'}')">📖 Descriptors</button>
+    </div>
+    ${present.length ? renderRubricGrid(a, present, false) : '<div class="empty" style="padding:8px 0;">Nobody marked present for this date.</div>'}
+    ${absent.length?`
+      <details style="margin-top:8px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${absent.length}) — grade if they present later</summary>
+        ${renderRubricGrid(a, absent, true)}
+      </details>`:''}
+    <details style="margin-top:10px;">
+      <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Weights for this activity — ${ORAL_CRITERIA.map(x=>Math.round(w.pct[x.id])+'%').join(' / ')}</summary>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:10px 2px 2px;">
+        ${ORAL_CRITERIA.map(x=>`
+          <label style="font-size:12px;color:var(--muted);">${x.label}<br>
+            <input type="number" min="0" step="5" class="rub-wt" value="${w.raw[x.id]}" onchange="setActivityWeight('${a.id}','${x.id}', this.value)">
+            <span style="font-size:11px;">${Math.round(w.pct[x.id])}%</span>
+          </label>`).join('')}
+        <button type="button" class="btn-ghost small" onclick="resetActivityWeights('${a.id}')">Reset to preset</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);padding:2px;">Any numbers work — they are normalized to 100%. Changing them re-derives every overall letter in this activity.</div>
+    </details>
     <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);">
       <span id="actfoot-${a.id}" style="display:flex;gap:10px;">
         <span>${graded}/${roster.length} graded</span>
@@ -8095,6 +8593,17 @@ function buildReportText(s, lang){
     });
   }
 
+  // --- oral rubric averages, with the band wording in the report language ---
+  if(s.rubric && s.rubric.criteria.length){
+    out.push('');
+    out.push(isPt ? 'RUBRICA ORAL' : 'ORAL RUBRIC');
+    s.rubric.criteria.forEach(c=>{
+      out.push(`- ${isPt?c.pt:c.label}: ${c.letter}  (${c.n} ${isPt?(c.n===1?'atividade':'atividades'):(c.n===1?'activity':'activities')})`);
+      const band = bandText(c.id, s.rubric.tier, c.letter, isPt);
+      if(band) out.push(`    ${band}`);
+    });
+  }
+
   // --- per-activity observations written during grading ---
   if(s.activityNotes && s.activityNotes.length){
     out.push('');
@@ -8394,6 +8903,18 @@ function renderStudentProfile(){
       .filter(a=>((a.notes||{})[student.id]||'').trim())
       .map(a=>({ date:a.date, description:a.description, skill:a.skill,
                  letter:(a.grades||{})[student.id]||null, note:(a.notes[student.id]||'').trim() })) : [],
+    rubric: cls ? (()=>{
+      const avgs = studentCriterionAverages(student.id, cls.id);
+      if(!Object.keys(avgs).length) return null;
+      // Tier for the wording = the one used most in this student's rubric activities.
+      const tally = {};
+      for(const a of (state.activities||[])){
+        if(a.classId!==cls.id || !isRubricActivity(a) || !(a.rubric||{})[student.id]) continue;
+        tally[a.tier||'basic'] = (tally[a.tier||'basic']||0) + 1;
+      }
+      const tier = Object.keys(tally).sort((x,y)=>tally[y]-tally[x])[0] || 'basic';
+      return { tier, criteria: ORAL_CRITERIA.filter(c=>avgs[c.id]).map(c=>({ id:c.id, label:c.label, pt:c.pt, ...avgs[c.id] })) };
+    })() : null,
     fromVal, toVal,
     total, present, late, absent, totalPhone,
     hwAvg, hwCount: hwRecords.length, noHwCount, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
@@ -8566,9 +9087,26 @@ function renderStudentProfile(){
       const skillAvgs = studentSkillAverages(student.id, cls.id);
       const recent = studentActivityGrades(student.id, cls.id);
       if(!recent.length) return '';
+      const rub = lastReportStats && lastReportStats.rubric;
       return `
     <div class="card section">
       <h3>🎯 ${pt?'Atividades (A\u2013F)':'Activities (A\u2013F)'}</h3>
+      ${rub ? `
+      <div style="margin:8px 0 14px;">
+        <div class="chart-note" style="margin-bottom:6px;">${pt
+          ? `Rubrica oral — média por critério nas atividades avaliadas (descritores ${tierMeta(rub.tier).pt})`
+          : `Oral rubric — average per criterion across graded activities (${tierMeta(rub.tier).label} descriptors)`}</div>
+        <table style="width:100%;">
+          <tbody>
+            ${rub.criteria.map(c=>`
+              <tr>
+                <td style="width:32%;font-size:13px;padding:4px 0;">${pt?c.pt:c.label}</td>
+                <td style="width:12%;text-align:center;"><b style="font-size:15px;color:${c.letter==='A'?'#1c7c3c':c.letter==='F'?'#b3261e':'var(--accent)'};">${c.letter}</b></td>
+                <td style="font-size:12.5px;color:var(--muted);line-height:1.45;">${esc(bandText(c.id, rub.tier, c.letter, pt))}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">
         ${ACTIVITY_SKILLS.filter(sk=>skillAvgs[sk.id]).map(sk=>{
           const v = skillAvgs[sk.id];
@@ -8595,6 +9133,11 @@ function renderStudentProfile(){
             <span style="font-size:12px;color:var(--muted);">${formatDateShort(a.date)}</span>
             <b style="width:24px;text-align:center;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};">${L||'—'}</b>
           </div>
+          ${isRubricActivity(a) && (a.rubric||{})[student.id] ? `
+          <div style="margin:3px 0 1px 26px;display:flex;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);">
+            ${ORAL_CRITERIA.filter(c=>(a.rubric[student.id]||{})[c.id]).map(c=>
+              `<span style="border:1px solid var(--border);border-radius:6px;padding:1px 6px;">${pt?c.pt:c.label} <b style="color:var(--text);">${a.rubric[student.id][c.id]}</b></span>`).join('')}
+          </div>` : ''}
           ${note?`<div style="margin:5px 0 1px 26px;padding:6px 10px;border-left:3px solid var(--accent);background:var(--surface-alt,rgba(0,0,0,.035));border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.5;">${esc(note)}</div>`:''}
         </div>`;
         }).join('')
@@ -11018,6 +11561,12 @@ window.__testables = {
   numToLetter,
   activityAvg,
   studentSkillAverages,
+  normalizeWeights,
+  rubricOverallNum,
+  rubricOverallLetter,
+  rubricCount,
+  studentCriterionAverages,
+  bandText,
   attendanceMonthly,
   hwMonthly,
   pointsMonthly,
@@ -11096,6 +11645,7 @@ async function init(){
   state.promises = loadKey('promises', {});
   state.pointsLog = loadKey('pointsLog', []);
   state.activities = loadKey('activities', []);
+  state.rubricSettings = loadKey('rubricSettings', null);
   state.projects = loadKey('projects', []);
   state.privateStudents = loadKey('privateStudents', []);
   state.privateLessons = loadKey('privateLessons', []);
