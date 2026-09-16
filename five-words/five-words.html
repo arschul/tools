@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Five Words — Tool Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f172a; --bg2:#16213b; --panel:#1b2647; --line:#2c3a63;
+  --ink:#eef2ff; --ink-dim:#93a3c9; --ink-faint:#5d6d96;
+  --accent:#f59e0b; --accent-soft:#fbbf24; --accent-ghost:rgba(245,158,11,.14);
+  --good:#34d399; --shadow:0 18px 40px rgba(0,0,0,.45);
+}
+html[data-theme="light"]{
+  --bg:#f6f4ef; --bg2:#ece8df; --panel:#fffdf8; --line:#ded7c9;
+  --ink:#1c1a17; --ink-dim:#5d5750; --ink-faint:#928a7e;
+  --accent:#b45309; --accent-soft:#d97706; --accent-ghost:rgba(180,83,9,.10);
+  --good:#047857;
+  --shadow:0 12px 30px rgba(60,50,30,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;
+  min-height:100vh; padding:64px 20px 60px;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.back-link,.theme-btn{
+  position:fixed; top:14px; z-index:50;
+  font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500;
+  padding:8px 16px; border-radius:999px; cursor:pointer;
+  background:var(--panel); color:var(--ink-dim);
+  border:1px solid var(--line); text-decoration:none;
+  transition:color .18s,border-color .18s;
+}
+.back-link{left:14px}
+.theme-btn{right:14px; font-size:1rem; padding:7px 13px}
+.back-link:hover,.theme-btn:hover{color:var(--accent); border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
+.wrap{max-width:1040px; margin:0 auto}
+
+header.masthead{text-align:center; margin-bottom:26px}
+.masthead h1{
+  font-family:'Playfair Display',serif; font-weight:900;
+  font-size:clamp(2.1rem,6vw,3.1rem); letter-spacing:-.02em; line-height:1;
+}
+.masthead h1 em{font-style:italic; font-weight:700; color:var(--accent)}
+.masthead p{color:var(--ink-faint); font-size:.92rem; margin-top:8px}
+
+/* ---- controls ---- */
+.modes{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:14px}
+.mode-tab{
+  font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:700;
+  padding:9px 20px; border-radius:999px; cursor:pointer;
+  background:transparent; color:var(--ink-dim); border:1px solid var(--line);
+  transition:all .18s;
+}
+.mode-tab:hover{color:var(--ink)}
+.mode-tab.on{background:var(--accent); color:#1a1205; border-color:var(--accent)}
+html[data-theme="light"] .mode-tab.on{color:#fffdf8}
+
+.filters{display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin-bottom:26px}
+.filter-set{display:flex; gap:5px; align-items:center}
+.filter-set span{font-size:.76rem; color:var(--ink-faint); margin-right:3px}
+.chip{
+  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
+  padding:5px 12px; border-radius:999px; cursor:pointer;
+  background:transparent; color:var(--ink-faint);
+  border:1px solid var(--line); transition:all .16s;
+}
+.chip:hover{color:var(--ink)}
+.chip.on{background:var(--accent-ghost); color:var(--accent-soft); border-color:var(--accent)}
+
+.panel{display:none}
+.panel.on{display:block}
+
+/* ---- the story slab: the hero ---- */
+.slab{
+  background:var(--panel); border:1px solid var(--line);
+  border-left:4px solid var(--accent);
+  border-radius:4px; box-shadow:var(--shadow);
+  padding:clamp(28px,6vw,56px) clamp(22px,5vw,48px);
+  margin-bottom:22px;
+}
+.story{
+  font-family:'Playfair Display',serif; font-weight:900;
+  font-size:clamp(1.9rem,5.4vw,3.6rem);
+  line-height:1.24; letter-spacing:-.015em;
+  display:flex; flex-wrap:wrap; gap:0 .3em; justify-content:center;
+  text-align:center;
+}
+.story .w{transition:color .3s}
+.story .pivot{color:var(--accent)}
+.story .blank{
+  color:var(--accent); border-bottom:5px solid var(--accent);
+  min-width:2.2em; display:inline-block; text-align:center;
+  animation:breathe 2.4s ease-in-out infinite;
+}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.34}}
+.story .reveal{animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+.tags{
+  display:flex; gap:8px; justify-content:center; margin-top:20px;
+  font-size:.74rem; color:var(--ink-faint);
+}
+.tags b{font-weight:500; color:var(--accent-soft); background:var(--accent-ghost);
+  padding:3px 9px; border-radius:3px}
+
+/* ---- ladder ---- */
+.ladder{list-style:none; margin:0 0 20px}
+.ladder li{
+  font-family:'Playfair Display',serif; font-size:clamp(1.05rem,2.6vw,1.5rem);
+  line-height:1.4; padding:13px 0 13px 46px; position:relative;
+  border-top:1px solid var(--line); color:var(--ink-faint);
+  transition:color .3s;
+}
+.ladder li:first-child{border-top:none}
+.ladder li::before{
+  content:counter(rung); counter-increment:rung;
+  position:absolute; left:8px; top:15px;
+  font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:700;
+  color:var(--ink-faint);
+}
+.ladder{counter-reset:rung}
+.ladder li.live{color:var(--ink)}
+.ladder li.live::before{color:var(--accent)}
+
+.gloss{
+  background:var(--accent-ghost); border-left:3px solid var(--accent);
+  padding:16px 20px; border-radius:0 4px 4px 0; margin-bottom:20px;
+  font-size:1.05rem; line-height:1.5;
+}
+.gloss strong{font-family:'Playfair Display',serif; color:var(--accent-soft)}
+
+/* ---- buttons ---- */
+.row{display:flex; flex-wrap:wrap; gap:10px; justify-content:center}
+.btn{
+  font-family:'DM Sans',sans-serif; font-size:.95rem; font-weight:700;
+  padding:13px 26px; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:#1a1205; border:none;
+  transition:filter .16s, opacity .16s;
+}
+html[data-theme="light"] .btn{color:#fffdf8}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.35; cursor:default; filter:none}
+.btn.ghost{background:transparent; color:var(--ink-dim); border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--accent); border-color:var(--accent); filter:none}
+.btn.sm{font-size:.82rem; padding:8px 15px}
+
+.hint{text-align:center; color:var(--ink-faint); font-size:.78rem; margin-top:18px}
+kbd{background:var(--panel); border:1px solid var(--line); border-radius:3px;
+  padding:1px 6px; font-family:'DM Sans',sans-serif; font-size:.75rem}
+
+/* ---- write mode ---- */
+.constraint{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px}
+.con-cell{text-align:center; padding:14px 10px; border:1px solid var(--line); border-radius:4px}
+.con-cell small{display:block; font-size:.72rem; color:var(--ink-faint); margin-bottom:6px}
+.con-cell strong{font-family:'Playfair Display',serif; font-weight:700;
+  font-size:clamp(1.1rem,3vw,1.6rem); color:var(--accent-soft)}
+
+.clock{
+  font-family:'Playfair Display',serif; font-weight:900;
+  font-size:clamp(3rem,13vw,6.5rem); line-height:1; text-align:center;
+  font-variant-numeric:tabular-nums; letter-spacing:-.03em;
+}
+.clock.low{color:var(--accent)}
+
+.composer{display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; margin-bottom:8px}
+.composer input{
+  flex:1 1 260px; min-width:0;
+  font-family:'Playfair Display',serif; font-size:clamp(1.1rem,3vw,1.6rem);
+  padding:14px 18px; border-radius:4px;
+  background:var(--bg2); color:var(--ink); border:1px solid var(--line);
+}
+.composer input::placeholder{color:var(--ink-faint); font-style:italic}
+.composer input:focus{outline:none; border-color:var(--accent)}
+#teamName{flex:0 1 150px; font-family:'DM Sans',sans-serif; font-size:.95rem}
+.counter{font-size:.85rem; color:var(--ink-faint); text-align:center; margin-bottom:18px}
+.counter.full{color:var(--accent); font-weight:700}
+
+.wall{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; margin-top:22px}
+.entry{
+  background:var(--panel); border:1px solid var(--line); border-radius:4px;
+  padding:18px; position:relative;
+}
+.entry.voting{cursor:pointer}
+.entry.voting:hover{border-color:var(--accent)}
+.entry.win{border-color:var(--accent); border-width:2px; background:var(--accent-ghost)}
+.entry p{font-family:'Playfair Display',serif; font-weight:700;
+  font-size:1.35rem; line-height:1.3; margin-bottom:10px}
+.entry .who{font-size:.74rem; color:var(--ink-faint)}
+.entry .pips{display:flex; gap:4px; flex-wrap:wrap; margin-top:10px; min-height:14px}
+.pip{width:13px; height:13px; border-radius:50%; background:var(--accent)}
+.entry .kill{position:absolute; top:8px; right:10px; background:none; border:none;
+  color:var(--ink-faint); cursor:pointer; font-size:1.1rem; line-height:1}
+.entry .kill:hover{color:var(--accent)}
+
+.empty{text-align:center; color:var(--ink-faint); padding:34px 20px;
+  border:1px dashed var(--line); border-radius:4px; font-size:.95rem}
+
+/* ---- chain ---- */
+.slots{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom:24px}
+.slot{
+  flex:1 1 150px; max-width:200px; min-height:96px;
+  border:1px solid var(--line); border-radius:4px;
+  background:var(--bg2); display:flex; align-items:center; justify-content:center;
+  font-family:'Playfair Display',serif; font-weight:700;
+  font-size:clamp(1.1rem,3.4vw,1.9rem); text-align:center; padding:10px;
+  cursor:pointer; transition:border-color .2s, background .2s;
+  word-break:break-word;
+}
+.slot:empty::after{content:attr(data-n); color:var(--ink-faint); font-size:1.3rem}
+.slot.next{border-color:var(--accent); background:var(--accent-ghost)}
+.slot.done{color:var(--accent-soft)}
+.chain-done{animation:pop .5s cubic-bezier(.2,1.5,.4,1)}
+
+@media(max-width:600px){
+  body{padding-top:58px}
+  .story{font-size:1.75rem; gap:0 .25em}
+  .slab{padding:24px 18px}
+  .filters{gap:10px}
+}
+</style>
+</head>
+<body>
+<a class="back-link" href="../">← Tool Hub</a>
+<button class="theme-btn" onclick="toggleTheme()" aria-label="Switch light or dark">◐</button>
+
+<div class="wrap">
+  <header class="masthead">
+    <h1>Five <em>Words</em></h1>
+    <p>A whole story in five words. The talking happens in everything it left out.</p>
+  </header>
+
+  <nav class="modes" id="modes"></nav>
+
+  <div class="filters">
+    <div class="filter-set"><span>Level</span><div id="levelChips"></div></div>
+    <div class="filter-set"><span>Tone</span><div id="toneChips"></div></div>
+  </div>
+
+  <!-- EXPAND -->
+  <section class="panel" id="p-expand">
+    <div class="slab">
+      <div class="story" id="exStory"></div>
+      <div class="tags" id="exTags"></div>
+    </div>
+    <ol class="ladder" id="exLadder"></ol>
+    <div id="exGloss"></div>
+    <div class="row">
+      <button class="btn" id="exNext">Next question</button>
+      <button class="btn ghost" id="exNew">New story</button>
+    </div>
+    <p class="hint"><kbd>→</kbd> next question · <kbd>N</kbd> new story</p>
+  </section>
+
+  <!-- WRITE -->
+  <section class="panel" id="p-write">
+    <div class="slab">
+      <div class="constraint" id="conCard"></div>
+      <div class="row" style="margin-top:22px">
+        <button class="btn ghost sm" id="conNew">New constraint</button>
+      </div>
+    </div>
+
+    <div class="slab">
+      <div class="clock" id="clock">3:00</div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn" id="clockGo">Start</button>
+        <button class="btn ghost sm" id="clockMinus">−30s</button>
+        <button class="btn ghost sm" id="clockPlus">+30s</button>
+        <button class="btn ghost sm" id="clockReset">Reset</button>
+      </div>
+    </div>
+
+    <div class="composer">
+      <input id="teamName" placeholder="Team name" autocomplete="off">
+      <input id="entryInput" placeholder="Exactly five words…" autocomplete="off">
+      <button class="btn" id="entryAdd">Add to wall</button>
+    </div>
+    <div class="counter" id="counter">0 of 5 words</div>
+
+    <div class="row">
+      <button class="btn ghost sm" id="voteStart">Start vote</button>
+      <button class="btn ghost sm" id="voteWin">Show winner</button>
+      <button class="btn ghost sm" id="wallClear">New round</button>
+    </div>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <!-- MISSING -->
+  <section class="panel" id="p-missing">
+    <div class="slab">
+      <div class="story" id="msStory"></div>
+      <div class="tags" id="msTags"></div>
+    </div>
+    <div id="msGloss"></div>
+    <div class="row">
+      <button class="btn" id="msReveal">Reveal the word</button>
+      <button class="btn ghost" id="msNext">Next story</button>
+      <button class="btn ghost sm" id="msAny">Blank a different word</button>
+    </div>
+    <p class="hint">Collect guesses out loud first. Ask <em>why</em> before you reveal.</p>
+  </section>
+
+  <!-- CHAIN -->
+  <section class="panel" id="p-chain">
+    <div class="slab">
+      <div class="slots" id="slots"></div>
+      <div class="composer" style="justify-content:center">
+        <input id="chainInput" placeholder="One word…" autocomplete="off" style="flex:0 1 320px">
+        <button class="btn" id="chainAdd">Add word</button>
+      </div>
+      <div class="counter" id="chainCount">Word 1 of 5</div>
+    </div>
+    <div class="row">
+      <button class="btn ghost sm" id="chainShuffle">Shuffle the order</button>
+      <button class="btn ghost sm" id="chainSave">Save to wall</button>
+      <button class="btn ghost sm" id="chainClear">Clear</button>
+    </div>
+    <p class="hint">One word each, around the room. Shuffle so nobody can plan ahead.</p>
+  </section>
+</div>
+<script>
+/* ---------- theme ---------- */
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+(function(){var s=store('theme'); if(s) document.documentElement.setAttribute('data-theme',s);})();
+function toggleTheme(){
+  var h=document.documentElement;
+  var n=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',n); store('theme',n);
+}
+
+/* ---------- story bank ----------
+   w = the five words   l = CEFR   t = tone   p = pivot word
+   g = gloss            b = index of the word Missing Word hides
+   q = three custom questions (rungs 1-3 of the Expand ladder)      */
+const STORIES = [
+/* A1 */
+{i:1,w:"The doll moved. I'm alone.",l:"A1",t:"creepy",p:"moved",g:"move (v) — to change from one position to another",b:2,q:["Where is the doll now?","Who put the doll there?","If nobody is home, who moved it?"]},
+{i:2,w:"I closed it. It's open.",l:"A1",t:"creepy",p:"closed",g:"closed (adj) — not open; shut",b:1,q:["What is 'it'?","How long was the person away?","Is there another way to open it?"]},
+{i:3,w:"My shadow didn't follow me.",l:"A1",t:"creepy",p:"shadow",g:"shadow (n) — the dark shape your body makes in the light",b:1,q:["What time of day is it?","Where did the shadow go?","Is the shadow still there now?"]},
+{i:4,w:"Footsteps upstairs. Nobody lives upstairs.",l:"A1",t:"creepy",p:"footsteps",g:"footsteps (n) — the sound of somebody walking",b:0,q:["Who is downstairs?","How many people are walking?","Why doesn't anybody live upstairs?"]},
+{i:5,w:"Someone whispered. Nobody is here.",l:"A1",t:"creepy",p:"whispered",g:"whisper (v) — to speak very quietly",b:1,q:["What did the voice say?","Which room is this?","Did the person hear it before?"]},
+{i:6,w:"Five friends. Six in photo.",l:"A1",t:"twist",p:"six",g:"count (v) — to say how many there are",b:2,q:["Where are the friends?","Who took the photo?","Who is the sixth person?"]},
+{i:7,w:"The dog waits. Every day.",l:"A1",t:"sad",p:"waits",g:"wait (v) — to stay in one place until somebody comes",b:2,q:["Where does the dog wait?","Who is the dog waiting for?","How long has it waited?"]},
+{i:8,w:"His chair is still empty.",l:"A1",t:"sad",p:"empty",g:"empty (adj) — with nothing or nobody in it",b:4,q:["Where is the chair?","Who usually sits there?","Why does nobody sit there now?"]},
+{i:9,w:"She never read my message.",l:"A1",t:"sad",p:"message",g:"message (n) — words you send to somebody",b:4,q:["What did the message say?","When did they send it?","Why didn't she read it?"]},
+{i:10,w:"My homework ate the dog.",l:"A1",t:"funny",p:"ate",g:"eat (v) — past: ate",b:2,q:["What subject was the homework?","How big was the homework?","What will they tell the teacher?"]},
+{i:11,w:"The teacher smiled. Everybody ran.",l:"A1",t:"funny",p:"smiled",g:"smile (v) — to make a happy face",b:2,q:["Which class is this?","Why is the smile scary?","What is in the teacher's hand?"]},
+{i:12,w:"Nobody noticed. I'm invisible again.",l:"A1",t:"sad",p:"invisible",g:"invisible (adj) — impossible to see",b:3,q:["Where is this person?","Who did they want to notice them?","Is 'invisible' real or a feeling?"]},
+{i:13,w:"The lights went out. Twice.",l:"A1",t:"creepy",p:"twice",g:"twice (adv) — two times",b:4,q:["What room are they in?","Who turned them on again?","Why is the second time worse?"]},
+{i:14,w:"Mom called me. Mom's away.",l:"A1",t:"creepy",p:"away",g:"away (adv) — not here; in another place",b:4,q:["Where is Mom?","What did the voice say?","Whose voice was it?"]},
+{i:15,w:"The window opens every night.",l:"A1",t:"creepy",p:"opens",g:"open (v) — to make something not closed",b:2,q:["Whose window is it?","What time does it open?","Does it open in or out?"]},
+{i:16,w:"Found my diary. Newer entries.",l:"A1",t:"twist",p:"newer",g:"entry (n) — one day's writing in a diary",b:3,q:["Where was the diary?","What do the new entries say?","Who wrote them?"]},
+{i:17,w:"My cat stares behind me.",l:"A1",t:"creepy",p:"stares",g:"stare (v) — to look at something for a long time",b:2,q:["Where is the person sitting?","What is behind them?","Does the cat move?"]},
+{i:18,w:"The bell rang. Nobody moved.",l:"A1",t:"creepy",p:"rang",g:"ring (v) — past: rang",b:2,q:["What bell is it?","How many students are there?","Why didn't anybody move?"]},
+{i:19,w:"I woke up. Still tired.",l:"A1",t:"funny",p:"still",g:"still (adv) — continuing, not finished",b:3,q:["What time is it?","What did they do last night?","What happens next?"]},
+{i:20,w:"My phone rang. From upstairs.",l:"A1",t:"creepy",p:"upstairs",g:"upstairs (adv) — on a higher floor",b:4,q:["Where is the person?","Where is the phone in their hand?","Who is calling?"]},
+/* A2 */
+{i:21,w:"Saw a reflection. Wasn't mine.",l:"A2",t:"creepy",p:"reflection",g:"reflection (n) — the image you see in a mirror or glass",b:2,q:["Who is speaking?","Where exactly are they standing?","Whose reflection is it?"]},
+{i:22,w:"Counted the stairs. Thirteen tonight.",l:"A2",t:"creepy",p:"counted",g:"count (v) — to say numbers in order",b:3,q:["How many stairs are there normally?","Why is this person counting?","Where does the extra stair go?"]},
+{i:23,w:"The last message arrived today.",l:"A2",t:"sad",p:"arrived",g:"arrive (v) — to reach a place",b:3,q:["Who sent the message?","When was it sent?","Why did it take so long?"]},
+{i:24,w:"She smiled. Her photo didn't.",l:"A2",t:"creepy",p:"photo",g:"photograph (n) — a picture made with a camera",b:3,q:["Who is holding the photo?","When was the photo taken?","Which one is really her?"]},
+{i:25,w:"Grandma's house still smells right.",l:"A2",t:"sad",p:"smells",g:"smell (v) — to have a particular scent",b:2,q:["What does the house smell like?","Who is in the house now?","Why is 'still' important?"]},
+{i:26,w:"I locked the door. Inside.",l:"A2",t:"twist",p:"inside",g:"inside (adv) — in a place, not outside",b:4,q:["What room is this?","Who were they locking out?","Who is inside with them?"]},
+{i:27,w:"The mirror fogged. Someone wrote.",l:"A2",t:"creepy",p:"fogged",g:"fog up (v) — to become covered with warm wet air",b:2,q:["Where is this mirror?","What word appeared?","Who was breathing on it?"]},
+{i:28,w:"Everyone clapped. I wasn't performing.",l:"A2",t:"twist",p:"clapped",g:"clap (v) — to hit your hands together to show you liked something",b:1,q:["Where is this person?","What were they doing?","Who is the audience watching?"]},
+{i:29,w:"The painting blinked. Just once.",l:"A2",t:"creepy",p:"blinked",g:"blink (v) — to close and open your eyes quickly",b:2,q:["Who is in the painting?","Where is the painting hanging?","Did anybody else see it?"]},
+{i:30,w:"He answered before I asked.",l:"A2",t:"creepy",p:"before",g:"before (prep) — earlier than",b:2,q:["What was the question?","Who is 'he'?","How did he know?"]},
+{i:31,w:"The elevator stopped between floors.",l:"A2",t:"creepy",p:"between",g:"between (prep) — in the space separating two things",b:3,q:["Which building is this?","Who is in the elevator?","What is on that floor?"]},
+{i:32,w:"I'm the only one left.",l:"A2",t:"sad",p:"left",g:"left (adj) — still there after the others have gone",b:4,q:["Left where?","Who left first?","Is this sad or lucky?"]},
+{i:33,w:"Nobody sat with me. Again.",l:"A2",t:"sad",p:"again",g:"again (adv) — one more time",b:4,q:["Where is this person sitting?","How many days has this happened?","What could change tomorrow?"]},
+{i:34,w:"My plant died. I overwatered.",l:"A2",t:"funny",p:"overwatered",g:"over- (prefix) — too much: overwater, oversleep, overreact",b:4,q:["What kind of plant was it?","How often did they water it?","What does this say about them?"]},
+{i:35,w:"The recipe's last step: run.",l:"A2",t:"funny",p:"recipe",g:"recipe (n) — instructions for cooking something",b:4,q:["What are they cooking?","What were the other steps?","Run where?"]},
+{i:36,w:"Dad's snoring. Dad moved out.",l:"A2",t:"creepy",p:"snoring",g:"snore (v) — to breathe noisily while sleeping",b:1,q:["Which room is the sound in?","When did Dad move out?","Who is in the bed?"]},
+{i:37,w:"The school bus never stopped.",l:"A2",t:"sad",p:"never",g:"never (adv) — not at any time",b:3,q:["Where is the child standing?","How long did they wait?","Why didn't it stop?"]},
+{i:38,w:"I understood the joke. Yesterday's.",l:"A2",t:"funny",p:"understood",g:"understand (v) — past: understood",b:4,q:["Who told the joke?","What was everyone doing yesterday?","What does this person do now?"]},
+{i:39,w:"My alarm rang. It's Saturday.",l:"A2",t:"funny",p:"alarm",g:"alarm (n) — a clock that wakes you up",b:4,q:["What time did it ring?","Why was it set?","What do they do next?"]},
+{i:40,w:"The phone charged. It's unplugged.",l:"A2",t:"creepy",p:"unplugged",g:"plug in / unplug (v) — to connect or disconnect from electricity",b:4,q:["Where is the phone?","How full is the battery?","What is charging it?"]},
+/* B1 */
+{i:41,w:"Someone's breathing. I live alone.",l:"B1",t:"creepy",p:"breathing",g:"breathe (v) — to take air in and out",b:1,q:["Which room is the sound coming from?","What time is it?","How long have they been listening?"]},
+{i:42,w:"The babysitter called. From upstairs.",l:"B1",t:"creepy",p:"upstairs",g:"upstairs (adv) — on the floor above",b:4,q:["Where are the parents?","Where are the children sleeping?","Who is on the phone?"]},
+{i:43,w:"I've been forgetting things. Apparently.",l:"B1",t:"twist",p:"apparently",g:"apparently (adv) — according to what others say (but maybe not true)",b:4,q:["Who told them this?","What have they forgotten?","Do they believe it?"]},
+{i:44,w:"My reflection turned around first.",l:"B1",t:"creepy",p:"first",g:"turn around (phr v) — to move so you face the other way",b:4,q:["What made them turn?","What is behind them?","What does the reflection see?"]},
+{i:45,w:"They found the diary. Mine.",l:"B1",t:"twist",p:"found",g:"find (v) — past: found",b:4,q:["Who are 'they'?","Where was it hidden?","What is written inside?"]},
+{i:46,w:"Wrong number. He knew me.",l:"B1",t:"creepy",p:"knew",g:"know (v) — past: knew",b:3,q:["What did he say first?","What did he call them?","How did he get the number?"]},
+{i:47,w:"The album gained another page.",l:"B1",t:"creepy",p:"gained",g:"gain (v) — to get more of something",b:2,q:["Whose album is it?","What is on the new page?","Who added it?"]},
+{i:48,w:"Everyone remembers me. I'm new.",l:"B1",t:"twist",p:"remembers",g:"remember (v) — to keep something in your memory",b:1,q:["Where has this person just arrived?","What do people say to them?","Have they been here before?"]},
+{i:49,w:"Years gone. Still texting me.",l:"B1",t:"sad",p:"still",g:"still (adv) — continuing up to now",b:2,q:["Who is sending the texts?","What do the texts say?","Does the person reply?"]},
+{i:50,w:"I inherited the house. Uninvited.",l:"B1",t:"twist",p:"inherited",g:"inherit (v) — to receive something after its owner dies",b:4,q:["Who owned the house before?","How many rooms are there?","Who else is living there?"]},
+{i:51,w:"The nightlight kept it away.",l:"B1",t:"creepy",p:"it",g:"keep away (phr v) — to stop something from coming close",b:3,q:["Whose room is this?","What is 'it'?","What happened to the nightlight?"]},
+{i:52,w:"My handwriting, but not mine.",l:"B1",t:"creepy",p:"handwriting",g:"handwriting (n) — the way a particular person writes by hand",b:1,q:["Where did they find the writing?","What does it say?","How do they know it isn't theirs?"]},
+{i:53,w:"He apologized before I told.",l:"B1",t:"creepy",p:"apologized",g:"apologize (v) — to say sorry",b:2,q:["What was he sorry for?","Who else knew?","How did he find out?"]},
+{i:54,w:"Last person alive. Doorbell rings.",l:"B1",t:"creepy",p:"doorbell",g:"doorbell (n) — the button visitors press outside a house",b:3,q:["How long have they been alone?","Where are they hiding?","Do they answer it?"]},
+{i:55,w:"Winning felt exactly like losing.",l:"B1",t:"sad",p:"exactly",g:"exactly (adv) — in every way; precisely",b:2,q:["What did they win?","Who were they competing against?","What did they expect to feel?"]},
+{i:56,w:"The audience applauded my silence.",l:"B1",t:"sad",p:"silence",g:"silence (n) — the state of saying or hearing nothing",b:4,q:["What were they supposed to say?","How big is the audience?","Why are people clapping?"]},
+{i:57,w:"Deleted the photo. It's back.",l:"B1",t:"creepy",p:"deleted",g:"delete (v) — to remove something from a device",b:4,q:["What is in the photo?","Why did they delete it?","How many times has it returned?"]},
+{i:58,w:"My imaginary friend never left.",l:"B1",t:"creepy",p:"imaginary",g:"imaginary (adj) — existing only in the mind",b:1,q:["How old were they then?","How old are they now?","Where is the friend right now?"]},
+{i:59,w:"My dog growls at nothing.",l:"B1",t:"creepy",p:"growls",g:"growl (v) — to make a low angry sound",b:4,q:["Which direction is the dog facing?","When does it start?","What can the dog hear?"]},
+{i:60,w:"Passed the test. Wrong exam.",l:"B1",t:"funny",p:"wrong",g:"wrong (adj) — not correct",b:3,q:["Which exam did they sit?","How long until they noticed?","What happens to the score?"]},
+/* B2 */
+{i:61,w:"The museum guard never blinks.",l:"B2",t:"creepy",p:"blinks",g:"blink (v) — to shut and open the eyes quickly",b:4,q:["Which room is the guard standing in?","How long has the visitor watched?","What is the guard actually guarding?"]},
+{i:62,w:"Deleted his number. It calls.",l:"B2",t:"creepy",p:"deleted",g:"delete (v) — to remove permanently from a device",b:3,q:["Why did they delete it?","What appears on the screen now?","Have they answered yet?"]},
+{i:63,w:"I've always been the understudy.",l:"B2",t:"sad",p:"understudy",g:"understudy (n) — an actor who learns a role in case the star can't perform",b:4,q:["What is the show?","How many times have they performed?","Is 'understudy' literal here?"]},
+{i:64,w:"Nobody mentioned the extra chair.",l:"B2",t:"creepy",p:"extra",g:"extra (adj) — more than the usual or expected number",b:3,q:["What is the occasion?","How many people are at the table?","Who is the chair for?"]},
+{i:65,w:"My biography mentioned next week.",l:"B2",t:"twist",p:"biography",g:"biography (n) — the story of a person's life, written by someone else",b:1,q:["Where did they find the book?","Who wrote it?","What does next week say?"]},
+{i:66,w:"Congratulations! You're our last applicant.",l:"B2",t:"twist",p:"applicant",g:"applicant (n) — a person who applies for a job or place",b:3,q:["What is the job?","How many applied before?","Why is 'last' unsettling?"]},
+{i:67,w:"The house remembers. I don't.",l:"B2",t:"creepy",p:"remembers",g:"remember (v) — to hold something in memory",b:2,q:["How long have they lived there?","What does the house do?","What has been forgotten?"]},
+{i:68,w:"He repeated my thought, aloud.",l:"B2",t:"creepy",p:"aloud",g:"aloud (adv) — out loud, so others can hear",b:4,q:["What was the thought?","Where are they?","Did anyone else react?"]},
+{i:69,w:"The old map gained roads.",l:"B2",t:"creepy",p:"gained",g:"gain (v) — to acquire or come to have more",b:3,q:["How old is the map?","Where do the new roads lead?","Who is following them?"]},
+{i:70,w:"Everyone aged. The photograph didn't.",l:"B2",t:"creepy",p:"aged",g:"age (v) — to grow older",b:1,q:["How old is the photograph?","Who is in it?","What is the photograph doing instead?"]},
+{i:71,w:"Recognized nobody at my reunion.",l:"B2",t:"sad",p:"recognized",g:"recognize (v) — to know someone because you've seen them before",b:0,q:["How many years since school?","Who did they hope to see?","Did anyone recognize them?"]},
+{i:72,w:"She kept the receipt. Regifted.",l:"B2",t:"funny",p:"regifted",g:"regift (v) — to give someone a present that was given to you",b:4,q:["What was the present?","Who gave it originally?","How was she found out?"]},
+{i:73,w:"Future me warned me. Late.",l:"B2",t:"twist",p:"warned",g:"warn (v) — to tell someone about a danger in advance",b:4,q:["What was the warning?","How did it arrive?","How late is late?"]},
+{i:74,w:"They restored the painting. Differently.",l:"B2",t:"creepy",p:"restored",g:"restore (v) — to repair something old so it looks new again",b:4,q:["What was the painting of?","Who restored it?","What changed?"]},
+{i:75,w:"Applause. The theatre was empty.",l:"B2",t:"creepy",p:"applause",g:"applause (n) — the sound of many people clapping",b:0,q:["Who is on the stage?","How long does it last?","Where is the sound coming from?"]},
+{i:76,w:"Quoted accurately. I said nothing.",l:"B2",t:"twist",p:"accurately",g:"accurately (adv) — exactly and correctly",b:1,q:["Who quoted them?","Where was it published?","What does the quote say?"]},
+{i:77,w:"History repeated. Nobody had noticed.",l:"B2",t:"twist",p:"repeated",g:"repeat (v) — to happen again",b:1,q:["What happened the first time?","How much time passed?","Who should have noticed?"]},
+{i:78,w:"Fluent at last. Everyone left.",l:"B2",t:"sad",p:"fluent",g:"fluent (adj) — able to speak a language easily and well",b:0,q:["How long did it take?","Who did they learn it for?","Where did everyone go?"]},
+{i:79,w:"The lighthouse went dark. Deliberately.",l:"B2",t:"creepy",p:"deliberately",g:"deliberately (adv) — on purpose, not by accident",b:4,q:["Who runs the lighthouse?","What is out at sea?","Why turn it off?"]},
+{i:80,w:"The statue's pose changed overnight.",l:"B2",t:"creepy",p:"pose",g:"pose (n) — the position a body is held in",b:2,q:["Where does the statue stand?","What was the old pose?","Which way is it facing now?"]},
+{i:81,w:"Autocorrect ruined my love confession.",l:"B1",t:"funny",p:"autocorrect",g:"autocorrect (n) — the phone feature that changes your spelling for you",b:0,q:["Who was the message for?","What word did it change it to?","Did they send a second message?"]},
+{i:82,w:"Studied all night. Wrong chapter.",l:"B1",t:"funny",p:"chapter",g:"chapter (n) — one numbered part of a book",b:4,q:["Which subject is the exam?","How many hours did they study?","What do they do in the exam room?"]},
+{i:83,w:"Waved back. She wasn't waving.",l:"B1",t:"funny",p:"waving",g:"wave (v) — to move your hand to greet someone",b:4,q:["Where is this happening?","Who was she waving at?","How do they recover?"]},
+{i:84,w:"Fluent in sarcasm. Interview tomorrow.",l:"B2",t:"funny",p:"sarcasm",g:"sarcasm (n) — saying the opposite of what you mean, to be funny or unkind",b:2,q:["What is the job?","What might they accidentally say?","Is sarcasm a skill or a problem here?"]},
+{i:85,w:"Rehearsed the apology. Sang it.",l:"B2",t:"funny",p:"rehearsed",g:"rehearse (v) — to practise something before performing it",b:0,q:["What are they apologizing for?","How many times did they practise?","How did the other person react?"]},
+{i:86,w:"Group project. I'm the group.",l:"B2",t:"funny",p:"group",g:"group project (n) — work shared between several students",b:4,q:["How many people are in the group?","Where is everyone else?","What will they say on presentation day?"]},
+{i:87,w:"New student. Old school photo.",l:"A1",t:"twist",p:"photo",g:"photo (n) — a picture from a camera",b:2,q:["Which day is it?","Where is the old photo?","Who is in the old photo?"]},
+{i:88,w:"Everyone knows my name. Why?",l:"A1",t:"twist",p:"knows",g:"know (v) — to have information about somebody",b:2,q:["Where is this person?","Is it their first day?","How do people say the name?"]},
+{i:89,w:"I woke up. Different bedroom.",l:"A2",t:"twist",p:"different",g:"different (adj) — not the same",b:4,q:["What is in the room?","Where did they fall asleep?","Whose bedroom is it?"]},
+{i:90,w:"The test was blank. Everyone's.",l:"A2",t:"twist",p:"blank",g:"blank (adj) — with nothing written on it",b:3,q:["Which class is this?","What did the teacher say?","How long do they sit there?"]}
+];
+
+/* ---------- state ---------- */
+const S = {
+  mode: 'expand',
+  level: store('fw-level') || 'All',
+  tone:  store('fw-tone')  || 'All',
+  ex: {story:null, rung:0},
+  ms: {story:null, blank:0, shown:false},
+  wall: [], voting:false, teamNo:0,
+  chain: ['','','','',''], order:[0,1,2,3,4], chainStep:0,
+  clock:{left:180, id:null, running:false}
+};
+const MODES = [['expand','Expand'],['write','Write'],['missing','Missing'],['chain','Chain']];
+const LEVELS = ['All','A1','A2','B1','B2'];
+const TONES  = ['All','creepy','twist','funny','sad'];
+const $ = id => document.getElementById(id);
+
+function pool(){
+  return STORIES.filter(s =>
+    (S.level === 'All' || s.l === S.level) &&
+    (S.tone  === 'All' || s.t === S.tone));
+}
+function draw(avoid){
+  const p = pool();
+  if(!p.length) return null;
+  if(p.length === 1) return p[0];
+  let s, guard = 0;
+  do { s = p[Math.floor(Math.random()*p.length)]; guard++; } while(avoid && s.i === avoid.i && guard < 30);
+  return s;
+}
+const words = s => s.w.split(' ');
+const bare = w => w.replace(/[.,!?:;'"—]/g,'').toLowerCase();
+
+/* ---------- chrome ---------- */
+function buildChrome(){
+  $('modes').innerHTML = MODES.map(([k,label]) =>
+    `<button class="mode-tab" data-mode="${k}">${label}</button>`).join('');
+  $('modes').querySelectorAll('.mode-tab').forEach(b =>
+    b.onclick = () => setMode(b.dataset.mode));
+
+  $('levelChips').innerHTML = LEVELS.map(l =>
+    `<button class="chip" data-lv="${l}">${l}</button>`).join(' ');
+  $('levelChips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    S.level = b.dataset.lv; store('fw-level', S.level);
+    paintChips(); refreshStories();
+  });
+
+  $('toneChips').innerHTML = TONES.map(t =>
+    `<button class="chip" data-tn="${t}">${t === 'All' ? 'All' : t[0].toUpperCase()+t.slice(1)}</button>`).join(' ');
+  $('toneChips').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    S.tone = b.dataset.tn; store('fw-tone', S.tone);
+    paintChips(); refreshStories();
+  });
+  paintChips();
+}
+function paintChips(){
+  $('levelChips').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.lv === S.level));
+  $('toneChips').querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.tn === S.tone));
+}
+function setMode(m){
+  S.mode = m;
+  $('modes').querySelectorAll('.mode-tab').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  ['expand','write','missing','chain'].forEach(k => $('p-'+k).classList.toggle('on', k === m));
+}
+function refreshStories(){
+  if(!pool().length){ S.level = 'All'; S.tone = 'All'; paintChips(); }
+  newExpand(); newMissing();
+}
+function tagRow(s){
+  return `<b>${s.l}</b><b>${s.t}</b>`;
+}
+
+/* ---------- mode: expand ---------- */
+function renderStory(el, s, opts){
+  opts = opts || {};
+  el.innerHTML = words(s).map((w,idx) => {
+    if(opts.blank === idx && !opts.shown) return `<span class="blank">&nbsp;</span>`;
+    const hot = opts.blank === idx && opts.shown;
+    return `<span class="w${hot ? ' pivot reveal' : ''}">${w}</span>`;
+  }).join(' ');
+}
+function newExpand(){
+  const s = draw(S.ex.story);
+  if(!s) return;
+  S.ex.story = s; S.ex.rung = 0;
+  renderStory($('exStory'), s);
+  $('exTags').innerHTML = tagRow(s);
+  $('exGloss').innerHTML = '';
+  $('exLadder').innerHTML = '';
+  $('exNext').disabled = false;
+  $('exNext').textContent = 'Next question';
+}
+function ladderFor(s){
+  const final = s.l === 'A1' || s.l === 'A2'
+    ? 'Now tell the whole story. Three sentences.'
+    : 'Now tell the whole story. Five sentences.';
+  return s.q.concat(['What happened one minute before this?', final]);
+}
+function nextRung(){
+  const s = S.ex.story; if(!s) return;
+  const rungs = ladderFor(s);
+  if(S.ex.rung < rungs.length){
+    const li = document.createElement('li');
+    li.textContent = rungs[S.ex.rung];
+    li.className = 'live';
+    $('exLadder').querySelectorAll('li').forEach(x => x.classList.remove('live'));
+    $('exLadder').appendChild(li);
+    S.ex.rung++;
+    if(S.ex.rung === rungs.length) $('exNext').textContent = 'Show the key word';
+    return;
+  }
+  if(!$('exGloss').innerHTML){
+    $('exGloss').innerHTML = `<div class="gloss"><strong>${s.p}</strong> — everything turns on this word.<br>${s.g}</div>`;
+    $('exNext').disabled = true;
+  }
+}
+
+/* ---------- mode: write ---------- */
+const SETTINGS = ["an empty school corridor","the last bus home","a family kitchen","the back of a classroom","a swimming pool at night","grandmother's house","an elevator","a hotel room","the school library","a bedroom at 3 a.m.","a supermarket after closing","a long car journey","a birthday party","the bathroom mirror","a summer camp cabin","a hospital waiting room","the attic","a bus stop in the rain"];
+function pivotWords(){
+  const seen = new Set(), out = [];
+  const p = pool().length ? pool() : STORIES;
+  p.forEach(s => { if(!seen.has(s.p)){ seen.add(s.p); out.push(s.p); } });
+  return out;
+}
+function newConstraint(){
+  const ws = pivotWords();
+  const tones = TONES.slice(1);
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  $('conCard').innerHTML =
+    `<div class="con-cell"><small>Must include the word</small><strong>${pick(ws)}</strong></div>
+     <div class="con-cell"><small>Set it in</small><strong>${pick(SETTINGS)}</strong></div>
+     <div class="con-cell"><small>Tone</small><strong>${S.tone === 'All' ? pick(tones) : S.tone}</strong></div>`;
+}
+function countWords(v){
+  return v.trim().split(/\s+/).filter(Boolean);
+}
+function onType(){
+  const inp = $('entryInput');
+  let ws = countWords(inp.value);
+  if(ws.length > 5){
+    ws = ws.slice(0,5);
+    inp.value = ws.join(' ');
+  }
+  const c = $('counter');
+  c.textContent = `${ws.length} of 5 words`;
+  c.classList.toggle('full', ws.length === 5);
+}
+function addEntry(){
+  const ws = countWords($('entryInput').value);
+  if(ws.length !== 5){
+    $('counter').textContent = `${ws.length} of 5 — it has to be exactly five.`;
+    return;
+  }
+  const name = $('teamName').value.trim() || `Team ${++S.teamNo}`;
+  S.wall.push({text: ws.join(' '), who: name, votes: 0});
+  $('entryInput').value = ''; $('teamName').value = '';
+  onType(); paintWall(); $('entryInput').focus();
+}
+function paintWall(){
+  const w = $('wall');
+  if(!S.wall.length){
+    w.innerHTML = `<div class="empty" style="grid-column:1/-1">Nothing on the wall yet. Set a constraint, start the clock, and add the first five words.</div>`;
+    return;
+  }
+  const top = S.wall.reduce((m,e) => Math.max(m, e.votes), 0);
+  w.innerHTML = S.wall.map((e,idx) =>
+    `<div class="entry${S.voting ? ' voting' : ''}${S.showWin && e.votes === top && top > 0 ? ' win' : ''}" data-i="${idx}">
+       ${S.voting ? '' : `<button class="kill" data-kill="${idx}" aria-label="Remove">×</button>`}
+       <p>${e.text}</p>
+       <span class="who">${e.who}</span>
+       <div class="pips">${'<span class="pip"></span>'.repeat(e.votes)}</div>
+     </div>`).join('');
+  w.querySelectorAll('.entry').forEach(el => {
+    if(S.voting) el.onclick = () => { S.wall[+el.dataset.i].votes++; paintWall(); };
+  });
+  w.querySelectorAll('[data-kill]').forEach(b => b.onclick = ev => {
+    ev.stopPropagation(); S.wall.splice(+b.dataset.kill,1); paintWall();
+  });
+}
+
+/* clock */
+function paintClock(){
+  const t = S.clock.left, m = Math.floor(t/60), s = t % 60;
+  const el = $('clock');
+  el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle('low', t <= 30);
+}
+function chime(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [660, 495].forEach((f,idx) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t0 = ctx.currentTime + idx * 0.42;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.22, t0 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 1.1);
+      o.start(t0); o.stop(t0 + 1.2);
+    });
+  }catch(e){}
+}
+function toggleClock(){
+  if(S.clock.running){
+    clearInterval(S.clock.id); S.clock.running = false; $('clockGo').textContent = 'Start';
+    return;
+  }
+  if(S.clock.left <= 0) S.clock.left = 180;
+  S.clock.running = true; $('clockGo').textContent = 'Pause';
+  S.clock.id = setInterval(() => {
+    S.clock.left--;
+    if(S.clock.left <= 0){
+      S.clock.left = 0; clearInterval(S.clock.id);
+      S.clock.running = false; $('clockGo').textContent = 'Start'; chime();
+    }
+    paintClock();
+  }, 1000);
+}
+function bumpClock(n){
+  S.clock.left = Math.max(0, S.clock.left + n); paintClock();
+}
+
+/* ---------- mode: missing ---------- */
+function newMissing(){
+  const s = draw(S.ms.story);
+  if(!s) return;
+  S.ms = {story: s, blank: s.b, shown: false};
+  paintMissing();
+}
+function paintMissing(){
+  const s = S.ms.story; if(!s) return;
+  renderStory($('msStory'), s, {blank: S.ms.blank, shown: S.ms.shown});
+  $('msTags').innerHTML = tagRow(s);
+  const hidden = words(s)[S.ms.blank];
+  $('msGloss').innerHTML = S.ms.shown
+    ? `<div class="gloss"><strong>${hidden}</strong><br>${bare(hidden) === bare(s.p) ? s.g : 'Take out this word and the story stops working. Ask the class why.'}</div>`
+    : '';
+  $('msReveal').disabled = S.ms.shown;
+}
+function blankAnother(){
+  const s = S.ms.story; if(!s) return;
+  let n = S.ms.blank;
+  while(n === S.ms.blank) n = Math.floor(Math.random()*5);
+  S.ms.blank = n; S.ms.shown = false; paintMissing();
+}
+
+/* ---------- mode: chain ---------- */
+function paintChain(){
+  $('slots').innerHTML = S.chain.map((w,idx) => {
+    const isNext = S.chainStep < 5 && S.order[S.chainStep] === idx;
+    return `<div class="slot${w ? ' done' : ''}${isNext ? ' next' : ''}" data-n="${idx+1}" data-i="${idx}">${w}</div>`;
+  }).join('');
+  $('slots').querySelectorAll('.slot').forEach(el => el.onclick = () => {
+    const pos = S.order.indexOf(+el.dataset.i);
+    if(pos > -1){ S.chainStep = pos; paintChain(); $('chainInput').focus(); }
+  });
+  const done = S.chain.every(Boolean);
+  $('chainCount').textContent = done
+    ? 'Five words. Read it out loud, then ask what happened.'
+    : `Word ${S.chainStep+1} of 5 — filling position ${S.order[S.chainStep]+1}`;
+  if(done) $('slots').classList.add('chain-done');
+  else $('slots').classList.remove('chain-done');
+}
+function addChainWord(){
+  const v = $('chainInput').value.trim().split(/\s+/)[0];
+  if(!v) return;
+  S.chain[S.order[S.chainStep]] = v;
+  $('chainInput').value = '';
+  let n = S.chainStep;
+  while(n < 5 && S.chain[S.order[n]]) n++;
+  S.chainStep = Math.min(n, 4);
+  paintChain(); $('chainInput').focus();
+}
+function clearChain(){
+  S.chain = ['','','','','']; S.chainStep = 0; S.order = [0,1,2,3,4]; paintChain();
+}
+function shuffleChain(){
+  const o = [0,1,2,3,4];
+  for(let k = o.length - 1; k > 0; k--){
+    const j = Math.floor(Math.random()*(k+1)); [o[k],o[j]] = [o[j],o[k]];
+  }
+  S.order = o; S.chainStep = 0;
+  S.chain = ['','','','',''];
+  paintChain();
+}
+function saveChain(){
+  if(!S.chain.every(Boolean)) return;
+  S.wall.push({text: S.chain.join(' '), who: 'Class chain', votes: 0});
+  paintWall(); clearChain(); setMode('write');
+}
+
+/* ---------- wiring ---------- */
+buildChrome();
+setMode('expand');
+newExpand(); newMissing(); newConstraint(); paintClock(); paintWall(); paintChain();
+
+$('exNext').onclick = nextRung;
+$('exNew').onclick = newExpand;
+
+$('conNew').onclick = newConstraint;
+$('clockGo').onclick = toggleClock;
+$('clockPlus').onclick = () => bumpClock(30);
+$('clockMinus').onclick = () => bumpClock(-30);
+$('clockReset').onclick = () => {
+  clearInterval(S.clock.id); S.clock.running = false;
+  $('clockGo').textContent = 'Start'; S.clock.left = 180; paintClock();
+};
+$('entryInput').oninput = onType;
+$('entryInput').onkeydown = e => { if(e.key === 'Enter') addEntry(); };
+$('entryAdd').onclick = addEntry;
+$('voteStart').onclick = () => {
+  S.voting = !S.voting; S.showWin = false;
+  $('voteStart').textContent = S.voting ? 'Stop voting' : 'Start vote';
+  paintWall();
+};
+$('voteWin').onclick = () => { S.showWin = true; paintWall(); };
+$('wallClear').onclick = () => {
+  if(S.wall.length && !confirm('Clear the wall and start a new round?')) return;
+  S.wall = []; S.voting = false; S.showWin = false; S.teamNo = 0;
+  $('voteStart').textContent = 'Start vote';
+  paintWall(); newConstraint();
+};
+
+$('msReveal').onclick = () => { S.ms.shown = true; paintMissing(); };
+$('msNext').onclick = newMissing;
+$('msAny').onclick = blankAnother;
+
+$('chainAdd').onclick = addChainWord;
+$('chainInput').onkeydown = e => { if(e.key === 'Enter') addChainWord(); };
+$('chainShuffle').onclick = shuffleChain;
+$('chainSave').onclick = saveChain;
+$('chainClear').onclick = clearChain;
+
+document.addEventListener('keydown', e => {
+  if(/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if(S.mode === 'expand'){
+    if(e.key === 'ArrowRight'){ e.preventDefault(); nextRung(); }
+    if(e.key.toLowerCase() === 'n'){ newExpand(); }
+  }
+  if(S.mode === 'missing'){
+    if(e.key === 'ArrowRight'){ e.preventDefault(); S.ms.shown = true; paintMissing(); }
+    if(e.key.toLowerCase() === 'n'){ newMissing(); }
+  }
+});
+
+</script>
+</body>
+</html>
