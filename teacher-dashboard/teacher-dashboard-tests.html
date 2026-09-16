@@ -309,6 +309,43 @@ function run(T, state){
   const b21_ = bRecs_.find(r=>r.date==='2026-07-21');
   ok('default-present: untouched student counted present', b21_ && b21_.attendance==='present', bRecs_.map(r=>r.date));
   ok('default-present: assumed record invents no homework', b21_ && b21_.hw===null && b21_._assumed===true);
+
+  // ---------- oral rubric ----------
+  section('oral rubric — weights, derived letter, criterion averages');
+  const W_ = {vocabulary:20,grammar:20,pronunciation:20,fluency:20,task:20};
+  eq('all A with equal weights', T.rubricOverallLetter({vocabulary:'A',grammar:'A',pronunciation:'A',fluency:'A',task:'A'}, W_), 'A');
+  eq('half-graded rubric scores on what is there', T.rubricOverallLetter({fluency:'C'}, W_), 'C');
+  eq('nothing graded stays null', T.rubricOverallNum({}, W_), null);
+  eq('fluency-heavy weights pull the letter down',
+     T.rubricOverallLetter({vocabulary:'A',grammar:'A',pronunciation:'A',fluency:'D',task:'A'},
+                           {vocabulary:10,grammar:10,pronunciation:10,fluency:60,task:10}), 'C');
+  eq('round half up (2.5 → B)', T.numToLetter(2.5), 'B');
+  eq('all-zero weights fall back to equal', T.normalizeWeights({vocabulary:0,grammar:0,pronunciation:0,fluency:0,task:0}).pct.task, 20);
+  eq('weights normalize to percentages', Math.round(T.normalizeWeights({vocabulary:1,grammar:1,pronunciation:1,fluency:1,task:0}).pct.vocabulary), 25);
+  eq('criteria graded counter', T.rubricCount({vocabulary:'A',task:'F'}), 2);
+  ok('every band descriptor exists in both languages',
+     ['vocabulary','grammar','pronunciation','fluency','task'].every(c =>
+       ['basic','intermediate','advanced'].every(t =>
+         ['A','B','C','D','F'].every(L => T.bandText(c,t,L,false) && T.bandText(c,t,L,true)))));
+  ok('PT and EN descriptors differ', T.bandText('fluency','basic','F',true) !== T.bandText('fluency','basic','F',false));
+
+  T._setState({
+    classes:[{id:'c1',name:'Test',level:'Basic 2'}],
+    students:[{id:'s1',name:'A',classId:'c1'}],
+    sessions:{}, events:[], holidays:[], sessionMeta:{}, lessonNotes:{}, homework:{}, promises:{},
+    activities:[
+      { id:'a1', classId:'c1', date:'2026-08-01', skill:'speaking', mode:'rubric', tier:'basic',
+        weights:W_, rubric:{ s1:{ vocabulary:'A', fluency:'C' } }, grades:{ s1:'B' } },
+      { id:'a2', classId:'c1', date:'2026-08-08', skill:'speaking', mode:'rubric', tier:'basic',
+        weights:W_, rubric:{ s1:{ vocabulary:'C' } }, grades:{ s1:'C' } },
+      { id:'a3', classId:'c1', date:'2026-08-15', skill:'speaking', description:'quick one', grades:{ s1:'A' } }
+    ]
+  });
+  const crit_ = T.studentCriterionAverages('s1','c1');
+  eq('criterion average A + C → B', crit_.vocabulary.letter, 'B');
+  eq('counts only rubric activities', crit_.vocabulary.n, 2);
+  eq('ungraded criterion absent', crit_.grammar, undefined);
+  eq('derived letters still feed skill averages', T.studentSkillAverages('s1','c1').speaking.letter, 'B');
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
