@@ -6460,14 +6460,14 @@ function renderRollCall(){
           const pNotes = students.map(s=>[s, ((prevSession[s.id]||{}).notes||'').trim()]).filter(x=>x[1]);
           const pContent = getLessonNote(cls.id, prevDate);
           const pPlan    = getPromise(cls.id, prevDate);
-          const hwToday  = getHomework(cls.id, date);
+          const hwPrevDue = getHomework(cls.id, prevDate);   // what was collected at that lesson
           const owing = [...hwPending.keys()].map(id=>students.find(s=>s.id===id)).filter(Boolean);
           return `<div class="card rc-panel">
             <div class="rc-panel-head">Last class \u2014 <b>${formatDateLong(prevDate)}</b>
               <button type="button" class="linkish" style="margin-left:auto;text-decoration:underline;"
                 onclick="goToRollCall('${cls.id}','${prevDate}')">open that register \u2192</button></div>
             ${sec('\uD83D\uDCDD What we did last class', pContent?read(planReadHtml(pContent)):none('Nothing was recorded.'))}
-            ${sec('\uD83D\uDCD8 Homework assigned '+sub('(due today)'), hwToday?read(planReadHtml(hwToday)):none('No homework was assigned.'))}
+            ${sec('\uD83D\uDCD8 Homework due last class', hwPrevDue?read(planReadHtml(hwPrevDue)):none('Nothing was due last class.'))}
             ${sec('\uD83D\uDEAA Absent last class', (pAbs.length||pLate.length)
               ? `<div class="rc-chips">${pAbs.map(s=>`<span class="rc-chip abs">${esc(s.name)}</span>`).join('')}${pLate.map(s=>`<span class="rc-chip late">${esc(s.name)} \u00b7 late</span>`).join('')}</div>`
               : none('Everyone was present.'))}
@@ -10718,7 +10718,7 @@ function renderPrivStudent(){
   const place = latestPlacement(s.id);
   const completed = lessons.filter(l=>l.status==='completed').length;
   const noshow = lessons.filter(l=>l.status==='no-show').length;
-  const cancelled = lessons.filter(l=>l.status==='canceled').length;
+  const canceled = lessons.filter(l=>l.status==='canceled').length;
   window._privLessonIds = lessons.map(l=>l.id);
   window._privPayIds2 = pays.map(p=>p.id);
   window._privCpIds = cps.map(c=>c.id);
@@ -11891,7 +11891,7 @@ function projSaveTeam(runId, teamId){
   const members = [...document.querySelectorAll('.tm-mem:checked')].map(i=>i.value);
   let team = teamId ? (run.teams||[]).filter(t=>t.id===teamId)[0] : null;
   if(!team){ team = { id: uid(), memberIds: [] }; run.teams = run.teams||[]; run.teams.push(team); }
-  team.name = name; team.colour = color; team.memberIds = members;
+  team.name = name; team.colour = colour; team.memberIds = members;
   // A student can only be on one team per run.
   (run.teams||[]).forEach(t=>{
     if(t.id===team.id) return;
