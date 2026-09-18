@@ -1029,6 +1029,7 @@ let state = {
   projOpenTeamId: null,
   showArchived: false,
   showDashEC: false,
+  showClubCard: true,
   // Private lessons
   privateStudents: [],
   privateLessons: [],
@@ -4069,6 +4070,7 @@ function renderClasses(){
         <p>No active classes.</p>
         <button class="btn-accent" onclick="openClassModal()">+ Add your first class</button>
       </div>`}
+    ${renderClubCard()}
     ${archived.length ? `
       <div style="margin-top:24px;">
         <button type="button" class="dash-row-left" style="margin-bottom:8px;" aria-expanded="${state.showArchived}" onclick="state.showArchived=!state.showArchived;refreshView();">
@@ -5304,18 +5306,7 @@ function setClubStatus(eventId, studentId, status){
   clubMutateRec(eventId, r=>{
     const cur = Object.assign({}, r.att[studentId]||{});
     cur.status = (cur.status === status) ? null : status;
-    if(cur.status !== 'present') cur.late = false;
-    r.att = Object.assign({}, r.att, {[studentId]: cur});
-  });
-  refreshView();
-  openClubModal(eventId);
-}
-function toggleClubLate(eventId, studentId){
-  clubFlush(eventId);
-  clubMutateRec(eventId, r=>{
-    const cur = Object.assign({}, r.att[studentId]||{});
-    cur.late = !cur.late;
-    if(cur.late) cur.status = 'present';
+    if(cur.status === 'absent'){ cur.late = false; cur.lateMin = 0; cur.leftEarlyMin = 0; }
     r.att = Object.assign({}, r.att, {[studentId]: cur});
   });
   refreshView();
@@ -5355,6 +5346,16 @@ function clubRemoveStudent(eventId, studentId){
   refreshView();
   openClubModal(eventId);
 }
+function setClubNum(eventId, studentId, field, val){
+  const n = Math.max(0, Math.round(Number(val) || 0));
+  clubMutateRec(eventId, r=>{
+    const cur = Object.assign({}, r.att[studentId]||{});
+    cur[field] = n;
+    if(field === 'lateMin') cur.late = n > 0;
+    r.att = Object.assign({}, r.att, {[studentId]: cur});
+  });
+  refreshView();
+}
 function setClubContent(eventId, val){
   clubMutateRec(eventId, r=>{ r.content = val; });
   refreshView();
@@ -5366,6 +5367,77 @@ function setClubDone(eventId, on){
   openClubModal(eventId);
 }
 
+
+/* --- the Club in Classes & Students ---
+   The Club is a class the teacher runs, so it belongs where the classes are.
+   Sessions come from the Calendar; this card is a second door to the same
+   events, plus a quick way to put another Friday on the list. */
+function renderClubCard(){
+  const evs = clubEventsAll();
+  const today = todayStr();
+  const upcoming = evs.filter(e=>e.date >= today);
+  const past = evs.filter(e=>e.date < today).reverse();
+  const shown = upcoming.concat(past.slice(0, 8));
+  const open = state.showClubCard !== false;
+  const row = e => {
+    const c = clubCounts(e.id);
+    const rec = clubRec(e.id);
+    const slots = clubSlots(e.id);
+    const when = `${pmDayEn(e.date)} ${pmShortDate(e.date)}`;
+    return `
+      <div class="student-list-row">
+        <button type="button" class="student-name-link" onclick="openClubModal('${e.id}')">
+          ${when}${e.date===today?' · Today':''}
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="meta">${slots.map(sl=>esc(clubSlotLabel(sl))).join(' · ')}</span>
+          <span class="badge ${rec.done?'green':c.present?'hw':'other'}">${c.present}/${c.total}</span>
+          <button class="icon-btn" onclick="openClubModal('${e.id}')">📋 Roll call</button>
+        </div>
+      </div>`;
+  };
+  return `
+    <div class="card class-card" style="margin-top:16px;">
+      <div class="class-card-head">
+        <button type="button" class="dash-row-left" aria-expanded="${open}" onclick="state.showClubCard=${open?'false':'true'};refreshView();">
+          <span class="color-dot" style="background:var(--amber)" aria-hidden="true"></span>
+          <span>
+            <span class="dash-row-title">⭐ English Club</span>
+            <span class="dash-row-sub">${evs.length} session${evs.length===1?'':'s'} · ${clubFlagged().length} students tagged${clubSessionsDue().length?` · ${clubSessionsDue().length} awaiting roll call`:''}</span>
+          </span>
+          <span class="chevron" style="margin-left:8px;" aria-hidden="true">${open?'▾':'▸'}</span>
+        </button>
+      </div>
+      ${open ? `
+        <div class="class-card-body">
+          <div class="add-student-row">
+            <input type="date" id="club-new-date" value="${nextFridayStr()}">
+            <button class="btn-accent" onclick="addClubSession()">+ Add session</button>
+          </div>
+          ${shown.length ? `<div class="student-list">${shown.map(row).join('')}</div>`
+            : `<div class="empty">No English Club sessions yet. Pick a date above to add the first one.</div>`}
+          ${past.length > 8 ? `<div class="meta" style="margin-top:8px;">Older sessions stay on the calendar.</div>` : ''}
+        </div>` : ''}
+    </div>`;
+}
+function nextFridayStr(){
+  const d = new Date();
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function addClubSession(){
+  const input = document.getElementById('club-new-date');
+  const date = input && input.value;
+  if(!date) return;
+  const existing = clubEventsAll().find(e=>e.date === date);
+  if(existing){ openClubModal(existing.id); return; }
+  const ev = { id: uid(), date, title: 'English Club', type: 'other', classId: null };
+  state.events.push(ev);
+  scheduleSave('events', state.events);
+  refreshView();
+  openClubModal(ev.id);
+}
+
 /* --- the Friday itself --- */
 function clubModalRow(eventId, rec, studentId, slots){
   const s = state.students.find(x=>x.id===studentId);
@@ -5373,32 +5445,39 @@ function clubModalRow(eventId, rec, studentId, slots){
   slots = slots || clubSlots(eventId);
   const cls = classById(s.classId);
   const a = rec.att[studentId] || {};
+  const lateMin = Number(a.lateMin || 0);
+  const earlyMin = Number(a.leftEarlyMin || 0);
   const registered = clubRegisteredIds(eventId).includes(studentId);
+  const away = a.status === 'absent';
   const btn = (status, label, color) => {
     const on = a.status === status;
     return `<button type="button" class="btn-ghost small" onclick="setClubStatus('${eventId}','${studentId}','${status}')"
       aria-pressed="${on}" style="${on?`background:var(--${color}-soft);color:var(--${color});border-color:var(--${color});font-weight:700;`:''}">${label}</button>`;
   };
   return `
-    <div class="modal-row" style="align-items:flex-start;flex-wrap:wrap;gap:10px;">
-      <div style="min-width:150px;flex:1;">
-        <div style="font-weight:600;">${esc(s.name)}${registered?'':` <span class="badge other" style="font-size:10px;">walk-in</span>`}</div>
-        <div class="meta">${cls?esc(cls.name):'No class'}</div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+    <div style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="min-width:130px;flex:1;">
+          <div style="font-weight:600;">${esc(s.name)}${registered?'':` <span class="badge other" style="font-size:10px;">walk-in</span>`}</div>
+          <div class="meta">${cls?esc(cls.name):'No class'}</div>
+        </div>
         ${btn('present','Present','green')}
         ${btn('absent','Absent','red')}
-        <button type="button" class="btn-ghost small" onclick="toggleClubLate('${eventId}','${studentId}')"
-          aria-pressed="${!!a.late}" title="Arrived late"
-          style="${a.late?'background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700;':''}">🕐</button>
+        <label class="meta" style="display:flex;align-items:center;gap:4px;${away?'opacity:.45;':''}">Late
+          <input type="number" min="0" class="cr-num" value="${lateMin}" ${away?'disabled':''}
+            onchange="setClubNum('${eventId}','${studentId}','lateMin', this.value)" style="width:62px;"> min</label>
+        <label class="meta" style="display:flex;align-items:center;gap:4px;${away?'opacity:.45;':''}">Left early
+          <input type="number" min="0" class="cr-num" value="${earlyMin}" ${away?'disabled':''}
+            onchange="setClubNum('${eventId}','${studentId}','leftEarlyMin', this.value)" style="width:62px;"> min</label>
         ${slots.length > 1 ? `<select onchange="setStudentSlot('${eventId}','${studentId}', this.value)" title="Time slot" style="max-width:130px;">
           ${slots.map(sl=>`<option value="${sl.id}" ${sl.id===clubSlotIdOf(eventId, studentId)?'selected':''}>${esc(clubSlotLabel(sl))}</option>`).join('')}
         </select>` : ''}
-        <input type="text" data-club-note="${studentId}" value="${esc(a.note||'')}" placeholder="note"
-          style="min-width:120px;flex:1;" onchange="clubFlush('${eventId}')">
         <button type="button" class="icon-btn danger" title="Remove from this session"
           onclick="clubRemoveStudent('${eventId}','${studentId}')">×</button>
       </div>
+      <textarea data-club-note="${studentId}" rows="2" onchange="clubFlush('${eventId}')"
+        placeholder="What ${esc(pmFirstName(s.name))} worked on today…"
+        style="width:100%;margin-top:8px;resize:vertical;">${esc(a.note||'')}</textarea>
     </div>`;
 }
 function openClubModal(eventId){
@@ -5445,12 +5524,11 @@ function openClubModal(eventId){
         </select>`:''}
       </div>
     </div>
-    <div class="modal-section">
-      <div class="modal-section-label">What we did</div>
-      <textarea id="club-content" rows="4" placeholder="e.g. Board games, then free conversation about weekend plans."
-        onchange="setClubContent('${eventId}', this.value)">${esc(rec.content)}</textarea>
-      <div class="meta" style="margin-top:6px;">This appears on the report of every student who was here.</div>
-    </div>
+    ${rec.content ? `<div class="modal-section">
+      <div class="modal-section-label">Note for the whole group</div>
+      <textarea id="club-content" rows="3" onchange="setClubContent('${eventId}', this.value)">${esc(rec.content)}</textarea>
+      <div class="meta" style="margin-top:6px;">Shown on every student's report, under their own note. Clear it to remove it.</div>
+    </div>` : ''}
     <div class="modal-actions">
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
         <input type="checkbox" ${rec.done?'checked':''} onchange="setClubDone('${eventId}', this.checked)"> Session complete
@@ -5558,7 +5636,9 @@ function clubReportRows(student, from, to){
     const sl = clubSlotTime(e.id, student.id);
     return { date: e.date, title: e.title, content: (rec.content||'').trim(),
              time: (sl && sl.from) ? `${sl.from}–${sl.to||''}` : '',
-             status: a.status || null, late: !!a.late, note: (a.note||'').trim() };
+             status: a.status || null, late: !!a.late || Number(a.lateMin||0) > 0,
+             lateMin: Number(a.lateMin||0), leftEarlyMin: Number(a.leftEarlyMin||0),
+             note: (a.note||'').trim() };
   }).sort((a,b)=>b.date.localeCompare(a.date));
 }
 function pmShortDate(dateStr){
@@ -9101,8 +9181,12 @@ function buildReportText(s, lang){
       const st = r.status==='present' ? (isPt?'presente':'present')
                : r.status==='absent' ? (isPt?'ausente':'absent')
                : (isPt?'não registrado':'not recorded');
-      out.push(`- ${formatDateShort(r.date)}${r.time?` ${r.time}`:''} — ${st}${r.late?(isPt?' (atrasado)':' (late)'):''}${r.content?` · ${r.content}`:''}`);
+      const marks = [];
+      if(r.lateMin) marks.push(isPt?`${r.lateMin} min de atraso`:`${r.lateMin} min late`);
+      if(r.leftEarlyMin) marks.push(isPt?`saiu ${r.leftEarlyMin} min antes`:`left ${r.leftEarlyMin} min early`);
+      out.push(`- ${formatDateShort(r.date)}${r.time?` ${r.time}`:''} — ${st}${marks.length?` (${marks.join(', ')})`:''}`);
       if(r.note) out.push(`    ${r.note}`);
+      if(r.content) out.push(`    ${r.content}`);
     });
   }
 
@@ -9702,17 +9786,22 @@ function renderStudentProfile(){
         <div class="lost-summary" style="margin-bottom:10px;">${t.clubAttendedOf(went, rows.length)}</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.clubWhat}</th><th>${t.notes}</th></tr></thead>
+            <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th title="${t.histCols.late.full}">${t.histCols.late.abbr}</th><th title="${t.histCols.early.full}">${t.histCols.early.abbr}</th><th>${t.clubWhat}</th></tr></thead>
             <tbody>
               ${rows.map(r=>{
                 const key = r.status || 'unmarked';
                 const badge = r.status==='present' ? 'green' : r.status==='absent' ? 'red' : 'other';
                 const blank = `<span style="color:var(--muted);">—</span>`;
+                const away = r.status === 'absent';
+                const what = [r.note, r.content].filter(Boolean);
                 return `<tr>
                   <td>${formatDateShort(r.date)}${r.time?`<div class="meta" style="font-size:11px;">${esc(r.time)}</div>`:''}</td>
-                  <td><span class="badge ${badge}">${t.clubStatusLabels[key]}</span>${r.late?` <span class="badge amber">${t.clubLate}</span>`:''}</td>
-                  <td>${r.content?esc(r.content):`<span style="color:var(--muted);">${t.clubNoContent}</span>`}</td>
-                  <td>${r.note?esc(r.note):blank}</td>
+                  <td><span class="badge ${badge}">${t.clubStatusLabels[key]}</span></td>
+                  <td>${!away && r.lateMin?r.lateMin+' min':blank}</td>
+                  <td>${!away && r.leftEarlyMin?r.leftEarlyMin+' min':blank}</td>
+                  <td>${what.length
+                    ? `${r.note?esc(r.note):''}${r.content?`<div class="meta" style="font-size:11px;${r.note?'margin-top:4px;':''}">${esc(r.content)}</div>`:''}`
+                    : `<span style="color:var(--muted);">${t.clubNoContent}</span>`}</td>
                 </tr>`;
               }).join('')}
             </tbody>
