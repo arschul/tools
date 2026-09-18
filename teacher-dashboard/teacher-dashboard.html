@@ -1040,6 +1040,7 @@ let state = {
   grades: {},
   gradeSettings: { margin: 0 },
   clubSettings: null,          // English Club invite details — see CLUB_DEFAULTS
+  clubs: {},                   // English Club sessions: {eventId: {content, roster, att, done}}
   backupMeta: { lastBackupAt: null },
   privView: 'overview',
   privStudentFilter: 'active',
@@ -1136,6 +1137,12 @@ const T = {
     backToContacts: '← Back to Contacts',
     backToClasses: '← Back to Classes & Students',
     englishClubBadge: '⭐ English Club',
+    clubHead: '⭐ English Club',
+    clubAttendedOf: (a,n) => `Attended <b>${a}</b> of <b>${n}</b> session${n===1?'':'s'}`,
+    clubWhat: 'What we did',
+    clubNoContent: 'No description recorded',
+    clubStatusLabels: {present:'Present', absent:'Absent', unmarked:'Not recorded'},
+    clubLate: 'late',
     langToggle: 'PT',
     copyTextBtn: 'Copy text',
     attendanceLabels: {present:'Present', late:'Late', absent:'Absent'},
@@ -1224,6 +1231,12 @@ const T = {
     backToContacts: '← Voltar para Contatos',
     backToClasses: '← Voltar a Turmas e Alunos',
     englishClubBadge: '⭐ English Club',
+    clubHead: '⭐ Clube de Inglês',
+    clubAttendedOf: (a,n) => `Participou de <b>${a}</b> de <b>${n}</b> encontro${n===1?'':'s'}`,
+    clubWhat: 'O que fizemos',
+    clubNoContent: 'Sem descrição registrada',
+    clubStatusLabels: {present:'Presente', absent:'Ausente', unmarked:'Não registrado'},
+    clubLate: 'atrasado',
     langToggle: 'EN',
     copyTextBtn: 'Copiar texto',
     attendanceLabels: {present:'Presente', late:'Atrasado', absent:'Ausente'},
@@ -2071,7 +2084,7 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','pointsLog','activities','rubricSettings','projects'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','clubs','pointsLog','activities','rubricSettings','projects'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -3681,6 +3694,24 @@ function _renderDashboard(el){
         <span class="section-title" style="margin:0;">⭐ English Club (${ecStudents.length})</span>
       </button>
       <button class="btn-accent small" style="position:absolute;top:14px;right:16px;" onclick="event.stopPropagation();openParentMessages()" title="Generate a WhatsApp message for every flagged student, filled in with their own grades and attendance">📱 Message parents</button>
+      ${(()=>{
+        const due = clubSessionsDue().slice(-3).reverse();
+        if(!due.length) return '';
+        const today = todayStr();
+        return due.map(e=>{
+          const c = clubCounts(e.id);
+          return `<div class="dash-row" style="background:var(--amber-soft);border-radius:10px;padding:8px 12px;margin-top:8px;">
+            <div class="dash-row-left">
+              <span class="color-dot" style="background:var(--amber)"></span>
+              <div>
+                <div class="dash-row-title">${esc(e.title)}${e.date===today?' · Today':''}</div>
+                <div class="dash-row-sub">${formatDateShort(e.date)} · ${c.present}/${c.total} marked present${c.unmarked?` · ${c.unmarked} not marked`:''}</div>
+              </div>
+            </div>
+            <button class="btn-accent small" onclick="openClubModal('${e.id}')">📋 Roll call</button>
+          </div>`;
+        }).join('');
+      })()}
       ${state.showDashEC ? ecStudents.map((s,i)=>{ const c=classById(s.classId); return `
         <div class="dash-row">
           <div class="dash-row-left">
@@ -5052,6 +5083,252 @@ function pmPickAll(studentId, on){
   const next = on ? clubEventsFor(s).map(e=>e.id) : [];
   clubMutate(c=>{ c.pick = Object.assign({}, c.pick, {[studentId]: next}); });
   pmRegenerate();
+}
+
+/* ================= ENGLISH CLUB SESSIONS =================
+   The Club is already on the Calendar and students are already flagged for it,
+   so this adds only the Friday itself: who turned up, and what was done.
+   Attendance lives in state.clubs keyed by the calendar event's id, entirely
+   apart from class sessions — no class figure moves because of the Club.
+   Nothing is assumed: a student who is never ticked stays "not recorded"
+   rather than counting as present, because registering is not turning up. */
+function clubEventsAll(){
+  return (state.events||[]).filter(isClubEvent).slice()
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+function clubEventById(id){ return (state.events||[]).find(e=>e.id===id && isClubEvent(e)) || null; }
+function clubRec(eventId){
+  const r = (state.clubs||{})[eventId] || {};
+  return { content: r.content||'', roster: Array.isArray(r.roster)?r.roster.slice():null,
+           att: Object.assign({}, r.att||{}), done: !!r.done };
+}
+function clubMutateRec(eventId, fn){
+  const rec = clubRec(eventId);
+  fn(rec);
+  state.clubs = Object.assign({}, state.clubs||{}, {[eventId]: rec});
+  scheduleSave('clubs', state.clubs);
+}
+/* Flagged students are registered for every Club session, unless the teacher
+   narrowed the list down in the message modal or edited this session's roster
+   by hand. An event tied to a class only takes that class's students. */
+function clubFlagged(){
+  return sortByName(state.students.filter(s=>{
+    const c = classById(s.classId);
+    return s.englishClub && c && !c.archived;
+  }));
+}
+function clubRegisteredIds(eventId){
+  const rec = clubRec(eventId);
+  if(rec.roster) return rec.roster.slice();
+  const ev = clubEventById(eventId);
+  const picks = clubSettings().pick || {};
+  return clubFlagged().filter(s=>{
+    if(ev && ev.classId && ev.classId !== s.classId) return false;
+    const saved = picks[s.id];
+    return Array.isArray(saved) ? saved.includes(eventId) : true;
+  }).map(s=>s.id);
+}
+/* Anyone with a record on the day belongs on the list even if they were never
+   registered — a walk-in is still someone who was there. */
+function clubRosterIds(eventId){
+  const ids = clubRegisteredIds(eventId);
+  Object.keys(clubRec(eventId).att).forEach(id=>{ if(!ids.includes(id)) ids.push(id); });
+  return ids.filter(id=>state.students.some(s=>s.id===id));
+}
+function clubCounts(eventId){
+  const att = clubRec(eventId).att;
+  let present = 0, absent = 0;
+  const ids = clubRosterIds(eventId);
+  ids.forEach(id=>{
+    const st = (att[id]||{}).status;
+    if(st === 'present') present++;
+    else if(st === 'absent') absent++;
+  });
+  return { total: ids.length, present, absent, unmarked: ids.length - present - absent };
+}
+function clubSessionsDue(){
+  const today = todayStr();
+  return clubEventsAll().filter(e=>e.date <= today && !clubRec(e.id).done);
+}
+
+/* --- writes --- */
+/* Anything typed but not yet committed is read out of the DOM before a
+   re-render, so clicking Present never eats a half-written note. */
+function clubFlush(eventId){
+  const ta = document.getElementById('club-content');
+  const notes = Array.prototype.slice.call(document.querySelectorAll('[data-club-note]'));
+  if(!ta && !notes.length) return;
+  clubMutateRec(eventId, r=>{
+    if(ta) r.content = ta.value;
+    if(notes.length){
+      const att = Object.assign({}, r.att);
+      notes.forEach(inp=>{
+        const id = inp.getAttribute('data-club-note');
+        const v = inp.value;
+        if(v || att[id]) att[id] = Object.assign({}, att[id]||{}, {note: v});
+      });
+      r.att = att;
+    }
+  });
+}
+function setClubStatus(eventId, studentId, status){
+  clubFlush(eventId);
+  clubMutateRec(eventId, r=>{
+    const cur = Object.assign({}, r.att[studentId]||{});
+    cur.status = (cur.status === status) ? null : status;
+    if(cur.status !== 'present') cur.late = false;
+    r.att = Object.assign({}, r.att, {[studentId]: cur});
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+function toggleClubLate(eventId, studentId){
+  clubFlush(eventId);
+  clubMutateRec(eventId, r=>{
+    const cur = Object.assign({}, r.att[studentId]||{});
+    cur.late = !cur.late;
+    if(cur.late) cur.status = 'present';
+    r.att = Object.assign({}, r.att, {[studentId]: cur});
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+function clubMarkAllPresent(eventId){
+  clubFlush(eventId);
+  const ids = clubRosterIds(eventId);
+  clubMutateRec(eventId, r=>{
+    const att = Object.assign({}, r.att);
+    ids.forEach(id=>{
+      if(!(att[id]||{}).status) att[id] = Object.assign({}, att[id]||{}, {status:'present'});
+    });
+    r.att = att;
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+function clubAddStudent(eventId, studentId){
+  if(!studentId) return;
+  clubFlush(eventId);
+  const ids = clubRosterIds(eventId);
+  if(!ids.includes(studentId)) ids.push(studentId);
+  clubMutateRec(eventId, r=>{ r.roster = ids; });
+  refreshView();
+  openClubModal(eventId);
+}
+function clubRemoveStudent(eventId, studentId){
+  clubFlush(eventId);
+  const ids = clubRosterIds(eventId).filter(id=>id!==studentId);
+  clubMutateRec(eventId, r=>{
+    r.roster = ids;
+    const att = Object.assign({}, r.att);
+    delete att[studentId];
+    r.att = att;
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+function setClubContent(eventId, val){
+  clubMutateRec(eventId, r=>{ r.content = val; });
+  refreshView();
+}
+function setClubDone(eventId, on){
+  clubFlush(eventId);
+  clubMutateRec(eventId, r=>{ r.done = !!on; });
+  refreshView();
+  openClubModal(eventId);
+}
+
+/* --- the Friday itself --- */
+function clubModalRow(eventId, rec, studentId){
+  const s = state.students.find(x=>x.id===studentId);
+  if(!s) return '';
+  const cls = classById(s.classId);
+  const a = rec.att[studentId] || {};
+  const registered = clubRegisteredIds(eventId).includes(studentId);
+  const btn = (status, label, color) => {
+    const on = a.status === status;
+    return `<button type="button" class="btn-ghost small" onclick="setClubStatus('${eventId}','${studentId}','${status}')"
+      aria-pressed="${on}" style="${on?`background:var(--${color}-soft);color:var(--${color});border-color:var(--${color});font-weight:700;`:''}">${label}</button>`;
+  };
+  return `
+    <div class="modal-row" style="align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div style="min-width:150px;flex:1;">
+        <div style="font-weight:600;">${esc(s.name)}${registered?'':` <span class="badge other" style="font-size:10px;">walk-in</span>`}</div>
+        <div class="meta">${cls?esc(cls.name):'No class'}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        ${btn('present','Present','green')}
+        ${btn('absent','Absent','red')}
+        <button type="button" class="btn-ghost small" onclick="toggleClubLate('${eventId}','${studentId}')"
+          aria-pressed="${!!a.late}" title="Arrived late"
+          style="${a.late?'background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700;':''}">🕐</button>
+        <input type="text" data-club-note="${studentId}" value="${esc(a.note||'')}" placeholder="note"
+          style="min-width:120px;flex:1;" onchange="clubFlush('${eventId}')">
+        <button type="button" class="icon-btn danger" title="Remove from this session"
+          onclick="clubRemoveStudent('${eventId}','${studentId}')">×</button>
+      </div>
+    </div>`;
+}
+function openClubModal(eventId){
+  const ev = clubEventById(eventId);
+  if(!ev){ alert('That English Club session is no longer on the calendar.'); return; }
+  const rec = clubRec(eventId);
+  const ids = clubRosterIds(eventId);
+  const c = clubCounts(eventId);
+  const t = clubSessionTime(ev);
+  const others = sortByName(state.students.filter(s=>{
+    const cl = classById(s.classId);
+    return !ids.includes(s.id) && cl && !cl.archived;
+  }));
+  showModal(`${sizeModal('md sheet')}
+    <h3>⭐ ${esc(ev.title)}</h3>
+    <div class="meta" style="margin:-4px 0 12px;">${formatDateLong(ev.date)} · ${t.from}–${t.to}</div>
+    <div class="modal-section">
+      <div class="modal-section-label">Roll call — ${c.present} present · ${c.absent} absent${c.unmarked?` · ${c.unmarked} not marked`:''}</div>
+      ${ids.length
+        ? ids.map(id=>clubModalRow(eventId, rec, id)).join('')
+        : `<div class="empty">Nobody is registered for this session. Tag students with ⭐ English Club under Classes &amp; Students, or add someone below.</div>`}
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        ${ids.length?`<button class="btn-ghost small" onclick="clubMarkAllPresent('${eventId}')">${(c.present||c.absent)?'Mark rest present':'Mark all present'}</button>`:''}
+        ${others.length?`<select onchange="clubAddStudent('${eventId}', this.value)" style="max-width:220px;">
+          <option value="">+ Add student…</option>
+          ${others.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+        </select>`:''}
+      </div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">What we did</div>
+      <textarea id="club-content" rows="4" placeholder="e.g. Board games, then free conversation about weekend plans."
+        onchange="setClubContent('${eventId}', this.value)">${esc(rec.content)}</textarea>
+      <div class="meta" style="margin-top:6px;">This appears on the report of every student who was here.</div>
+    </div>
+    <div class="modal-actions">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+        <input type="checkbox" ${rec.done?'checked':''} onchange="setClubDone('${eventId}', this.checked)"> Session complete
+      </label>
+      <button class="btn-ghost" onclick="clubFlush('${eventId}');closeModal();refreshView();">Close</button>
+    </div>
+  `);
+}
+
+/* --- report --- */
+/* Sessions the student was registered for or turned up to, up to today: a
+   report is a record of what happened, not a diary of what is booked. */
+function clubReportRows(student, from, to){
+  if(!student) return [];
+  const today = todayStr();
+  return clubEventsAll().filter(e=>{
+    if(e.date > today) return false;
+    if(from && e.date < from) return false;
+    if(to && e.date > to) return false;
+    if(clubRec(e.id).att[student.id]) return true;
+    return clubRegisteredIds(e.id).includes(student.id);
+  }).map(e=>{
+    const rec = clubRec(e.id);
+    const a = rec.att[student.id] || {};
+    return { date: e.date, title: e.title, content: (rec.content||'').trim(),
+             status: a.status || null, late: !!a.late, note: (a.note||'').trim() };
+  }).sort((a,b)=>b.date.localeCompare(a.date));
 }
 function pmShortDate(dateStr){
   const d = new Date(dateStr+'T00:00:00');
@@ -8615,6 +8892,22 @@ function buildReportText(s, lang){
     });
   }
 
+  // --- English Club ---
+  if(s.clubs && s.clubs.length){
+    const went = s.clubs.filter(r=>r.status==='present').length;
+    out.push('');
+    out.push(isPt ? 'CLUBE DE INGLÊS' : 'ENGLISH CLUB');
+    out.push(isPt ? `Participou de ${went} de ${s.clubs.length} encontro${s.clubs.length===1?'':'s'}.`
+                  : `Attended ${went} of ${s.clubs.length} session${s.clubs.length===1?'':'s'}.`);
+    s.clubs.forEach(r=>{
+      const st = r.status==='present' ? (isPt?'presente':'present')
+               : r.status==='absent' ? (isPt?'ausente':'absent')
+               : (isPt?'não registrado':'not recorded');
+      out.push(`- ${formatDateShort(r.date)} — ${st}${r.late?(isPt?' (atrasado)':' (late)'):''}${r.content?` · ${r.content}`:''}`);
+      if(r.note) out.push(`    ${r.note}`);
+    });
+  }
+
   // --- classes missed detail ---
   if(s.missed && s.missed.length){
     out.push('');
@@ -8915,6 +9208,7 @@ function renderStudentProfile(){
       const tier = Object.keys(tally).sort((x,y)=>tally[y]-tally[x])[0] || 'basic';
       return { tier, criteria: ORAL_CRITERIA.filter(c=>avgs[c.id]).map(c=>({ id:c.id, label:c.label, pt:c.pt, ...avgs[c.id] })) };
     })() : null,
+    clubs: clubReportRows(student, fromVal, toVal),
     fromVal, toVal,
     total, present, late, absent, totalPhone,
     hwAvg, hwCount: hwRecords.length, noHwCount, partScore, expected, classesLost, attendanceRate: attendanceRate_, attRateBasis,
@@ -9201,6 +9495,33 @@ function renderStudentProfile(){
         <div style="font-size:13px;color:var(--text);"><b>${state.reportLang==='pt'?'Resumo':'Summary'}:</b> ${esc(h.summary)}</div>
       </div>`).join('')}
     </div>` : ''}
+    ${(()=>{
+      const rows = lastReportStats.clubs || [];
+      if(!rows.length) return '';
+      const went = rows.filter(r=>r.status==='present').length;
+      return `<div class="card section" style="border-left:4px solid var(--amber);">
+        <h3>${t.clubHead}</h3>
+        <div class="lost-summary" style="margin-bottom:10px;">${t.clubAttendedOf(went, rows.length)}</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th>${t.clubWhat}</th><th>${t.notes}</th></tr></thead>
+            <tbody>
+              ${rows.map(r=>{
+                const key = r.status || 'unmarked';
+                const badge = r.status==='present' ? 'green' : r.status==='absent' ? 'red' : 'other';
+                const blank = `<span style="color:var(--muted);">—</span>`;
+                return `<tr>
+                  <td>${formatDateShort(r.date)}</td>
+                  <td><span class="badge ${badge}">${t.clubStatusLabels[key]}</span>${r.late?` <span class="badge amber">${t.clubLate}</span>`:''}</td>
+                  <td>${r.content?esc(r.content):`<span style="color:var(--muted);">${t.clubNoContent}</span>`}</td>
+                  <td>${r.note?esc(r.note):blank}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    })()}
     <div class="card table-wrap">
       ${records.length||holidayDates.length ? `
       <table>
@@ -10209,6 +10530,23 @@ function openDayModal(dateStr){
       }).join('') : `<div class="empty">No private lessons.</div>`}
       <div style="margin-top:8px;"><button class="btn-ghost small" onclick="closeModal();openLessonModal(null,null,'${dateStr}')">+ Add private lesson</button></div>
     </div>
+    ${(()=>{
+      const clubsToday = eventsToday.filter(isClubEvent);
+      if(!clubsToday.length) return '';
+      return `<div class="modal-section">
+        <div class="modal-section-label">English Club</div>
+        ${clubsToday.map(e=>{
+          const c = clubCounts(e.id);
+          const rec = clubRec(e.id);
+          return `<div class="modal-row">
+            <span>⭐ ${esc(e.title)}
+              <span class="badge ${rec.done?'green':c.present?'hw':'other'}">${c.present}/${c.total}</span>
+              ${rec.done?'':`<span class="meta"> · roll call open</span>`}</span>
+            <button class="btn-accent small" onclick="closeModal();openClubModal('${e.id}')">Roll Call →</button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    })()}
     <div class="modal-section">
       <div class="modal-section-label">Events</div>
       ${eventsToday.length ? eventsToday.map(e=>`
@@ -11555,6 +11893,11 @@ window.__testables = {
   sessionCounts,
   sessionRosterIds,
   studentAttendanceRecords,
+  clubRegisteredIds,
+  clubRosterIds,
+  clubCounts,
+  clubReportRows,
+  clubSessionsDue,
   rollcallSessionNeighbors,
   prevHwPending,
   letterToNum,
@@ -11657,6 +12000,7 @@ async function init(){
   state.grades = loadKey('grades', {});
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
   state.clubSettings = loadKey('clubSettings', null);
+  state.clubs = loadKey('clubs', {});
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   sortStudentStore();
