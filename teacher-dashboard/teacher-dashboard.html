@@ -5325,6 +5325,12 @@ function clubMarkAllPresent(eventId){
   refreshView();
   openClubModal(eventId);
 }
+let clubPickClassId = '';   // the class chosen in the add-student picker
+function clubSetPickClass(classId, eventId){
+  clubFlush(eventId);
+  clubPickClassId = classId || '';
+  openClubModal(eventId);
+}
 function clubAddStudent(eventId, studentId){
   if(!studentId) return;
   clubFlush(eventId);
@@ -5492,12 +5498,14 @@ function openClubModal(eventId){
     const cl = classById(s.classId);
     return !ids.includes(s.id) && cl && !cl.archived;
   }));
+  const otherClasses = activeClasses().filter(cl=>others.some(s=>s.classId===cl.id));
+  if(clubPickClassId && !otherClasses.some(cl=>cl.id===clubPickClassId)) clubPickClassId = '';
   showModal(`${sizeModal('md sheet')}
     <h3>⭐ ${esc(ev.title)}</h3>
     <div class="meta" style="margin:-4px 0 12px;">${formatDateLong(ev.date)} · ${slots.map(sl=>esc(clubSlotLabel(sl))).join(' · ')}</div>
     <div class="modal-section">
       <div class="modal-section-label">Roll call — ${c.present} present · ${c.absent} absent${c.unmarked?` · ${c.unmarked} not marked`:''}</div>
-      ${ids.length ? slots.map(sl=>{
+      ${slots.map(sl=>{
         const group = clubSlotStudents(eventId, sl.id);
         const unmarked = group.filter(id=>!(rec.att[id]||{}).status).length;
         return `<div style="margin-bottom:12px;">
@@ -5513,14 +5521,18 @@ function openClubModal(eventId){
             ? group.map(id=>clubModalRow(eventId, rec, id, slots)).join('')
             : `<div class="empty" style="padding:6px 0;">No one at this time yet.</div>`}
         </div>`;
-      }).join('')
-        : `<div class="empty">Nobody is registered for this session. Tag students with ⭐ English Club under Classes &amp; Students, or add someone below.</div>`}
+      }).join('')}
+      ${ids.length ? '' : `<div class="empty">Nobody is registered yet. Tag students with ⭐ English Club under Classes &amp; Students, or pick a class and add them below.</div>`}
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${ids.length?`<button class="btn-ghost small" onclick="clubMarkAllPresent('${eventId}')">${(c.present||c.absent)?'Mark rest present':'Mark all present'}</button>`:''}
         <button class="btn-ghost small" onclick="addClubSlot('${eventId}')">+ Add time slot</button>
-        ${others.length?`<select onchange="clubAddStudent('${eventId}', this.value)" style="max-width:220px;">
-          <option value="">+ Add student…</option>
-          ${others.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
+        ${others.length?`<select onchange="clubSetPickClass(this.value, '${eventId}')" style="max-width:190px;">
+          <option value="">Class…</option>
+          ${otherClasses.map(cl=>`<option value="${cl.id}" ${cl.id===clubPickClassId?'selected':''}>${esc(cl.name)} (${others.filter(s=>s.classId===cl.id).length})</option>`).join('')}
+        </select>
+        <select onchange="clubAddStudent('${eventId}', this.value)" style="max-width:200px;" ${clubPickClassId?'':'disabled'}>
+          <option value="">${clubPickClassId?'+ Add student…':'Pick a class first'}</option>
+          ${others.filter(s=>s.classId===clubPickClassId).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
         </select>`:''}
       </div>
     </div>
@@ -5572,11 +5584,18 @@ function clubSlotLabel(s){ return `${s.from||'?'}–${s.to||'?'}`; }
 function clubSlotStudents(eventId, slotId){
   return clubRosterIds(eventId).filter(id=>clubSlotIdOf(eventId, id) === slotId);
 }
+function clubTimePlus(hhmm, mins){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm||''));
+  if(!m) return '';
+  const total = (Number(m[1])*60 + Number(m[2]) + mins) % 1440;
+  return pad(Math.floor(total/60)) + ':' + pad(total%60);
+}
 function addClubSlot(eventId){
   clubFlush(eventId);
   const slots = clubSlots(eventId).slice();
   const last = slots[slots.length-1];
-  slots.push({ id: uid(), from: (last && last.to) || '', to: '' });
+  const from = (last && (last.to || clubTimePlus(last.from, 60))) || '14:00';
+  slots.push({ id: uid(), from, to: clubTimePlus(from, 60) || '' });
   clubMutateRec(eventId, r=>{ r.slots = slots; });
   refreshView();
   openClubModal(eventId);
