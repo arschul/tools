@@ -5525,7 +5525,12 @@ function openClubModal(eventId){
       ${ids.length ? '' : `<div class="empty">Nobody is registered yet. Tag students with ⭐ English Club under Classes &amp; Students, or pick a class and add them below.</div>`}
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${ids.length?`<button class="btn-ghost small" onclick="clubMarkAllPresent('${eventId}')">${(c.present||c.absent)?'Mark rest present':'Mark all present'}</button>`:''}
-        <button class="btn-ghost small" onclick="addClubSlot('${eventId}')">+ Add time slot</button>
+        <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <input type="time" id="club-new-from" value="${esc(clubNextSlotFrom(eventId))}" title="New slot starts" style="width:110px;">
+          <span class="meta">–</span>
+          <input type="time" id="club-new-to" value="${esc(clubTimePlus(clubNextSlotFrom(eventId), 60))}" title="New slot ends" style="width:110px;">
+          <button class="btn-ghost small" onclick="addClubSlot('${eventId}')">+ Add time slot</button>
+        </span>
         ${others.length?`<select onchange="clubSetPickClass(this.value, '${eventId}')" style="max-width:190px;">
           <option value="">Class…</option>
           ${otherClasses.map(cl=>`<option value="${cl.id}" ${cl.id===clubPickClassId?'selected':''}>${esc(cl.name)} (${others.filter(s=>s.classId===cl.id).length})</option>`).join('')}
@@ -5590,12 +5595,21 @@ function clubTimePlus(hhmm, mins){
   const total = (Number(m[1])*60 + Number(m[2]) + mins) % 1440;
   return pad(Math.floor(total/60)) + ':' + pad(total%60);
 }
+/* What the new-slot fields suggest: the hour after the last slot ends. The
+   teacher overwrites it as often as not, which is the point of the fields. */
+function clubNextSlotFrom(eventId){
+  const slots = clubSlots(eventId);
+  const last = slots[slots.length-1];
+  return (last && (last.to || clubTimePlus(last.from, 60))) || '14:00';
+}
 function addClubSlot(eventId){
   clubFlush(eventId);
+  const fromEl = document.getElementById('club-new-from');
+  const toEl = document.getElementById('club-new-to');
   const slots = clubSlots(eventId).slice();
-  const last = slots[slots.length-1];
-  const from = (last && (last.to || clubTimePlus(last.from, 60))) || '14:00';
-  slots.push({ id: uid(), from, to: clubTimePlus(from, 60) || '' });
+  const from = (fromEl && fromEl.value) || clubNextSlotFrom(eventId);
+  const to = (toEl && toEl.value) || clubTimePlus(from, 60) || '';
+  slots.push({ id: uid(), from, to });
   clubMutateRec(eventId, r=>{ r.slots = slots; });
   refreshView();
   openClubModal(eventId);
