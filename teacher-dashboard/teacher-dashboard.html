@@ -5017,8 +5017,134 @@ function pmHour(t){ return String(t||'').replace(':00','h').replace(':','h'); }
        get a paragraph about attendance. --- */
 function buildParentMessage(student){
   const cfg = clubSettings();
+  if(cfg.kind === 'club') return cfg.lang === 'en' ? pmClubInviteEn(student, cfg) : pmClubInvitePt(student, cfg);
   return cfg.lang === 'en' ? pmTextEn(student, cfg) : pmTextPt(student, cfg);
 }
+/* ================= ENGLISH CLUB INVITATION =================
+   A separate message from the performance update, because it does a different
+   job: it states plainly where the student stands, says that the invitation is
+   not to the whole class, gives the dates and the student's own time, and asks
+   the family for one specific thing — getting them there. The work itself is
+   the student's, and the message says so: a parent who reads that the teacher
+   will fix it has been told the wrong thing. */
+function pmInviteFacts(d, inc, f, g, pt){
+  const F = [];
+  if(inc.grades && d.st){
+    if(d.st.advanced){
+      if(d.st.final != null && d.st.under){
+        F.push(pt ? `No TOEFL, ${g.ela} fez ${d.st.final} pontos, ${d.st.target - d.st.final} abaixo da meta da turma, que é ${d.st.target}.`
+                  : `In the TOEFL, ${f} scored ${d.st.final}, ${d.st.target - d.st.final} points below the class target of ${d.st.target}.`);
+      } else if(d.st.diagnostic != null && (d.st.target - d.st.diagnostic) > 0){
+        const gap = d.st.target - d.st.diagnostic;
+        F.push(pt ? `No diagnóstico, ${g.ela} fez ${d.st.diagnostic} pontos no TOEFL e a meta da turma é ${d.st.target}: faltam ${gap} pontos, e a prova oficial é uma só, na última aula do curso.`
+                  : `In the diagnostic, ${f} scored ${d.st.diagnostic} and the class target is ${d.st.target}: ${gap} points short, and the official test is sat once, in the last lesson of the course.`);
+      }
+    } else {
+      const r = d.remaining;
+      if(r > 0 && d.need != null){
+        F.push(pt ? `${g.Ela} está com ${d.st.total} dos ${CYCLE_TOTAL_TARGET} pontos necessários e resta${r===1?' uma única avaliação':`m ${r} avaliações`}, ou seja, precisa de ${d.need} pontos ${r===1?'nela':'em cada uma'}.`
+                  : `${f} has ${d.st.total} of the ${CYCLE_TOTAL_TARGET} points needed, with ${r===1?'a single assessment':`${r} assessments`} left — that means ${d.need} points ${r===1?'in it':'in each one'}.`);
+      } else if(d.st.entered > 0){
+        F.push(pt ? `${g.Ela} está com ${d.st.total} dos ${CYCLE_TOTAL_TARGET} pontos necessários.`
+                  : `${f} has ${d.st.total} of the ${CYCLE_TOTAL_TARGET} points needed.`);
+      }
+    }
+  }
+  const rot = [];
+  if(inc.attendance && d.absent > 0){
+    rot.push(pt ? `${d.absent} falta${d.absent>1?'s':''}` : `${d.absent} absence${d.absent>1?'s':''}`);
+  }
+  if(inc.hw && d.hwMissing > 0){
+    rot.push(pt ? `${d.hwMissing} dever${d.hwMissing>1?'es':''} não entregue${d.hwMissing>1?'s':''}`
+                : `${d.hwMissing} ${d.hwMissing>1?'pieces':'piece'} of homework not handed in`);
+  }
+  if(rot.length){
+    const first = !F.length;
+    F.push(pt
+      ? (first ? `${g.Ela} está com ${pmJoin(rot, 'e')} no período, com conteúdo que não volta.`
+               : `Somam-se a isso ${pmJoin(rot, 'e')} no período, com conteúdo que não volta.`)
+      : (first ? `${f} has ${pmJoin(rot, 'and')} this term — content that does not come back.`
+               : `On top of that, ${pmJoin(rot, 'and')} this term — content that does not come back.`));
+  }
+  if(inc.norecovery){
+    if(d.st && d.st.advanced){
+      F.push(pt ? `Não há segunda aplicação do TOEFL: é uma prova só, e ela decide o resultado final ${g.dela}.`
+                : `There is no second sitting of the TOEFL: it is taken once, and it decides ${f}'s final result.`);
+    } else if(d.remaining === 1){
+      F.push(pt ? `Não existe prova de recuperação: essa última prova decide o resultado final ${g.dela}.`
+                : `There is no resit: that last test decides ${f}'s final result.`);
+    } else if(d.remaining > 1){
+      F.push(pt ? `Não existe prova de recuperação: as avaliações que faltam decidem o resultado final ${g.dela}.`
+                : `There is no resit: the assessments still ahead decide ${f}'s final result.`);
+    }
+  }
+  return F;
+}
+
+function pmClubInvitePt(student, cfg){
+  const d = parentMsgStats(student);
+  const f = pmFirstName(student.name);
+  const fem = pmGenderOf(student) === 'f';
+  const g = { o: fem?'a':'o', doDa: fem?'da':'do', ela: fem?'ela':'ele', Ela: fem?'Ela':'Ele',
+              dela: fem?'dela':'dele', propria: fem?'a própria':'o próprio' };
+  const n = pmPicked(student).length;
+  const P = [];
+
+  const role = cfg.role === 'professora' ? 'professora' : 'professor';
+  P.push(cfg.teacher
+    ? `Olá! Aqui é ${cfg.teacher}, ${role} de inglês ${g.doDa} ${f}, da Phil Young's.`
+    : `Olá! Aqui é ${role==='professora'?'a':'o'} ${role} de inglês ${g.doDa} ${f}, da Phil Young's.`);
+
+  const facts = pmInviteFacts(d, cfg.inc, f, g, true);
+  P.push(facts.length
+    ? `Preciso ser direto com vocês sobre a situação ${g.doDa} ${f} no curso. ` + facts.join(' ')
+    : `Queria falar com vocês sobre o momento ${g.doDa} ${f} no curso, porque é hora de agir.`);
+
+  P.push(`É por isso que estou convidando ${g.o} ${f} para o English Club. O convite não é para a turma toda: chamo os alunos cuja situação exige ação imediata, e a ${g.dela} exige. São encontros extras e gratuitos, fora do horário normal, para recuperar o conteúdo que ficou para trás e treinar exatamente o que cai na prova.`);
+
+  P.push(pmSessionsBlock(student, cfg, true));
+
+  if(n > 1){
+    P.push(`São ${n} encontros, e a sequência importa: cada um puxa o seguinte, e o ganho aparece quando ${g.ela} vem ${n===2?'nos dois':'nos '+n}.`);
+  }
+
+  P.push(`A participação é voluntária, mas neste momento eu não a trataria como opcional. Quem vira esse quadro é ${g.propria} ${f}, com o esforço ${g.dela}. O que nós podemos fazer, eu aqui e vocês em casa, é garantir que ${g.ela} tenha essa chance e chegue ${n>1?'nesses horários':'nesse horário'}.`);
+
+  P.push(`Posso contar com vocês? É só confirmar por aqui que eu reservo ${n>1?'as vagas':'a vaga'}.`);
+  P.push(role === 'professora' ? `Obrigada!` : `Obrigado!`);
+  return P.join('\n\n');
+}
+
+function pmClubInviteEn(student, cfg){
+  const d = parentMsgStats(student);
+  const f = pmFirstName(student.name);
+  const n = pmPicked(student).length;
+  const P = [];
+
+  P.push(cfg.teacher
+    ? `Hello! This is ${cfg.teacher}, ${f}'s English teacher at Phil Young's.`
+    : `Hello! This is ${f}'s English teacher at Phil Young's.`);
+
+  const facts = pmInviteFacts(d, cfg.inc, f, {}, false);
+  P.push(facts.length
+    ? `I need to be straight with you about where ${f} stands on the course. ` + facts.join(' ')
+    : `I wanted to talk to you about where ${f} stands on the course, because this is the moment to act.`);
+
+  P.push(`That is why I am inviting ${f} to the English Club. The invitation does not go to the whole class: I call the students whose situation needs acting on now, and ${f}'s does. These are extra sessions, free of charge and outside normal hours, to catch up on the content left behind and practice exactly what comes up in the test.`);
+
+  P.push(pmSessionsBlock(student, cfg, false));
+
+  if(n > 1){
+    P.push(`That is ${n} sessions, and the sequence matters: each one leads into the next, and the gain shows when ${f} comes to ${n===2?'both':'all '+n}.`);
+  }
+
+  P.push(`Attendance is voluntary, but right now I would not treat it as optional. The one who turns this around is ${f}, through ${f}'s own work. What we can do, me here and you at home, is make sure ${f} gets that chance and arrives ${n>1?'at those times':'at that time'}.`);
+
+  P.push(`Can I count on you? Just confirm here and I will save ${n>1?'the places':'the place'}.`);
+  P.push(`Thank you!`);
+  return P.join('\n\n');
+}
+
 
 /* --- English Club sessions come from the Calendar, not from a second place to
        keep updated. Any event whose title names the Club counts; an event tied
@@ -5100,7 +5226,9 @@ function clubEventById(id){ return (state.events||[]).find(e=>e.id===id && isClu
 function clubRec(eventId){
   const r = (state.clubs||{})[eventId] || {};
   return { content: r.content||'', roster: Array.isArray(r.roster)?r.roster.slice():null,
-           att: Object.assign({}, r.att||{}), done: !!r.done };
+           att: Object.assign({}, r.att||{}), done: !!r.done,
+           slots: Array.isArray(r.slots)&&r.slots.length ? r.slots.map(s=>Object.assign({}, s)) : null,
+           slotOf: Object.assign({}, r.slotOf||{}) };
 }
 function clubMutateRec(eventId, fn){
   const rec = clubRec(eventId);
@@ -5239,9 +5367,10 @@ function setClubDone(eventId, on){
 }
 
 /* --- the Friday itself --- */
-function clubModalRow(eventId, rec, studentId){
+function clubModalRow(eventId, rec, studentId, slots){
   const s = state.students.find(x=>x.id===studentId);
   if(!s) return '';
+  slots = slots || clubSlots(eventId);
   const cls = classById(s.classId);
   const a = rec.att[studentId] || {};
   const registered = clubRegisteredIds(eventId).includes(studentId);
@@ -5262,6 +5391,9 @@ function clubModalRow(eventId, rec, studentId){
         <button type="button" class="btn-ghost small" onclick="toggleClubLate('${eventId}','${studentId}')"
           aria-pressed="${!!a.late}" title="Arrived late"
           style="${a.late?'background:var(--amber-soft);color:var(--amber);border-color:var(--amber);font-weight:700;':''}">🕐</button>
+        ${slots.length > 1 ? `<select onchange="setStudentSlot('${eventId}','${studentId}', this.value)" title="Time slot" style="max-width:130px;">
+          ${slots.map(sl=>`<option value="${sl.id}" ${sl.id===clubSlotIdOf(eventId, studentId)?'selected':''}>${esc(clubSlotLabel(sl))}</option>`).join('')}
+        </select>` : ''}
         <input type="text" data-club-note="${studentId}" value="${esc(a.note||'')}" placeholder="note"
           style="min-width:120px;flex:1;" onchange="clubFlush('${eventId}')">
         <button type="button" class="icon-btn danger" title="Remove from this session"
@@ -5275,6 +5407,7 @@ function openClubModal(eventId){
   const rec = clubRec(eventId);
   const ids = clubRosterIds(eventId);
   const c = clubCounts(eventId);
+  const slots = clubSlots(eventId);
   const t = clubSessionTime(ev);
   const others = sortByName(state.students.filter(s=>{
     const cl = classById(s.classId);
@@ -5282,14 +5415,30 @@ function openClubModal(eventId){
   }));
   showModal(`${sizeModal('md sheet')}
     <h3>⭐ ${esc(ev.title)}</h3>
-    <div class="meta" style="margin:-4px 0 12px;">${formatDateLong(ev.date)} · ${t.from}–${t.to}</div>
+    <div class="meta" style="margin:-4px 0 12px;">${formatDateLong(ev.date)} · ${slots.map(sl=>esc(clubSlotLabel(sl))).join(' · ')}</div>
     <div class="modal-section">
       <div class="modal-section-label">Roll call — ${c.present} present · ${c.absent} absent${c.unmarked?` · ${c.unmarked} not marked`:''}</div>
-      ${ids.length
-        ? ids.map(id=>clubModalRow(eventId, rec, id)).join('')
+      ${ids.length ? slots.map(sl=>{
+        const group = clubSlotStudents(eventId, sl.id);
+        const unmarked = group.filter(id=>!(rec.att[id]||{}).status).length;
+        return `<div style="margin-bottom:12px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">
+            <input type="time" value="${esc(sl.from)}" onchange="setClubSlotTime('${eventId}','${sl.id}','from', this.value)" style="width:110px;">
+            <span class="meta">–</span>
+            <input type="time" value="${esc(sl.to)}" onchange="setClubSlotTime('${eventId}','${sl.id}','to', this.value)" style="width:110px;">
+            <span class="meta">${group.length} student${group.length===1?'':'s'}</span>
+            ${unmarked?`<button class="btn-ghost small" onclick="clubMarkSlotPresent('${eventId}','${sl.id}')">Mark present</button>`:''}
+            ${slots.length>1?`<button class="icon-btn danger" title="Remove this time slot" onclick="removeClubSlot('${eventId}','${sl.id}')">×</button>`:''}
+          </div>
+          ${group.length
+            ? group.map(id=>clubModalRow(eventId, rec, id, slots)).join('')
+            : `<div class="empty" style="padding:6px 0;">No one at this time yet.</div>`}
+        </div>`;
+      }).join('')
         : `<div class="empty">Nobody is registered for this session. Tag students with ⭐ English Club under Classes &amp; Students, or add someone below.</div>`}
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         ${ids.length?`<button class="btn-ghost small" onclick="clubMarkAllPresent('${eventId}')">${(c.present||c.absent)?'Mark rest present':'Mark all present'}</button>`:''}
+        <button class="btn-ghost small" onclick="addClubSlot('${eventId}')">+ Add time slot</button>
         ${others.length?`<select onchange="clubAddStudent('${eventId}', this.value)" style="max-width:220px;">
           <option value="">+ Add student…</option>
           ${others.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}
@@ -5311,6 +5460,86 @@ function openClubModal(eventId){
   `);
 }
 
+/* --- time slots ---
+   One Friday can hold several sittings: two students at 14:00, three more at
+   15:30. Slots live on the session record, and each registered student is
+   assigned to one when the teacher registers them. A session with no slots
+   behaves as it always did — a single time read from the event title or the
+   Club defaults — so old dates are untouched. */
+function clubSlots(eventId){
+  const rec = clubRec(eventId);
+  if(rec.slots && rec.slots.length){
+    return rec.slots.map(s=>({ id:s.id, from:s.from||'', to:s.to||'' }));
+  }
+  const ev = clubEventById(eventId);
+  const t = ev ? clubSessionTime(ev) : { from:'', to:'' };
+  return [{ id:'default', from:t.from, to:t.to }];
+}
+function clubSlotIdOf(eventId, studentId){
+  const slots = clubSlots(eventId);
+  const want = (clubRec(eventId).slotOf||{})[studentId];
+  return slots.some(s=>s.id===want) ? want : slots[0].id;
+}
+function clubSlotTime(eventId, studentId){
+  const slots = clubSlots(eventId);
+  const id = clubSlotIdOf(eventId, studentId);
+  return slots.find(s=>s.id===id) || slots[0];
+}
+/* The one call the rest of the app makes: this student's time on this date. */
+function clubTimeFor(ev, student){
+  if(!ev) return { from:'', to:'' };
+  return student ? clubSlotTime(ev.id, student.id) : clubSessionTime(ev);
+}
+function clubSlotLabel(s){ return `${s.from||'?'}–${s.to||'?'}`; }
+function clubSlotStudents(eventId, slotId){
+  return clubRosterIds(eventId).filter(id=>clubSlotIdOf(eventId, id) === slotId);
+}
+function addClubSlot(eventId){
+  clubFlush(eventId);
+  const slots = clubSlots(eventId).slice();
+  const last = slots[slots.length-1];
+  slots.push({ id: uid(), from: (last && last.to) || '', to: '' });
+  clubMutateRec(eventId, r=>{ r.slots = slots; });
+  refreshView();
+  openClubModal(eventId);
+}
+function setClubSlotTime(eventId, slotId, which, val){
+  const slots = clubSlots(eventId).map(s=>s.id===slotId ? Object.assign({}, s, {[which]: val}) : s);
+  clubMutateRec(eventId, r=>{ r.slots = slots; });
+  refreshView();
+}
+/* Removing a slot never removes its students: they fall back to the first
+   slot, which is where the teacher will look for them. */
+function removeClubSlot(eventId, slotId){
+  clubFlush(eventId);
+  const slots = clubSlots(eventId).filter(s=>s.id!==slotId);
+  clubMutateRec(eventId, r=>{
+    r.slots = slots.length ? slots : null;
+    const slotOf = Object.assign({}, r.slotOf||{});
+    Object.keys(slotOf).forEach(id=>{ if(slotOf[id]===slotId) delete slotOf[id]; });
+    r.slotOf = slotOf;
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+function setStudentSlot(eventId, studentId, slotId){
+  clubFlush(eventId);
+  clubMutateRec(eventId, r=>{ r.slotOf = Object.assign({}, r.slotOf||{}, {[studentId]: slotId}); });
+  refreshView();
+  openClubModal(eventId);
+}
+function clubMarkSlotPresent(eventId, slotId){
+  clubFlush(eventId);
+  const ids = clubSlotStudents(eventId, slotId);
+  clubMutateRec(eventId, r=>{
+    const att = Object.assign({}, r.att);
+    ids.forEach(id=>{ if(!(att[id]||{}).status) att[id] = Object.assign({}, att[id]||{}, {status:'present'}); });
+    r.att = att;
+  });
+  refreshView();
+  openClubModal(eventId);
+}
+
 /* --- report --- */
 /* Sessions the student was registered for or turned up to, up to today: a
    report is a record of what happened, not a diary of what is booked. */
@@ -5326,7 +5555,9 @@ function clubReportRows(student, from, to){
   }).map(e=>{
     const rec = clubRec(e.id);
     const a = rec.att[student.id] || {};
+    const sl = clubSlotTime(e.id, student.id);
     return { date: e.date, title: e.title, content: (rec.content||'').trim(),
+             time: (sl && sl.from) ? `${sl.from}–${sl.to||''}` : '',
              status: a.status || null, late: !!a.late, note: (a.note||'').trim() };
   }).sort((a,b)=>b.date.localeCompare(a.date));
 }
@@ -5351,12 +5582,12 @@ function pmSessionsBlock(student, cfg, pt){
     return `📅 ${d}\n🕑 ${pt ? pmHour(cfg.from)+' às '+pmHour(cfg.to) : cfg.from+' – '+cfg.to}${place}`;
   }
   if(picks.length === 1){
-    const t = clubSessionTime(picks[0]);
+    const t = clubTimeFor(picks[0], student);
     const d = pt ? pmDatePt(picks[0].date) : pmDateEn(picks[0].date);
     return `📅 ${d}\n🕑 ${pt ? pmHour(t.from)+' às '+pmHour(t.to) : t.from+' – '+t.to}${place}`;
   }
   return picks.map(e=>{
-    const t = clubSessionTime(e);
+    const t = clubTimeFor(e, student);
     const d = pt ? pmDatePt(e.date) : pmDateEn(e.date);
     return `📅 ${d} · ${pt ? pmHour(t.from)+' às '+pmHour(t.to) : t.from+' – '+t.to}`;
   }).join('\n') + place;
@@ -5444,28 +5675,10 @@ function pmTextPt(student, cfg){
     P.push(`Do lado positivo, frequência e deveres ${doDa} ${f} estão em dia. A base está lá, falta transformar isso em nota.`);
   }
 
-  /* — realidade + convite, no mesmo parágrafo para não alongar — */
-  if(cfg.kind === 'club'){
-    const n = pmPicked(student).length;
-    const many = n > 1;
-    const real = inc.norecovery
-      ? ((d.st && d.st.advanced)
-          ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só. O tempo que ainda temos é o que vai decidir o resultado, e foi por isso que montei o English Club: `
-          : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações. Foi por isso que montei o English Club: `)
-      : `Montei o English Club para ajudar exatamente nisso: `;
-    P.push(real + (many
-      ? `encontros extras, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova. No caso ${doDa} ${f}, não é uma aula solta: gostaria de contar com ${ele} em ${n} encontros, porque o conteúdo é encadeado e cada um puxa o seguinte.`
-      : `um encontro extra, fora do horário normal, para reforçar o conteúdo e treinar o que cai na prova.`));
-    P.push(pmSessionsBlock(student, cfg, true));
-    P.push(many
-      ? `Os encontros são gratuitos e a participação é voluntária, mas essa sequência faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele} nessas datas? É só confirmar por aqui que eu reservo as vagas.`
-      : `É gratuito e opcional, mas acho que faria muita diferença para ${o} ${f} neste momento. Posso contar com ${ele}? É só confirmar por aqui que eu reservo a vaga.`);
-  } else {
-    if(inc.norecovery) P.push((d.st && d.st.advanced)
-      ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só, na última aula do curso.`
-      : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações.`);
-    P.push(`Estou à disposição para combinar o que ${ele} pode fazer daqui para frente. Qualquer coisa, é só chamar por aqui.`);
-  }
+  if(inc.norecovery) P.push((d.st && d.st.advanced)
+    ? `Não há recuperação nem segunda chance: o TOEFL é uma aplicação só, na última aula do curso.`
+    : `Como não existe prova de recuperação, os pontos precisam vir já nas próximas avaliações.`);
+  P.push(`Estou à disposição para combinar o que ${ele} pode fazer daqui para frente. Qualquer coisa, é só chamar por aqui.`);
 
   P.push(`Obrigado!`);
   return P.join('\n\n');
@@ -5520,24 +5733,9 @@ function pmTextEn(student, cfg){
     P.push(`On the positive side, ${f}'s attendance and homework are both on track. The foundation is there — it needs to turn into marks.`);
   }
 
-  if(cfg.kind === 'club'){
-    const n = pmPicked(student).length, many = n > 1;
-    P.push((inc.norecovery
-      ? ((d.st && d.st.advanced)
-          ? `There is no resit and no second sitting: the TOEFL is taken once. The time we have left is what decides the result, and that is why I set up the English Club: `
-          : `There is no resit exam, so the points have to come from the assessments still ahead. That is why I set up the English Club: `)
-      : `I set up the English Club for exactly this: `)
-      + (many
-        ? `extra sessions outside normal hours to revise the content and practice what comes up in the test. For ${f} this is not a one-off: I would like to count on ${f} at ${n} sessions, because the content builds and each one leads into the next.`
-        : `an extra session outside normal hours to revise the content and practice what comes up in the test.`));
-    P.push(pmSessionsBlock(student, cfg, false));
-    P.push(many
-      ? `The sessions are free and attendance is voluntary, but this run would make a real difference for ${f} right now. Can I count on ${f} on those dates? Just confirm here and I will save the places.`
-      : `It is free and optional, but I think it would make a real difference for ${f} right now. Can I count on ${f} being there? Just confirm here and I will save the place.`);
-  } else {
-    if(inc.norecovery) P.push(`There is no resit exam, so the points have to come from the assessments still ahead.`);
-    P.push(`I am happy to talk through what ${f} can do from here. Just message me any time.`);
-  }
+  if(inc.norecovery) P.push(`There is no resit exam, so the points have to come from the assessments still ahead.`);
+  P.push(`I am happy to talk through what ${f} can do from here. Just message me any time.`);
+
   P.push(`Thank you!`);
   return P.join('\n\n');
 }
@@ -5758,7 +5956,7 @@ function pmChipsHtml(s){
   const allOn = picked.size === avail.length;
   return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:9px;">
     <span class="meta" style="font-size:11px;">Invite to (${picked.size}/${avail.length}):</span>
-    ${avail.map(e=>{ const on = picked.has(e.id); const t = clubSessionTime(e); return `
+    ${avail.map(e=>{ const on = picked.has(e.id); const t = clubTimeFor(e, s); return `
       <button class="btn-ghost small" onclick="pmTogglePick('${s.id}','${e.id}')"
         title="${esc(e.title)} · ${esc(t.from)}–${esc(t.to)}"
         style="${on?'border-color:var(--accent);color:var(--accent);font-weight:700;':'opacity:.62;'}">
@@ -5797,7 +5995,7 @@ function pmMarkDone(studentId, i){
   const when = new Date();
   const stamp = `${pad(when.getDate())}/${pad(when.getMonth()+1)} ${pad(when.getHours())}:${pad(when.getMinutes())}`;
   const sessions = picks.length
-    ? picks.map(e=>{ const t = clubSessionTime(e); return `${pmShortDate(e.date)} ${t.from}–${t.to}`; }).join(', ')
+    ? picks.map(e=>{ const t = clubTimeFor(e, s); return `${pmShortDate(e.date)} ${t.from}–${t.to}`; }).join(', ')
     : (cfg.date ? `${pmShortDate(cfg.date)} ${cfg.from}–${cfg.to}` : '');
   const category = cfg.kind === 'club' ? 'English Club' : 'Grades';
   const reason = cfg.kind === 'club'
@@ -8903,7 +9101,7 @@ function buildReportText(s, lang){
       const st = r.status==='present' ? (isPt?'presente':'present')
                : r.status==='absent' ? (isPt?'ausente':'absent')
                : (isPt?'não registrado':'not recorded');
-      out.push(`- ${formatDateShort(r.date)} — ${st}${r.late?(isPt?' (atrasado)':' (late)'):''}${r.content?` · ${r.content}`:''}`);
+      out.push(`- ${formatDateShort(r.date)}${r.time?` ${r.time}`:''} — ${st}${r.late?(isPt?' (atrasado)':' (late)'):''}${r.content?` · ${r.content}`:''}`);
       if(r.note) out.push(`    ${r.note}`);
     });
   }
@@ -9511,7 +9709,7 @@ function renderStudentProfile(){
                 const badge = r.status==='present' ? 'green' : r.status==='absent' ? 'red' : 'other';
                 const blank = `<span style="color:var(--muted);">—</span>`;
                 return `<tr>
-                  <td>${formatDateShort(r.date)}</td>
+                  <td>${formatDateShort(r.date)}${r.time?`<div class="meta" style="font-size:11px;">${esc(r.time)}</div>`:''}</td>
                   <td><span class="badge ${badge}">${t.clubStatusLabels[key]}</span>${r.late?` <span class="badge amber">${t.clubLate}</span>`:''}</td>
                   <td>${r.content?esc(r.content):`<span style="color:var(--muted);">${t.clubNoContent}</span>`}</td>
                   <td>${r.note?esc(r.note):blank}</td>
