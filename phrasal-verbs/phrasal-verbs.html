@@ -532,7 +532,19 @@ var PARTICLE_SENSE = {
  "with":"doing something together with someone",
  "to":"moving towards someone or something",
  "across":"moving from one side to the other",
- "forward":"moving ahead"
+ "forward":"moving ahead",
+ "up with":"keeping pace with something that keeps moving or changing",
+ "up to":"looking towards someone above you",
+ "down on":"looking at someone from above, and not kindly",
+ "down with":"catching something, usually an illness",
+ "out of":"using the last of something, or coming from inside it",
+ "away with":"removing something completely",
+ "along with":"being together with someone",
+ "forward to":"waiting happily for something ahead of you",
+ "rid of":"making yourself free of something",
+ "over to":"handing something across to someone else",
+ "in on":"joining something that has already started",
+ "through with":"finishing something completely"
 };
 
 /* ============================================================
@@ -691,19 +703,23 @@ function emptyMsg(){
 function combosFor(verb, particle){
   return DATA.filter(function(x){ return x.v === verb && x.p === particle; });
 }
-function whyWrong(d, picked){
+/* showAnswer=false while other teams can still steal: say why the pick is
+   wrong without naming the particle they are still hunting for. */
+function whyWrong(d, picked, showAnswer){
   var real = combosFor(d.v, picked);
-  var right = '<b>' + d.v + ' ' + d.p + '</b>';
   var wrong = '<b>' + d.v + ' ' + picked + '</b>';
+  var tail = showAnswer
+    ? ' The verb you want here is <b>' + d.v + ' ' + d.p + '</b> &mdash; ' + d.m + '.'
+    : '';
   if (real.length){
     var means = real.map(function(x){ return x.m; }).join('; or ');
     return wrong + ' is a real phrasal verb, but it means ' + means +
-           '. Here you need ' + right + ' &mdash; ' + d.m + '.';
+           ', which is not what this sentence says.' + tail;
   }
   var sense = PARTICLE_SENSE[picked];
-  return wrong + ' does not fit this sentence. ' +
-         (sense ? 'On its own <b>' + picked + '</b> suggests ' + sense + '. ' : '') +
-         'The verb you want here is ' + right + ' &mdash; ' + d.m + '.';
+  return wrong + ' does not fit this sentence.' +
+         (sense ? ' On its own <b>' + picked + '</b> suggests ' + sense + '.' : '') +
+         tail;
 }
 
 /* ============================================================
@@ -1041,7 +1057,6 @@ function newShowdown(){
     turnNo: 1,        // turns played
     tried: [],        // team indexes that have missed this verb
     rejected: [],     // particles already ruled out on this verb
-    whys: [],         // explanations shown for this verb
     opts: [],         // fixed chip order for this verb
     left: S.turnSecs,
     timer: null,
@@ -1053,7 +1068,7 @@ function newShowdown(){
 function sdSetItem(){
   var sd = S.sd;
   nextItem();
-  sd.tried = []; sd.rejected = []; sd.whys = [];
+  sd.tried = []; sd.rejected = [];
   sd.phase = 'live'; sd.result = '';
   sd.opts = S.item ? shuffle(distractors(S.item,4).concat([S.item.p])) : [];
 }
@@ -1092,10 +1107,7 @@ function sdHit(){
 function sdMiss(timedOut, picked){
   var sd = S.sd;
   sdStopTimer();
-  if (picked && sd.rejected.indexOf(picked) < 0){
-    sd.rejected.push(picked);
-    sd.whys.push(whyWrong(S.item, picked));
-  }
+  if (picked && sd.rejected.indexOf(picked) < 0) sd.rejected.push(picked);
   if (sd.tried.indexOf(sd.turn) < 0) sd.tried.push(sd.turn);
   var everyoneTried = sd.tried.length >= sd.teams.length;
 
@@ -1144,8 +1156,9 @@ function renderShowdown(){
     return '<button class="chip'+(out?' wrong':'')+'" data-p="'+pp+'"'+(out?' disabled':'')+
            '><kbd>'+(i+1)+'</kbd>'+pp+'</button>';
   }).join('') + '</div>';
-  var whyBlock = sd.whys.length
-    ? '<div class="why">'+sd.whys.map(function(h){ return '<p>'+h+'</p>'; }).join('')+'</div>'
+  var whyBlock = sd.rejected.length
+    ? '<div class="why">'+sd.rejected.map(function(pp){
+        return '<p>'+whyWrong(d, pp, !live)+'</p>'; }).join('')+'</div>'
     : '';
 
   stage.innerHTML =
