@@ -238,6 +238,12 @@ html[data-theme="light"] .badge.lvl{color:#fff}
   font-size:clamp(30px,4.4vw,52px);
 }
 .timer.low{color:var(--bad)}
+.why{
+  margin-top:22px;border-left:3px solid var(--amber);padding:2px 0 2px 18px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.why p{font-size:clamp(16px,1.9vw,22px);line-height:1.5;color:var(--ink-dim)}
+.why p b{color:var(--ink);font-family:'Sora',sans-serif;font-weight:600}
 .scoreboard{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
 .team{
   flex:1 1 150px;background:var(--panel-2);border:2px solid var(--line);border-radius:14px;
@@ -505,6 +511,30 @@ var TYPE_RULE = {
 var PARTICLES_2 = ["up","down","in","out","on","off","away","back","over","through","around","at","for","after","into","with","about","across","to","forward"];
 var PARTICLES_3 = ["up with","up to","down on","down with","out of","away with","along with","forward to","rid of","over to","in on","through with"];
 
+/* particle senses — fallback when a wrong pick is not a real combination */
+var PARTICLE_SENSE = {
+ "up":"finishing something, or making it greater",
+ "down":"making something smaller, or moving it lower",
+ "in":"going inside, or adding something",
+ "out":"going outside, or taking something away",
+ "on":"starting or continuing, or touching",
+ "off":"leaving, stopping, or separating",
+ "away":"removing something or putting distance between",
+ "back":"returning to where you started",
+ "over":"going across something, or checking it again",
+ "around":"turning or moving in a circle",
+ "through":"going from the beginning to the end of something",
+ "at":"pointing your attention at something",
+ "for":"aiming at something you want",
+ "about":"the subject you are dealing with",
+ "after":"following someone, or taking care of them",
+ "into":"entering something, or meeting it by chance",
+ "with":"doing something together with someone",
+ "to":"moving towards someone or something",
+ "across":"moving from one side to the other",
+ "forward":"moving ahead"
+};
+
 /* ============================================================
    THEME
    ============================================================ */
@@ -653,6 +683,27 @@ function lockChips(){
 }
 function emptyMsg(){
   return '<p class="web-empty">No verbs match these filters. Turn a level or a type back on above.</p>';
+}
+
+/* ============================================================
+   WHY A PARTICLE IS WRONG
+   ============================================================ */
+function combosFor(verb, particle){
+  return DATA.filter(function(x){ return x.v === verb && x.p === particle; });
+}
+function whyWrong(d, picked){
+  var real = combosFor(d.v, picked);
+  var right = '<b>' + d.v + ' ' + d.p + '</b>';
+  var wrong = '<b>' + d.v + ' ' + picked + '</b>';
+  if (real.length){
+    var means = real.map(function(x){ return x.m; }).join('; or ');
+    return wrong + ' is a real phrasal verb, but it means ' + means +
+           '. Here you need ' + right + ' &mdash; ' + d.m + '.';
+  }
+  var sense = PARTICLE_SENSE[picked];
+  return wrong + ' does not fit this sentence. ' +
+         (sense ? 'On its own <b>' + picked + '</b> suggests ' + sense + '. ' : '') +
+         'The verb you want here is ' + right + ' &mdash; ' + d.m + '.';
 }
 
 /* ============================================================
@@ -989,12 +1040,22 @@ function newShowdown(){
     turn: 0,          // whose turn it is
     turnNo: 1,        // turns played
     tried: [],        // team indexes that have missed this verb
+    rejected: [],     // particles already ruled out on this verb
+    whys: [],         // explanations shown for this verb
+    opts: [],         // fixed chip order for this verb
     left: S.turnSecs,
     timer: null,
     phase: 'live',    // live | resolved | over
     result: ''
   };
+  sdSetItem();
+}
+function sdSetItem(){
+  var sd = S.sd;
   nextItem();
+  sd.tried = []; sd.rejected = []; sd.whys = [];
+  sd.phase = 'live'; sd.result = '';
+  sd.opts = S.item ? shuffle(distractors(S.item,4).concat([S.item.p])) : [];
 }
 var sdTimerId = null;
 function sdStopTimer(){
@@ -1028,9 +1089,13 @@ function sdHit(){
   SFX.good(); bumpTally(true);
   renderShowdown();
 }
-function sdMiss(timedOut){
+function sdMiss(timedOut, picked){
   var sd = S.sd;
   sdStopTimer();
+  if (picked && sd.rejected.indexOf(picked) < 0){
+    sd.rejected.push(picked);
+    sd.whys.push(whyWrong(S.item, picked));
+  }
   if (sd.tried.indexOf(sd.turn) < 0) sd.tried.push(sd.turn);
   var everyoneTried = sd.tried.length >= sd.teams.length;
 
@@ -1052,11 +1117,8 @@ function sdMiss(timedOut){
 function sdAdvance(){
   var sd = S.sd;
   sd.turnNo++;
-  sd.tried = [];
-  sd.phase = 'live';
-  sd.result = '';
   sdNextTeam();
-  nextItem();
+  sdSetItem();
   renderShowdown();
   sdStartTimer();
 }
@@ -1076,7 +1138,15 @@ function renderShowdown(){
 
   var d = S.item;
   var live = (sd.phase === 'live');
-  var opts = shuffle(distractors(d,4).concat([d.p]));
+  if (!sd.opts || !sd.opts.length) sd.opts = shuffle(distractors(d,4).concat([d.p]));
+  var chips = '<div class="chips" id="chips">' + sd.opts.map(function(pp,i){
+    var out = sd.rejected.indexOf(pp) > -1;
+    return '<button class="chip'+(out?' wrong':'')+'" data-p="'+pp+'"'+(out?' disabled':'')+
+           '><kbd>'+(i+1)+'</kbd>'+pp+'</button>';
+  }).join('') + '</div>';
+  var whyBlock = sd.whys.length
+    ? '<div class="why">'+sd.whys.map(function(h){ return '<p>'+h+'</p>'; }).join('')+'</div>'
+    : '';
 
   stage.innerHTML =
     '<div class="turn-bar">'+
@@ -1085,7 +1155,8 @@ function renderShowdown(){
       (S.turnSecs && live ? '<div class="timer" id="sdTimer">'+Math.max(sd.left,0)+'s</div>' : '')+
     '</div>'+
     questionHTML(d)+
-    (live ? chipsHTML(opts) : '<p class="verdict ok" style="margin-top:22px">'+sd.result+'</p>')+
+    (live ? chips : '<p class="verdict ok" style="margin-top:22px">'+sd.result+'</p>')+
+    whyBlock +
     revealHTML(d)+
     '<div class="scoreboard">'+sd.teams.map(function(t,i){
       var cls = 'team' + (i===sd.turn && live ? ' active' : '') + (sd.tried.indexOf(i)>-1 ? ' out' : '');
@@ -1106,8 +1177,9 @@ function renderShowdown(){
   Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){
     b.addEventListener('click', function(){
       if (S.sd.phase !== 'live') return;
-      if (b.getAttribute('data-p') === d.p){ fillGap(d.p); lockChips(); sdHit(); }
-      else { b.classList.add('wrong','shake'); b.disabled = true; sdMiss(false); }
+      var pick = b.getAttribute('data-p');
+      if (pick === d.p){ fillGap(d.p); lockChips(); sdHit(); }
+      else { b.classList.add('shake'); SFX.bad(); sdMiss(false, pick); }
     });
   });
   Array.prototype.forEach.call(stage.querySelectorAll('.adj button'), function(b){
@@ -1197,7 +1269,7 @@ function refresh(){
   buildDeck();
   SP.round = 1;
   if (S.mode === 'showdown'){
-    if (S.sd && S.sd.phase !== 'over'){ nextItem(); S.sd.tried = []; S.sd.phase = 'live'; S.sd.result=''; }
+    if (S.sd && S.sd.phase !== 'over'){ sdSetItem(); }
     render();
   } else {
     nextItem();
