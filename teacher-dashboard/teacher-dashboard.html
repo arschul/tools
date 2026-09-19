@@ -5287,9 +5287,16 @@ function clubCounts(eventId){
   });
   return { total: ids.length, present, absent, unmarked: ids.length - present - absent };
 }
+/* A session only nags while there is roll call left to take on it: a date with
+   nobody registered has nothing to record, and one where every student has
+   already been ticked is done whether or not the box was checked. */
 function clubSessionsDue(){
   const today = todayStr();
-  return clubEventsAll().filter(e=>e.date <= today && !clubRec(e.id).done);
+  return clubEventsAll().filter(e=>{
+    if(e.date > today || clubRec(e.id).done) return false;
+    const c = clubCounts(e.id);
+    return c.total > 0 && c.unmarked > 0;
+  });
 }
 
 /* --- writes --- */
