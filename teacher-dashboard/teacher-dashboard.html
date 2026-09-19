@@ -502,6 +502,9 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
      with a tooltip is unreadable on a touch screen and unverifiable at a glance. */
   .hw-owed{display:block;font-size:10.5px;font-weight:600;color:var(--amber);white-space:normal;line-height:1.25;margin-top:1px;}
   .compact-roster tr.cr-absent td{opacity:.55;}
+  .compact-roster tr.club-row:hover td{background:var(--sidebar-hover, var(--gray-soft));}
+  .compact-roster tr.club-empty td{opacity:.45;}
+  .compact-roster tr.club-empty td.cr-name{opacity:.6;color:var(--muted);}
   .compact-roster tr.cr-absent td.cr-name{opacity:1;color:var(--muted);}
   .cr-pa{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
   .cr-pa button{width:30px;height:28px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;color:var(--muted);}
@@ -948,6 +951,10 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="m9 13 2 2 4-4"/></svg></span>
     Roll Call
   </button>
+  <button type="button" class="nav-item" data-view="club-list" onclick="navigate('club-list')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+    English Club
+  </button>
   <button type="button" class="nav-item" data-view="calendar" onclick="navigate('calendar')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
     Calendar
@@ -991,6 +998,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   <div id="view-dashboard" class="view"></div>
   <div id="view-classes" class="view"></div>
   <div id="view-rollcall" class="view"></div>
+  <div id="view-club-list" class="view"></div>
   <div id="view-club" class="view"></div>
   <div id="view-calendar" class="view"></div>
   <div id="view-projects" class="view"></div>
@@ -3420,7 +3428,7 @@ document.addEventListener('keydown', (e)=>{
 function navigate(view, params={}){
   Object.assign(state, params);
   state.view = view;
-  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', club:'classes', calendar:'calendar', projects:'projects', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', contacts:'contacts', private:'private', 'priv-student':'private'};
+  const navMap = {dashboard:'dashboard', classes:'classes', rollcall:'rollcall', 'club-list':'club-list', club:'club-list', calendar:'calendar', projects:'projects', student: state.studentProfileReturn||'reports', reports:'reports', 'group-report':'reports', contacts:'contacts', private:'private', 'priv-student':'private'};
   document.querySelectorAll('.nav-item').forEach(n=>{
     const on = n.dataset.view===navMap[view];
     n.classList.toggle('active', on);
@@ -3446,6 +3454,7 @@ function refreshView(){
   if(v==='dashboard') renderDashboard();
   else if(v==='classes') renderClasses();
   else if(v==='rollcall') renderRollCall();
+  else if(v==='club-list') renderClubList();
   else if(v==='club') renderClubSession();
   else if(v==='calendar') renderCalendar();
   else if(v==='projects') renderProjects();
@@ -4073,7 +4082,6 @@ function renderClasses(){
         <p>No active classes.</p>
         <button class="btn-accent" onclick="openClassModal()">+ Add your first class</button>
       </div>`}
-    ${renderClubCard()}
     ${archived.length ? `
       <div style="margin-top:24px;">
         <button type="button" class="dash-row-left" style="margin-bottom:8px;" aria-expanded="${state.showArchived}" onclick="state.showArchived=!state.showArchived;refreshView();">
@@ -5342,58 +5350,6 @@ function setClubDone(eventId, on){
 }
 
 
-/* --- the Club in Classes & Students ---
-   The Club is a class the teacher runs, so it belongs where the classes are.
-   Sessions come from the Calendar; this card is a second door to the same
-   events, plus a quick way to put another Friday on the list. */
-function renderClubCard(){
-  const evs = clubEventsAll();
-  const today = todayStr();
-  const upcoming = evs.filter(e=>e.date >= today);
-  const past = evs.filter(e=>e.date < today).reverse();
-  const shown = upcoming.concat(past.slice(0, 8));
-  const open = state.showClubCard !== false;
-  const row = e => {
-    const c = clubCounts(e.id);
-    const rec = clubRec(e.id);
-    const slots = clubSlots(e.id);
-    const when = `${pmDayEn(e.date)} ${pmShortDate(e.date)}`;
-    return `
-      <div class="student-list-row">
-        <button type="button" class="student-name-link" onclick="goToClubSession('${e.id}')">
-          ${when}${e.date===today?' · Today':''}
-        </button>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span class="meta">${slots.map(sl=>esc(clubSlotLabel(sl))).join(' · ')}</span>
-          <span class="badge ${rec.done?'green':c.present?'hw':'other'}">${c.present}/${c.total}</span>
-          <button class="icon-btn" onclick="goToClubSession('${e.id}')">📋 Roll call</button>
-        </div>
-      </div>`;
-  };
-  return `
-    <div class="card class-card" style="margin-top:16px;">
-      <div class="class-card-head">
-        <button type="button" class="dash-row-left" aria-expanded="${open}" onclick="state.showClubCard=${open?'false':'true'};refreshView();">
-          <span class="color-dot" style="background:var(--amber)" aria-hidden="true"></span>
-          <span>
-            <span class="dash-row-title">⭐ English Club</span>
-            <span class="dash-row-sub">${evs.length} session${evs.length===1?'':'s'} · ${clubFlagged().length} students tagged${clubSessionsDue().length?` · ${clubSessionsDue().length} awaiting roll call`:''}</span>
-          </span>
-          <span class="chevron" style="margin-left:8px;" aria-hidden="true">${open?'▾':'▸'}</span>
-        </button>
-      </div>
-      ${open ? `
-        <div class="class-card-body">
-          <div class="add-student-row">
-            <input type="date" id="club-new-date" value="${nextFridayStr()}">
-            <button class="btn-accent" onclick="addClubSession()">+ Add session</button>
-          </div>
-          ${shown.length ? `<div class="student-list">${shown.map(row).join('')}</div>`
-            : `<div class="empty">No English Club sessions yet. Pick a date above to add the first one.</div>`}
-          ${past.length > 8 ? `<div class="meta" style="margin-top:8px;">Older sessions stay on the calendar.</div>` : ''}
-        </div>` : ''}
-    </div>`;
-}
 function nextFridayStr(){
   const d = new Date();
   d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
@@ -5500,6 +5456,62 @@ function clubMarkSlotPresent(eventId, slotId){
   refreshView();
 }
 
+/* --- the Club's own tab: every session, in date order ---
+   Dates run oldest to newest because that is how a term reads. A date with
+   nobody on it is greyed: it exists on the calendar but has no one to teach,
+   which is exactly the state the teacher needs to spot at a glance. */
+function renderClubList(){
+  const evs = clubEventsAll();
+  const today = todayStr();
+  const tagged = clubFlagged().length;
+  const rows = evs.map(e=>{
+    const c = clubCounts(e.id);
+    const rec = clubRec(e.id);
+    const slots = clubSlots(e.id);
+    const empty = c.total === 0;
+    const past = e.date < today;
+    const isToday = e.date === today;
+    const status = empty ? `<span class="badge other">no students</span>`
+      : rec.done ? `<span class="badge green">complete</span>`
+      : past ? `<span class="badge amber">roll call due</span>`
+      : `<span class="badge hw">${c.total} registered</span>`;
+    return `
+      <tr class="club-row ${empty?'club-empty':''}" onclick="goToClubSession('${e.id}')" style="cursor:pointer;">
+        <td class="cr-name">${pmDayEn(e.date)} ${pmShortDate(e.date)}${isToday?` <span class="badge green" style="font-size:10px;">today</span>`:''}</td>
+        <td>${slots.map(sl=>esc(clubSlotLabel(sl))).join(' · ')}</td>
+        <td>${empty ? '—' : `${c.total} student${c.total===1?'':'s'}`}</td>
+        <td>${empty ? '—' : `${c.present} present${c.absent?` · ${c.absent} absent`:''}${c.unmarked?` · ${c.unmarked} not marked`:''}`}</td>
+        <td>${status}</td>
+        <td><button type="button" class="icon-btn" onclick="event.stopPropagation();goToClubSession('${e.id}')">Open →</button></td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('view-club-list').innerHTML = `
+    <div class="topbar">
+      <div>
+        <h1>⭐ English Club</h1>
+        <div class="meta">${evs.length} session${evs.length===1?'':'s'} · ${tagged} student${tagged===1?'':'s'} tagged${clubSessionsDue().length?` · ${clubSessionsDue().length} awaiting roll call`:''}</div>
+      </div>
+      <div class="rollcall-controls">
+        <input type="date" id="club-new-date" value="${nextFridayStr()}">
+        <button class="btn-accent" onclick="addClubSession()">+ Add session</button>
+      </div>
+    </div>
+    ${evs.length ? `
+      <div class="card section">
+        <div class="compact-wrap">
+          <table class="compact-roster">
+            <thead><tr>
+              <th class="cr-name">Date</th><th>Times</th><th>Registered</th><th>Attendance</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`
+      : `<div class="card empty-card">No English Club sessions yet. Pick a date above and add the first one.</div>`}
+  `;
+}
+
 /* --- the Friday itself, as its own screen ---
    A Club session is a class the teacher runs, so it gets the Roll Call
    treatment rather than a dialog: one page per date, the slots stacked down
@@ -5595,7 +5607,7 @@ function renderClubSession(){
     document.getElementById('view-club').innerHTML = `
       <div class="topbar"><div><h1>English Club</h1></div></div>
       <div class="card empty-card">That session is no longer on the calendar.
-        <button type="button" class="linkish" onclick="navigate('classes')">Back to Classes &amp; Students</button>.</div>`;
+        <button type="button" class="linkish" onclick="navigate('club-list')">Back to English Club</button>.</div>`;
     return;
   }
   const rec = clubRec(eventId);
@@ -5607,7 +5619,7 @@ function renderClubSession(){
   document.getElementById('view-club').innerHTML = `
     <div class="topbar">
       <div>
-        <button class="btn-ghost back-btn" onclick="navigate('classes')">← Classes &amp; Students</button>
+        <button class="btn-ghost back-btn" onclick="navigate('club-list')">← English Club</button>
         <h1>⭐ English Club</h1>
         <div class="meta">${formatDateLong(ev.date)} · ${c.present} present · ${c.absent} absent${c.unmarked?` · ${c.unmarked} not marked`:''}</div>
       </div>
