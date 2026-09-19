@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phrasal Verb Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14121f; --panel:#1e1b2e; --panel-2:#272338; --line:#3a3350;
+  --ink:#f2effa; --ink-dim:#a49ec2; --accent:#a78bfa; --accent-deep:#7c5cf0;
+  --amber:#fbbf24; --good:#4ade80; --bad:#fb7185; --shadow:rgba(0,0,0,.45);
+}
+html[data-theme="light"]{
+  --bg:#f6f4fb; --panel:#ffffff; --panel-2:#efeaf9; --line:#ded6f0;
+  --ink:#1c1630; --ink-dim:#655d84; --accent:#6d3ff0; --accent-deep:#5528d8;
+  --amber:#b45309; --good:#15803d; --bad:#be123c; --shadow:rgba(60,40,110,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh; padding:64px 20px 40px;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.disp{font-family:'Sora',sans-serif;letter-spacing:-.02em}
+
+.back-link,.theme-btn{
+  position:fixed; top:14px; z-index:60;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line);
+  border-radius:999px; padding:9px 18px; font-size:14px; font-weight:600;
+  text-decoration:none; cursor:pointer; font-family:'Inter',sans-serif;
+}
+.back-link{left:16px}
+.theme-btn{right:16px}
+.back-link:hover,.theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.wrap{max-width:1180px;margin:0 auto}
+
+/* ---- header ---- */
+.masthead{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.masthead h1{font-size:clamp(28px,4vw,44px);font-weight:800}
+.masthead h1 em{font-style:normal;color:var(--accent)}
+.tally{margin-left:auto;font-size:15px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.tally b{color:var(--ink);font-size:19px}
+
+/* ---- mode tabs ---- */
+.modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mode-tab{
+  flex:1 1 180px; background:var(--panel); border:1px solid var(--line);
+  color:var(--ink-dim); border-radius:12px; padding:12px 16px; cursor:pointer;
+  font-family:'Sora',sans-serif; font-weight:600; font-size:16px; text-align:left;
+  transition:border-color .15s,color .15s,background .15s;
+}
+.mode-tab small{display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:12.5px;opacity:.75;margin-top:3px}
+.mode-tab:hover{border-color:var(--accent)}
+.mode-tab[aria-selected="true"]{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.mode-tab[aria-selected="true"] small{opacity:.9}
+
+/* ---- filter bar ---- */
+.filters{
+  display:flex;gap:18px;flex-wrap:wrap;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin-bottom:22px;
+}
+.fgroup{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fgroup>span{font-size:12.5px;color:var(--ink-dim);margin-right:2px}
+.chip-f{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
+  border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:600;cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.chip-f[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#17122a}
+html[data-theme="light"] .chip-f[aria-pressed="true"]{color:#fff}
+.count-note{margin-left:auto;font-size:13px;color:var(--ink-dim)}
+
+/* ---- stage ---- */
+.stage{
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;
+  padding:clamp(20px,4vw,42px); box-shadow:0 18px 44px var(--shadow); min-height:420px;
+  display:flex;flex-direction:column;
+}
+.meta-row{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+.badge{
+  font-size:12.5px;font-weight:700;padding:4px 11px;border-radius:6px;
+  background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line);
+}
+.badge.lvl{background:var(--accent);color:#17122a;border-color:transparent}
+html[data-theme="light"] .badge.lvl{color:#fff}
+
+.sentence{
+  font-family:'Sora',sans-serif;font-weight:400;
+  font-size:clamp(24px,3.4vw,40px); line-height:1.5; letter-spacing:-.01em;
+}
+.gap{
+  display:inline-block;min-width:3.2em;border-bottom:4px solid var(--amber);
+  color:var(--amber);font-weight:800;text-align:center;
+}
+.gap.filled{border-bottom-color:var(--good);color:var(--good)}
+.verb-hl{color:var(--accent);font-weight:600}
+
+.chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.chip{
+  min-height:64px;padding:0 26px;border-radius:14px;
+  background:var(--panel-2);border:2px solid var(--line);color:var(--ink);
+  font-family:'Sora',sans-serif;font-weight:600;font-size:clamp(19px,2.2vw,26px);
+  cursor:pointer;display:flex;align-items:center;gap:10px;
+  transition:transform .12s,border-color .12s,background .12s;
+}
+.chip kbd{
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--ink-dim);
+  background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:2px 6px;
+}
+.chip:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.chip.correct{background:var(--good);border-color:var(--good);color:#06240f}
+.chip.wrong{opacity:.4;border-color:var(--bad)}
+.chip:disabled{cursor:default}
+@keyframes shake{10%,90%{transform:translateX(-4px)}30%,70%{transform:translateX(7px)}50%{transform:translateX(-7px)}}
+.shake{animation:shake .4s}
+
+.reveal{
+  margin-top:auto;padding-top:26px;border-top:1px solid var(--line);
+  opacity:0;transform:translateY(10px);transition:opacity .28s,transform .28s;
+}
+.reveal.show{opacity:1;transform:none}
+.reveal .mean{font-size:clamp(18px,2.2vw,26px);line-height:1.5}
+.reveal .mean b{color:var(--good);font-family:'Sora',sans-serif}
+.reveal .rule{margin-top:10px;font-size:15.5px;color:var(--ink-dim)}
+.reveal .rule strong{color:var(--amber)}
+
+/* ---- split it ---- */
+.dropzone{
+  min-height:96px;border:2px dashed var(--line);border-radius:14px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;margin:18px 0;
+}
+.dropzone.ok{border-color:var(--good);border-style:solid}
+.dropzone.no{border-color:var(--bad);border-style:solid}
+.dropzone:empty::after{content:"Build the sentence here";color:var(--ink-dim);font-size:17px}
+.tile{
+  min-height:58px;padding:0 20px;border-radius:12px;background:var(--panel-2);
+  border:2px solid var(--line);color:var(--ink);font-family:'Sora',sans-serif;
+  font-weight:600;font-size:clamp(18px,2.1vw,26px);cursor:pointer;
+  display:flex;align-items:center;transition:transform .12s,border-color .12s;
+}
+.tile:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tile.pron{border-color:var(--amber);color:var(--amber)}
+.bank{display:flex;gap:10px;flex-wrap:wrap;min-height:58px}
+.frame{font-size:clamp(17px,2vw,23px);color:var(--ink-dim);line-height:1.5}
+.verdict{margin-top:16px;font-size:clamp(17px,2vw,22px);line-height:1.45;min-height:2.4em}
+.verdict.ok{color:var(--good)}
+.verdict.no{color:var(--bad)}
+.verdict b{color:var(--ink)}
+.round-flag{font-size:13px;color:var(--amber);font-weight:700;margin-bottom:6px}
+
+/* ---- verb web ---- */
+.web{display:grid;grid-template-columns:320px 1fr;gap:34px;align-items:start}
+@media(max-width:820px){.web{grid-template-columns:1fr}}
+.hub-verbs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.hub-verb{
+  padding:9px 18px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);
+  color:var(--ink-dim);font-family:'Sora',sans-serif;font-weight:600;font-size:17px;cursor:pointer;
+}
+.hub-verb[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#2b1a00}
+.orbit{display:flex;flex-direction:column;gap:9px}
+.orbit button{
+  text-align:left;padding:14px 18px;border-radius:12px;background:var(--panel-2);
+  border:1px solid var(--line);color:var(--ink);cursor:pointer;
+  font-family:'Sora',sans-serif;font-weight:600;font-size:clamp(18px,2vw,23px);
+}
+.orbit button:hover{border-color:var(--accent)}
+.orbit button[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.orbit button span{display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:13px;color:var(--ink-dim);margin-top:3px}
+.web-detail{min-height:280px}
+.web-detail .pv{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(30px,4.4vw,52px);color:var(--accent)}
+.web-detail .def{font-size:clamp(19px,2.3vw,27px);margin:14px 0 20px;line-height:1.45}
+.web-detail .ex{font-size:clamp(17px,2vw,23px);color:var(--ink-dim);line-height:1.5;border-left:3px solid var(--amber);padding-left:16px}
+.web-empty{color:var(--ink-dim);font-size:18px;line-height:1.6}
+
+/* ---- showdown ---- */
+.sd-setup{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;color:var(--ink-dim)}
+.field input,.field select{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:10px 14px;font-size:16px;font-family:'Inter',sans-serif;
+}
+.scoreboard{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 0}
+.team{
+  flex:1 1 150px;background:var(--panel-2);border:2px solid var(--line);border-radius:14px;
+  padding:14px 16px;cursor:pointer;text-align:left;color:var(--ink);
+}
+.team:hover{border-color:var(--good)}
+.team .tn{font-family:'Sora',sans-serif;font-weight:600;font-size:17px}
+.team .ts{font-family:'Sora',sans-serif;font-weight:800;font-size:40px;font-variant-numeric:tabular-nums}
+.team.lead{border-color:var(--amber)}
+.timer{
+  font-family:'Sora',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;
+  font-size:clamp(34px,5vw,56px);
+}
+.timer.low{color:var(--bad)}
+
+/* ---- buttons ---- */
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.btn{
+  padding:12px 22px;border-radius:11px;border:1px solid var(--line);background:var(--panel-2);
+  color:var(--ink);font-family:'Inter',sans-serif;font-weight:600;font-size:15px;cursor:pointer;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+.btn.primary:hover{filter:brightness(1.1);color:#fff}
+.hint{font-size:13px;color:var(--ink-dim);margin-top:18px}
+.hint kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:2px 6px;font-size:12px}
+.hide{display:none !important}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<a class="back-link" href="../">&larr; Tool Hub</a>
+<button class="theme-btn" onclick="toggleTheme()">Light / dark</button>
+
+<div class="wrap">
+  <div class="masthead">
+    <h1>Phrasal Verb <em>Lab</em></h1>
+    <div class="tally">Correct <b id="tallyC">0</b> / <b id="tallyS">0</b></div>
+  </div>
+
+  <div class="modes" role="tablist">
+    <button class="mode-tab" role="tab" data-mode="drop" aria-selected="true">Particle Drop<small>Pick the missing particle</small></button>
+    <button class="mode-tab" role="tab" data-mode="split" aria-selected="false">Split It<small>Word order and pronoun rules</small></button>
+    <button class="mode-tab" role="tab" data-mode="web" aria-selected="false">Verb Web<small>One verb, many particles</small></button>
+    <button class="mode-tab" role="tab" data-mode="showdown" aria-selected="false">Showdown<small>Timed team rounds</small></button>
+  </div>
+
+  <div class="filters">
+    <div class="fgroup" id="levelFilters"><span>Level</span></div>
+    <div class="fgroup" id="typeFilters"><span>Type</span></div>
+    <div class="count-note" id="poolCount"></div>
+  </div>
+
+  <div class="stage" id="stage"></div>
+  <p class="hint"><kbd>1</kbd>–<kbd>5</kbd> pick · <kbd>&rarr;</kbd> next · <kbd>Space</kbd> reveal · <kbd>R</kbd> reshuffle · <kbd>F</kbd> fullscreen</p>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   type 1 = no object        2 = separable       3 = inseparable
+   type 4 = three words, never separated
+   ============================================================ */
+var DATA = [
+/* ---------- A1 ---------- */
+{l:"A1",t:1,v:"get",p:"up",m:"leave your bed in the morning",pre:"I",post:"at seven o'clock every day."},
+{l:"A1",t:1,v:"sit",p:"down",m:"move your body onto a chair",pre:"Please",post:"and open your books."},
+{l:"A1",t:1,v:"stand",p:"up",m:"move from sitting to standing",pre:"Everybody",post:"and stretch for a minute."},
+{l:"A1",t:1,v:"wake",p:"up",m:"stop sleeping",pre:"I always",post:"before my alarm rings."},
+{l:"A1",t:2,v:"turn",p:"on",o:"the light",n:"it",m:"make a machine or a light start working",pre:"It's dark in here. Can you",post:"?"},
+{l:"A1",t:2,v:"turn",p:"off",o:"the TV",n:"it",m:"make a machine or a light stop working",pre:"Please",post:"before dinner."},
+{l:"A1",t:2,v:"turn",p:"up",o:"the volume",n:"it",m:"make the sound louder",pre:"I can't hear the video. Could you",post:"?"},
+{l:"A1",t:2,v:"turn",p:"down",o:"the music",n:"it",m:"make the sound quieter",pre:"The neighbours are asleep, so",post:"a little."},
+{l:"A1",t:2,v:"put",p:"on",o:"your jacket",n:"it",m:"start wearing a piece of clothing",pre:"It's cold outside, so",post:"before you go."},
+{l:"A1",t:2,v:"take",p:"off",o:"your shoes",n:"them",m:"stop wearing a piece of clothing",pre:"Please",post:"at the door."},
+{l:"A1",t:2,v:"pick",p:"up",o:"the pen",n:"it",m:"lift something with your hand",pre:"You dropped something —",post:"for me?"},
+{l:"A1",t:2,v:"put",p:"down",o:"your phone",n:"it",m:"stop holding something and place it on a surface",pre:"We're starting now, so",post:"."},
+{l:"A1",t:2,v:"put",p:"away",o:"your books",n:"them",m:"put things back where they belong",pre:"The lesson is over —",post:"."},
+{l:"A1",t:2,v:"write",p:"down",o:"the new word",n:"it",m:"make a note of something on paper",pre:"That's useful, so",post:"in your notebook."},
+{l:"A1",t:2,v:"clean",p:"up",o:"your room",n:"it",m:"make a place tidy again",pre:"Your friends arrive at six, so",post:"first."},
+{l:"A1",t:2,v:"try",p:"on",o:"these jeans",n:"them",m:"put clothes on to see if they fit",pre:"Before you buy anything,",post:"."},
+{l:"A1",t:2,v:"call",p:"back",o:"your mother",n:"her",m:"telephone someone again",pre:"You missed a call, so",post:"tonight."},
+{l:"A1",t:3,v:"look",p:"at",o:"the board",n:"it",m:"turn your eyes towards something",pre:"Everyone,",post:"for a second."},
+{l:"A1",t:3,v:"look",p:"for",o:"my keys",n:"them",m:"try to find something",pre:"I'm late because I'm still",post:"."},
+{l:"A1",t:3,v:"get",p:"on",o:"the bus",n:"it",m:"enter a bus, train or plane",pre:"We",post:"at the corner near school."},
+{l:"A1",t:3,v:"get",p:"off",o:"the train",n:"it",m:"leave a bus, train or plane",pre:"You should",post:"at the third stop."},
+{l:"A1",t:1,v:"get",p:"in",m:"enter a car or a small space",pre:"The taxi is here, so",post:"quickly."},
+{l:"A1",t:1,v:"get",p:"out",m:"leave a car or a small space",pre:"We're home —",post:"and grab your bag."},
+{l:"A1",t:1,v:"come",p:"in",m:"enter a room",pre:"The door is open, so just",post:"."},
+{l:"A1",t:1,v:"go",p:"out",m:"leave home for something social",pre:"On Fridays we usually",post:"with friends."},
+{l:"A1",t:1,v:"come",p:"back",m:"return to a place",pre:"My sister",post:"from Chile last night."},
+{l:"A1",t:1,v:"go",p:"back",m:"return to a place you were before",pre:"I forgot my phone, so I have to",post:"."},
+{l:"A1",t:1,v:"hurry",p:"up",m:"do something faster",pre:"The film starts at eight, so",post:"!"},
+{l:"A1",t:1,v:"grow",p:"up",m:"become an adult",pre:"My cousins",post:"in a small town near the coast."},
+{l:"A1",t:1,v:"lie",p:"down",m:"put your body flat to rest",pre:"I have a headache, so I'm going to",post:"for ten minutes."},
+
+/* ---------- A2 ---------- */
+{l:"A2",t:3,v:"look",p:"after",o:"my little sister",n:"her",m:"take care of someone or something",pre:"On Saturdays I",post:"while my parents work."},
+{l:"A2",t:2,v:"look",p:"up",o:"the word",n:"it",m:"search for information in a dictionary or online",pre:"If you don't know it,",post:"."},
+{l:"A2",t:1,v:"give",p:"up",m:"stop trying",pre:"The exercise is hard, but don't",post:"yet."},
+{l:"A2",t:2,v:"give",p:"back",o:"my pen",n:"it",m:"return something to its owner",pre:"You borrowed it yesterday, so",post:"please."},
+{l:"A2",t:2,v:"throw",p:"away",o:"the box",n:"it",m:"put something in the rubbish",pre:"Nobody needs it, so",post:"."},
+{l:"A2",t:2,v:"put",p:"off",o:"the meeting",n:"it",m:"move something to a later date",pre:"Two people are sick, so we should",post:"."},
+{l:"A2",t:2,v:"find",p:"out",o:"the answer",n:"it",m:"discover information",pre:"Nobody knows yet, so let's",post:"together."},
+{l:"A2",t:2,v:"fill",p:"in",o:"the form",n:"it",m:"write information in the spaces on a document",pre:"Before the trip you must",post:"."},
+{l:"A2",t:2,v:"drop",p:"off",o:"my sister",n:"her",m:"take someone somewhere and leave them there",pre:"Every morning my dad has to",post:"at school."},
+{l:"A2",t:2,v:"take",p:"out",o:"the trash",n:"it",m:"remove something from a place",pre:"It smells terrible, so please",post:"."},
+{l:"A2",t:1,v:"turn",p:"around",m:"move so you face the other way",pre:"Someone is calling you —",post:"."},
+{l:"A2",t:1,v:"come",p:"over",m:"visit someone at their home",pre:"If you're free tonight, just",post:"."},
+{l:"A2",t:1,v:"go",p:"away",m:"leave a place or a person",pre:"I'm busy right now, so please",post:"."},
+{l:"A2",t:1,v:"hang",p:"up",m:"end a phone call",pre:"We talked for an hour before I",post:"."},
+{l:"A2",t:4,v:"get",p:"along with",o:"my cousins",n:"them",m:"have a friendly relationship with someone",pre:"I really",post:"— we never argue."},
+{l:"A2",t:4,v:"look",p:"forward to",o:"the weekend",n:"it",m:"feel happy about something that will happen",pre:"After a long week I always",post:"."},
+{l:"A2",t:3,v:"wait",p:"for",o:"the bus",n:"it",m:"stay somewhere until something arrives",pre:"We had to",post:"in the rain."},
+{l:"A2",t:3,v:"talk",p:"about",o:"the film",n:"it",m:"discuss a subject",pre:"In class tomorrow we'll",post:"."},
+{l:"A2",t:3,v:"think",p:"about",o:"your answer",n:"it",m:"consider something carefully",pre:"Take a minute and",post:"."},
+{l:"A2",t:3,v:"ask",p:"for",o:"help",n:"it",m:"say that you want something",pre:"If the task is unclear, just",post:"."},
+{l:"A2",t:3,v:"pay",p:"for",o:"the tickets",n:"them",m:"give money in exchange for something",pre:"My brother offered to",post:"."},
+{l:"A2",t:1,v:"go",p:"on",m:"continue",pre:"That's interesting —",post:", I'm listening."},
+{l:"A2",t:1,v:"get",p:"back",m:"return from somewhere",pre:"They",post:"from the beach after midnight."},
+{l:"A2",t:1,v:"stay",p:"up",m:"go to bed later than usual",pre:"On Saturdays I sometimes",post:"until two."},
+{l:"A2",t:1,v:"eat",p:"out",m:"have a meal in a restaurant",pre:"Once a month my family likes to",post:"."},
+{l:"A2",t:1,v:"work",p:"out",m:"do physical exercise",pre:"He goes to the gym to",post:"three times a week."},
+{l:"A2",t:1,v:"calm",p:"down",m:"become less angry or nervous",pre:"Take a deep breath and",post:"."},
+{l:"A2",t:1,v:"slow",p:"down",m:"go less quickly",pre:"You're reading too fast, so",post:"a bit."},
+{l:"A2",t:1,v:"speak",p:"up",m:"talk more loudly",pre:"The people at the back can't hear you, so",post:"."},
+{l:"A2",t:1,v:"dress",p:"up",m:"put on smart or special clothes",pre:"For the school party everyone wants to",post:"."},
+
+/* ---------- B1 ---------- */
+{l:"B1",t:3,v:"run",p:"into",o:"an old friend",n:"him",m:"meet someone by chance",pre:"At the airport I",post:"from primary school."},
+{l:"B1",t:4,v:"run",p:"out of",o:"milk",n:"it",m:"use all of something so none is left",pre:"We can't make pancakes — we",post:"."},
+{l:"B1",t:4,v:"put",p:"up with",o:"the noise",n:"it",m:"accept something annoying without complaining",pre:"Their flat is next to a club, so they",post:"every weekend."},
+{l:"B1",t:4,v:"catch",p:"up with",o:"the class",n:"it",m:"reach the same level as others after falling behind",pre:"She was ill for a week and had to",post:"."},
+{l:"B1",t:4,v:"come",p:"up with",o:"a better idea",n:"it",m:"think of a plan or a solution",pre:"The first plan failed, so we",post:"."},
+{l:"B1",t:4,v:"get",p:"rid of",o:"these old clothes",n:"them",m:"throw away or give away something you don't want",pre:"My wardrobe is full, so I need to",post:"."},
+{l:"B1",t:1,v:"break",p:"down",m:"stop working (a machine or vehicle)",pre:"Our car",post:"on the way to the coast."},
+{l:"B1",t:1,v:"break",p:"up",m:"end a romantic relationship",pre:"They were together for two years before they",post:"."},
+{l:"B1",t:1,v:"turn",p:"out",m:"happen in the end, often unexpectedly",pre:"It rained all morning, but the trip",post:"really well."},
+{l:"B1",t:1,v:"give",p:"in",m:"stop arguing and accept what someone wants",pre:"He asked me ten times until I finally",post:"."},
+{l:"B1",t:1,v:"show",p:"up",m:"arrive, especially late or unexpectedly",pre:"We waited an hour and he never",post:"."},
+{l:"B1",t:1,v:"carry",p:"on",m:"continue doing something",pre:"You're doing well, so just",post:"."},
+{l:"B1",t:1,v:"set",p:"off",m:"start a journey",pre:"To avoid traffic we",post:"before sunrise."},
+{l:"B1",t:2,v:"take",p:"up",o:"a new hobby",n:"it",m:"start doing an activity regularly",pre:"After the exams I want to",post:"."},
+{l:"B1",t:2,v:"give",p:"away",o:"my old books",n:"them",m:"give something to someone without asking for money",pre:"Instead of selling them, I'll",post:"."},
+{l:"B1",t:2,v:"point",p:"out",o:"the mistake",n:"it",m:"tell someone about something they haven't noticed",pre:"Nobody wanted to",post:"in front of the class."},
+{l:"B1",t:2,v:"turn",p:"down",o:"the offer",n:"it",m:"refuse an offer or invitation",pre:"The salary was low, so she decided to",post:"."},
+{l:"B1",t:2,v:"bring",p:"up",o:"a new topic",n:"it",m:"start talking about a subject",pre:"Halfway through dinner he suddenly decided to",post:"."},
+{l:"B1",t:2,v:"make",p:"up",o:"a story",n:"it",m:"invent something that isn't true",pre:"He couldn't explain the delay, so he had to",post:"."},
+{l:"B1",t:2,v:"figure",p:"out",o:"the answer",n:"it",m:"understand something after thinking about it",pre:"Give me a minute and I'll",post:"."},
+{l:"B1",t:2,v:"hand",p:"in",o:"your homework",n:"it",m:"give work to a teacher or a boss",pre:"The deadline is Friday, so please",post:"by then."},
+{l:"B1",t:2,v:"sort",p:"out",o:"the problem",n:"it",m:"deal with something successfully",pre:"Don't panic — we can",post:"this afternoon."},
+{l:"B1",t:2,v:"call",p:"off",o:"the trip",n:"it",m:"cancel something that was planned",pre:"Because of the storm they had to",post:"."},
+{l:"B1",t:2,v:"check",p:"out",o:"this website",n:"it",m:"look at something because it might be interesting",pre:"If you like music, you should",post:"."},
+{l:"B1",t:2,v:"cheer",p:"up",o:"my friend",n:"her",m:"make someone feel happier",pre:"She failed the test, so I tried to",post:"."},
+{l:"B1",t:2,v:"put",p:"out",o:"the fire",n:"it",m:"stop something from burning",pre:"The firefighters worked all night to",post:"."},
+{l:"B1",t:3,v:"deal",p:"with",o:"the problem",n:"it",m:"take action to solve something",pre:"Ignoring it won't help — somebody has to",post:"."},
+{l:"B1",t:3,v:"go",p:"through",o:"a difficult time",n:"it",m:"experience something hard",pre:"Be patient with her; she's",post:"right now."},
+{l:"B1",t:3,v:"count",p:"on",o:"my best friend",n:"her",m:"trust someone to help you",pre:"Whatever happens, I can always",post:"."},
+{l:"B1",t:3,v:"take",p:"after",o:"my mother",n:"her",m:"look or behave like an older relative",pre:"Everyone says I",post:"."},
+
+/* ---------- B2 ---------- */
+{l:"B2",t:4,v:"get",p:"away with",o:"cheating",n:"it",m:"do something wrong without being punished",pre:"He copied the whole essay and somehow",post:"."},
+{l:"B2",t:4,v:"look",p:"down on",o:"other people",n:"them",m:"think you are better than someone else",pre:"Success is no reason to",post:"."},
+{l:"B2",t:4,v:"look",p:"up to",o:"my older brother",n:"him",m:"admire and respect someone",pre:"Ever since I was small I've",post:"."},
+{l:"B2",t:4,v:"come",p:"down with",o:"the flu",n:"it",m:"start to have an illness",pre:"Half the team",post:"before the final."},
+{l:"B2",t:4,v:"face",p:"up to",o:"the truth",n:"it",m:"accept a difficult reality",pre:"Sooner or later he'll have to",post:"."},
+{l:"B2",t:4,v:"cut",p:"down on",o:"sugar",n:"it",m:"use or consume less of something",pre:"The doctor told him to",post:"."},
+{l:"B2",t:4,v:"keep",p:"up with",o:"the news",n:"it",m:"stay informed about something as it changes",pre:"With five apps open it's hard to",post:"."},
+{l:"B2",t:4,v:"do",p:"away with",o:"the rule",n:"it",m:"get rid of something permanently",pre:"After the protests the school decided to",post:"."},
+{l:"B2",t:4,v:"back",p:"out of",o:"the deal",n:"it",m:"decide not to do something you promised",pre:"Two days before signing, the company",post:"."},
+{l:"B2",t:4,v:"own",p:"up to",o:"his mistake",n:"it",m:"admit that you did something wrong",pre:"It took courage, but he finally",post:"."},
+{l:"B2",t:2,v:"bring",p:"about",o:"real change",n:"it",m:"make something happen",pre:"A single law won't",post:"."},
+{l:"B2",t:2,v:"carry",p:"out",o:"a survey",n:"it",m:"do something that was planned or ordered",pre:"The students will",post:"in three schools."},
+{l:"B2",t:2,v:"put",p:"forward",o:"a proposal",n:"it",m:"suggest an idea for others to consider",pre:"At the meeting the team will",post:"."},
+{l:"B2",t:2,v:"take",p:"on",o:"more work",n:"it",m:"agree to do extra work or responsibility",pre:"She's already busy, so she shouldn't",post:"."},
+{l:"B2",t:2,v:"rule",p:"out",o:"that possibility",n:"it",m:"decide that something is impossible",pre:"The evidence is thin, so we can't",post:"yet."},
+{l:"B2",t:2,v:"single",p:"out",o:"one student",n:"her",m:"choose one person from a group for attention",pre:"A good teacher doesn't",post:"in front of everyone."},
+{l:"B2",t:2,v:"talk",p:"over",o:"the plan",n:"it",m:"discuss something carefully before deciding",pre:"Before we commit, let's",post:"."},
+{l:"B2",t:2,v:"sum",p:"up",o:"the argument",n:"it",m:"state the main points briefly",pre:"In the last paragraph you should",post:"."},
+{l:"B2",t:2,v:"lay",p:"off",o:"two hundred workers",n:"them",m:"end someone's job because there isn't enough work",pre:"When sales fell the factory had to",post:"."},
+{l:"B2",t:2,v:"phase",p:"out",o:"the old system",n:"it",m:"stop using something gradually",pre:"Over three years they plan to",post:"."},
+{l:"B2",t:2,v:"draw",p:"up",o:"a plan",n:"it",m:"prepare a document or a detailed plan",pre:"The committee met to",post:"."},
+{l:"B2",t:2,v:"back",p:"up",o:"your files",n:"them",m:"make a second copy in case the first is lost",pre:"Before the update you should",post:"."},
+{l:"B2",t:3,v:"turn",p:"to",o:"a close friend",n:"her",m:"go to someone for help or advice",pre:"When things get hard I usually",post:"."},
+{l:"B2",t:3,v:"go",p:"over",o:"my notes",n:"them",m:"examine or review something carefully",pre:"The night before a test I",post:"twice."},
+{l:"B2",t:3,v:"stick",p:"to",o:"the plan",n:"it",m:"continue doing what you decided",pre:"Whatever happens tomorrow, we",post:"."},
+{l:"B2",t:3,v:"come",p:"across",o:"an old photo",n:"it",m:"find something by chance",pre:"While cleaning the attic I",post:"of my grandparents."},
+{l:"B2",t:1,v:"die",p:"down",m:"become gradually weaker or quieter",pre:"The applause took a long time to",post:"."},
+{l:"B2",t:1,v:"wear",p:"off",m:"stop having an effect",pre:"The painkillers started to",post:"after four hours."},
+{l:"B2",t:1,v:"pull",p:"through",m:"recover from a serious illness or difficulty",pre:"It was a hard year, but the business",post:"."},
+{l:"B2",t:1,v:"catch",p:"on",m:"become popular",pre:"The app was slow to",post:", but now everyone uses it."}
+];
+DATA.forEach(function(d,i){ d.id = i+1; });
+
+var TYPE_NAME = {1:"no object",2:"separable",3:"inseparable",4:"three-word"};
+var TYPE_RULE = {
+  1:"This one takes no object at all.",
+  2:"Separable: the object can go in the middle <strong>or</strong> after the particle — but a pronoun must go in the middle.",
+  3:"Inseparable: the object always comes after the particle.",
+  4:"Three-word verbs never break apart. The object always follows all three words."
+};
+var PARTICLES_2 = ["up","down","in","out","on","off","away","back","over","through","around","at","for","after","into","with","about","across","to","forward"];
+var PARTICLES_3 = ["up with","up to","down on","down with","out of","away with","along with","forward to","rid of","over to","in on","through with"];
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function store(k, v){
+  try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+  catch(e) { return null; }
+}
+function toggleTheme(){
+  var html = document.documentElement;
+  var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  store('theme', next);
+}
+(function(){
+  var saved = store('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+var actx = null;
+function ac(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(freq, dur, type, vol, delay){
+  var c = ac(); if(!c) return;
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  var t0 = c.currentTime + (delay||0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.18, t0+0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t0); o.stop(t0+dur+0.05);
+}
+var SFX = {
+  good:  function(){ tone(660,.14,'sine',.2,0); tone(990,.22,'sine',.16,.1); },
+  bad:   function(){ tone(180,.22,'triangle',.16,0); },
+  flip:  function(){ tone(420,.08,'sine',.1,0); },
+  buzz:  function(){ tone(140,.5,'sawtooth',.14,0); tone(105,.5,'sawtooth',.12,.05); },
+  point: function(){ tone(520,.1,'square',.12,0); tone(780,.16,'square',.1,.08); },
+  win:   function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.3,'sine',.16,i*.11); }); }
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var S = {
+  mode: 'drop',
+  levels: ['A2','B1'],
+  types: [1,2,3,4],
+  deck: [], di: 0, item: null,
+  seen: 0, correct: 0,
+  answered: false,
+  webVerb: null, webPick: null,
+  sd: null
+};
+
+var stage = document.getElementById('stage');
+
+function pool(){
+  return DATA.filter(function(d){
+    return S.levels.indexOf(d.l) > -1 && S.types.indexOf(d.t) > -1;
+  });
+}
+function shuffle(a){
+  for (var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function buildDeck(){
+  S.deck = shuffle(pool().slice());
+  S.di = 0;
+  document.getElementById('poolCount').textContent = S.deck.length + ' verbs in the deck';
+}
+function nextItem(){
+  if (!S.deck.length) { S.item = null; return; }
+  if (S.di >= S.deck.length) { shuffle(S.deck); S.di = 0; }
+  S.item = S.deck[S.di++];
+}
+function bumpTally(ok){
+  S.seen++; if(ok) S.correct++;
+  document.getElementById('tallyC').textContent = S.correct;
+  document.getElementById('tallyS').textContent = S.seen;
+}
+
+/* ============================================================
+   SENTENCE HELPERS
+   ============================================================ */
+function joinPost(post){
+  return /^[.,!?;:']/.test(post) ? post : ' ' + post;
+}
+function fullSentence(d, objText){
+  var mid = d.v + ' ' + d.p + (objText ? ' ' + objText : '');
+  return d.pre + ' ' + mid + joinPost(d.post);
+}
+function distractors(d, n){
+  var isThree = d.p.indexOf(' ') > -1;
+  var bank = isThree ? PARTICLES_3 : PARTICLES_2;
+  var sameVerb = DATA.filter(function(x){
+    return x.v === d.v && x.p !== d.p && (x.p.indexOf(' ')>-1) === isThree;
+  }).map(function(x){ return x.p; });
+  var out = [];
+  shuffle(sameVerb.slice()).forEach(function(p){ if(out.length<n && out.indexOf(p)<0) out.push(p); });
+  shuffle(bank.slice()).forEach(function(p){ if(out.length<n && p!==d.p && out.indexOf(p)<0) out.push(p); });
+  return out;
+}
+
+/* ============================================================
+   MODE: PARTICLE DROP
+   ============================================================ */
+function renderDrop(){
+  if (!S.item) { stage.innerHTML = emptyMsg(); return; }
+  var d = S.item;
+  S.answered = false;
+  var opts = shuffle(distractors(d,4).concat([d.p]));
+  var objBit = d.o ? ' ' + d.o : '';
+
+  stage.innerHTML =
+    '<div class="meta-row"><span class="badge lvl">'+d.l+'</span>'+
+    '<span class="badge">'+TYPE_NAME[d.t]+'</span>'+
+    '<span class="badge">#'+d.id+'</span></div>'+
+    '<p class="sentence">'+d.pre+' <span class="verb-hl">'+d.v+'</span> '+
+      '<span class="gap" id="gap">&nbsp;&nbsp;&nbsp;</span>'+objBit+joinPost(d.post)+'</p>'+
+    '<div class="chips" id="chips">'+
+      opts.map(function(p,i){
+        return '<button class="chip" data-p="'+p+'"><kbd>'+(i+1)+'</kbd>'+p+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="reveal" id="reveal">'+
+      '<p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
+      '<p class="rule">'+TYPE_RULE[d.t]+'</p>'+
+    '</div>'+
+    '<div class="controls">'+
+      '<button class="btn" id="btnReveal">Show meaning</button>'+
+      '<button class="btn primary" id="btnNext">Next verb</button>'+
+    '</div>';
+
+  Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){
+    b.addEventListener('click', function(){ answerDrop(b); });
+  });
+  document.getElementById('btnReveal').addEventListener('click', function(){ showReveal(); });
+  document.getElementById('btnNext').addEventListener('click', function(){ nextItem(); renderDrop(); });
+}
+function answerDrop(btn){
+  if (S.answered) return;
+  var d = S.item, pick = btn.getAttribute('data-p');
+  if (pick === d.p){
+    S.answered = true;
+    btn.classList.add('correct');
+    var gap = document.getElementById('gap');
+    gap.textContent = d.p; gap.classList.add('filled');
+    Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){ b.disabled = true; });
+    SFX.good(); bumpTally(true); showReveal();
+  } else {
+    btn.classList.add('wrong','shake'); btn.disabled = true;
+    setTimeout(function(){ btn.classList.remove('shake'); }, 420);
+    SFX.bad();
+  }
+}
+function showReveal(){
+  var r = document.getElementById('reveal');
+  if (r) r.classList.add('show');
+}
+
+/* ============================================================
+   MODE: SPLIT IT
+   ============================================================ */
+var SP = { round:1, bank:[], zone:[] };
+
+function renderSplit(){
+  if (!S.item) { stage.innerHTML = emptyMsg(); return; }
+  var d = S.item;
+  var usePron = (SP.round === 2 && d.o);
+  var obj = usePron ? d.n : d.o;
+  var tiles = [d.v].concat(d.p.split(' '));
+  if (d.o) tiles.push(obj);
+
+  SP.bank = shuffle(tiles.slice());
+  SP.zone = [];
+
+  stage.innerHTML =
+    '<div class="meta-row"><span class="badge lvl">'+d.l+'</span>'+
+    '<span class="badge">'+TYPE_NAME[d.t]+'</span>'+
+    (d.o ? '<span class="badge">round '+SP.round+' of 2</span>' : '')+'</div>'+
+    (usePron ? '<p class="round-flag">Same verb, pronoun object. Does the order change?</p>' : '')+
+    '<p class="frame">'+d.pre+' &hellip; '+d.post.replace(/^\s+/,'')+'</p>'+
+    '<div class="dropzone" id="zone"></div>'+
+    '<div class="bank" id="bank"></div>'+
+    '<p class="verdict" id="verdict"></p>'+
+    '<div class="controls">'+
+      '<button class="btn" id="btnClear">Clear</button>'+
+      '<button class="btn" id="btnMean">Show meaning</button>'+
+      '<button class="btn primary" id="btnNext2">'+(d.o && SP.round===1 ? 'Next round' : 'Next verb')+'</button>'+
+    '</div>'+
+    '<div class="reveal" id="reveal">'+
+      '<p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
+      '<p class="rule">'+TYPE_RULE[d.t]+'</p>'+
+    '</div>';
+
+  paintSplit();
+  document.getElementById('btnClear').addEventListener('click', function(){
+    SP.bank = SP.bank.concat(SP.zone); SP.zone = [];
+    document.getElementById('verdict').textContent = '';
+    document.getElementById('zone').className = 'dropzone';
+    paintSplit();
+  });
+  document.getElementById('btnMean').addEventListener('click', showReveal);
+  document.getElementById('btnNext2').addEventListener('click', advanceSplit);
+}
+function advanceSplit(){
+  var d = S.item;
+  if (d.o && SP.round === 1){ SP.round = 2; renderSplit(); }
+  else { SP.round = 1; nextItem(); renderSplit(); }
+}
+function paintSplit(){
+  var d = S.item;
+  var zone = document.getElementById('zone'), bank = document.getElementById('bank');
+  zone.innerHTML = ''; bank.innerHTML = '';
+  SP.zone.forEach(function(w, i){
+    var b = document.createElement('button');
+    b.className = 'tile' + (isPron(w,d) ? ' pron' : '');
+    b.textContent = w;
+    b.addEventListener('click', function(){
+      SP.bank.push(SP.zone.splice(i,1)[0]);
+      document.getElementById('verdict').textContent = '';
+      zone.className = 'dropzone';
+      paintSplit();
+    });
+    zone.appendChild(b);
+  });
+  SP.bank.forEach(function(w, i){
+    var b = document.createElement('button');
+    b.className = 'tile' + (isPron(w,d) ? ' pron' : '');
+    b.textContent = w;
+    b.addEventListener('click', function(){
+      SP.zone.push(SP.bank.splice(i,1)[0]);
+      paintSplit();
+      if (SP.bank.length === 0) checkSplit();
+    });
+    bank.appendChild(b);
+  });
+}
+function isPron(w,d){ return d.n && w === d.n && SP.round === 2; }
+
+function checkSplit(){
+  var d = S.item;
+  var got = SP.zone.join(' ');
+  var P = d.p.split(' ');
+  var usePron = (SP.round === 2 && d.o);
+  var obj = usePron ? d.n : d.o;
+  var zone = document.getElementById('zone');
+  var v = document.getElementById('verdict');
+
+  var afterParticle = [d.v].concat(P).concat(d.o ? [obj] : []).join(' ');
+  var splitOrder = d.o ? [d.v, obj].concat(P).join(' ') : null;
+
+  var ok = false, msg = '';
+  if (d.t === 1){
+    ok = (got === afterParticle);
+    msg = ok ? '<b>'+got+'</b> — correct. This verb never takes an object.'
+             : 'The particle follows the verb: <b>'+afterParticle+'</b>.';
+  } else if (d.t === 2){
+    if (usePron){
+      ok = (got === splitOrder);
+      msg = ok ? '<b>'+got+'</b> — right. A pronoun always goes between the verb and the particle.'
+               : 'Pronouns never come after the particle. Say <b>'+splitOrder+'</b>, not "'+got+'".';
+    } else {
+      ok = (got === afterParticle || got === splitOrder);
+      msg = ok ? '<b>'+got+'</b> — correct. Both <b>'+afterParticle+'</b> and <b>'+splitOrder+'</b> work with a noun object.'
+               : 'With a noun you can say <b>'+afterParticle+'</b> or <b>'+splitOrder+'</b>.';
+    }
+  } else {
+    ok = (got === afterParticle);
+    if (ok){
+      msg = '<b>'+got+'</b> — correct. Nothing goes between the verb and the particle.';
+    } else if (splitOrder && got === splitOrder){
+      msg = d.t === 3
+        ? '<b>'+d.v+' '+d.p+'</b> cannot be separated. The object always comes last: <b>'+afterParticle+'</b>.'
+        : 'Three-word verbs never break apart: <b>'+afterParticle+'</b>.';
+    } else {
+      msg = 'Keep all the words together in order: <b>'+afterParticle+'</b>.';
+    }
+  }
+
+  zone.className = 'dropzone ' + (ok ? 'ok' : 'no');
+  v.className = 'verdict ' + (ok ? 'ok' : 'no');
+  v.innerHTML = msg;
+  if (ok){ SFX.good(); } else { SFX.bad(); }
+  bumpTally(ok);
+  showReveal();
+}
+
+/* ============================================================
+   MODE: VERB WEB
+   ============================================================ */
+function webVerbs(){
+  var counts = {};
+  pool().forEach(function(d){ (counts[d.v] = counts[d.v] || []).push(d); });
+  return Object.keys(counts)
+    .filter(function(v){ return counts[v].length >= 3; })
+    .sort(function(a,b){ return counts[b].length - counts[a].length || a.localeCompare(b); });
+}
+function renderWeb(){
+  var verbs = webVerbs();
+  if (!verbs.length){
+    stage.innerHTML = '<p class="web-empty">No verb in this deck has three or more particles yet. Add another level or type above.</p>';
+    return;
+  }
+  if (verbs.indexOf(S.webVerb) < 0) { S.webVerb = verbs[0]; S.webPick = null; }
+  var family = pool().filter(function(d){ return d.v === S.webVerb; });
+
+  stage.innerHTML =
+    '<div class="hub-verbs">'+verbs.map(function(v){
+      return '<button class="hub-verb" data-v="'+v+'" aria-pressed="'+(v===S.webVerb)+'">'+v+'</button>';
+    }).join('')+'</div>'+
+    '<div class="web">'+
+      '<div class="orbit" id="orbit">'+family.map(function(d){
+        return '<button data-id="'+d.id+'" aria-pressed="'+(S.webPick===d.id)+'">'+d.v+' '+d.p+
+               '<span>'+d.l+' &middot; '+TYPE_NAME[d.t]+'</span></button>';
+      }).join('')+'</div>'+
+      '<div class="web-detail" id="webDetail"></div>'+
+    '</div>';
+
+  Array.prototype.forEach.call(stage.querySelectorAll('.hub-verb'), function(b){
+    b.addEventListener('click', function(){
+      S.webVerb = b.getAttribute('data-v'); S.webPick = null; SFX.flip(); renderWeb();
+    });
+  });
+  Array.prototype.forEach.call(stage.querySelectorAll('#orbit button'), function(b){
+    b.addEventListener('click', function(){
+      S.webPick = parseInt(b.getAttribute('data-id'),10); SFX.flip(); renderWeb();
+    });
+  });
+  paintWebDetail(family);
+}
+function paintWebDetail(family){
+  var box = document.getElementById('webDetail');
+  if (!S.webPick){
+    box.innerHTML = '<p class="web-empty">Ask the class what <b>'+S.webVerb+
+      '</b> means with each particle before you click. '+family.length+' meanings are waiting here.</p>';
+    return;
+  }
+  var d = DATA.filter(function(x){ return x.id === S.webPick; })[0];
+  box.innerHTML =
+    '<p class="pv">'+d.v+' '+d.p+'</p>'+
+    '<p class="def">'+d.m+'</p>'+
+    '<p class="ex">'+fullSentence(d, d.o || '')+'</p>';
+}
+
+/* ============================================================
+   MODE: SHOWDOWN
+   ============================================================ */
+function renderShowdownSetup(){
+  stage.innerHTML =
+    '<div class="meta-row"><span class="badge">team game</span></div>'+
+    '<p class="sentence" style="font-size:clamp(20px,2.6vw,30px)">Two to four teams. One verb at a time. Tap the team that answers first.</p>'+
+    '<div class="sd-setup" style="margin-top:26px">'+
+      '<div class="field"><label for="sdTeams">Teams</label>'+
+        '<select id="sdTeams"><option>2</option><option>3</option><option>4</option></select></div>'+
+      '<div class="field"><label for="sdTime">Round length</label>'+
+        '<select id="sdTime"><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option><option value="0">No timer</option></select></div>'+
+      '<div class="field" style="flex:1 1 260px"><label for="sdNames">Team names (comma separated)</label>'+
+        '<input id="sdNames" placeholder="Lions, Tigers"></div>'+
+    '</div>'+
+    '<div class="controls"><button class="btn primary" id="sdStart">Start the round</button></div>';
+  document.getElementById('sdStart').addEventListener('click', startShowdown);
+}
+function startShowdown(){
+  var n = parseInt(document.getElementById('sdTeams').value,10);
+  var secs = parseInt(document.getElementById('sdTime').value,10);
+  var raw = document.getElementById('sdNames').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  var teams = [];
+  for (var i=0;i<n;i++) teams.push({ name: raw[i] || ('Team '+(i+1)), score: 0 });
+  S.sd = { teams: teams, secs: secs, left: secs, timer: null, live: true };
+  nextItem();
+  renderShowdown();
+  if (secs > 0) tickShowdown();
+}
+function tickShowdown(){
+  clearInterval(S.sd.timer);
+  S.sd.timer = setInterval(function(){
+    S.sd.left--;
+    var el = document.getElementById('sdTimer');
+    if (el){
+      el.textContent = S.sd.left + 's';
+      el.className = 'timer' + (S.sd.left <= 10 ? ' low' : '');
+    }
+    if (S.sd.left <= 0){ clearInterval(S.sd.timer); S.sd.live = false; SFX.buzz(); renderShowdown(); }
+  }, 1000);
+}
+function renderShowdown(){
+  var sd = S.sd;
+  if (!sd) { renderShowdownSetup(); return; }
+  if (!S.item) { stage.innerHTML = emptyMsg(); return; }
+  var d = S.item;
+  var best = Math.max.apply(null, sd.teams.map(function(t){ return t.score; }));
+  var opts = shuffle(distractors(d,4).concat([d.p]));
+  var objBit = d.o ? ' ' + d.o : '';
+
+  stage.innerHTML =
+    '<div class="meta-row">'+
+      '<span class="badge lvl">'+d.l+'</span>'+
+      '<span class="badge">'+TYPE_NAME[d.t]+'</span>'+
+      (sd.secs>0 ? '<span class="timer" id="sdTimer" style="margin-left:auto">'+Math.max(sd.left,0)+'s</span>' : '')+
+    '</div>'+
+    (sd.live
+      ? '<p class="sentence">'+d.pre+' <span class="verb-hl">'+d.v+'</span> '+
+        '<span class="gap" id="gap">&nbsp;&nbsp;&nbsp;</span>'+objBit+joinPost(d.post)+'</p>'+
+        '<div class="chips" id="chips">'+opts.map(function(p,i){
+          return '<button class="chip" data-p="'+p+'"><kbd>'+(i+1)+'</kbd>'+p+'</button>';
+        }).join('')+'</div>'
+      : '<p class="sentence">Time. <span class="verb-hl">'+leader(sd)+'</span></p>')+
+    '<div class="reveal" id="reveal"><p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
+      '<p class="rule">'+TYPE_RULE[d.t]+'</p></div>'+
+    '<p class="hint" style="margin-top:20px">Tap a team to give it the point.</p>'+
+    '<div class="scoreboard">'+sd.teams.map(function(t,i){
+      return '<button class="team'+(t.score===best&&best>0?' lead':'')+'" data-i="'+i+'">'+
+             '<div class="tn">'+t.name+'</div><div class="ts">'+t.score+'</div></button>';
+    }).join('')+'</div>'+
+    '<div class="controls">'+
+      '<button class="btn" id="sdReveal">Show answer</button>'+
+      '<button class="btn primary" id="sdNext">Next verb</button>'+
+      (sd.live ? '' : '<button class="btn" id="sdAgain">New round</button>')+
+      '<button class="btn" id="sdEnd">End game</button>'+
+    '</div>';
+
+  Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){
+    b.addEventListener('click', function(){
+      if (b.getAttribute('data-p') === d.p){
+        var gap = document.getElementById('gap');
+        gap.textContent = d.p; gap.classList.add('filled');
+        Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(x){ x.disabled = true; });
+        SFX.good(); showReveal();
+      } else { b.classList.add('wrong','shake'); b.disabled = true; SFX.bad(); }
+    });
+  });
+  Array.prototype.forEach.call(stage.querySelectorAll('.team'), function(b){
+    b.addEventListener('click', function(){
+      sd.teams[parseInt(b.getAttribute('data-i'),10)].score++;
+      SFX.point(); renderShowdown();
+    });
+  });
+  document.getElementById('sdReveal').addEventListener('click', function(){
+    var gap = document.getElementById('gap');
+    if (gap){ gap.textContent = d.p; gap.classList.add('filled'); }
+    showReveal();
+  });
+  document.getElementById('sdNext').addEventListener('click', function(){ nextItem(); renderShowdown(); });
+  document.getElementById('sdEnd').addEventListener('click', function(){
+    clearInterval(sd.timer); SFX.win(); S.sd = null; renderShowdownSetup();
+  });
+  var again = document.getElementById('sdAgain');
+  if (again) again.addEventListener('click', function(){
+    sd.left = sd.secs; sd.live = true; nextItem(); renderShowdown(); if (sd.secs>0) tickShowdown();
+  });
+}
+function leader(sd){
+  var sorted = sd.teams.slice().sort(function(a,b){ return b.score - a.score; });
+  if (sorted[0].score === 0) return 'Nobody scored this round.';
+  if (sorted[1] && sorted[0].score === sorted[1].score) return 'It is a tie on ' + sorted[0].score + '.';
+  return sorted[0].name + ' leads with ' + sorted[0].score + '.';
+}
+
+/* ============================================================
+   FILTERS + MODE SWITCHING
+   ============================================================ */
+function emptyMsg(){
+  return '<p class="web-empty">No verbs match these filters. Turn a level or a type back on above.</p>';
+}
+function buildFilters(){
+  var lv = document.getElementById('levelFilters');
+  ['A1','A2','B1','B2'].forEach(function(l){
+    var b = document.createElement('button');
+    b.className = 'chip-f'; b.textContent = l;
+    b.setAttribute('aria-pressed', S.levels.indexOf(l)>-1);
+    b.addEventListener('click', function(){
+      var i = S.levels.indexOf(l);
+      if (i>-1){ if (S.levels.length===1) return; S.levels.splice(i,1); } else S.levels.push(l);
+      b.setAttribute('aria-pressed', S.levels.indexOf(l)>-1);
+      refresh();
+    });
+    lv.appendChild(b);
+  });
+  var tp = document.getElementById('typeFilters');
+  [[2,'separable'],[3,'inseparable'],[1,'no object'],[4,'three-word']].forEach(function(pair){
+    var b = document.createElement('button');
+    b.className = 'chip-f'; b.textContent = pair[1];
+    b.setAttribute('aria-pressed','true');
+    b.addEventListener('click', function(){
+      var i = S.types.indexOf(pair[0]);
+      if (i>-1){ if (S.types.length===1) return; S.types.splice(i,1); } else S.types.push(pair[0]);
+      b.setAttribute('aria-pressed', S.types.indexOf(pair[0])>-1);
+      refresh();
+    });
+    tp.appendChild(b);
+  });
+}
+function refresh(){
+  buildDeck();
+  SP.round = 1;
+  if (S.mode !== 'showdown') nextItem();
+  render();
+}
+function render(){
+  if (S.mode === 'drop') renderDrop();
+  else if (S.mode === 'split') renderSplit();
+  else if (S.mode === 'web') renderWeb();
+  else renderShowdown();
+}
+Array.prototype.forEach.call(document.querySelectorAll('.mode-tab'), function(tab){
+  tab.addEventListener('click', function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.mode-tab'), function(t){
+      t.setAttribute('aria-selected', t === tab);
+    });
+    if (S.sd){ clearInterval(S.sd.timer); }
+    S.mode = tab.getAttribute('data-mode');
+    if (S.mode === 'showdown') S.sd = null;
+    SP.round = 1;
+    if (S.mode !== 'web' && !S.item) nextItem();
+    render();
+  });
+});
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
+document.addEventListener('keydown', function(e){
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  var k = e.key;
+  if (k >= '1' && k <= '5'){
+    var chips = stage.querySelectorAll('.chip');
+    var c = chips[parseInt(k,10)-1];
+    if (c && !c.disabled) c.click();
+  } else if (k === 'ArrowRight'){
+    e.preventDefault();
+    if (S.mode === 'drop'){ nextItem(); renderDrop(); }
+    else if (S.mode === 'split'){ advanceSplit(); }
+    else if (S.mode === 'showdown' && S.sd){ nextItem(); renderShowdown(); }
+  } else if (k === ' '){
+    e.preventDefault(); showReveal();
+  } else if (k === 'r' || k === 'R'){
+    refresh();
+  } else if (k === 'f' || k === 'F'){
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+buildFilters();
+buildDeck();
+nextItem();
+render();
+</script>
+</body>
+</html>
