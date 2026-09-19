@@ -43,8 +43,65 @@ h1,h2,h3,.disp{font-family:'Sora',sans-serif;letter-spacing:-.02em}
 .masthead{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:22px}
 .masthead h1{font-size:clamp(28px,4vw,44px);font-weight:800}
 .masthead h1 em{font-style:normal;color:var(--accent)}
-.tally{margin-left:auto;font-size:15px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.masthead .lead{font-size:16px;color:var(--ink-dim);flex-basis:100%;margin-top:2px}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.tally{font-size:15px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
 .tally b{color:var(--ink);font-size:19px}
+
+/* ---- start screen ---- */
+.start-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:22px}
+.panel{
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:22px 24px;box-shadow:0 14px 34px var(--shadow);
+}
+.panel h2{font-size:19px;font-weight:600;margin-bottom:4px}
+.panel .sub{font-size:13.5px;color:var(--ink-dim);margin-bottom:16px}
+.panel.dim{opacity:.45}
+
+.opt-list{display:grid;gap:10px}
+.opt{
+  display:flex;gap:14px;align-items:flex-start;text-align:left;cursor:pointer;
+  background:var(--panel-2);border:2px solid var(--line);border-radius:12px;
+  padding:14px 16px;color:var(--ink);font-family:'Inter',sans-serif;width:100%;
+}
+.opt:hover{border-color:var(--accent)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-deep);color:#fff}
+.opt .oi{font-size:22px;line-height:1}
+.opt .on{font-family:'Sora',sans-serif;font-weight:600;font-size:17px}
+.opt .od{font-size:13px;opacity:.78;margin-top:3px;line-height:1.4}
+
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip-f{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
+  border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.chip-f[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#17122a}
+html[data-theme="light"] .chip-f[aria-pressed="true"]{color:#fff}
+.group-label{font-size:12.5px;color:var(--ink-dim);margin:14px 0 7px}
+.group-label.top{margin-top:0}
+
+.field{display:flex;flex-direction:column;gap:6px;min-width:130px}
+.field label{font-size:12.5px;color:var(--ink-dim)}
+.field input,.field select{
+  background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+  border-radius:10px;padding:11px 14px;font-size:16px;font-family:'Inter',sans-serif;
+}
+.field input:disabled,.field select:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.name-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px}
+.toggle{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14.5px;margin-top:16px}
+.toggle input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin-top:1px}
+.toggle span small{display:block;font-size:12.5px;color:var(--ink-dim);margin-top:2px;line-height:1.4}
+
+.start-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.btn-start{
+  padding:18px 46px;border-radius:14px;border:none;background:var(--accent-deep);color:#fff;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:21px;cursor:pointer;min-height:64px;
+}
+.btn-start:hover{filter:brightness(1.12)}
+.btn-start:disabled{opacity:.4;cursor:not-allowed}
+.deck-note{font-size:14.5px;color:var(--ink-dim)}
 
 /* ---- mode tabs ---- */
 .modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
@@ -52,7 +109,6 @@ h1,h2,h3,.disp{font-family:'Sora',sans-serif;letter-spacing:-.02em}
   flex:1 1 180px; background:var(--panel); border:1px solid var(--line);
   color:var(--ink-dim); border-radius:12px; padding:12px 16px; cursor:pointer;
   font-family:'Sora',sans-serif; font-weight:600; font-size:16px; text-align:left;
-  transition:border-color .15s,color .15s,background .15s;
 }
 .mode-tab small{display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:12.5px;opacity:.75;margin-top:3px}
 .mode-tab:hover{border-color:var(--accent)}
@@ -67,13 +123,7 @@ h1,h2,h3,.disp{font-family:'Sora',sans-serif;letter-spacing:-.02em}
 }
 .fgroup{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .fgroup>span{font-size:12.5px;color:var(--ink-dim);margin-right:2px}
-.chip-f{
-  background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
-  border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:600;cursor:pointer;
-  font-family:'Inter',sans-serif;
-}
-.chip-f[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#17122a}
-html[data-theme="light"] .chip-f[aria-pressed="true"]{color:#fff}
+.filters .chip-f{padding:6px 13px;font-size:13.5px}
 .count-note{margin-left:auto;font-size:13px;color:var(--ink-dim)}
 
 /* ---- stage ---- */
@@ -179,27 +229,39 @@ html[data-theme="light"] .badge.lvl{color:#fff}
 .web-empty{color:var(--ink-dim);font-size:18px;line-height:1.6}
 
 /* ---- showdown ---- */
-.sd-setup{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:12.5px;color:var(--ink-dim)}
-.field input,.field select{
-  background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
-  border-radius:10px;padding:10px 14px;font-size:16px;font-family:'Inter',sans-serif;
-}
-.scoreboard{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 0}
-.team{
-  flex:1 1 150px;background:var(--panel-2);border:2px solid var(--line);border-radius:14px;
-  padding:14px 16px;cursor:pointer;text-align:left;color:var(--ink);
-}
-.team:hover{border-color:var(--good)}
-.team .tn{font-family:'Sora',sans-serif;font-weight:600;font-size:17px}
-.team .ts{font-family:'Sora',sans-serif;font-weight:800;font-size:40px;font-variant-numeric:tabular-nums}
-.team.lead{border-color:var(--amber)}
+.turn-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.turn-now{font-family:'Sora',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,40px);line-height:1.15}
+.turn-now span{color:var(--amber)}
+.turn-no{font-size:13px;color:var(--ink-dim);margin-top:4px}
 .timer{
-  font-family:'Sora',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;
-  font-size:clamp(34px,5vw,56px);
+  margin-left:auto;font-family:'Sora',sans-serif;font-weight:800;font-variant-numeric:tabular-nums;
+  font-size:clamp(30px,4.4vw,52px);
 }
 .timer.low{color:var(--bad)}
+.scoreboard{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.team{
+  flex:1 1 150px;background:var(--panel-2);border:2px solid var(--line);border-radius:14px;
+  padding:14px 16px;text-align:left;color:var(--ink);position:relative;
+}
+.team.active{border-color:var(--amber);box-shadow:0 0 0 3px rgba(251,191,36,.18)}
+.team.out{opacity:.45}
+.team .tn{font-family:'Sora',sans-serif;font-weight:600;font-size:17px}
+.team .ts{font-family:'Sora',sans-serif;font-weight:800;font-size:40px;font-variant-numeric:tabular-nums}
+.team .adj{position:absolute;top:10px;right:10px;display:flex;gap:4px}
+.team .adj button{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--bg);
+  color:var(--ink-dim);cursor:pointer;font-size:15px;line-height:1;
+}
+.team .adj button:hover{border-color:var(--accent);color:var(--accent)}
+.standings{display:flex;flex-direction:column;gap:10px;margin:22px 0}
+.standing{
+  display:flex;align-items:center;gap:16px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:12px;padding:14px 18px;font-size:19px;
+}
+.standing.first{border-color:var(--amber)}
+.standing .pos{font-family:'Sora',sans-serif;font-weight:800;color:var(--ink-dim);width:2ch}
+.standing .nm{font-family:'Sora',sans-serif;font-weight:600;flex:1}
+.standing .sc{font-family:'Sora',sans-serif;font-weight:800;font-variant-numeric:tabular-nums}
 
 /* ---- buttons ---- */
 .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
@@ -222,26 +284,78 @@ html[data-theme="light"] .badge.lvl{color:#fff}
 <button class="theme-btn" onclick="toggleTheme()">Light / dark</button>
 
 <div class="wrap">
-  <div class="masthead">
-    <h1>Phrasal Verb <em>Lab</em></h1>
-    <div class="tally">Correct <b id="tallyC">0</b> / <b id="tallyS">0</b></div>
-  </div>
 
-  <div class="modes" role="tablist">
-    <button class="mode-tab" role="tab" data-mode="drop" aria-selected="true">Particle Drop<small>Pick the missing particle</small></button>
-    <button class="mode-tab" role="tab" data-mode="split" aria-selected="false">Split It<small>Word order and pronoun rules</small></button>
-    <button class="mode-tab" role="tab" data-mode="web" aria-selected="false">Verb Web<small>One verb, many particles</small></button>
-    <button class="mode-tab" role="tab" data-mode="showdown" aria-selected="false">Showdown<small>Timed team rounds</small></button>
-  </div>
+  <section id="startScreen">
+    <div class="masthead">
+      <h1>Phrasal Verb <em>Lab</em></h1>
+      <p class="lead">120 phrasal verbs across A1&ndash;B2. Pick an activity and press start.</p>
+    </div>
+    <div class="start-grid">
+      <div class="panel">
+        <h2>Activity</h2>
+        <p class="sub">You can switch at any time once you start.</p>
+        <div class="opt-list" id="optActivity"></div>
+      </div>
+      <div class="panel">
+        <h2>Content</h2>
+        <p class="sub">What goes into the deck.</p>
+        <p class="group-label top">CEFR level</p>
+        <div class="chip-row" id="optLevels"></div>
+        <p class="group-label">Verb type</p>
+        <div class="chip-row" id="optTypes"></div>
+      </div>
+      <div class="panel" id="teamPanel">
+        <h2>Team play</h2>
+        <p class="sub">Teams take turns. Showdown only.</p>
+        <div class="row">
+          <div class="field"><label for="setTeams">Number of teams</label>
+            <select id="setTeams"><option>2</option><option>3</option><option>4</option></select></div>
+          <div class="field"><label for="setTimer">Time per turn</label>
+            <select id="setTimer">
+              <option value="20">20 seconds</option>
+              <option value="30" selected>30 seconds</option>
+              <option value="45">45 seconds</option>
+              <option value="60">60 seconds</option>
+              <option value="0">No timer</option>
+            </select></div>
+        </div>
+        <div class="name-grid" id="teamNames"></div>
+        <label class="toggle"><input type="checkbox" id="setSteal" checked>
+          <span>Let the next team steal<small>A miss passes the same verb along instead of ending the turn.</small></span></label>
+      </div>
+    </div>
+    <div class="start-bar">
+      <button class="btn-start" id="btnStart">Start</button>
+      <span class="deck-note" id="deckNote"></span>
+    </div>
+  </section>
 
-  <div class="filters">
-    <div class="fgroup" id="levelFilters"><span>Level</span></div>
-    <div class="fgroup" id="typeFilters"><span>Type</span></div>
-    <div class="count-note" id="poolCount"></div>
-  </div>
+  <section id="app" class="hide">
+    <div class="masthead">
+      <h1>Phrasal Verb <em>Lab</em></h1>
+      <div class="head-right">
+        <div class="tally">Correct <b id="tallyC">0</b> / <b id="tallyS">0</b></div>
+        <button class="btn" id="btnSettings">Settings</button>
+      </div>
+    </div>
 
-  <div class="stage" id="stage"></div>
-  <p class="hint"><kbd>1</kbd>–<kbd>5</kbd> pick · <kbd>&rarr;</kbd> next · <kbd>Space</kbd> reveal · <kbd>R</kbd> reshuffle · <kbd>F</kbd> fullscreen</p>
+    <div class="modes" role="tablist">
+      <button class="mode-tab" role="tab" data-mode="drop" aria-selected="true">Particle Drop<small>Pick the missing particle</small></button>
+      <button class="mode-tab" role="tab" data-mode="split" aria-selected="false">Split It<small>Word order and pronoun rules</small></button>
+      <button class="mode-tab" role="tab" data-mode="web" aria-selected="false">Verb Web<small>One verb, many particles</small></button>
+      <button class="mode-tab" role="tab" data-mode="showdown" aria-selected="false">Showdown<small>Teams take turns</small></button>
+    </div>
+
+    <div class="filters">
+      <div class="fgroup" id="levelFilters"><span>Level</span></div>
+      <div class="fgroup" id="typeFilters"><span>Type</span></div>
+      <div class="count-note" id="poolCount"></div>
+    </div>
+
+    <div class="stage" id="stage"></div>
+    <p class="hint"><kbd>1</kbd>&ndash;<kbd>5</kbd> pick &middot; <kbd>&rarr;</kbd> next &middot; <kbd>Space</kbd> reveal &middot; <kbd>R</kbd> reshuffle &middot; <kbd>F</kbd> fullscreen</p>
+  </section>
+
 </div>
 
 <script>
@@ -429,18 +543,30 @@ var SFX = {
   good:  function(){ tone(660,.14,'sine',.2,0); tone(990,.22,'sine',.16,.1); },
   bad:   function(){ tone(180,.22,'triangle',.16,0); },
   flip:  function(){ tone(420,.08,'sine',.1,0); },
+  pass:  function(){ tone(330,.1,'square',.1,0); tone(440,.12,'square',.1,.09); },
   buzz:  function(){ tone(140,.5,'sawtooth',.14,0); tone(105,.5,'sawtooth',.12,.05); },
-  point: function(){ tone(520,.1,'square',.12,0); tone(780,.16,'square',.1,.08); },
   win:   function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.3,'sine',.16,i*.11); }); }
 };
 
 /* ============================================================
    STATE
    ============================================================ */
+var MODES = [
+  ['drop','\u25CF','Particle Drop','Pick the missing particle from five options.'],
+  ['split','\u25A0','Split It','Arrange the words. Separable, inseparable and pronoun rules.'],
+  ['web','\u25C6','Verb Web','One verb, all its particles. Elicit before you reveal.'],
+  ['showdown','\u2605','Showdown','Teams take turns answering against the clock.']
+];
+var TYPE_OPTS = [[2,'separable'],[3,'inseparable'],[1,'no object'],[4,'three-word']];
+
 var S = {
   mode: 'drop',
   levels: ['A2','B1'],
   types: [1,2,3,4],
+  teamCount: 2,
+  teamNames: ['Team 1','Team 2','Team 3','Team 4'],
+  turnSecs: 30,
+  steal: true,
   deck: [], di: 0, item: null,
   seen: 0, correct: 0,
   answered: false,
@@ -448,6 +574,8 @@ var S = {
   sd: null
 };
 
+var startScreen = document.getElementById('startScreen');
+var app = document.getElementById('app');
 var stage = document.getElementById('stage');
 
 function pool(){
@@ -462,7 +590,8 @@ function shuffle(a){
 function buildDeck(){
   S.deck = shuffle(pool().slice());
   S.di = 0;
-  document.getElementById('poolCount').textContent = S.deck.length + ' verbs in the deck';
+  var el = document.getElementById('poolCount');
+  if (el) el.textContent = S.deck.length + ' verbs in the deck';
 }
 function nextItem(){
   if (!S.deck.length) { S.item = null; return; }
@@ -496,6 +625,132 @@ function distractors(d, n){
   shuffle(bank.slice()).forEach(function(p){ if(out.length<n && p!==d.p && out.indexOf(p)<0) out.push(p); });
   return out;
 }
+function questionHTML(d){
+  return '<p class="sentence">'+d.pre+' <span class="verb-hl">'+d.v+'</span> '+
+    '<span class="gap" id="gap">&nbsp;&nbsp;&nbsp;</span>'+(d.o ? ' '+d.o : '')+joinPost(d.post)+'</p>';
+}
+function chipsHTML(opts){
+  return '<div class="chips" id="chips">'+opts.map(function(p,i){
+    return '<button class="chip" data-p="'+p+'"><kbd>'+(i+1)+'</kbd>'+p+'</button>';
+  }).join('')+'</div>';
+}
+function revealHTML(d){
+  return '<div class="reveal" id="reveal">'+
+    '<p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
+    '<p class="rule">'+TYPE_RULE[d.t]+'</p></div>';
+}
+function showReveal(){
+  var r = document.getElementById('reveal');
+  if (r) r.classList.add('show');
+}
+function fillGap(p){
+  var gap = document.getElementById('gap');
+  if (gap){ gap.textContent = p; gap.classList.add('filled'); }
+}
+function lockChips(){
+  Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){ b.disabled = true; });
+}
+function emptyMsg(){
+  return '<p class="web-empty">No verbs match these filters. Turn a level or a type back on above.</p>';
+}
+
+/* ============================================================
+   START SCREEN
+   ============================================================ */
+function renderStart(){
+  var act = document.getElementById('optActivity');
+  act.innerHTML = MODES.map(function(m){
+    return '<button class="opt" data-mode="'+m[0]+'" aria-pressed="'+(S.mode===m[0])+'">'+
+      '<span class="oi" aria-hidden="true">'+m[1]+'</span>'+
+      '<span><span class="on">'+m[2]+'</span><span class="od">'+m[3]+'</span></span></button>';
+  }).join('');
+  Array.prototype.forEach.call(act.querySelectorAll('.opt'), function(b){
+    b.addEventListener('click', function(){
+      S.mode = b.getAttribute('data-mode'); SFX.flip(); renderStart();
+    });
+  });
+
+  var lv = document.getElementById('optLevels');
+  lv.innerHTML = ['A1','A2','B1','B2'].map(function(l){
+    return '<button class="chip-f" data-l="'+l+'" aria-pressed="'+(S.levels.indexOf(l)>-1)+'">'+l+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(lv.querySelectorAll('.chip-f'), function(b){
+    b.addEventListener('click', function(){
+      var l = b.getAttribute('data-l'), i = S.levels.indexOf(l);
+      if (i>-1){ if (S.levels.length===1) return; S.levels.splice(i,1); } else S.levels.push(l);
+      renderStart();
+    });
+  });
+
+  var tp = document.getElementById('optTypes');
+  tp.innerHTML = TYPE_OPTS.map(function(t){
+    return '<button class="chip-f" data-t="'+t[0]+'" aria-pressed="'+(S.types.indexOf(t[0])>-1)+'">'+t[1]+'</button>';
+  }).join('');
+  Array.prototype.forEach.call(tp.querySelectorAll('.chip-f'), function(b){
+    b.addEventListener('click', function(){
+      var t = parseInt(b.getAttribute('data-t'),10), i = S.types.indexOf(t);
+      if (i>-1){ if (S.types.length===1) return; S.types.splice(i,1); } else S.types.push(t);
+      renderStart();
+    });
+  });
+
+  var teamsSel = document.getElementById('setTeams');
+  teamsSel.value = String(S.teamCount);
+  teamsSel.onchange = function(){ S.teamCount = parseInt(teamsSel.value,10); renderStart(); };
+
+  var timeSel = document.getElementById('setTimer');
+  timeSel.value = String(S.turnSecs);
+  timeSel.onchange = function(){ S.turnSecs = parseInt(timeSel.value,10); };
+
+  var steal = document.getElementById('setSteal');
+  steal.checked = S.steal;
+  steal.onchange = function(){ S.steal = steal.checked; };
+
+  var names = document.getElementById('teamNames');
+  names.innerHTML = '';
+  for (var i=0;i<S.teamCount;i++){
+    (function(i){
+      var f = document.createElement('div');
+      f.className = 'field';
+      f.innerHTML = '<label for="tn'+i+'">Team '+(i+1)+'</label>'+
+                    '<input id="tn'+i+'" maxlength="18" value="'+S.teamNames[i].replace(/"/g,'&quot;')+'">';
+      names.appendChild(f);
+      f.querySelector('input').addEventListener('input', function(e){
+        S.teamNames[i] = e.target.value;
+      });
+    })(i);
+  }
+
+  var teamPanel = document.getElementById('teamPanel');
+  var teamy = (S.mode === 'showdown');
+  teamPanel.classList.toggle('dim', !teamy);
+  Array.prototype.forEach.call(teamPanel.querySelectorAll('input,select'), function(el){ el.disabled = !teamy; });
+
+  var n = pool().length;
+  document.getElementById('deckNote').textContent =
+    n ? n + ' verbs in this deck.' : 'Nothing matches — pick at least one level and one type.';
+  document.getElementById('btnStart').disabled = (n === 0);
+}
+
+function openSettings(){
+  sdStopTimer();
+  app.classList.add('hide');
+  startScreen.classList.remove('hide');
+  renderStart();
+}
+function startApp(){
+  startScreen.classList.add('hide');
+  app.classList.remove('hide');
+  syncFilterBar();
+  buildDeck();
+  SP.round = 1;
+  S.sd = null;
+  Array.prototype.forEach.call(document.querySelectorAll('.mode-tab'), function(t){
+    t.setAttribute('aria-selected', t.getAttribute('data-mode') === S.mode);
+  });
+  if (S.mode !== 'web') nextItem();
+  render();
+}
 
 /* ============================================================
    MODE: PARTICLE DROP
@@ -505,23 +760,12 @@ function renderDrop(){
   var d = S.item;
   S.answered = false;
   var opts = shuffle(distractors(d,4).concat([d.p]));
-  var objBit = d.o ? ' ' + d.o : '';
 
   stage.innerHTML =
     '<div class="meta-row"><span class="badge lvl">'+d.l+'</span>'+
     '<span class="badge">'+TYPE_NAME[d.t]+'</span>'+
     '<span class="badge">#'+d.id+'</span></div>'+
-    '<p class="sentence">'+d.pre+' <span class="verb-hl">'+d.v+'</span> '+
-      '<span class="gap" id="gap">&nbsp;&nbsp;&nbsp;</span>'+objBit+joinPost(d.post)+'</p>'+
-    '<div class="chips" id="chips">'+
-      opts.map(function(p,i){
-        return '<button class="chip" data-p="'+p+'"><kbd>'+(i+1)+'</kbd>'+p+'</button>';
-      }).join('')+
-    '</div>'+
-    '<div class="reveal" id="reveal">'+
-      '<p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
-      '<p class="rule">'+TYPE_RULE[d.t]+'</p>'+
-    '</div>'+
+    questionHTML(d) + chipsHTML(opts) + revealHTML(d) +
     '<div class="controls">'+
       '<button class="btn" id="btnReveal">Show meaning</button>'+
       '<button class="btn primary" id="btnNext">Next verb</button>'+
@@ -530,7 +774,7 @@ function renderDrop(){
   Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){
     b.addEventListener('click', function(){ answerDrop(b); });
   });
-  document.getElementById('btnReveal').addEventListener('click', function(){ showReveal(); });
+  document.getElementById('btnReveal').addEventListener('click', showReveal);
   document.getElementById('btnNext').addEventListener('click', function(){ nextItem(); renderDrop(); });
 }
 function answerDrop(btn){
@@ -539,19 +783,13 @@ function answerDrop(btn){
   if (pick === d.p){
     S.answered = true;
     btn.classList.add('correct');
-    var gap = document.getElementById('gap');
-    gap.textContent = d.p; gap.classList.add('filled');
-    Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){ b.disabled = true; });
+    fillGap(d.p); lockChips();
     SFX.good(); bumpTally(true); showReveal();
   } else {
     btn.classList.add('wrong','shake'); btn.disabled = true;
     setTimeout(function(){ btn.classList.remove('shake'); }, 420);
     SFX.bad();
   }
-}
-function showReveal(){
-  var r = document.getElementById('reveal');
-  if (r) r.classList.add('show');
 }
 
 /* ============================================================
@@ -584,10 +822,7 @@ function renderSplit(){
       '<button class="btn" id="btnMean">Show meaning</button>'+
       '<button class="btn primary" id="btnNext2">'+(d.o && SP.round===1 ? 'Next round' : 'Next verb')+'</button>'+
     '</div>'+
-    '<div class="reveal" id="reveal">'+
-      '<p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
-      '<p class="rule">'+TYPE_RULE[d.t]+'</p>'+
-    '</div>';
+    revealHTML(d);
 
   paintSplit();
   document.getElementById('btnClear').addEventListener('click', function(){
@@ -601,7 +836,7 @@ function renderSplit(){
 }
 function advanceSplit(){
   var d = S.item;
-  if (d.o && SP.round === 1){ SP.round = 2; renderSplit(); }
+  if (d && d.o && SP.round === 1){ SP.round = 2; renderSplit(); }
   else { SP.round = 1; nextItem(); renderSplit(); }
 }
 function paintSplit(){
@@ -740,158 +975,232 @@ function paintWebDetail(family){
 }
 
 /* ============================================================
-   MODE: SHOWDOWN
+   MODE: SHOWDOWN — teams take turns
    ============================================================ */
-function renderShowdownSetup(){
-  stage.innerHTML =
-    '<div class="meta-row"><span class="badge">team game</span></div>'+
-    '<p class="sentence" style="font-size:clamp(20px,2.6vw,30px)">Two to four teams. One verb at a time. Tap the team that answers first.</p>'+
-    '<div class="sd-setup" style="margin-top:26px">'+
-      '<div class="field"><label for="sdTeams">Teams</label>'+
-        '<select id="sdTeams"><option>2</option><option>3</option><option>4</option></select></div>'+
-      '<div class="field"><label for="sdTime">Round length</label>'+
-        '<select id="sdTime"><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option><option value="0">No timer</option></select></div>'+
-      '<div class="field" style="flex:1 1 260px"><label for="sdNames">Team names (comma separated)</label>'+
-        '<input id="sdNames" placeholder="Lions, Tigers"></div>'+
-    '</div>'+
-    '<div class="controls"><button class="btn primary" id="sdStart">Start the round</button></div>';
-  document.getElementById('sdStart').addEventListener('click', startShowdown);
-}
-function startShowdown(){
-  var n = parseInt(document.getElementById('sdTeams').value,10);
-  var secs = parseInt(document.getElementById('sdTime').value,10);
-  var raw = document.getElementById('sdNames').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+function newShowdown(){
   var teams = [];
-  for (var i=0;i<n;i++) teams.push({ name: raw[i] || ('Team '+(i+1)), score: 0 });
-  S.sd = { teams: teams, secs: secs, left: secs, timer: null, live: true };
+  for (var i=0;i<S.teamCount;i++){
+    teams.push({ name: (S.teamNames[i] || '').trim() || ('Team '+(i+1)), score: 0 });
+  }
+  S.sd = {
+    teams: teams,
+    turn: 0,          // whose turn it is
+    turnNo: 1,        // turns played
+    tried: [],        // team indexes that have missed this verb
+    left: S.turnSecs,
+    timer: null,
+    phase: 'live',    // live | resolved | over
+    result: ''
+  };
   nextItem();
-  renderShowdown();
-  if (secs > 0) tickShowdown();
 }
-function tickShowdown(){
-  clearInterval(S.sd.timer);
-  S.sd.timer = setInterval(function(){
+var sdTimerId = null;
+function sdStopTimer(){
+  if (sdTimerId){ clearInterval(sdTimerId); sdTimerId = null; }
+  if (S.sd) S.sd.timer = null;
+}
+function sdStartTimer(){
+  sdStopTimer();
+  if (!S.turnSecs || !S.sd) return;
+  S.sd.left = S.turnSecs;
+  sdTimerId = setInterval(function(){
+    if (!S.sd || S.sd.phase !== 'live'){ sdStopTimer(); return; }
     S.sd.left--;
     var el = document.getElementById('sdTimer');
     if (el){
       el.textContent = S.sd.left + 's';
       el.className = 'timer' + (S.sd.left <= 10 ? ' low' : '');
     }
-    if (S.sd.left <= 0){ clearInterval(S.sd.timer); S.sd.live = false; SFX.buzz(); renderShowdown(); }
+    if (S.sd.left <= 0){ sdStopTimer(); sdMiss(true); }
   }, 1000);
+  S.sd.timer = sdTimerId;
 }
-function renderShowdown(){
+function sdNextTeam(){ S.sd.turn = (S.sd.turn + 1) % S.sd.teams.length; }
+
+function sdHit(){
+  var sd = S.sd, d = S.item;
+  sdStopTimer();
+  sd.teams[sd.turn].score++;
+  sd.phase = 'resolved';
+  sd.result = sd.teams[sd.turn].name + ' takes the point.';
+  SFX.good(); bumpTally(true);
+  renderShowdown();
+}
+function sdMiss(timedOut){
   var sd = S.sd;
-  if (!sd) { renderShowdownSetup(); return; }
+  sdStopTimer();
+  if (sd.tried.indexOf(sd.turn) < 0) sd.tried.push(sd.turn);
+  var everyoneTried = sd.tried.length >= sd.teams.length;
+
+  if (S.steal && !everyoneTried){
+    var missed = sd.teams[sd.turn].name;
+    sdNextTeam();
+    while (sd.tried.indexOf(sd.turn) > -1) sdNextTeam();
+    sd.result = missed + (timedOut ? ' ran out of time. ' : ' missed. ') + sd.teams[sd.turn].name + ' can steal it.';
+    SFX.pass();
+    sdStartTimer();
+    renderShowdown();
+  } else {
+    sd.phase = 'resolved';
+    sd.result = timedOut ? 'Time. Nobody takes the point.' : 'No point this time.';
+    SFX.buzz(); bumpTally(false);
+    renderShowdown();
+  }
+}
+function sdAdvance(){
+  var sd = S.sd;
+  sd.turnNo++;
+  sd.tried = [];
+  sd.phase = 'live';
+  sd.result = '';
+  sdNextTeam();
+  nextItem();
+  renderShowdown();
+  sdStartTimer();
+}
+function sdFinish(){
+  sdStopTimer();
+  S.sd.phase = 'over';
+  SFX.win();
+  renderShowdown();
+}
+
+function renderShowdown(){
+  if (!S.sd) { newShowdown(); sdStartTimer(); }
+  var sd = S.sd;
+
+  if (sd.phase === 'over'){ renderStandings(); return; }
   if (!S.item) { stage.innerHTML = emptyMsg(); return; }
+
   var d = S.item;
-  var best = Math.max.apply(null, sd.teams.map(function(t){ return t.score; }));
+  var live = (sd.phase === 'live');
   var opts = shuffle(distractors(d,4).concat([d.p]));
-  var objBit = d.o ? ' ' + d.o : '';
 
   stage.innerHTML =
-    '<div class="meta-row">'+
-      '<span class="badge lvl">'+d.l+'</span>'+
-      '<span class="badge">'+TYPE_NAME[d.t]+'</span>'+
-      (sd.secs>0 ? '<span class="timer" id="sdTimer" style="margin-left:auto">'+Math.max(sd.left,0)+'s</span>' : '')+
+    '<div class="turn-bar">'+
+      '<div><div class="turn-now"><span>'+sd.teams[sd.turn].name+'</span>'+(live?' to answer':'')+'</div>'+
+      '<div class="turn-no">Turn '+sd.turnNo+' &middot; '+d.l+' &middot; '+TYPE_NAME[d.t]+'</div></div>'+
+      (S.turnSecs && live ? '<div class="timer" id="sdTimer">'+Math.max(sd.left,0)+'s</div>' : '')+
     '</div>'+
-    (sd.live
-      ? '<p class="sentence">'+d.pre+' <span class="verb-hl">'+d.v+'</span> '+
-        '<span class="gap" id="gap">&nbsp;&nbsp;&nbsp;</span>'+objBit+joinPost(d.post)+'</p>'+
-        '<div class="chips" id="chips">'+opts.map(function(p,i){
-          return '<button class="chip" data-p="'+p+'"><kbd>'+(i+1)+'</kbd>'+p+'</button>';
-        }).join('')+'</div>'
-      : '<p class="sentence">Time. <span class="verb-hl">'+leader(sd)+'</span></p>')+
-    '<div class="reveal" id="reveal"><p class="mean"><b>'+d.v+' '+d.p+'</b> &mdash; '+d.m+'</p>'+
-      '<p class="rule">'+TYPE_RULE[d.t]+'</p></div>'+
-    '<p class="hint" style="margin-top:20px">Tap a team to give it the point.</p>'+
+    questionHTML(d)+
+    (live ? chipsHTML(opts) : '<p class="verdict ok" style="margin-top:22px">'+sd.result+'</p>')+
+    revealHTML(d)+
     '<div class="scoreboard">'+sd.teams.map(function(t,i){
-      return '<button class="team'+(t.score===best&&best>0?' lead':'')+'" data-i="'+i+'">'+
-             '<div class="tn">'+t.name+'</div><div class="ts">'+t.score+'</div></button>';
+      var cls = 'team' + (i===sd.turn && live ? ' active' : '') + (sd.tried.indexOf(i)>-1 ? ' out' : '');
+      return '<div class="'+cls+'"><div class="adj">'+
+             '<button data-adj="-1" data-i="'+i+'" aria-label="Remove a point from '+t.name+'">&minus;</button>'+
+             '<button data-adj="1" data-i="'+i+'" aria-label="Give a point to '+t.name+'">+</button></div>'+
+             '<div class="tn">'+t.name+'</div><div class="ts">'+t.score+'</div></div>';
     }).join('')+'</div>'+
     '<div class="controls">'+
+      (live ? '<button class="btn" id="sdPass">Pass</button>' : '')+
       '<button class="btn" id="sdReveal">Show answer</button>'+
-      '<button class="btn primary" id="sdNext">Next verb</button>'+
-      (sd.live ? '' : '<button class="btn" id="sdAgain">New round</button>')+
+      (live ? '' : '<button class="btn primary" id="sdNext">Next turn</button>')+
       '<button class="btn" id="sdEnd">End game</button>'+
     '</div>';
 
+  if (!live){ fillGap(d.p); showReveal(); }
+
   Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(b){
     b.addEventListener('click', function(){
-      if (b.getAttribute('data-p') === d.p){
-        var gap = document.getElementById('gap');
-        gap.textContent = d.p; gap.classList.add('filled');
-        Array.prototype.forEach.call(stage.querySelectorAll('.chip'), function(x){ x.disabled = true; });
-        SFX.good(); showReveal();
-      } else { b.classList.add('wrong','shake'); b.disabled = true; SFX.bad(); }
+      if (S.sd.phase !== 'live') return;
+      if (b.getAttribute('data-p') === d.p){ fillGap(d.p); lockChips(); sdHit(); }
+      else { b.classList.add('wrong','shake'); b.disabled = true; sdMiss(false); }
     });
   });
-  Array.prototype.forEach.call(stage.querySelectorAll('.team'), function(b){
+  Array.prototype.forEach.call(stage.querySelectorAll('.adj button'), function(b){
     b.addEventListener('click', function(){
-      sd.teams[parseInt(b.getAttribute('data-i'),10)].score++;
-      SFX.point(); renderShowdown();
+      var i = parseInt(b.getAttribute('data-i'),10);
+      var by = parseInt(b.getAttribute('data-adj'),10);
+      sd.teams[i].score = Math.max(0, sd.teams[i].score + by);
+      SFX.flip(); renderShowdown();
     });
   });
+  var pass = document.getElementById('sdPass');
+  if (pass) pass.addEventListener('click', function(){ sdMiss(false); });
   document.getElementById('sdReveal').addEventListener('click', function(){
-    var gap = document.getElementById('gap');
-    if (gap){ gap.textContent = d.p; gap.classList.add('filled'); }
-    showReveal();
+    fillGap(d.p); lockChips(); showReveal();
   });
-  document.getElementById('sdNext').addEventListener('click', function(){ nextItem(); renderShowdown(); });
-  document.getElementById('sdEnd').addEventListener('click', function(){
-    clearInterval(sd.timer); SFX.win(); S.sd = null; renderShowdownSetup();
-  });
-  var again = document.getElementById('sdAgain');
-  if (again) again.addEventListener('click', function(){
-    sd.left = sd.secs; sd.live = true; nextItem(); renderShowdown(); if (sd.secs>0) tickShowdown();
-  });
+  var nxt = document.getElementById('sdNext');
+  if (nxt) nxt.addEventListener('click', sdAdvance);
+  document.getElementById('sdEnd').addEventListener('click', sdFinish);
 }
-function leader(sd){
+function renderStandings(){
+  var sd = S.sd;
   var sorted = sd.teams.slice().sort(function(a,b){ return b.score - a.score; });
-  if (sorted[0].score === 0) return 'Nobody scored this round.';
-  if (sorted[1] && sorted[0].score === sorted[1].score) return 'It is a tie on ' + sorted[0].score + '.';
-  return sorted[0].name + ' leads with ' + sorted[0].score + '.';
+  var top = sorted[0].score;
+  var winners = sorted.filter(function(t){ return t.score === top; });
+  var head = top === 0 ? 'No points scored.'
+           : winners.length > 1 ? 'A tie on ' + top + '.'
+           : winners[0].name + ' wins.';
+
+  stage.innerHTML =
+    '<div class="meta-row"><span class="badge">'+(sd.turnNo)+' turns played</span></div>'+
+    '<p class="sentence">'+head+'</p>'+
+    '<div class="standings">'+sorted.map(function(t,i){
+      return '<div class="standing'+(t.score===top && top>0 ? ' first' : '')+'">'+
+             '<span class="pos">'+(i+1)+'</span><span class="nm">'+t.name+'</span>'+
+             '<span class="sc">'+t.score+'</span></div>';
+    }).join('')+'</div>'+
+    '<div class="controls">'+
+      '<button class="btn primary" id="sdAgain">Play again</button>'+
+      '<button class="btn" id="sdSettings">Change settings</button>'+
+    '</div>';
+  document.getElementById('sdAgain').addEventListener('click', function(){
+    S.sd = null; buildDeck(); renderShowdown();
+  });
+  document.getElementById('sdSettings').addEventListener('click', openSettings);
 }
 
 /* ============================================================
-   FILTERS + MODE SWITCHING
+   FILTER BAR (in-app, mirrors start screen)
    ============================================================ */
-function emptyMsg(){
-  return '<p class="web-empty">No verbs match these filters. Turn a level or a type back on above.</p>';
-}
-function buildFilters(){
+var filterBarBuilt = false;
+function buildFilterBar(){
+  if (filterBarBuilt) return;
+  filterBarBuilt = true;
   var lv = document.getElementById('levelFilters');
   ['A1','A2','B1','B2'].forEach(function(l){
     var b = document.createElement('button');
-    b.className = 'chip-f'; b.textContent = l;
-    b.setAttribute('aria-pressed', S.levels.indexOf(l)>-1);
+    b.className = 'chip-f'; b.textContent = l; b.setAttribute('data-l', l);
     b.addEventListener('click', function(){
       var i = S.levels.indexOf(l);
       if (i>-1){ if (S.levels.length===1) return; S.levels.splice(i,1); } else S.levels.push(l);
-      b.setAttribute('aria-pressed', S.levels.indexOf(l)>-1);
-      refresh();
+      syncFilterBar(); refresh();
     });
     lv.appendChild(b);
   });
   var tp = document.getElementById('typeFilters');
-  [[2,'separable'],[3,'inseparable'],[1,'no object'],[4,'three-word']].forEach(function(pair){
+  TYPE_OPTS.forEach(function(pair){
     var b = document.createElement('button');
-    b.className = 'chip-f'; b.textContent = pair[1];
-    b.setAttribute('aria-pressed','true');
+    b.className = 'chip-f'; b.textContent = pair[1]; b.setAttribute('data-t', pair[0]);
     b.addEventListener('click', function(){
       var i = S.types.indexOf(pair[0]);
       if (i>-1){ if (S.types.length===1) return; S.types.splice(i,1); } else S.types.push(pair[0]);
-      b.setAttribute('aria-pressed', S.types.indexOf(pair[0])>-1);
-      refresh();
+      syncFilterBar(); refresh();
     });
     tp.appendChild(b);
+  });
+}
+function syncFilterBar(){
+  buildFilterBar();
+  Array.prototype.forEach.call(document.querySelectorAll('#levelFilters .chip-f'), function(b){
+    b.setAttribute('aria-pressed', S.levels.indexOf(b.getAttribute('data-l')) > -1);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#typeFilters .chip-f'), function(b){
+    b.setAttribute('aria-pressed', S.types.indexOf(parseInt(b.getAttribute('data-t'),10)) > -1);
   });
 }
 function refresh(){
   buildDeck();
   SP.round = 1;
-  if (S.mode !== 'showdown') nextItem();
-  render();
+  if (S.mode === 'showdown'){
+    if (S.sd && S.sd.phase !== 'over'){ nextItem(); S.sd.tried = []; S.sd.phase = 'live'; S.sd.result=''; }
+    render();
+  } else {
+    nextItem();
+    render();
+  }
 }
 function render(){
   if (S.mode === 'drop') renderDrop();
@@ -899,35 +1208,42 @@ function render(){
   else if (S.mode === 'web') renderWeb();
   else renderShowdown();
 }
+
 Array.prototype.forEach.call(document.querySelectorAll('.mode-tab'), function(tab){
   tab.addEventListener('click', function(){
     Array.prototype.forEach.call(document.querySelectorAll('.mode-tab'), function(t){
       t.setAttribute('aria-selected', t === tab);
     });
-    if (S.sd){ clearInterval(S.sd.timer); }
+    sdStopTimer();
     S.mode = tab.getAttribute('data-mode');
-    if (S.mode === 'showdown') S.sd = null;
     SP.round = 1;
     if (S.mode !== 'web' && !S.item) nextItem();
+    if (S.mode === 'showdown' && (!S.sd || S.sd.phase === 'over')){ S.sd = null; }
     render();
+    if (S.mode === 'showdown' && S.sd && S.sd.phase === 'live') sdStartTimer();
   });
 });
+document.getElementById('btnSettings').addEventListener('click', openSettings);
+document.getElementById('btnStart').addEventListener('click', startApp);
 
 /* ============================================================
    KEYBOARD
    ============================================================ */
 document.addEventListener('keydown', function(e){
   if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+  if (!startScreen.classList.contains('hide')){
+    if (e.key === 'Enter' && !document.getElementById('btnStart').disabled) startApp();
+    return;
+  }
   var k = e.key;
   if (k >= '1' && k <= '5'){
-    var chips = stage.querySelectorAll('.chip');
-    var c = chips[parseInt(k,10)-1];
+    var c = stage.querySelectorAll('.chip')[parseInt(k,10)-1];
     if (c && !c.disabled) c.click();
   } else if (k === 'ArrowRight'){
     e.preventDefault();
     if (S.mode === 'drop'){ nextItem(); renderDrop(); }
     else if (S.mode === 'split'){ advanceSplit(); }
-    else if (S.mode === 'showdown' && S.sd){ nextItem(); renderShowdown(); }
+    else if (S.mode === 'showdown' && S.sd && S.sd.phase === 'resolved'){ sdAdvance(); }
   } else if (k === ' '){
     e.preventDefault(); showReveal();
   } else if (k === 'r' || k === 'R'){
@@ -941,10 +1257,7 @@ document.addEventListener('keydown', function(e){
 /* ============================================================
    BOOT
    ============================================================ */
-buildFilters();
-buildDeck();
-nextItem();
-render();
+renderStart();
 </script>
 </body>
 </html>
