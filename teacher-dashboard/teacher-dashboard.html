@@ -890,6 +890,23 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     .pill{padding:9px 14px;}
   }
 
+  /* ---------- attention queue + housekeeping (P2) ---------- */
+  .attn-row{align-items:flex-start;}
+  .attn-row .dash-row-left{align-items:flex-start;flex:1;min-width:0;}
+  .attn-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0;}
+  .attn-count{font-weight:400;font-size:13px;color:var(--muted);}
+  .attn-detail{margin-top:8px;border-left:2px solid var(--border);padding-left:11px;display:flex;flex-direction:column;gap:9px;}
+  .attn-sig{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;}
+  .attn-sig-acts{display:flex;gap:6px;flex-wrap:wrap;}
+  .attn-more{white-space:nowrap;}
+  .hk-group{padding-top:10px;}
+  .hk-group + .hk-group{margin-top:6px;border-top:1px solid var(--border);}
+  .hk-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-bottom:2px;}
+  @media(max-width:700px){
+    .attn-row{flex-direction:column;align-items:stretch;}
+    .attn-acts{justify-content:flex-start;}
+  }
+
   /* ---------- mobile bottom nav ---------- */
   .mobile-nav{display:none;}
   @media(max-width:760px){
@@ -1113,6 +1130,7 @@ let state = {
   projOpenTeamId: null,
   showArchived: false,
   showDashEC: false,
+  showDashHk: true,      // P2: Housekeeping strip open by default
   showClubCard: true,
   // Private lessons
   privateStudents: [],
@@ -3884,26 +3902,6 @@ function _renderDashboard(el){
 
   // — Contact Parents (group students) —
   const cpStudents = sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; }));
-  window._dashCpIds = cpStudents.map(s=>s.id);
-  const cpHtml = cpStudents.length ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
-      <h3>📞 Contact Parents</h3>
-      ${cpStudents.map((s,i)=>{ const c=classById(s.classId); return `
-        <div class="dash-row">
-          <div class="dash-row-left">
-            ${c?`<span class="color-dot" style="background:${c.color}"></span>`:''}
-            <div>
-              <div class="dash-row-title">${esc(s.name)} <span class="badge red" style="margin-left:6px;">${esc(s.contactParents.category)}</span></div>
-              <div class="dash-row-sub">${esc(s.contactParents.reason)}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashCpIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="clearContactParents(window._dashCpIds[${i}])" title="Log the call and mark done">✓ Done</button>
-            <button class="icon-btn danger" onclick="discardContactParents(window._dashCpIds[${i}])" title="Discard — no longer needed, nothing logged">✕</button>
-          </div>
-        </div>`; }).join('')}
-    </div>` : '';
 
   // — Reminders (private students: adults, so it's "send that link", not "call home") —
   const remStudents = sortByName(state.privateStudents.filter(s=>s.contactParents?.reason));
@@ -3980,9 +3978,9 @@ function _renderDashboard(el){
   window._dashStaleIds = staleLessons.map(l=>l.id);
   window._dashStaleStudentIds = staleLessons.map(l=>l.studentId);
   const staleHtml = staleLessons.length ? `
-    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
-      <h3>⏰ Private lessons awaiting status</h3>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">These are past their scheduled time but still flagged as "scheduled". Mark them so hours and payments stay accurate.</div>
+    <div class="hk-group">
+      <div class="hk-label">⏰ PRIVATE LESSONS AWAITING STATUS (${staleLessons.length})</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Past their scheduled time but still flagged as "scheduled". Mark them so hours and payments stay accurate.</div>
       ${staleLessons.map((l,i)=>`
         <div class="dash-row">
           <div class="dash-row-left">
@@ -4001,8 +3999,8 @@ function _renderDashboard(el){
     </div>` : '';
 
   const pendingHtml = pendingCompletions.length ? `
-    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
-      <h3>⏳ Sessions awaiting completion</h3>
+    <div class="hk-group">
+      <div class="hk-label">⏳ SESSIONS AWAITING COMPLETION (${pendingCompletions.length})</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">These have roll call data but aren't marked complete yet, so they're not counted in reports.</div>
       ${pendingCompletions.map((p,i)=>`
         <div class="dash-row">
@@ -4023,7 +4021,7 @@ function _renderDashboard(el){
   // — Backup reminder —
   const backupDays = daysSinceLastBackup();
   const backupHtml = backupDays >= 7 ? `
-    <div class="card section" style="margin-bottom:16px;border-left:4px solid var(--amber);">
+    <div class="hk-group">
       <div class="dash-row" style="align-items:center;">
         <div class="dash-row-left">
           <div>
@@ -4097,70 +4095,7 @@ function _renderDashboard(el){
     });
   });
 
-  window._dashTwoRowIds = twoInRow.map(x=>x.id);
-  window._dashMissIds = missedAssess.map(x=>x.id);
-  window._dashEssayIds = missedEssay.map(x=>x.id);
-  window._dashEssayKeys = missedEssay.map(x=>x.key);
-  window._dashEssayWhy = missedEssay.map(x=>
-    `${x.label} not written \u2014 due ${formatDateShort(x.date)}${x.topic?' \u2014 '+x.topic:''}${x.wasAbsent?' (absent that day)':''}`);
-  window._dashTwoRowKeys = twoInRow.map(x=>x.key);
-  window._dashMissKeys = missedAssess.map(x=>x.key);
-  window._dashTwoRowWhy = twoInRow.map(x=>`Missed two classes in a row (${formatDateShort(x.d1)} & ${formatDateShort(x.d2)})`);
-  window._dashMissWhy = missedAssess.map(x=>`Absent for a ${eventTypeLabel(x.type).toLowerCase()} on ${formatDateShort(x.date)}${x.title?' — '+x.title:''}`);
-
   const attnDot = classId => { const c=classById(classId); return c?`<span class="color-dot" style="background:${c.color}"></span>`:''; };
-  const attnAlertHtml = (twoInRow.length || missedAssess.length || missedEssay.length) ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
-      <h3>📞 Attendance — contact parents</h3>
-      ${twoInRow.length ? `
-        <div class="dash-row-sub" style="margin:2px 0 6px;font-weight:600;">Missed two classes in a row</div>
-        ${twoInRow.map((x,i)=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              ${attnDot(x.classId)}
-              <div>
-                <div class="dash-row-title">${esc(x.name)}</div>
-                <div class="dash-row-sub">Absent ${formatDateShort(x.d1)} &amp; ${formatDateShort(x.d2)}</div>
-              </div>
-            </div>
-            <span style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashTwoRowIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashTwoRowIds[${i}], window._dashTwoRowKeys[${i}], window._dashTwoRowWhy[${i}])" title="Log the call and clear this alert">✓ Done</button>
-            </span>
-          </div>`).join('')}` : ''}
-      ${missedAssess.length ? `
-        <div class="dash-row-sub" style="margin:${twoInRow.length?'12px':'2px'} 0 6px;font-weight:600;">Missed a test or review</div>
-        ${missedAssess.map((x,i)=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              ${attnDot(x.classId)}
-              <div>
-                <div class="dash-row-title">${esc(x.name)} <span class="badge ${x.type}" style="margin-left:6px;">${eventTypeLabel(x.type)}</span></div>
-                <div class="dash-row-sub">Absent ${formatDateShort(x.date)}${x.title?' · '+esc(x.title):''}</div>
-              </div>
-            </div>
-            <span style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashMissIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashMissIds[${i}], window._dashMissKeys[${i}], window._dashMissWhy[${i}])" title="Log the call and clear this alert">✓ Done</button>
-            </span>
-          </div>`).join('')}` : ''}
-      ${missedEssay.length ? `
-        <div class="dash-row-sub" style="margin:${(twoInRow.length||missedAssess.length)?'12px':'2px'} 0 6px;font-weight:600;">\u270d\ufe0f Essay not written</div>
-        ${missedEssay.map((x,i)=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              ${attnDot(x.classId)}
-              <div>
-                <div class="dash-row-title">${esc(x.name)} <span class="badge test" style="margin-left:6px;">${esc(x.label)}</span></div>
-                <div class="dash-row-sub">${x.wasAbsent?'Absent on':'No mark recorded for'} ${formatDateShort(x.date)}${x.topic?' \u00b7 '+esc(x.topic):''}</div>
-              </div>
-            </div>
-            <span style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button class="btn-ghost small" onclick="openGradesModal('${x.classId}'); gmSetTab('essays');" title="Enter the essay score">Grades \u2192</button>
-              <button class="btn-ghost small" onclick="openAttendanceCallModal(window._dashEssayIds[${i}], window._dashEssayKeys[${i}], window._dashEssayWhy[${i}])" title="Log the call and clear this alert">\u2713 Done</button>
-            </span>
-          </div>`).join('')}` : ''}
-    </div>` : '';
 
   // — Grades alerts: contact parents —
   // Non-advanced: running average of entered tests under 80 (240-point cycle),
@@ -4204,66 +4139,59 @@ function _renderDashboard(el){
   // — At-risk: combined signals (attendance dip + homework + grades) —
   const risks = state.students.map(riskAssess).filter(Boolean)
     .sort((a,b)=> b.score-a.score || byName(a,b));
-  window._dashRiskIds = risks.map(x=>x.studentId);
-  const riskHtml = risks.length ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--purple);">
-      <h3>⚠️ At-risk students <span style="font-weight:400;font-size:13px;color:var(--muted);">— two or more warning signs together</span></h3>
-      ${risks.map((x,i)=>`
-        <div class="dash-row">
-          <div class="dash-row-left">
-            ${attnDot(x.classId)}
-            <div>
-              <div class="dash-row-title">${esc(x.name)}
-                ${x.signals.map(sg=>`<span class="badge ${sg.sev>=2?'red':'amber'}" style="margin-left:6px;font-size:11px;">${RISK_ICON[sg.kind]||''} ${sg.kind}</span>`).join('')}
-              </div>
-              <div class="dash-row-sub">${esc(classById(x.classId)?.name||'')} · ${x.signals.map(sg=>esc(sg.text)).join(' · ')}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashRiskIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="openContactParentsModal(window._dashRiskIds[${i}])" title="Flag contact parents">📞 Flag</button>
-          </div>
-        </div>`).join('')}
-    </div>` : '';
 
-  window._dashGradeIds = gradeAlerts.map(x=>x.id);
-  window._dashGradeClassIds = gradeAlerts.map(x=>x.classId);
-  window._dashMissTestIds = missedTests.map(x=>x.id);
-  window._dashMissTestClassIds = missedTests.map(x=>x.classId);
-  const gradesAlertHtml = (gradeAlerts.length || missedTests.length) ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--red);">
-      <h3>📝 Grades — contact parents</h3>
-      ${gradeAlerts.map((x,i)=>`
-        <div class="dash-row">
+  /* — One attention queue —
+     Every signal above, merged into one row per student. Actions are stashed
+     as closures rather than serialised into onclick strings, so student names
+     and essay topics can contain anything without breaking or injecting. */
+  const attnQueue = buildAttentionQueue({ cpStudents, twoInRow, missedAssess, missedEssay, missedTests, gradeAlerts, risks });
+  const attnActs = [];
+  const A = fn => { attnActs.push(fn); return attnActs.length-1; };
+  const actBtn = a => `<button class="btn-ghost small" ${a.danger?'style="color:var(--red);"':''}${a.title?` title="${esc(a.title)}"`:''} onclick="window._attnActions[${A(a.run)}]()">${esc(a.label)}</button>`;
+  const attnSevWord = n => n>=3 ? 'flagged' : n>=2 ? 'needs a call' : 'early warning';
+  const attnHtml = attnQueue.length ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid ${attnQueue[0].sev>=2?'var(--red)':'var(--amber)'};">
+      <h3>⚠️ Needs attention <span class="attn-count">— ${attnQueue.length} student${attnQueue.length===1?'':'s'}, ${attnQueue.reduce((n,r)=>n+r.signals.length,0)} warning${attnQueue.reduce((n,r)=>n+r.signals.length,0)===1?'':'s'}</span></h3>
+      ${attnQueue.map(r=>{
+        const cls = classById(r.classId);
+        const one = r.signals.length===1;
+        const open = dashAttnOpen.has(r.studentId);
+        return `
+        <div class="dash-row attn-row">
           <div class="dash-row-left">
-            ${attnDot(x.classId)}
-            <div>
-              <div class="dash-row-title">${esc(x.name)} <span class="badge ${x.st.under?'red':'amber'}" style="margin-left:6px;">${x.st.under?(x.st.advanced?'TOEFL below target':'Avg under 80'):(x.st.advanced?'Close to target':'Close to 80')}</span></div>
-              <div class="dash-row-sub">${esc(classById(x.classId)?.name||'')} · ${esc(x.cycleLabel)} · ${gradeStatusLine(x.st,'en')}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-ghost small" onclick="openGradesModal(window._dashGradeClassIds[${i}])">Grades →</button>
-            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:window._dashGradeIds[${i}],studentProfileReturn:'reports'})">Report →</button>
-            <button class="icon-btn" onclick="openContactParentsModal(window._dashGradeIds[${i}])" title="Flag contact parents">📞 Flag</button>
-          </div>
-        </div>`).join('')}
-      ${missedTests.length ? `
-        <div class="dash-row-sub" style="margin:${gradeAlerts.length?'12px':'2px'} 0 6px;font-weight:600;">Missed a scheduled test</div>
-        ${missedTests.map((x,i)=>`
-          <div class="dash-row">
-            <div class="dash-row-left">
-              ${attnDot(x.classId)}
-              <div>
-                <div class="dash-row-title">${esc(x.name)} <span class="badge test" style="margin-left:6px;">${esc(x.testLabel)}</span></div>
-                <div class="dash-row-sub">${esc(classById(x.classId)?.name||'')} · ${esc(x.cycleLabel)} · Absent ${formatDateShort(x.date)} — no make-up score entered yet</div>
+            ${cls?`<span class="color-dot" style="background:${cls.color};margin-top:6px;flex-shrink:0;"></span>`:''}
+            <div style="min-width:0;">
+              <div class="dash-row-title">${esc(r.name)}
+                ${r.signals.map(sg=>`<span class="badge ${sg.sev>=2?'red':'amber'}" style="margin-left:6px;font-size:11px;">${sg.icon} ${esc(sg.label)}</span>`).join('')}
               </div>
+              <div class="dash-row-sub">${esc(cls?cls.name:'')}${one?' · '+esc(r.signals[0].text):' · '+attnSevWord(r.sev)}</div>
+              ${!one && open ? `<div class="attn-detail">${r.signals.map(sg=>`
+                <div class="attn-sig">
+                  <div style="min-width:0;"><b>${sg.icon} ${esc(sg.label)}</b> — ${esc(sg.text)}</div>
+                  ${sg.actions.length?`<div class="attn-sig-acts">${sg.actions.map(actBtn).join('')}</div>`:''}
+                </div>`).join('')}</div>` : ''}
             </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn-ghost small" onclick="openGradesModal(window._dashMissTestClassIds[${i}])">Grades →</button>
-              <button class="icon-btn" onclick="openContactParentsModal(window._dashMissTestIds[${i}])" title="Flag contact parents">📞 Flag</button>
-            </div>
-          </div>`).join('')}` : ''}
+          </div>
+          <div class="attn-acts">
+            ${one
+              ? r.signals[0].actions.map(actBtn).join('')
+              : `<button class="btn-ghost small attn-more" aria-expanded="${open}" onclick="toggleAttnRow('${r.studentId}')">${open?'▾ Hide':'▸ '+r.signals.length+' warnings'}</button>`}
+            <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${r.studentId}',studentProfileReturn:'classes'})">Report →</button>
+            ${r.flagged?'':`<button class="icon-btn" title="Flag to contact parents" onclick="openContactParentsModal('${r.studentId}')">📞 Flag</button>`}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+  window._attnActions = attnActs;
+
+  const hkCount = (backupDays>=7?1:0) + pendingCompletions.length + staleLessons.length;
+  const hkHtml = hkCount ? `
+    <div class="card section" style="margin-top:16px;border-left:4px solid var(--amber);">
+      <button type="button" class="dash-row-left" aria-expanded="${state.showDashHk!==false}" onclick="state.showDashHk = state.showDashHk===false; refreshView();">
+        <span class="chevron" aria-hidden="true">${state.showDashHk!==false?'▾':'▸'}</span>
+        <span class="section-title" style="margin:0;">🧹 Housekeeping (${hkCount})</span>
+      </button>
+      ${state.showDashHk!==false ? `${pendingHtml}${staleHtml}${backupHtml}` : ''}
     </div>` : '';
 
   el.innerHTML = `
@@ -4273,9 +4201,6 @@ function _renderDashboard(el){
       <div class="card stat"><div class="stat-num">${state.students.filter(s=>{const c=classById(s.classId);return c&&!c.archived;}).length}</div><div class="stat-label">Students</div></div>
       <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
     </div>
-    ${backupHtml}
-    ${pendingHtml}
-    ${staleHtml}
     <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
       <div class="card section"><h3>Today's Classes</h3>${todayHtml}${privTodayHtml}</div>
       <div class="card section">
@@ -4289,13 +4214,102 @@ function _renderDashboard(el){
         ${upcomingHtml}
       </div>
     </div>
-    ${riskHtml}
-    ${gradesAlertHtml}
-    ${attnAlertHtml}
-    ${cpHtml}
+    ${attnHtml}
     ${remHtml}
+    ${hkHtml}
     ${ecHtml}
   `;
+}
+
+/* ================= ATTENTION QUEUE (P2) =================
+   The dashboard used to stack four separate red cards — At-risk, Grades,
+   Attendance and the manual Contact Parents flag — each of which could hold
+   the SAME student, with no way to tell. buildAttentionQueue merges every
+   signal into one row per student, keeping each signal's own text and its own
+   clear/discard action so the existing alertHandled keys are untouched.
+   Purely derived: no new state key, nothing written.                     */
+
+const dashAttnOpen = new Set();          // studentIds whose detail is expanded
+function toggleAttnRow(id){
+  dashAttnOpen.has(id) ? dashAttnOpen.delete(id) : dashAttnOpen.add(id);
+  refreshView();
+}
+
+/* src carries the alert lists the dashboard already computes. Each signal is
+   {kind, sev, icon, label, text, actions:[{label,title,danger,run}]}; sev 3 is
+   a manual flag, 2 something concrete and overdue, 1 an early warning. */
+function buildAttentionQueue(src){
+  src = src || {};
+  const rows = new Map();
+  const push = (id, name, classId, sig) => {
+    if(!rows.has(id)) rows.set(id, { studentId:id, name, classId, signals:[] });
+    rows.get(id).signals.push(sig);
+  };
+  const dateS = d => (typeof formatDateShort==='function' ? formatDateShort(d) : d);
+
+  (src.cpStudents||[]).forEach(s=> push(s.id, s.name, s.classId, {
+    kind:'flag', sev:3, icon:'\ud83d\udcde',
+    label: (s.contactParents && s.contactParents.category) || 'Flagged',
+    text: (s.contactParents && s.contactParents.reason) || 'Flagged to contact parents',
+    actions:[
+      { label:'\u2713 Logged', title:'Log the call and clear the flag', run:()=>clearContactParents(s.id) },
+      { label:'\u2715 Discard', title:'No longer needed \u2014 nothing logged', danger:true, run:()=>discardContactParents(s.id) }
+    ]
+  }));
+
+  (src.twoInRow||[]).forEach(x=> push(x.id, x.name, x.classId, {
+    kind:'attendance', sev:2, icon:'\ud83d\udeaa', label:'2 in a row',
+    text:`Absent ${dateS(x.d1)} & ${dateS(x.d2)}`,
+    actions:[{ label:'\u2713 Log call', title:'Log the call and clear this alert',
+      run:()=>openAttendanceCallModal(x.id, x.key, `Missed two classes in a row (${dateS(x.d1)} & ${dateS(x.d2)})`) }]
+  }));
+
+  (src.missedAssess||[]).forEach(x=>{
+    const what = eventTypeLabel(x.type).toLowerCase();
+    push(x.id, x.name, x.classId, {
+      kind:'missed-assessment', sev:2, icon:'\ud83d\udcc5', label:'Missed '+what,
+      text:`Absent ${dateS(x.date)}${x.title?' \u00b7 '+x.title:''}`,
+      actions:[{ label:'\u2713 Log call', title:'Log the call and clear this alert',
+        run:()=>openAttendanceCallModal(x.id, x.key, `Absent for a ${what} on ${dateS(x.date)}${x.title?' \u2014 '+x.title:''}`) }]
+    });
+  });
+
+  (src.missedEssay||[]).forEach(x=> push(x.id, x.name, x.classId, {
+    kind:'essay', sev:2, icon:'\u270d\ufe0f', label:x.label,
+    text:`${x.wasAbsent?'Absent on':'No mark recorded for'} ${dateS(x.date)}${x.topic?' \u00b7 '+x.topic:''}`,
+    actions:[
+      { label:'Grades \u2192', title:'Enter the essay score', run:()=>{ openGradesModal(x.classId); gmSetTab('essays'); } },
+      { label:'\u2713 Log call', title:'Log the call and clear this alert',
+        run:()=>openAttendanceCallModal(x.id, x.key, `${x.label} not written \u2014 due ${dateS(x.date)}${x.topic?' \u2014 '+x.topic:''}${x.wasAbsent?' (absent that day)':''}`) }
+    ]
+  }));
+
+  (src.missedTests||[]).forEach(x=> push(x.id, x.name, x.classId, {
+    kind:'missed-test', sev:2, icon:'\ud83d\udcdd', label:'Missed '+x.testLabel,
+    text:`Absent ${dateS(x.date)} \u2014 no make-up score entered yet`,
+    actions:[{ label:'Grades \u2192', run:()=>openGradesModal(x.classId) }]
+  }));
+
+  (src.gradeAlerts||[]).forEach(x=> push(x.id, x.name, x.classId, {
+    kind:'grades', sev: x.st.under ? 2 : 1, icon:'\ud83d\udcdd',
+    label: x.st.under ? (x.st.advanced?'TOEFL below target':'Avg under 80')
+                      : (x.st.advanced?'Close to target':'Close to 80'),
+    text: `${x.cycleLabel} \u00b7 ${gradeStatusLine(x.st,'en')}`,
+    actions:[{ label:'Grades \u2192', run:()=>openGradesModal(x.classId) }]
+  }));
+
+  // riskAssess already gates itself at two or more co-occurring signals, so its
+  // trends add context to a row rather than creating noisy single-signal ones.
+  (src.risks||[]).forEach(r=> (r.signals||[]).forEach(sg=> push(r.studentId, r.name, r.classId, {
+    kind:'trend-'+sg.kind, sev: sg.sev || 1, icon: (typeof RISK_ICON!=='undefined' && RISK_ICON[sg.kind]) || '\u26a0\ufe0f',
+    label: sg.kind, text: sg.text, actions:[]
+  })));
+
+  return [...rows.values()].map(r=>{
+    r.sev = r.signals.reduce((m,s)=>Math.max(m, s.sev||1), 0);
+    r.flagged = r.signals.some(s=>s.kind==='flag');
+    return r;
+  }).sort((a,b)=> b.sev-a.sev || b.signals.length-a.signals.length || byName(a,b));
 }
 
 /* ================= CLASSES & STUDENTS ================= */
@@ -12612,6 +12626,7 @@ window.state = state;
 // E2: expose pure/near-pure functions for the test harness. Guarded so it never
 // interferes with normal use. See teacher-dashboard-tests.html.
 window.__testables = {
+  buildAttentionQueue,
   attendanceRate,
   pointsFor,
   hwEffOf,
