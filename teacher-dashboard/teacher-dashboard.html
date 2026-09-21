@@ -890,6 +890,46 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     .pill{padding:9px 14px;}
   }
 
+  /* ---------- P3: section nav, settings rail, shortcuts ---------- */
+  .sec-nav{
+    position:sticky;top:0;z-index:25;display:flex;gap:6px;overflow-x:auto;
+    padding:9px 0;margin:0 0 14px;background:var(--bg);
+    border-bottom:1px solid var(--border);
+  }
+  .sec-nav button{
+    flex-shrink:0;white-space:nowrap;background:var(--surface);border:1px solid var(--border);
+    color:var(--muted);border-radius:999px;padding:7px 13px;font-family:inherit;font-size:12.5px;
+    font-weight:600;cursor:pointer;
+  }
+  .sec-nav button:hover{border-color:var(--accent);color:var(--accent);}
+  [data-sp-sec]{scroll-margin-top:66px;}
+  @media print{ .sec-nav{display:none !important;} }
+  .set-rail{
+    position:sticky;top:-18px;z-index:5;display:flex;gap:6px;overflow-x:auto;
+    padding:10px 0;margin:2px 0 4px;background:var(--card);border-bottom:1px solid var(--border);
+  }
+  .set-rail button{
+    flex-shrink:0;white-space:nowrap;background:var(--surface);border:1px solid var(--border);
+    color:var(--muted);border-radius:999px;padding:6px 12px;font-family:inherit;font-size:12px;
+    font-weight:600;cursor:pointer;
+  }
+  .set-rail button:hover{border-color:var(--accent);color:var(--accent);}
+  .kbd{
+    display:inline-block;min-width:22px;text-align:center;padding:2px 7px;border-radius:6px;
+    border:1px solid var(--border);border-bottom-width:2px;background:var(--surface-alt);
+    font-family:var(--font-mono);font-size:12px;color:var(--text);
+  }
+  .shortcut-row{display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;}
+  .shortcut-row:last-child{border-bottom:none;}
+  .shortcut-row .keys{flex:0 0 130px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
+  .sidebar-foot{
+    margin-top:2px;background:none;border:none;color:#7d869c;font-family:inherit;font-size:11.5px;
+    cursor:pointer;padding:4px 10px;text-align:left;width:100%;
+  }
+  .sidebar-foot:hover{color:#fff;}
+  /* The manual Save stays out of the way until there is something to save. */
+  .sidebar-save.is-idle .save-btn{display:none;}
+
   /* ---------- attention queue + housekeeping (P2) ---------- */
   .attn-row{align-items:flex-start;}
   .attn-row .dash-row-left{align-items:flex-start;flex:1;min-width:0;}
@@ -1055,6 +1095,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
     Settings
   </button>
+  <button type="button" class="sidebar-foot no-print" onclick="openShortcutsModal()" title="Keyboard shortcuts (?)">⌨ Keyboard shortcuts</button>
   <button type="button" class="nav-item" onclick="doLogout()">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
     Log out
@@ -1835,6 +1876,8 @@ function renderSaveState(){
 
 // The manual Save button sits quiet until there is genuinely something to do.
 function paintSaveButtons(){
+  const idle = !(staleConflict || authExpired || failedSaves.size > 0 || pendingSaves.size > 0);
+  document.querySelectorAll('.sidebar-save').forEach(el=>el.classList.toggle('is-idle', idle));
   document.querySelectorAll('.save-btn').forEach(btn=>{
     if(btn.dataset.busy) return;
     const blocked = staleConflict || authExpired || failedSaves.size > 0;
@@ -2038,10 +2081,16 @@ function openSettingsModal(){
     ? `${formatDateLong(last.slice(0,10))} · ${Math.floor(days)} day${Math.floor(days)===1?'':'s'} ago`
     : 'Never backed up';
 
+  const cfgClub = clubSettings();
   showModal(`${sizeModal('md sheet')}
     <h2>Settings</h2>
+    <nav class="set-rail" aria-label="Settings sections">
+      ${[['set-theme','Theme'],['set-bg','Background'],['set-scale','Size'],['set-grades','Grade alerts'],
+         ['set-rubric','Oral rubric'],['set-club','English Club'],['set-private','Private lessons'],['set-backup','Backup']]
+        .map(([id,label])=>`<button type="button" onclick="setRailGo('${id}')">${label}</button>`).join('')}
+    </nav>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 10px;">Theme</h3>
+    <h3 id="set-theme" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 10px;">Theme</h3>
     <div role="radiogroup" aria-label="Theme" style="display:grid;gap:8px;">
       ${THEMES.map(t=>`
         <button type="button" role="radio" aria-checked="${ui.theme===t.id}"
@@ -2061,7 +2110,7 @@ function openSettingsModal(){
         </button>`).join('')}
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Background</h3>
+    <h3 id="set-bg" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Background</h3>
     <div style="font-size:12px;color:var(--muted);margin:-4px 0 10px;">Combine any background with any theme — the pattern picks up the theme's colors.</div>
     <div role="radiogroup" aria-label="Background" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;">
       ${BGS.map(b=>`
@@ -2077,7 +2126,7 @@ function openSettingsModal(){
         </button>`).join('')}
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 4px;">Interface size</h3>
+    <h3 id="set-scale" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 4px;">Interface size</h3>
     <p class="meta" style="margin:0 0 10px;font-size:12px;">Scales text and spacing together, like browser zoom.</p>
     <div class="pill-group" role="radiogroup" aria-label="Interface size">
       ${SCALES.map(s=>`
@@ -2085,7 +2134,7 @@ function openSettingsModal(){
           aria-checked="${ui.scale===s.v}" onclick="setScale(${s.v})">${s.label}</button>`).join('')}
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Grade alerts</h3>
+    <h3 id="set-grades" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Grade alerts</h3>
     <div class="card section" style="padding:14px 16px;">
       <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
         <span style="flex:1;">Contact-parents margin<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Points above the minimum that still flag a student as "close". Applies to all classes.</span></span>
@@ -2097,7 +2146,7 @@ function openSettingsModal(){
       </div>
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Oral rubric</h3>
+    <h3 id="set-rubric" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Oral rubric</h3>
     <div class="card section" style="padding:14px 16px;">
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">
         Weight presets for rubric activities (${ORAL_CRITERIA.map(c=>c.label).join(' · ')}).
@@ -2127,7 +2176,37 @@ function openSettingsModal(){
       </div>
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Private lessons</h3>
+    <h3 id="set-club" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">English Club</h3>
+    <div class="card section" style="padding:14px 16px;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Used when a parent message is written. The session date and times come from the Calendar; these are the details that don't change.</div>
+      <div style="display:grid;gap:10px;">
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+          <span style="flex:1;">Where it happens<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Goes straight into the message, e.g. "na escola".</span></span>
+          <input type="text" value="${esc(cfgClub.place)}" placeholder="na escola" onchange="setClubSetting('place',this.value)" style="width:150px;">
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+          <span style="flex:1;">Your name<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Just the name — the message builds the sign-off around it.</span></span>
+          <input type="text" value="${esc(cfgClub.teacher)}" placeholder="optional" onchange="setClubSetting('teacher',this.value)" style="width:150px;">
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+          <span style="flex:1;">Sign off in Portuguese as</span>
+          <select onchange="setClubSetting('role',this.value)" style="width:150px;">
+            <option value="professor" ${cfgClub.role!=='professora'?'selected':''}>professor</option>
+            <option value="professora" ${cfgClub.role==='professora'?'selected':''}>professora</option>
+          </select>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
+          <span style="flex:1;">Default session time<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Only used when the Calendar has no English Club event.</span></span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <input type="time" value="${esc(cfgClub.from)}" onchange="setClubSetting('from',this.value)">
+            <span style="color:var(--muted);">→</span>
+            <input type="time" value="${esc(cfgClub.to)}" onchange="setClubSetting('to',this.value)">
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <h3 id="set-private" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Private lessons</h3>
     <div class="card section" style="padding:14px 16px;">
       <label style="display:flex;align-items:center;gap:10px;font-size:14px;">
         <span style="flex:1;">Mark as overdue after<br><span style="font-size:12px;color:var(--muted);font-weight:400;">Days a private student's oldest unpaid lesson can go before the Dashboard flags them.</span></span>
@@ -2135,7 +2214,7 @@ function openSettingsModal(){
       </label>
     </div>
 
-    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Backup</h3>
+    <h3 id="set-backup" style="font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 10px;">Backup</h3>
     <div class="card section" style="padding:14px 16px;${days>=7?'border-left:4px solid var(--amber);':''}">
       <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Last backup: <b style="color:var(--text);">${esc(lastLabel)}</b></div>
       <button class="btn-accent" onclick="openBackupModal()">Backup &amp; restore…</button>
@@ -3465,6 +3544,40 @@ document.addEventListener('keydown', (e)=>{
   navRollcallSession(e.key==='ArrowLeft' ? -1 : 1);
 });
 
+/* ? opens the shortcut list. Three shortcuts existed and were documented
+   nowhere; this is the only place they are written down. */
+function openShortcutsModal(){
+  const row = (keys, what) => `<div class="shortcut-row">
+    <span class="keys">${keys.map(k=>`<span class="kbd">${esc(k)}</span>`).join('<span style="color:var(--muted);font-size:11px;">+</span>')}</span>
+    <span>${what}</span></div>`;
+  showModal(`
+    <h2>Keyboard shortcuts</h2>
+    <p class="meta" style="margin:6px 0 14px;">Shortcuts are ignored while you are typing in a field.</p>
+    <div class="card section" style="padding:6px 16px;">
+      ${row(['/'], 'Search students from anywhere')}
+      ${row(['?'], 'Open this list')}
+      ${row(['Esc'], 'Close the open dialog')}
+      ${row(['Alt','\u2190'], 'Roll Call: previous class meeting')}
+      ${row(['Alt','\u2192'], 'Roll Call: next class meeting')}
+      ${row(['Tab'], 'Move between controls \u2014 focus stays inside an open dialog')}
+    </div>
+    <p class="meta" style="margin:12px 0 0;">Browser Back and Forward work throughout, and every screen has its own web address you can bookmark.</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn-ghost" onclick="closeModal()">Done</button>
+    </div>`);
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key!=='?' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.target;
+  if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable)) return;
+  if(!dataReady) return;
+  if(document.getElementById('modal-root')?.firstElementChild) return;
+  if(document.getElementById('app-main')?.classList.contains('app-hidden')) return;
+  e.preventDefault();
+  openShortcutsModal();
+});
+
 document.addEventListener('keydown', (e)=>{
   if(e.key!=='/' || e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target;
@@ -3665,6 +3778,7 @@ function openMoreMenu(){
       <hr>
       <button type="button" id="m-save-btn" class="save-btn" onclick="saveNowClicked('m-save-btn','m-save-msg')">💾 Save</button>
       <div id="m-save-msg" class="save-msg" style="padding:0 12px;font-size:12px;color:var(--muted);"></div>
+      <button type="button" onclick="closeModal();openShortcutsModal()">⌨ Keyboard shortcuts</button>
       <button type="button" onclick="closeModal();openSettingsModal()">⚙️ Settings</button>
       <button type="button" onclick="closeModal();doLogout()">↪ Log out</button>
       <hr>
@@ -5279,7 +5393,13 @@ function setClubSetting(k, v){
   c[k] = v;
   state.clubSettings = c;
   scheduleSave('clubSettings', c);
+  // Changing the message kind changes who you are most likely writing to.
+  if(k==='kind') pmFilter = (v==='update') ? 'flagged' : 'club';
   pmRegenerate(k==='lang' || k==='kind');
+}
+function setRailGo(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block:'start' });
 }
 function setClubInc(k, v){
   const c = clubSettings();
@@ -6283,19 +6403,47 @@ let pmExtraIds = [];        // students opened explicitly from a 📱 button
 let pmSelected = null;      // Set of ids being written right now; null = "all"
 let pmShowTimes = false;
 
-function pmFlaggedIds(){
-  return sortByName(state.students.filter(s=>{
-    const c = classById(s.classId);
-    return s.englishClub && c && !c.archived;
-  })).map(s=>s.id);
+/* Which pool the roster is drawn from. The composer writes English Club
+   invitations AND performance updates, so tying the roster to the Club star
+   made the second kind unreachable for anyone who wasn't starred. */
+let pmFilter = 'club';           // 'club' | 'flagged' | 'all'
+const PM_FILTERS = [
+  ['club',    '\u2b50 English Club'],
+  ['flagged', '\ud83d\udcde Contact flagged'],
+  ['all',     'All students']
+];
+function pmActiveStudents(){
+  return state.students.filter(s=>{ const c = classById(s.classId); return c && !c.archived; });
 }
-/* The roster is whoever is flagged, plus anyone the teacher opened by hand.
-   Marking a message done clears the flag, so students leave the list on their
-   own and nothing has to be reconciled. */
+function pmPoolIds(filter){
+  const f = filter || pmFilter;
+  const pool = pmActiveStudents().filter(s=>
+    f==='all' ? true : f==='flagged' ? !!(s.contactParents && s.contactParents.reason) : !!s.englishClub);
+  return sortByName(pool).map(s=>s.id);
+}
+function pmFlaggedIds(){ return pmPoolIds('club'); }
+/* The roster is the current pool, plus anyone the teacher opened by hand with
+   the 📱 button — those stay visible whatever the filter says. */
 function pmRoster(){
-  const ids = pmFlaggedIds();
+  const ids = pmPoolIds();
   pmExtraIds.forEach(id=>{ if(!ids.includes(id) && state.students.some(s=>s.id===id)) ids.push(id); });
   return sortByName(ids.map(id=>state.students.find(s=>s.id===id)).filter(Boolean)).map(s=>s.id);
+}
+/* Switching to a broad pool must not silently queue a message for every
+   student — "all" starts with nothing picked, the narrow pools start full. */
+function pmSetFilter(f){
+  pmFilter = f;
+  pmSelected = (f==='all') ? new Set(pmExtraIds) : null;
+  pmRegenerate(true);
+}
+function pmFilterChipsHtml(){
+  const counts = { club: pmPoolIds('club').length, flagged: pmPoolIds('flagged').length, all: pmPoolIds('all').length };
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-right:2px;">Who</span>
+    ${PM_FILTERS.map(([k,label])=>`
+      <button class="btn-ghost small" aria-pressed="${pmFilter===k}" onclick="pmSetFilter('${k}')"
+        style="${pmFilter===k?'border-color:var(--accent);color:var(--accent);font-weight:700;':''}">${label} (${counts[k]})</button>`).join('')}
+  </div>`;
 }
 function pmChosen(){
   const roster = pmRoster();
@@ -6312,6 +6460,7 @@ function openParentMessages(ids){
     scheduleSave('clubSettings', state.clubSettings);
   }
   pmExtraIds = (ids || []).slice();
+  pmFilter = (cfg.kind==='update') ? 'flagged' : 'club';
   pmSelected = (ids && ids.length) ? new Set(ids) : null;
   pmShowTimes = false;
   state.contactsTab = 'messages';
@@ -6344,7 +6493,12 @@ function renderParentMessages(){
       <div><h1>Contacts</h1><div class="meta">Write a parent message from the student's own grades, attendance and homework</div></div>
     </div>
     ${contactsTabsHtml('messages')}
-    ${!roster.length ? `<div class="card empty-card">No students are flagged for English Club. Star a student on the Classes page, or open one with the 📱 button, to write a message.</div>` : `
+    ${!roster.length ? `
+      <div class="card section" style="padding:11px 14px;margin-bottom:12px;">${pmFilterChipsHtml()}</div>
+      <div class="card empty-card">${
+        pmFilter==='club' ? 'No students are starred for English Club. Star one on a class page, switch the filter above, or open a single student with the 📱 button.'
+        : pmFilter==='flagged' ? 'No students are currently flagged to contact parents. Switch the filter above to write to anyone else.'
+        : 'No students in any active class yet.'}</div>` : `
     <div class="card section" style="padding:12px 14px;margin-bottom:12px;">
       ${pmSessionsPanelHtml()}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;">
@@ -6356,15 +6510,9 @@ function renderParentMessages(){
           <option value="pt" ${cfg.lang!=='en'?'selected':''}>Message in Portuguese</option>
           <option value="en" ${cfg.lang==='en'?'selected':''}>Message in English</option>
         </select>
-        <input type="text" value="${esc(cfg.place)}" placeholder="Place" onchange="setClubSetting('place',this.value)"
-          style="flex:1 1 130px;min-width:110px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
-        <input type="text" value="${esc(cfg.teacher)}" placeholder="Your name (optional)" onchange="setClubSetting('teacher',this.value)"
-          title="Just your name — the message adds the rest around it."
-          style="flex:1 1 150px;min-width:120px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:12.5px;background:var(--surface);color:var(--text);">
-        ${sel} onchange="setClubSetting('role',this.value)" title="How you sign off in Portuguese">
-          <option value="professor" ${cfg.role!=='professora'?'selected':''}>professor</option>
-          <option value="professora" ${cfg.role==='professora'?'selected':''}>professora</option>
-        </select>
+        <button type="button" class="linkish" style="font-size:12px;text-decoration:underline;margin-left:auto;"
+          onclick="openSettingsModal();setTimeout(()=>setRailGo('set-club'),0)"
+          title="Place, your name and the sign-off live in Settings">\u2699 Club details\u2026</button>
       </div>
       <div style="display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin-top:9px;">
         <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Include</span>
@@ -6429,12 +6577,13 @@ function pmToggleTimes(){ pmShowTimes = !pmShowTimes; pmRegenerate(true); }
    teacher narrows the list here and works one batch at a time. */
 function pmStudentPickerHtml(){
   const roster = pmRoster();
-  if(roster.length < 2) return '';
   const all = roster.map(id=>state.students.find(s=>s.id===id)).filter(Boolean);
   const chosenIds = new Set(pmChosen().map(s=>s.id));
-  const every = chosenIds.size === all.length;
+  const every = all.length>0 && chosenIds.size === all.length;
+  if(all.length < 2) return `<div class="card section" style="padding:11px 14px;margin-bottom:12px;">${pmFilterChipsHtml()}</div>`;
   return `<div class="card section" style="padding:11px 14px;margin-bottom:12px;">
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    ${pmFilterChipsHtml()}
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);">
       <span class="meta" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-right:2px;">Students</span>
       ${all.map(s=>{ const on = chosenIds.has(s.id); const c = classById(s.classId); return `
         <button class="btn-ghost small" onclick="pmToggleStudent('${s.id}')" title="${esc(c?c.name:'')}"
@@ -9762,6 +9911,7 @@ function copyReportText(){
 
 function renderStudentProfile(){
   const t = T[state.reportLang];
+  const pt0 = state.reportLang==='pt';
   const student = state.students.find(s=>s.id===state.studentProfileId);
   const returnView = state.studentProfileReturn || 'reports';
   const returnLabel = canGoBack()
@@ -9983,6 +10133,7 @@ function renderStudentProfile(){
         <div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:6px;">${t.reportPeriod}: ${fromVal?formatDateShort(fromVal):t.allTime}${fromVal||toVal?` – ${toVal?formatDateShort(toVal):t.present2}`:''}</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;" class="no-print">
+        <button class="btn-ghost" onclick="openParentMessages(['${student.id}'])" title="Message parents — builds a message from this student's own grades and attendance">📱</button>
         <button class="btn-ghost" onclick="openRenameStudentModal('${student.id}')" title="Edit this student's name">✏️</button>
         <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
         <button class="btn-ghost" onclick="openReportTextModal()">${t.copyTextBtn}</button>
@@ -9990,6 +10141,7 @@ function renderStudentProfile(){
       </div>
     </div>
     <div class="print-only" style="margin-bottom:14px;font-size:12px;color:var(--muted);">${t.generatedOn} ${formatDateLong(todayStr())}</div>
+    <nav id="sp-nav" class="sec-nav no-print" aria-label="${pt0?'Seções do relatório':'Report sections'}"></nav>
     <div class="card section no-print" style="margin-bottom:16px;">
       <div class="rollcall-controls" style="flex-wrap:wrap;align-items:center;">
         <label style="font-size:13px;font-weight:600;color:var(--muted);">${t.reportPeriod}:</label>
@@ -10009,7 +10161,7 @@ function renderStudentProfile(){
       <div class="card stat"><div class="stat-num">${hwAvg!=null?hwAvg+'%':'—'}</div><div class="stat-label">${t.homeworkDone}</div></div>
       <div class="card stat"><div class="stat-num">${partScore!=null?partScore+'%':'—'}</div><div class="stat-label">${t.participation}</div></div>
     </div>
-    <div class="charts-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+    <div class="charts-grid" id="sp-charts" data-sp-sec="${pt0?'Resumo':'Overview'}" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
       <div class="card chart-card">
         <h3>${t.attendance}</h3>
         <div class="chart-note">${t.basedOn(total)}${late?` · ${late} ${t.lateNote}`:''}</div>
@@ -10083,7 +10235,7 @@ function renderStudentProfile(){
           ${sparklineSvg(series, opts)}
         </div>`;
       return `
-    <div class="card section">
+    <div class="card section" id="sp-trends" data-sp-sec="${pt?'Tendências':'Trends'}">
       <h3>📈 ${pt?'Tendências':'Trends'}</h3>
       <div class="chart-note" style="margin-bottom:10px;">${pt?'Sessões concluídas, feriados excluídos':'Completed sessions only, holidays excluded'}</div>
       ${risk?`<div class="warn-banner" style="margin-bottom:12px;">⚠️ ${pt?'Sinais de risco combinados':'Combined warning signs'}: ${risk.signals.map(sg=>esc(sg.text)).join(' · ')}</div>`:''}
@@ -10100,7 +10252,7 @@ function renderStudentProfile(){
       const prj = lastReportStats.projects||[];
       if(!prj.length) return '';
       return `
-    <div class="card section">
+    <div class="card section" id="sp-projects" data-sp-sec="${pt?'Projetos':'Projects'}">
       <h3>🧪 ${pt?'Projetos':'Projects'}</h3>
       ${prj.map(p=>{
         const span = p.startDate ? formatDateShort(p.startDate) + (p.endDate?' – '+formatDateShort(p.endDate):'') : '';
@@ -10129,7 +10281,7 @@ function renderStudentProfile(){
       if(!recent.length) return '';
       const rub = lastReportStats && lastReportStats.rubric;
       return `
-    <div class="card section">
+    <div class="card section" id="sp-activities" data-sp-sec="${pt?'Atividades':'Activities'}">
       <h3>🎯 ${pt?'Atividades (A\u2013F)':'Activities (A\u2013F)'}</h3>
       ${rub ? `
       <div style="margin:8px 0 14px;">
@@ -10187,7 +10339,7 @@ function renderStudentProfile(){
     })()}
     ${periodInfo ? testPeriodCardHtml(periodInfo, state.reportLang==='pt') : ''}
     ${gradesInfo ? `
-    <div class="card section" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
+    <div class="card section" id="sp-grades" data-sp-sec="${pt0?'Notas':'Grades'}" ${gradesInfo.cycles.some(cy=>cy.status.under)?'style="border-left:4px solid var(--red);"':''}>
       <h3>📝 ${state.reportLang==='pt'?'Notas':'Test Grades'}${gradesInfo.level?` <span class="badge other" style="font-size:12px;vertical-align:middle;">${esc(gradesInfo.level)}</span>`:''}</h3>
       <div class="chart-note" style="margin-bottom:8px;">${gradesInfo.advanced
         ? (state.reportLang==='pt' ? `Diagnóstico na primeira semana · TOEFL no fim do período · meta: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>` : `Diagnostic in week one · real TOEFL at the end of the term · target: <b>${TOEFL_TARGETS[gradesInfo.level]||'—'}</b>`)
@@ -10217,13 +10369,13 @@ function renderStudentProfile(){
     </div>` : ''}
     ${toeflInfo ? toeflReportCardHtml(toeflInfo, state.reportLang==='pt') : ''}
     ${essayInfo ? essayReportCardHtml(essayInfo, state.reportLang==='pt') : ''}
-    <div class="card section">
+    <div class="card section" id="sp-lost" data-sp-sec="${t.classesLost}">
       <h3>${t.classesLost}</h3>
       <div class="lost-summary">${classesLostHtml}</div>
       ${total ? `<div class="lost-summary" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${t.timeLost}: <b>${fmtMinsAndHours(totalLostMin)} ≈ ${lostEquivClasses} ${t.equivClasses}</b>${expected?` (${t.of} ${expected} ${t.expectedShort})`:''}.</div>` : ''}
     </div>
     ${(student.contactParents?.reason || student.contactParentsHistory?.length) ? `
-    <div class="card section" style="border-left:4px solid var(--red);">
+    <div class="card section" id="sp-contact" data-sp-sec="${pt0?'Contato':'Contact'}" style="border-left:4px solid var(--red);">
       <h3>📞 ${state.reportLang==='pt'?'Contato com Responsáveis':'Contact Parents'}</h3>
       ${student.contactParents?.reason ? `
       <div style="margin-bottom:12px;padding:10px 14px;background:var(--red-soft);border-radius:10px;">
@@ -10245,7 +10397,7 @@ function renderStudentProfile(){
       const rows = lastReportStats.clubs || [];
       if(!rows.length) return '';
       const went = rows.filter(r=>r.status==='present').length;
-      return `<div class="card section" style="border-left:4px solid var(--amber);">
+      return `<div class="card section" id="sp-club" data-sp-sec="${t.clubHead}" style="border-left:4px solid var(--amber);">
         <h3>${t.clubHead}</h3>
         <div class="lost-summary" style="margin-bottom:10px;">${t.clubAttendedOf(went, rows.length)}</div>
         <div class="table-wrap">
@@ -10273,7 +10425,7 @@ function renderStudentProfile(){
         </div>
       </div>`;
     })()}
-    <div class="card table-wrap">
+    <div class="card table-wrap" id="sp-history" data-sp-sec="${pt0?'Histórico':'History'}">
       ${records.length||holidayDates.length ? `
       <table>
         <thead><tr><th>${t.date}</th><th>${t.attendance}</th><th title="${t.histCols.late.full}">${t.histCols.late.abbr}</th><th title="${t.histCols.early.full}">${t.histCols.early.abbr}</th><th title="${t.histCols.phone.full}">${t.histCols.phone.abbr}</th><th title="${t.histCols.hw.full}">${t.histCols.hw.abbr}</th><th title="${t.histCols.hwLate.full}">${t.histCols.hwLate.abbr}</th><th title="${t.histCols.eng.full}">${t.histCols.eng.abbr}</th><th title="${t.histCols.part.full}">${t.histCols.part.abbr}</th><th>${t.notes}</th></tr></thead>
@@ -10336,7 +10488,31 @@ function renderStudentProfile(){
       ` : `<div class="empty-card">${t.noRecords}</div>`}
     </div>
   `;
+  spBuildSectionNav();
 }
+
+/* The report is thirteen stacked sections. The chip row is built from whatever
+   actually rendered — Projects, Activities and English Club only appear when
+   the student has them — so it never points at a section that isn't there. */
+function spBuildSectionNav(){
+  const root = document.getElementById('view-student');
+  const nav = root && root.querySelector('#sp-nav');
+  if(!nav) return;
+  const secs = [...root.querySelectorAll('[data-sp-sec]')];
+  if(secs.length < 3){ nav.style.display = 'none'; nav.innerHTML = ''; return; }
+  nav.style.display = '';
+  nav.innerHTML = secs.map(el=>`<button type="button" onclick="spGo('${el.id}')">${esc(el.dataset.spSec||el.id)}</button>`).join('');
+}
+function prefersReducedMotion(){
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  catch(e){ return false; }
+}
+function spGo(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block:'start' });
+}
+
 function toggleReportLang(){
   state.reportLang = state.reportLang==='en' ? 'pt' : 'en';
   refreshView();
