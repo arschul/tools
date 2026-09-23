@@ -890,6 +890,23 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     .pill{padding:9px 14px;}
   }
 
+  /* ---------- P4: completion needs lesson content ---------- */
+  textarea.needs-fill{
+    border-color:var(--red) !important;
+    box-shadow:0 0 0 3px var(--red-soft);
+    animation:needs-fill-pulse .9s ease 1;
+  }
+  @keyframes needs-fill-pulse{
+    0%{box-shadow:0 0 0 0 var(--red-soft);}
+    45%{box-shadow:0 0 0 7px var(--red-soft);}
+    100%{box-shadow:0 0 0 3px var(--red-soft);}
+  }
+  @media(prefers-reduced-motion:reduce){ textarea.needs-fill{animation:none;} }
+  .complete-blocked{
+    font-size:12px;color:var(--red);margin-top:8px;display:flex;
+    align-items:center;gap:6px;flex-wrap:wrap;
+  }
+
   /* ---------- P3: section nav, settings rail, shortcuts ---------- */
   .sec-nav{
     position:sticky;top:0;z-index:25;display:flex;gap:6px;overflow-x:auto;
@@ -3486,6 +3503,22 @@ function showUndoToast(message, undoFn){
   toastTimer = setTimeout(dismiss, 6000);
 }
 
+/* A toast with nothing to undo — just says why something didn't happen. */
+function showNoticeToast(message){
+  const root = document.getElementById('toast-root');
+  if(!root) return;
+  if(toastTimer){ clearTimeout(toastTimer); toastTimer = null; }
+  root.innerHTML = '';
+  const el = document.createElement('div');
+  el.className = 'toast';
+  const msg = document.createElement('span'); msg.textContent = message;
+  const btn = document.createElement('button'); btn.textContent = 'OK';
+  btn.onclick = ()=>{ if(toastTimer){clearTimeout(toastTimer);toastTimer=null;} root.innerHTML=''; };
+  el.appendChild(msg); el.appendChild(btn);
+  root.appendChild(el);
+  toastTimer = setTimeout(()=>{ root.innerHTML=''; toastTimer=null; }, 6000);
+}
+
 /* ===== C3: global student search ===== */
 function openStudentSearch(){
   showModal(`${sizeModal('md')}
@@ -4127,7 +4160,10 @@ function _renderDashboard(el){
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn-ghost small" onclick="goToRollCall(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}])">Open Roll Call →</button>
-            <button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="toggleSessionCompleted(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}]); refreshView();">✓ Complete</button>
+            ${sessionContentReady(p.cls.id, p.date)
+              ? `<button class="btn-accent" style="padding:7px 12px;font-size:12px;" onclick="toggleSessionCompleted(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}]); refreshView();">✓ Complete</button>`
+              : `<button class="btn-accent" style="padding:7px 12px;font-size:12px;" title="Nothing recorded for this class yet"
+                   onclick="rcFocusWhatWeDid(window._dashPendingClassIds[${i}], window._dashPendingDates[${i}])">✎ Write what you did →</button>`}
           </div>
         </div>`).join('')}
     </div>` : '';
@@ -7667,8 +7703,14 @@ function renderRollCall(){
         const explicitlyCompleted = !!(state.sessionMeta && state.sessionMeta[cls.id+'_'+date]?.completed);
         if(isFuture) return `<div class="warn-banner">📅 This class is in the future — it won't be counted in reports until it takes place.</div>`;
         if(explicitlyCompleted) return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">🔒 Completed session — read-only, counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">Reopen to edit</button></div>`;
-        if(isToday) return `<div class="warn-banner">⏳ Today's class isn't counted in reports yet. Mark it completed when the class is over. <button class="btn-accent" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">✓ Complete session</button></div>`;
-        return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports. <button class="btn-ghost small" style="margin-left:8px;" onclick="toggleSessionCompleted('${cls.id}','${date}')">🔒 Lock (complete)</button></div>`;
+        const ready = sessionContentReady(cls.id, date);
+        const nag = `<button type="button" class="linkish" style="margin-left:8px;text-decoration:underline;${ready?'display:none;':''}" onclick="rcFocusWhatWeDid('${cls.id}','${date}')">Write what you did →</button>`;
+        if(isToday) return `<div class="warn-banner">⏳ Today's class isn't counted in reports yet. Mark it completed when the class is over.
+          <button class="btn-accent" style="margin-left:8px;" ${ready?'':'disabled title="Write what you did in class first"'}
+            onclick="toggleSessionCompleted('${cls.id}','${date}')">✓ Complete session</button>${nag}</div>`;
+        return `<div class="warn-banner" style="background:var(--green-soft);color:var(--green);">✓ Past session — counts toward reports.
+          <button class="btn-ghost small" style="margin-left:8px;" ${ready?'':'disabled title="Write what you did in class first"'}
+            onclick="toggleSessionCompleted('${cls.id}','${date}')">🔒 Lock (complete)</button>${nag}</div>`;
       })()}
       ${(()=>{
         /* ===== BEFORE / NOW / AFTER =====
@@ -7744,8 +7786,8 @@ function renderRollCall(){
                         ? `No homework was assigned on ${formatDateShort(prevDate)}, so nothing is due today.`
                         : 'No earlier class on record, so nothing is due today.')),
               locked ? '' : editBtn(hwEd, `lockHwDue('${cls.id}','${date}')`, `unlockHwDue('${cls.id}','${date}')`))}
-            ${sec('\uD83D\uDCDD What we did '+sub('(lesson content \u2014 shown on absent reports)'),
-              `<textarea rows="3" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value)">${esc(getLessonNote(cls.id, date))}</textarea>`)}
+            ${sec('\uD83D\uDCDD What we did '+sub('(lesson content \u2014 shown on absent reports, and required to complete the class)'),
+              `<textarea id="rc-what" rows="3" ${locked?'disabled':''} placeholder="e.g. Unit 7 review, phrasal verbs, p.43" style="${taStyle}" oninput="setLessonNote('${cls.id}','${date}', this.value); rcOnWhatWeDidInput('${cls.id}','${date}')">${esc(getLessonNote(cls.id, date))}</textarea>`)}
             ${sec('\uD83C\uDFAF Activities '+sub('(graded A\u2013F per student \u2014 grading stays open after class)'), `
               ${activitiesFor(cls.id, date).map(a=>{
                 const g = Object.keys(a.grades||{}).length, avg = activityAvg(a), sk = skillMeta(a.skill);
@@ -7789,11 +7831,18 @@ function renderRollCall(){
               `<textarea rows="3" placeholder="e.g. Workbook p.46, study irregular verbs" style="${taStyleNext}" oninput="setHomework('${cls.id}','${nextDate}', this.value)">${esc(getHomework(cls.id, nextDate))}</textarea>`)}
             ${sec('\uD83D\uDCCB Plan, promise or reminder for next class '+sub('(becomes that day\u2019s class plan)'),
               renderPlanEditor(cls.id, nextDate, { label:'' }))}
-            ${isToday && !locked ? `
+            ${isToday && !locked ? (()=>{
+              const ready = sessionContentReady(cls.id, date);
+              return `
             <div class="rc-sec" style="border-top:1px dashed var(--border);padding-top:14px;">
-              <button class="btn-accent" onclick="toggleSessionCompleted('${cls.id}','${date}')">\u2713 Complete today\u2019s session</button>
-              <div style="font-size:12px;color:var(--muted);margin-top:8px;">Locks the register and counts today toward reports.</div>
-            </div>` : ''}
+              <button class="btn-accent" ${ready?'':'disabled'} title="${ready?'':'Write what you did in class first'}"
+                onclick="toggleSessionCompleted('${cls.id}','${date}')">\u2713 Complete today\u2019s session</button>
+              ${ready
+                ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;">Locks the register and counts today toward reports.</div>`
+                : `<div class="complete-blocked">\u26a0\ufe0f \u201cWhat we did\u201d is still empty \u2014 absent students\u2019 reports are built from it.
+                     <button type="button" class="linkish" style="text-decoration:underline;" onclick="rcFocusWhatWeDid('${cls.id}','${date}')">Write it now \u2192</button></div>`}
+            </div>`;
+            })() : ''}
           </div>`;
         };
 
@@ -9171,13 +9220,59 @@ function isSessionCompleted(classId, date){
   if(date > todayStr()) return false;
   return !!(state.sessionMeta && state.sessionMeta[classId+'_'+date]?.completed);
 }
+/* A completed session is what absent students' reports are built from, and a
+   locked one can't be edited without deliberately reopening it. Completing
+   with no lesson content bakes in a blank. So: content first. Reopening is
+   never blocked — only the completing direction. */
+function sessionContentReady(classId, date){
+  return !!getLessonNote(classId, date).trim();
+}
+/* The Complete buttons are rendered disabled; the textarea is debounced-saved
+   but not re-rendered on every keystroke, so flip them the moment the field
+   stops being empty (and back if it is cleared again). */
+function rcOnWhatWeDidInput(classId, date){
+  const ready = sessionContentReady(classId, date);
+  document.querySelectorAll('#view-rollcall .btn-accent, #view-rollcall .btn-ghost.small').forEach(b=>{
+    const oc = b.getAttribute('onclick') || '';
+    if(oc.indexOf("toggleSessionCompleted('"+classId+"','"+date+"')") < 0) return;
+    b.disabled = !ready;
+    b.title = ready ? '' : 'Write what you did in class first';
+  });
+  document.querySelectorAll('#view-rollcall .complete-blocked').forEach(el=>{ el.style.display = ready ? 'none' : ''; });
+  document.querySelectorAll('#view-rollcall button.linkish').forEach(b=>{
+    if((b.getAttribute('onclick')||'').indexOf('rcFocusWhatWeDid(') < 0) return;
+    b.style.display = ready ? 'none' : '';
+  });
+}
+function rcFocusWhatWeDid(classId, date){
+  if(!state.rollcall || state.rollcall.classId!==classId || state.rollcall.date!==date){
+    goToRollCall(classId, date);
+  }
+  state.rcTab = 'now';
+  refreshView();
+  setTimeout(()=>{
+    const ta = document.getElementById('rc-what');
+    if(!ta) return;
+    ta.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block:'center' });
+    ta.classList.add('needs-fill');
+    ta.focus();
+    ta.addEventListener('input', ()=>ta.classList.remove('needs-fill'), { once:true });
+  }, 0);
+}
 function toggleSessionCompleted(classId, date){
   if(!state.sessionMeta) state.sessionMeta = {};
   const key = classId+'_'+date;
+  const turningOn = !state.sessionMeta[key]?.completed;
+  if(turningOn && !sessionContentReady(classId, date)){
+    showNoticeToast('Write what you did in class first \u2014 absent students\u2019 reports are built from it.');
+    rcFocusWhatWeDid(classId, date);
+    return false;
+  }
   if(!state.sessionMeta[key]) state.sessionMeta[key] = {};
   state.sessionMeta[key].completed = !state.sessionMeta[key].completed;
   scheduleSave('sessionMeta', state.sessionMeta);
   refreshView();
+  return true;
 }
 /* Compact roster: one row per student, every session field editable inline.
    Same setters as the Full view — only the layout differs. */
