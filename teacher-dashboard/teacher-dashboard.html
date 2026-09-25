@@ -9746,11 +9746,16 @@ function initRcState(s){
       vocab: null, grammar: null, port: null
     },
     includeProjects: true,
+    includeHomework: true,
     nonce: 0
   };
 }
 function rcSetProjects(on){
   if(rcState) rcState.includeProjects = !!on;
+  refreshReportTextArea();
+}
+function rcSetHomework(on){
+  if(rcState) rcState.includeHomework = !!on;
   refreshReportTextArea();
 }
 
@@ -9792,9 +9797,11 @@ function buildReportText(s, lang){
   // --- metrics ---
   out.push(`${L.attendance}: ${s.attendanceRate!=null?s.attendanceRate+'%':L.na}${s.expected!=null?` (${s.classesLost}/${s.expected} ${L.lost})`:''}`);
   out.push(`${L.punctuality}: ${s.late} ${L.late}`);
-  out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`
-    + (s.hwCount ? ` (${isPt?'em':'over'} ${s.hwCount} ${isPt?(s.hwCount===1?'aula com dever':'aulas com dever'):(s.hwCount===1?'class with homework assigned':'classes with homework assigned')})` : '')
-    + (s.noHwCount ? ` · ${s.noHwCount} ${isPt?(s.noHwCount===1?'aula em que não houve dever':'aulas em que não houve dever'):(s.noHwCount===1?'class where no homework was assigned':'classes where no homework was assigned')}` : ''));
+  if(!rcState || rcState.includeHomework !== false){
+    out.push(`${L.hw}: ${fmtPct(s.hwAvg)}`
+      + (s.hwCount ? ` (${isPt?'em':'over'} ${s.hwCount} ${isPt?(s.hwCount===1?'aula com dever':'aulas com dever'):(s.hwCount===1?'class with homework assigned':'classes with homework assigned')})` : '')
+      + (s.noHwCount ? ` · ${s.noHwCount} ${isPt?(s.noHwCount===1?'aula em que não houve dever':'aulas em que não houve dever'):(s.noHwCount===1?'class where no homework was assigned':'classes where no homework was assigned')}` : ''));
+  }
   out.push(`${L.part}: ${fmtPct(s.partScore)}`);
   if(s.totalPhone){
     const tl = isPt ? (s.totalPhone===1?'vez':'vezes') : (s.totalPhone===1?'time':'times');
@@ -9928,16 +9935,20 @@ function buildReportText(s, lang){
   }
 
   // --- English Club ---
-  if(s.clubs && s.clubs.length){
-    const went = s.clubs.filter(r=>r.status==='present').length;
+  // Only sessions where attendance was actually taken. A session the teacher
+  // never registered used to print as "não registrado" next to the real
+  // absences, which reads as one more absence. The count uses the same
+  // filtered list, so "2 de 3" never counts a session nobody marked.
+  // "English Club" is the club's name, so it stays in English in both reports.
+  const clubRows = (s.clubs||[]).filter(r=>r.status==='present' || r.status==='absent');
+  if(clubRows.length){
+    const went = clubRows.filter(r=>r.status==='present').length;
     out.push('');
-    out.push(isPt ? 'CLUBE DE INGLÊS' : 'ENGLISH CLUB');
-    out.push(isPt ? `Participou de ${went} de ${s.clubs.length} encontro${s.clubs.length===1?'':'s'}.`
-                  : `Attended ${went} of ${s.clubs.length} session${s.clubs.length===1?'':'s'}.`);
-    s.clubs.forEach(r=>{
-      const st = r.status==='present' ? (isPt?'presente':'present')
-               : r.status==='absent' ? (isPt?'ausente':'absent')
-               : (isPt?'não registrado':'not recorded');
+    out.push('ENGLISH CLUB');
+    out.push(isPt ? `Participou de ${went} de ${clubRows.length} encontro${clubRows.length===1?'':'s'}.`
+                  : `Attended ${went} of ${clubRows.length} session${clubRows.length===1?'':'s'}.`);
+    clubRows.forEach(r=>{
+      const st = r.status==='present' ? (isPt?'presente':'present') : (isPt?'ausente':'absent');
       const marks = [];
       if(r.lateMin) marks.push(isPt?`${r.lateMin} min de atraso`:`${r.lateMin} min late`);
       if(r.leftEarlyMin) marks.push(isPt?`saiu ${r.leftEarlyMin} min antes`:`left ${r.leftEarlyMin} min early`);
@@ -10025,13 +10036,17 @@ function openReportTextModal(){
       <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
     </div>
 
-    ${(lastReportStats.projects||[]).length ? `
-    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;display:grid;gap:9px;">
+      <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" ${rcState.includeHomework!==false?'checked':''} onchange="rcSetHomework(this.checked)">
+        <span>${isPt?'Incluir tarefa de casa':'Include homework'}${lastReportStats.hwAvg!=null?` <span class="meta">(${lastReportStats.hwAvg}%)</span>`:''}</span>
+      </label>
+      ${(lastReportStats.projects||[]).length ? `
       <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
         <input type="checkbox" ${rcState.includeProjects!==false?'checked':''} onchange="rcSetProjects(this.checked)">
         <span>${isPt?'Incluir projetos':'Include projects'} <span class="meta">(${lastReportStats.projects.length})</span></span>
-      </label>
-    </div>` : ''}
+      </label>` : ''}
+    </div>
 
     <textarea id="report-text-area" style="width:100%;min-height:260px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.5;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);">${esc(text)}</textarea>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
