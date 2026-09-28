@@ -9688,7 +9688,7 @@ function rcGradeFigure(s){
 }
 function rcPick(pool, nonce){ return (pool && pool.length) ? pool[nonce % pool.length] : ''; }
 
-function rcCommentLines(s, head, compact){
+function rcCommentLines(s, head){
   if(!rcState) return [];
   const lv = rcState.levels;
   const language = ['vocab','grammar','port'].filter(c=>lv[c]);
@@ -9721,23 +9721,12 @@ function rcCommentLines(s, head, compact){
   }
 
   const paras = [];
-  if(compact){
-    // The school's form counts printed lines, so the compact note keeps the
-    // shape of the letter (opening, the grade, what to work on, sign off) but
-    // spends one sentence per area instead of one per category: the single
-    // weakest language point and the single weakest habit, which is what the
-    // student needs to read anyway.
-    const weakest = cats => cats.slice().sort((a,b)=>lv[a]-lv[b])[0];
-    const pick = c => c ? fill(rcPhrase(c, lv[c], nonce + (i++))) : '';
-    const body = [pick(weakest(language)), pick(weakest(habits))].filter(Boolean).join(' ');
-    paras.push(lead.concat(body).filter(Boolean).join(' '));
-    paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
-  } else {
-    paras.push(lead.concat(para(language.length ? language : habits)).filter(Boolean).join(' '));
-    if(language.length && habits.length) paras.push(para(habits));
-    paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
-  }
+  paras.push(lead.concat(para(language.length ? language : habits)).filter(Boolean).join(' '));
+  if(language.length && habits.length) paras.push(para(habits));
+  paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
 
+  // The school's form gets the same note, heading and all figures aside: what
+  // was bloating that report was the numbers, not the words.
   const out = head ? ['', head, ''] : [''];
   paras.filter(Boolean).forEach((p,n)=>{ if(n) out.push(''); out.push(p); });
   return out;
@@ -9870,7 +9859,7 @@ function buildCompactReport(s, lang){
   const order = ['missed','club','rubric','acts','stats','grades'];
   const assemble = (keep, actNotes) => {
     const out = [head];
-    const note = rcTrimBlanks(rcCommentLines(s, null, true));
+    const note = rcTrimBlanks(rcCommentLines(s, null));
     if(note.length){ out.push(''); note.forEach(l=>out.push(l)); }
     const body = blocks
       .filter(b=>keep.includes(b.id))
@@ -9896,8 +9885,9 @@ function buildCompactReport(s, lang){
     lines = assemble(keep, false);
     if(rcCountLines(lines, width) <= budget) return lines.join('\n');
   }
-  // Nothing left to drop: the note alone is over budget, which is the
-  // teacher's call to make, so hand it over rather than cutting a sentence.
+  // Nothing left to drop: the note alone is over budget. It is the whole
+  // point of the block, so it is handed over intact and the counter turns red
+  // rather than a sentence going missing from a student's report card.
   return lines.join('\n');
 }
 
