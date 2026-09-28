@@ -9851,21 +9851,18 @@ function buildCompactReport(s, lang){
   add('grades', rcCompactGrades(s, isPt));
   add('stats',  rcCompactStats(s, isPt));
   add('rubric', rcCompactRubric(s, isPt));
-  add('acts',   rcCompactActivities(s, isPt, true));
   add('club',   rcCompactClub(s, isPt));
   add('missed', rcCompactMissed(s, isPt));
 
-  // Dropped in this order when the block does not fit. English Club outranks
-  // the A-F activity letters: the teacher would rather the form showed that the
-  // student turned up to the club than which letters the activities scored.
-  const order = ['missed','acts','rubric','club','stats','grades'];
-  const assemble = (keep, actNotes) => {
+  // The A-F activity letters never appear on the school's form at all, not
+  // even when there is room: the teacher's call is that the form is not the
+  // place for them, space or no space.
+  const order = ['missed','rubric','club','stats','grades'];
+  const assemble = keep => {
     const out = [head];
     const note = rcTrimBlanks(rcCommentLines(s, null));
     if(note.length){ out.push(''); note.forEach(l=>out.push(l)); }
-    const body = blocks
-      .filter(b=>keep.includes(b.id))
-      .map(b=> b.id==='acts' ? rcTrimBlanks(rcCompactActivities(s, isPt, actNotes)) : b.lines);
+    const body = blocks.filter(b=>keep.includes(b.id)).map(b=>b.lines);
     if(body.length){
       out.push('');
       body.forEach(b=>b.forEach(l=>out.push(l)));
@@ -9874,17 +9871,13 @@ function buildCompactReport(s, lang){
   };
 
   let keep = blocks.map(b=>b.id);
-  let lines = assemble(keep, true);
+  let lines = assemble(keep);
   if(rcCountLines(lines, width) <= budget) return lines.join('\n');
 
-  // 1) activity observations are the first thing to go, the letters stay.
-  lines = assemble(keep, false);
-  if(rcCountLines(lines, width) <= budget) return lines.join('\n');
-
-  // 2) then whole blocks, least important first.
+  // Drop whole blocks, least important first.
   for(const id of order){
     keep = keep.filter(k=>k !== id);
-    lines = assemble(keep, false);
+    lines = assemble(keep);
     if(rcCountLines(lines, width) <= budget) return lines.join('\n');
   }
   // Nothing left to drop: the note alone is over budget. It is the whole
@@ -9933,19 +9926,6 @@ function rcCompactRubric(s, isPt){
   if(!(s.rubric && s.rubric.criteria.length)) return [];
   const bits = s.rubric.criteria.map(c=>`${isPt?c.pt:c.label} ${c.letter}`);
   return [`${isPt?'Rubrica oral':'Oral rubric'} · ${bits.join(' · ')}`];
-}
-
-function rcCompactActivities(s, isPt, withNotes){
-  const rows = s.activityNotes || [];
-  if(!rows.length) return [];
-  const out = [];
-  const label = isPt ? 'Atividades · ' : 'Activities · ';
-  rows.forEach((a,i)=>{
-    const sk = skillMeta(a.skill);
-    const note = (withNotes && a.note) ? `: ${a.note}` : '';
-    out.push(`${i ? '  ' : label}${formatDateShort(a.date)} · ${isPt?sk.pt:sk.label} — ${a.description}${a.letter?` (${a.letter})`:''}${note}`);
-  });
-  return out;
 }
 
 function rcCompactClub(s, isPt){
