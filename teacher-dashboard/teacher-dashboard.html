@@ -2049,9 +2049,14 @@ function loadUi(){
       theme: THEME_FONTS[ui.theme] ? ui.theme : 'classic',
       scale: (ui.scale >= 0.9 && ui.scale <= 1.25) ? ui.scale : 1,
       bg: BGS.some(b=>b.id===ui.bg) ? ui.bg : 'theme',
-      rollView: ui.rollView==='compact' ? 'compact' : 'full'
+      rollView: ui.rollView==='compact' ? 'compact' : 'full',
+      rcPrint: {
+        width:    Number(ui.rcPrint && ui.rcPrint.width)    || 90,
+        maxLines: Number(ui.rcPrint && ui.rcPrint.maxLines) || 20
+      }
     };
-  }catch(e){ return { theme:'classic', scale:1, bg:'theme', rollView:'full' }; }
+  }catch(e){ return { theme:'classic', scale:1, bg:'theme', rollView:'full',
+                      rcPrint:{ width:90, maxLines:20 } }; }
 }
 function saveUi(ui){
   try{ localStorage.setItem(UI_KEY, JSON.stringify(ui)); }catch(e){}
@@ -9683,7 +9688,7 @@ function rcGradeFigure(s){
 }
 function rcPick(pool, nonce){ return (pool && pool.length) ? pool[nonce % pool.length] : ''; }
 
-function rcCommentLines(s, head){
+function rcCommentLines(s, head, compact){
   if(!rcState) return [];
   const lv = rcState.levels;
   const language = ['vocab','grammar','port'].filter(c=>lv[c]);
@@ -9716,11 +9721,24 @@ function rcCommentLines(s, head){
   }
 
   const paras = [];
-  paras.push(lead.concat(para(language.length ? language : habits)).filter(Boolean).join(' '));
-  if(language.length && habits.length) paras.push(para(habits));
-  paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
+  if(compact){
+    // The school's form counts printed lines, so the compact note keeps the
+    // shape of the letter (opening, the grade, what to work on, sign off) but
+    // spends one sentence per area instead of one per category: the single
+    // weakest language point and the single weakest habit, which is what the
+    // student needs to read anyway.
+    const weakest = cats => cats.slice().sort((a,b)=>lv[a]-lv[b])[0];
+    const pick = c => c ? fill(rcPhrase(c, lv[c], nonce + (i++))) : '';
+    const body = [pick(weakest(language)), pick(weakest(habits))].filter(Boolean).join(' ');
+    paras.push(lead.concat(body).filter(Boolean).join(' '));
+    paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
+  } else {
+    paras.push(lead.concat(para(language.length ? language : habits)).filter(Boolean).join(' '));
+    if(language.length && habits.length) paras.push(para(habits));
+    paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
+  }
 
-  const out = ['', head, ''];
+  const out = head ? ['', head, ''] : [''];
   paras.filter(Boolean).forEach((p,n)=>{ if(n) out.push(''); out.push(p); });
   return out;
 }
@@ -9747,8 +9765,37 @@ function initRcState(s){
     },
     includeProjects: true,
     includeHomework: true,
+    mode: 'full',                 // 'full' | 'compact' (the school's form)
+    printWidth: rcPrintPrefs().width,
+    printMax: rcPrintPrefs().maxLines,
     nonce: 0
   };
+}
+/* The form's width and line budget are a property of the school's paper, not
+   of the student, so they are remembered in the ui blob rather than recomputed
+   per report. */
+function rcPrintPrefs(){
+  const p = (loadUi().rcPrint) || {};
+  return { width: Number(p.width) || RC_PRINT.width,
+           maxLines: Number(p.maxLines) || RC_PRINT.maxLines };
+}
+function rcSavePrintPrefs(){
+  if(!rcState) return;
+  const ui = loadUi();
+  ui.rcPrint = { width: rcState.printWidth, maxLines: rcState.printMax };
+  saveUi(ui);
+}
+function rcSetMode(mode){
+  if(!rcState) return;
+  rcState.mode = mode === 'compact' ? 'compact' : 'full';
+  openReportTextModal();        // the controls differ per mode
+}
+function rcSetPrint(key, val){
+  if(!rcState) return;
+  const n = Math.max(key==='printWidth'?20:4, Math.min(key==='printWidth'?200:80, Number(val)||0));
+  rcState[key] = n;
+  rcSavePrintPrefs();
+  openReportTextModal();
 }
 function rcSetProjects(on){
   if(rcState) rcState.includeProjects = !!on;
@@ -9759,7 +9806,176 @@ function rcSetHomework(on){
   refreshReportTextArea();
 }
 
+/* ---------- the school's own report card ----------
+   The school prints these comments into a proprietary form whose comment area
+   holds a fixed number of PRINTED lines, so what matters is not how many
+   newlines the text has but how many lines it occupies once wrapped at the
+   form's width. rcWrapCount() measures that, rcFitReport() builds the block in
+   priority order and drops the least important pieces until it fits.
+
+   Priority is the teacher's: the note comes first and is never truncated
+   mid-sentence, the figures that decide the grade come next, and the softer
+   context goes first when space runs out. Projects and attendance-by-test are
+   never included here.                                                        */
+const RC_PRINT = { width: 90, maxLines: 20 };
+
+function rcWrapCount(line, width){
+  const w = Math.max(20, width|0);
+  if(!line) return 1;                      // a blank line still costs a line
+  return line.split('\n').reduce((n, seg)=>{
+    if(!seg.trim()) return n + 1;
+    const indent = (seg.match(/^ */) || [''])[0].length;
+    // Count the lines a word-wrapper would produce, never splitting a word.
+    let used = indent, count = 1, first = true;
+    for(const word of seg.trim().split(/ +/)){
+      const add = first ? used + word.length : used + 1 + word.length;
+      if(add <= w){ used = add; first = false; }
+      else { count++; used = Math.min(word.length, w); first = false; }
+    }
+    return n + count;
+  }, 0);
+}
+function rcCountLines(lines, width){
+  return lines.reduce((n,l)=>n + rcWrapCount(l, width), 0);
+}
+
+// Trailing blank lines cost printed lines for nothing.
+function rcTrimBlanks(lines){
+  const out = lines.slice();
+  while(out.length && !String(out[out.length-1]).trim()) out.pop();
+  while(out.length && !String(out[0]).trim()) out.shift();
+  return out;
+}
+
+function buildCompactReport(s, lang){
+  const isPt = lang === 'pt';
+  const width = (rcState && rcState.printWidth) || RC_PRINT.width;
+  const budget = (rcState && rcState.printMax) || RC_PRINT.maxLines;
+
+  const head = [rcFirstName(s.name) === s.name ? s.name : s.name,
+                s.className, rcPeriodText(s, isPt)].filter(Boolean).join('  ·  ');
+
+  // Every optional block, most important last to be dropped.
+  const blocks = [];
+  const add = (id, lines) => { const t = rcTrimBlanks(lines); if(t.length) blocks.push({id, lines:t}); };
+
+  add('grades', rcCompactGrades(s, isPt));
+  add('stats',  rcCompactStats(s, isPt));
+  add('rubric', rcCompactRubric(s, isPt));
+  add('acts',   rcCompactActivities(s, isPt, true));
+  add('club',   rcCompactClub(s, isPt));
+  add('missed', rcCompactMissed(s, isPt));
+
+  // Dropped in this order when the block does not fit.
+  const order = ['missed','club','rubric','acts','stats','grades'];
+  const assemble = (keep, actNotes) => {
+    const out = [head];
+    const note = rcTrimBlanks(rcCommentLines(s, null, true));
+    if(note.length){ out.push(''); note.forEach(l=>out.push(l)); }
+    const body = blocks
+      .filter(b=>keep.includes(b.id))
+      .map(b=> b.id==='acts' ? rcTrimBlanks(rcCompactActivities(s, isPt, actNotes)) : b.lines);
+    if(body.length){
+      out.push('');
+      body.forEach(b=>b.forEach(l=>out.push(l)));
+    }
+    return rcTrimBlanks(out);
+  };
+
+  let keep = blocks.map(b=>b.id);
+  let lines = assemble(keep, true);
+  if(rcCountLines(lines, width) <= budget) return lines.join('\n');
+
+  // 1) activity observations are the first thing to go, the letters stay.
+  lines = assemble(keep, false);
+  if(rcCountLines(lines, width) <= budget) return lines.join('\n');
+
+  // 2) then whole blocks, least important first.
+  for(const id of order){
+    keep = keep.filter(k=>k !== id);
+    lines = assemble(keep, false);
+    if(rcCountLines(lines, width) <= budget) return lines.join('\n');
+  }
+  // Nothing left to drop: the note alone is over budget, which is the
+  // teacher's call to make, so hand it over rather than cutting a sentence.
+  return lines.join('\n');
+}
+
+function rcPeriodText(s, isPt){
+  return s.fromVal
+    ? `${formatDateShort(s.fromVal)} – ${s.toVal?formatDateShort(s.toVal):(isPt?'presente':'present')}`
+    : (isPt ? 'Todo o período' : 'All time');
+}
+
+function rcCompactGrades(s, isPt){
+  if(!(s.grades && s.grades.cycles && s.grades.cycles.length)) return [];
+  const out = [];
+  s.grades.cycles.forEach(cy=>{
+    const st = cy.status;
+    const scores = st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ');
+    if(st.advanced){
+      out.push(`${isPt?'TOEFL':'TOEFL'} · ${cy.label}: ${scores} (${isPt?'meta':'target'} ${st.target})`
+        + (st.under ? (isPt?' · abaixo da meta':' · below target') : ''));
+    } else {
+      out.push(`${isPt?'Notas':'Grades'} · ${cy.label}: ${scores} · ${isPt?'total':'total'} ${st.total}/240 · ${isPt?'média':'avg'} ${st.avg}`
+        + (st.under ? (isPt?' · abaixo da média':' · below average') : ''));
+    }
+  });
+  return out;
+}
+
+function rcCompactStats(s, isPt){
+  const bits = [];
+  if(s.attendanceRate != null) bits.push(`${isPt?'Frequência':'Attendance'} ${s.attendanceRate}%`
+    + (s.expected != null ? ` (${s.classesLost}/${s.expected})` : ''));
+  if(s.late) bits.push(`${s.late} ${isPt?(s.late===1?'atraso':'atrasos'):(s.late===1?'late':'lates')}`);
+  if(!rcState || rcState.includeHomework !== false){
+    if(s.hwAvg != null) bits.push(`${isPt?'Lição':'Homework'} ${s.hwAvg}%`);
+  }
+  if(s.partScore != null) bits.push(`${isPt?'Participação':'Participation'} ${s.partScore}%`);
+  if(s.totalPhone) bits.push(`${isPt?'Celular':'Phone'} ${s.totalPhone}x`);
+  return bits.length ? [bits.join(' · ')] : [];
+}
+
+function rcCompactRubric(s, isPt){
+  if(!(s.rubric && s.rubric.criteria.length)) return [];
+  const bits = s.rubric.criteria.map(c=>`${isPt?c.pt:c.label} ${c.letter}`);
+  return [`${isPt?'Rubrica oral':'Oral rubric'} · ${bits.join(' · ')}`];
+}
+
+function rcCompactActivities(s, isPt, withNotes){
+  const rows = s.activityNotes || [];
+  if(!rows.length) return [];
+  const out = [];
+  const label = isPt ? 'Atividades · ' : 'Activities · ';
+  rows.forEach((a,i)=>{
+    const sk = skillMeta(a.skill);
+    const note = (withNotes && a.note) ? `: ${a.note}` : '';
+    out.push(`${i ? '  ' : label}${formatDateShort(a.date)} · ${isPt?sk.pt:sk.label} — ${a.description}${a.letter?` (${a.letter})`:''}${note}`);
+  });
+  return out;
+}
+
+function rcCompactClub(s, isPt){
+  const rows = (s.clubs||[]).filter(r=>r.status==='present' || r.status==='absent');
+  if(!rows.length) return [];
+  const went = rows.filter(r=>r.status==='present').length;
+  return [`ENGLISH CLUB · ${isPt?`${went} de ${rows.length} encontro${rows.length===1?'':'s'}`
+                                : `${went} of ${rows.length} session${rows.length===1?'':'s'}`}`];
+}
+
+function rcCompactMissed(s, isPt){
+  if(!(s.missed && s.missed.length)) return [];
+  const list = s.missed.map(m=>`${formatDateShort(m.date)}${m.topic?` (${m.topic})`:''}`).join(' · ');
+  return [`${isPt?'Aulas perdidas':'Classes missed'} · ${list}`];
+}
+
 function buildReportText(s, lang){
+  if(rcState && rcState.mode === 'compact') return buildCompactReport(s, lang);
+  return buildFullReportText(s, lang);
+}
+
+function buildFullReportText(s, lang){
   const isPt = lang==='pt';
   const L = isPt ? {
     title:'RELATÓRIO DO ALUNO', clazz:'Turma', period:'Período', allTime:'Todo o período',
@@ -10017,6 +10233,9 @@ function openReportTextModal(){
   const lang = state.reportLang;
   const isPt = lang==='pt';
   const text = buildReportText(lastReportStats, lang);
+  const isCompact = rcState.mode === 'compact';
+  const usedLines = isCompact ? rcCountLines(text.split('\n'), rcState.printWidth) : 0;
+  const fits = !isCompact || usedLines <= rcState.printMax;
   const autoNote = isPt
     ? 'Comportamento e lição de casa vêm dos dados. Vocabulário, gramática e português são opcionais. O texto sai como um recado escrito direto para o aluno, no primeiro nome e em segunda pessoa, e abre o relatório. Use ↻ Outra redação para trocar as frases.'
     : 'Behavior and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment is written straight to the student, in Portuguese, using their first name, and opens the report. Use ↻ Reword to swap the phrasing.';
@@ -10036,12 +10255,32 @@ function openReportTextModal(){
       <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
     </div>
 
+    <div class="card section" style="padding:14px 16px;margin-bottom:14px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn-ghost small" style="${isCompact?'':'border-color:var(--accent);color:var(--accent);'}" onclick="rcSetMode('full')">${isPt?'Completo':'Full'}</button>
+        <button class="btn-ghost small" style="${isCompact?'border-color:var(--accent);color:var(--accent);':''}" onclick="rcSetMode('compact')">${isPt?'Boletim da escola':'School form'}</button>
+        ${isCompact ? `
+        <span class="meta" style="font-size:12px;">${isPt?'largura':'width'}</span>
+        <input type="number" min="20" max="200" value="${rcState.printWidth}" onchange="rcSetPrint('printWidth', this.value)"
+               style="width:66px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;">
+        <span class="meta" style="font-size:12px;">${isPt?'linhas':'lines'}</span>
+        <input type="number" min="4" max="80" value="${rcState.printMax}" onchange="rcSetPrint('printMax', this.value)"
+               style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;">
+        <span id="rc-line-count" style="font-size:12px;font-weight:600;margin-left:auto;color:${fits?'var(--muted)':'var(--danger, #c0392b)'};">
+          ${usedLines}/${rcState.printMax} ${isPt?'linhas':'lines'}${fits?'':' ⚠'}
+        </span>` : ''}
+      </div>
+      ${isCompact ? `<p class="meta" style="margin:9px 0 0;font-size:12px;">${isPt
+        ? 'Conta linhas impressas, não parágrafos. Ajuste a largura até bater com o campo do boletim: o que não couber é cortado de baixo para cima, e os comentários nunca são cortados no meio.'
+        : 'Counts printed lines, not paragraphs. Set the width to match the form\'s comment box: anything that does not fit is dropped from the bottom up, and the note is never cut mid-sentence.'}</p>` : ''}
+    </div>
+
     <div class="card section" style="padding:14px 16px;margin-bottom:14px;display:grid;gap:9px;">
       <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
         <input type="checkbox" ${rcState.includeHomework!==false?'checked':''} onchange="rcSetHomework(this.checked)">
         <span>${isPt?'Incluir tarefa de casa':'Include homework'}${lastReportStats.hwAvg!=null?` <span class="meta">(${lastReportStats.hwAvg}%)</span>`:''}</span>
       </label>
-      ${(lastReportStats.projects||[]).length ? `
+      ${(!isCompact && (lastReportStats.projects||[]).length) ? `
       <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;">
         <input type="checkbox" ${rcState.includeProjects!==false?'checked':''} onchange="rcSetProjects(this.checked)">
         <span>${isPt?'Incluir projetos':'Include projects'} <span class="meta">(${lastReportStats.projects.length})</span></span>
