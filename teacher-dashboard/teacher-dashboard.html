@@ -9855,8 +9855,10 @@ function buildCompactReport(s, lang){
   add('club',   rcCompactClub(s, isPt));
   add('missed', rcCompactMissed(s, isPt));
 
-  // Dropped in this order when the block does not fit.
-  const order = ['missed','club','rubric','acts','stats','grades'];
+  // Dropped in this order when the block does not fit. English Club outranks
+  // the A-F activity letters: the teacher would rather the form showed that the
+  // student turned up to the club than which letters the activities scored.
+  const order = ['missed','acts','rubric','club','stats','grades'];
   const assemble = (keep, actNotes) => {
     const out = [head];
     const note = rcTrimBlanks(rcCommentLines(s, null));
