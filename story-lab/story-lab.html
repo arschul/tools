@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Lab 🧪</title>
+<meta name="description" content="A teacher-led story builder. The class creates a story in five stages: who, where and when, what happened, plot twist, ending. Scaffolding changes for A1, A2, B1 and B2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    var z = JSON.parse(localStorage.getItem('storylab.v1') || '{}').size;
+    if (z === '2' || z === '3') document.documentElement.setAttribute('data-size', z);
+  } catch (e) {}
+})();
+</script>
+<style>
+:root {
+  --bg: #0f1220; --surface: #171b2e; --surface2: #20264a; --border: #2f3760;
+  --text: #eef0fb; --muted: #aab0d0; --accent: #ffc857; --accent-ink: #241a00;
+  --ok: #6bdc8b; --warn: #ffb84d; --bad: #ff7a8a; --on-c: #111318;
+  --s0: #8b98ff; --s1: #3fd0b6; --s2: #ffb84d; --s3: #ff6fa0; --s4: #6bdc8b; --s5: #c7a2ff;
+  --radius: 16px; --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --font-display: 'Montserrat', system-ui, sans-serif;
+  --font-ui: 'Open Sans', system-ui, sans-serif;
+}
+:root[data-theme="light"] {
+  --bg: #f5f3ec; --surface: #ffffff; --surface2: #ecebf7; --border: #cfcce4;
+  --text: #1c2036; --muted: #4f5679; --accent: #a35f00; --accent-ink: #ffffff;
+  --ok: #1a7f3c; --warn: #9a5b00; --bad: #c62f45; --on-c: #ffffff;
+  --s0: #4a58d6; --s1: #0b7d6b; --s2: #9a5b00; --s3: #c02b63; --s4: #1a7f3c; --s5: #7444c9;
+  --shadow: 0 8px 24px rgba(30, 30, 70, .12);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { font-size: 18px; }
+html[data-size="2"] { font-size: 21px; }
+html[data-size="3"] { font-size: 25px; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui); line-height: 1.5; min-height: 100vh; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.back-link { position: fixed; top: 12px; left: 16px; z-index: 50; display: inline-flex; align-items: center; min-height: 56px; padding: 0 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 700; font-size: 14px; box-shadow: var(--shadow); }
+.back-link:hover { border-color: var(--accent); }
+
+#app { max-width: 1520px; margin: 0 auto; padding: 76px 20px 48px; }
+@media (min-width: 900px) { #app { padding-top: 12px; } .top { margin-left: 160px; } }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; min-height: 56px; }
+.tools { display: flex; gap: 8px; }
+.brand { display: flex; align-items: center; gap: 8px; margin-right: 2px; }
+.brand-icon { font-size: 26px; }
+.brand h1 { font-family: var(--font-display); font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+.levels { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); padding: 5px; border-radius: 18px; }
+.lvl { min-width: 58px; min-height: 56px; border: 0; border-radius: 13px; background: transparent; font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--muted); }
+.lvl:hover { color: var(--text); }
+.lvl[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.spacer { flex: 1 1 20px; }
+.timer { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); padding: 5px 6px 5px 10px; border-radius: 18px; }
+.tdisp { font-family: var(--font-display); font-weight: 800; font-size: 24px; min-width: 72px; text-align: center; font-variant-numeric: tabular-nums; }
+.tdisp.up { color: var(--bad); animation: pulse 1s ease-in-out 4; }
+@keyframes pulse { 50% { transform: scale(1.12); } }
+.ibtn { min-width: 56px; min-height: 56px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); font-size: 20px; font-weight: 700; display: inline-grid; place-items: center; }
+.ibtn:hover { border-color: var(--accent); }
+.timer .ibtn { border: 0; background: var(--surface2); }
+select.tsel { min-height: 56px; border-radius: 14px; border: 0; background: var(--surface2); color: var(--text); font: inherit; font-size: 16px; font-weight: 600; padding: 0 10px; }
+
+/* stage rail */
+.rail { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+.step { flex: 1 1 0; min-width: 132px; min-height: 60px; display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface); text-align: left; font-weight: 700; font-size: 15px; }
+.step .num { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; background: var(--c); color: var(--on-c); }
+.step[aria-current="step"] { border-color: var(--c); background: var(--surface2); }
+.step:hover { border-color: var(--c); }
+
+/* layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1020px) { .layout { grid-template-columns: 1fr; } #story { position: static !important; max-height: none !important; } }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 26px; box-shadow: var(--shadow); }
+#story { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+
+/* stage panel */
+.kicker { font-size: .78rem; letter-spacing: .09em; text-transform: uppercase; color: var(--c); font-weight: 800; }
+#stage h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin: .1em 0 .05em; letter-spacing: -.01em; }
+#stage h2:focus { outline: none; }
+#stage h3 { font-family: var(--font-display); font-size: 1.05rem; margin: 1.3em 0 .4em; }
+.ask { font-size: 1.5rem; font-weight: 700; margin: .1em 0 .25em; line-height: 1.3; }
+.hint { color: var(--muted); margin: 0 0 .9em; font-size: 1rem; }
+.lab { display: block; font-weight: 700; margin: 1.1em 0 .4em; font-size: 1rem; }
+
+.pron { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: .4em 0 .8em; color: var(--muted); font-weight: 600; font-size: 1rem; }
+.lines { margin: .6em 0 1em; padding: 6px 4px; }
+.line { font-size: 1.6rem; line-height: 1.45; margin: .15em 0; font-weight: 600; }
+.blank { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; min-height: 56px; min-width: 96px; margin: 3px 2px; padding: 0 16px; border-radius: 14px; border: 2px dashed var(--c); background: transparent; font-size: .85em; font-weight: 700; color: var(--muted); text-transform: lowercase; }
+.blank.filled { border-style: solid; background: var(--surface2); color: var(--text); text-transform: none; font-size: 1em; }
+.blank.active { box-shadow: 0 0 0 4px var(--c); }
+
+.opts { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px 16px; margin-top: .8em; }
+.opts-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.opts-head strong { flex: 1 1 200px; font-size: 1.1rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin: .6em 0; }
+.chip { min-height: 56px; padding: 6px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface); font-size: 1.05rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; text-align: left; }
+.opts .chip { background: var(--surface); }
+.chip:hover { border-color: var(--c); }
+.chip .em { font-size: 1.55em; line-height: 1; }
+.chip[aria-pressed="true"] { border-color: var(--c); background: var(--c); color: var(--on-c); }
+.chips.cards .chip { flex-direction: column; justify-content: center; min-width: 128px; min-height: 104px; text-align: center; gap: 4px; }
+.chips.cards .chip .em { font-size: 2.1em; }
+.chip.used { border-color: var(--ok); }
+.chip.used::after { content: "✓"; color: var(--ok); font-weight: 800; }
+.chip[aria-pressed="true"].used::after { color: var(--on-c); }
+.chip.small { font-size: .95rem; min-height: 56px; }
+
+.custom { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: .6em; }
+.custom label { font-weight: 700; font-size: .95rem; }
+.custom input { flex: 1 1 220px; min-height: 56px; padding: 0 14px; border-radius: 14px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 1.05rem; }
+.btn { min-height: 56px; padding: 0 22px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface2); font-weight: 700; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { background: transparent; }
+.nav { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 1.6em; }
+
+.qs { margin: .6em 0 .8em; padding-left: 1.4em; font-size: 1.3rem; font-weight: 600; line-height: 1.4; }
+.qs li { margin: .35em 0; padding-left: .2em; }
+.qs li::marker { color: var(--c); font-weight: 800; }
+.tip { border-left: 6px solid var(--c); background: var(--surface2); padding: 12px 18px; border-radius: 0 14px 14px 0; margin: .9em 0; font-size: 1.05rem; }
+.tip b { color: var(--c); }
+.note { border: 2px dashed var(--c); border-radius: 14px; padding: 12px 16px; margin: .9em 0; font-size: 1.02rem; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.note.warn { border-color: var(--warn); }
+.typeinfo { margin: .4em 0 .2em; padding: 12px 16px; background: var(--surface2); border-radius: 14px; }
+.typeinfo p { margin: .2em 0; }
+.draft { width: 100%; min-height: 10rem; font: inherit; font-size: 1.2rem; line-height: 1.6; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--bg); color: var(--text); resize: vertical; }
+.draft.small { min-height: 5.2rem; }
+.draft:focus { border-color: var(--c); outline: none; }
+.count { color: var(--muted); font-size: .9rem; margin-top: .3em; }
+
+/* story panel */
+.story-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.story-head h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.story-title { width: 100%; min-height: 56px; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; background: transparent; border: 0; border-bottom: 2px solid var(--border); color: var(--text); padding: 6px 2px; margin: .4em 0 .2em; }
+.story-title:focus { border-bottom-color: var(--accent); outline: none; }
+.para { margin: .8em 0; padding-left: 14px; border-left: 5px solid var(--c); font-size: 1.12rem; line-height: 1.65; }
+.para.empty { color: var(--muted); font-style: italic; font-size: .95rem; }
+.gap { color: var(--warn); font-weight: 700; letter-spacing: .05em; }
+.meter { position: relative; height: 14px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin: 12px 0 4px; }
+.meter .zone { position: absolute; top: 0; bottom: 0; background: rgba(107, 220, 139, .28); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--muted); border-radius: 99px; transition: width .3s; }
+.meter.ok i { background: var(--ok); }
+.meter.over i { background: var(--warn); }
+.metertext { font-size: .92rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.metertext b { color: var(--text); }
+
+/* review */
+.check { display: flex; gap: 14px; align-items: flex-start; width: 100%; min-height: 60px; text-align: left; padding: 10px 16px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface2); margin: 8px 0; font-size: 1.08rem; font-weight: 600; }
+.check .box { width: 30px; height: 30px; flex: none; border-radius: 9px; border: 2px solid var(--muted); display: grid; place-items: center; font-weight: 800; margin-top: 2px; }
+.check[aria-checked="true"] { border-color: var(--ok); }
+.check[aria-checked="true"] .box { background: var(--ok); border-color: var(--ok); color: #111318; }
+.check small { display: block; color: var(--muted); font-weight: 400; font-size: .82rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 1em 0; }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; background: rgba(5, 7, 20, .72); display: grid; place-items: center; z-index: 100; padding: 16px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; max-width: 680px; width: 100%; max-height: 92vh; overflow: auto; padding: 24px 28px; box-shadow: var(--shadow); }
+.modal h2 { font-family: var(--font-display); margin: 0 0 .3em; }
+.modal h3 { font-family: var(--font-display); font-size: 1rem; margin: 1.2em 0 .3em; }
+.modal ul { padding-left: 1.2em; margin: .3em 0; }
+.modal li { margin: .3em 0; }
+kbd { background: var(--surface2); border: 1px solid var(--border); border-bottom-width: 3px; border-radius: 8px; padding: 1px 9px; font-family: var(--font-ui); font-weight: 700; font-size: .9em; }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 22px; border-radius: 14px; font-weight: 700; z-index: 120; box-shadow: var(--shadow); }
+
+/* print */
+#print { display: none; }
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  body > *:not(#print) { display: none !important; }
+  #print { display: block; font-family: var(--font-ui); font-size: 12pt; line-height: 1.5; color: #000; }
+  #print h1 { font-family: var(--font-display); font-size: 22pt; margin: 6pt 0 10pt; }
+  #print h2 { font-family: var(--font-display); font-size: 13pt; margin: 14pt 0 3pt; }
+  #print .ph { display: flex; justify-content: space-between; font-size: 10pt; border-bottom: 1.5pt solid #000; padding-bottom: 4pt; }
+  #print p { margin: 4pt 0; }
+  #print .pp { font-size: 13pt; line-height: 1.7; margin: 8pt 0; }
+  #print .q { font-weight: 700; }
+  #print .wl { border-bottom: 1pt solid #555; height: 24pt; }
+  #print .ol { font-size: 9.5pt; color: #333; margin: 1pt 0; }
+  #print section { break-inside: avoid; }
+  #print .pf { margin-top: 16pt; font-size: 9pt; color: #555; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<a class="back-link" href="../">← Tool Hub</a>
+
+<div id="app">
+  <header class="top">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">🧪</span><h1>Story Lab</h1></div>
+    <div class="levels" id="levels" role="group" aria-label="Level"></div>
+        <div class="timer" id="timer">
+      <span class="tdisp" id="tdisp" role="timer" aria-label="Stage timer">02:00</span>
+      <button class="ibtn" id="tgo" type="button" aria-label="Start timer">▶</button>
+      <button class="ibtn" id="treset" type="button" aria-label="Reset timer">↺</button>
+      <select class="tsel" id="tsel" aria-label="Timer length"></select>
+    </div>
+    <div class="tools">
+      <button class="ibtn" id="bsize" type="button" aria-label="Change text size" title="Text size (A)">Aa</button>
+      <button class="ibtn" id="btheme" type="button" aria-label="Switch theme" title="Theme">◐</button>
+      <button class="ibtn" id="bfull" type="button" aria-label="Full screen" title="Full screen (F)">⛶</button>
+      <button class="ibtn" id="bhelp" type="button" aria-label="Help and shortcuts" title="Help (?)">?</button>
+    </div>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="Story stages"></nav>
+
+  <main class="layout">
+    <section class="panel" id="stage" aria-live="polite"></section>
+    <aside class="panel" id="story" aria-label="Story so far"></aside>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title" id="modal"></div>
+</div>
+<div id="toast" role="status" hidden></div>
+<div id="print" aria-hidden="true"></div>
+<noscript><p style="padding:24px">Story Lab needs JavaScript to run.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- small helpers ---------- */
+function store(k, v) {
+  try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+  catch (e) { return null; }
+}
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const o = (v, e, p) => { const r = { v: v }; if (e) r.e = e; if (p) r.p = p; return r; };
+const W = arr => arr.map(v => ({ v: v }));
+
+const LEVELS = ['A1', 'A2', 'B1', 'B2'];
+const STAGE_NAMES = ['Who', 'Where and when', 'What happened', 'Plot twist', 'Ending'];
+const PRON = {
+  he:   { P: 'He',   p: 'he',   obj: 'him',  poss: 'his',   was: 'was' },
+  she:  { P: 'She',  p: 'she',  obj: 'her',  poss: 'her',   was: 'was' },
+  it:   { P: 'It',   p: 'it',   obj: 'it',   poss: 'its',   was: 'was' },
+  they: { P: 'They', p: 'they', obj: 'them', poss: 'their', was: 'were' }
+};
+const PRON_KEYS = ['P', 'p', 'was', 'obj', 'poss'];
+const WS_PRON = { P: 'He / She', p: 'he / she', was: 'was', obj: 'him / her', poss: 'his / her' };
+
+/* ---------- content ---------- */
+const DATA = {};
+
+DATA.A1 = {
+  mode: 'frames', target: [45, 65], timer: 120, cards: true, prons: ['he', 'she', 'it'],
+  tagline: 'Picture cards and sentence frames. Present simple.',
+  how: [
+    'Ask the question on the screen. The class calls out answers or votes by show of hands.',
+    'Tap a blank, then tap the winning card. Use Surprise me when the class cannot decide.',
+    'Students copy the finished story into their notebooks, or you print the student sheet for a paper version.'
+  ],
+  stages: [
+    { ask: 'Who is our story about?', hint: 'Tap a card for the character, then choose the other words.',
+      slots: {
+        hero: { ph: 'who', q: 'Who is the character?', opts: [
+          o('Mia the student', '👧', 'she'), o('Leo the pirate', '🏴‍☠️', 'he'), o('Zoe the singer', '🎤', 'she'),
+          o('Max the astronaut', '🧑‍🚀', 'he'), o('Ana the cook', '🧑‍🍳', 'she'), o('Sam the footballer', '⚽', 'he'),
+          o('Rex the dog', '🐶', 'he'), o('Coco the cat', '🐱', 'she'), o('Bip the robot', '🤖', 'it'),
+          o('Luna the dragon', '🐲', 'she'), o('Kai the farmer', '🧑‍🌾', 'he'), o('Ivy the artist', '🎨', 'she')] },
+        adj: { ph: 'adjective', q: 'What is the character like?', opts: [
+          o('happy', '😊'), o('funny', '😂'), o('shy', '🙈'), o('kind', '💛'), o('brave', '🦁'), o('tired', '😴'), o('hungry', '🍔'), o('clever', '🧠')] },
+        likes: { ph: 'thing', q: 'What does the character like?', opts: [
+          o('pizza', '🍕'), o('music', '🎵'), o('football', '⚽'), o('books', '📚'), o('animals', '🐾'), o('games', '🎮'), o('drawing', '✏️'), o('swimming', '🏊')] }
+      },
+      lines: ['This is {hero}.', '{P} is {adj}.', '{P} likes {likes}.'] },
+    { ask: 'Where and when does it start?', hint: 'Choose a place, the weather and the time of day.',
+      slots: {
+        place: { ph: 'place', q: 'Where is the character?', opts: [
+          o('in the park', '🌳'), o('at the beach', '🏖️'), o('at school', '🏫'), o('in a forest', '🌲'), o('at the zoo', '🐘'), o('in a castle', '🏰'), o('on a boat', '⛵'), o('in a small town', '🏘️')] },
+        weather: { ph: 'weather', q: 'What is the weather like?', opts: [
+          o('sunny', '☀️'), o('rainy', '🌧️'), o('cold', '❄️'), o('hot', '🥵'), o('windy', '💨')] },
+        time: { ph: 'time', q: 'What time of day is it?', opts: [
+          o('morning', '🌅'), o('afternoon', '🌞'), o('evening', '🌇'), o('night', '🌙')] }
+      },
+      lines: ['{P} is {place}.', 'It is a {weather} {time}.'] },
+    { ask: 'What happens?', hint: 'The character finds something and does something.',
+      slots: {
+        find: { ph: 'thing', q: 'What does the character find?', opts: [
+          o('a map', '🗺️'), o('a key', '🔑'), o('a big box', '📦'), o('an egg', '🥚'), o('a magic book', '📖'), o('a phone', '📱'), o('a strange door', '🚪'), o('a gold coin', '🪙')] },
+        action: { ph: 'action', q: 'What does the character do?', opts: [
+          o('opens it', '🔓'), o('takes it home', '🏠'), o('shows it to a friend', '👫'), o('looks inside', '👀'), o('runs away', '🏃'), o('calls a friend', '📞')] },
+        feel: { ph: 'feeling', q: 'How does the character feel?', opts: [
+          o('excited', '🤩'), o('scared', '😨'), o('surprised', '😮'), o('nervous', '😬'), o('happy', '😊')] }
+      },
+      lines: ['One day, {p} finds {find}.', 'Then {p} {action}.', '{P} is {feel}.'] },
+    { ask: 'What is the plot twist?', hint: 'Something surprising happens. The class chooses.',
+      slots: {
+        twist: { ph: 'surprise', q: 'What is the surprise?', opts: [
+          o('the door opens by itself', '🚪'), o('the box starts to move', '📦'), o('a little dragon comes out', '🐉'), o('all the lights go out', '💡'),
+          o('it starts to rain very hard', '🌧️'), o('a strange voice says hello', '🗣️'), o('a big cat jumps out', '🐱'), o('everything turns blue', '🌈')] },
+        react: { ph: 'action', q: 'What does the character do?', opts: [
+          o('laughs', '😂'), o('shouts', '📣'), o('jumps', '🦘'), o('smiles', '🙂'), o('waits', '⏳'), o('runs', '🏃')] }
+      },
+      lines: ['Suddenly, {twist}.', 'Then {p} {react}.'] },
+    { ask: 'How does it end?', hint: 'Choose how the character feels and what happens last.',
+      slots: {
+        endFeel: { ph: 'feeling', q: 'How does the character feel at the end?', opts: [
+          o('happy', '😊'), o('proud', '🏅'), o('tired', '😴'), o('sad', '😢'), o('very brave', '🦁')] },
+        endDo: { ph: 'action', q: 'What does the character do?', opts: [
+          o('goes home', '🏠'), o('makes a new friend', '🤝'), o('tells everyone', '📣'), o('eats a big dinner', '🍽️'), o('goes to sleep', '🛌'), o('has a party', '🎉')] }
+      },
+      lines: ['In the end, {p} is {endFeel}.', '{P} {endDo}.', 'The end.'] }
+  ],
+  checks: [
+    { id: 'name', label: 'The character has a name', test: (t, c) => !!c.d.slots.hero },
+    { id: 'caps', label: 'Every sentence starts with a capital letter', test: (t) => sentences(t).length > 0 && sentences(t).every(s => /^[A-Z]/.test(s.trim())) },
+    { id: 'stops', label: 'Every sentence ends with a full stop', test: (t) => sentences(t).length > 0 && paras(t).every(p => /[.!?]["”']?$/.test(p.trim())) },
+    { id: 'gaps', label: 'No blanks are left', test: (t) => t.length > 0 && !/_{3,}/.test(t) },
+    { id: 'len', label: 'The story is about 45 to 65 words', test: (t, c) => c.n >= 45 && c.n <= 65 }
+  ]
+};
+
+DATA.A2 = {
+  mode: 'frames', target: [80, 130], timer: 180, cards: false, prons: ['he', 'she', 'it', 'they'],
+  tagline: 'Sentence frames with choices, plus one sentence of your own. Past simple.',
+  how: [
+    'Work through the blanks in order. The class chooses each one, then you ask for one extra sentence of their own.',
+    'Word chips add useful words to the extra sentence. A chip turns green when the story already uses it.',
+    'Read the past simple aloud together. Check that every verb about the past is in the past.'
+  ],
+  stages: [
+    { ask: 'Who is our story about?', hint: 'Pick a name, a job or role, a quality and a wish.',
+      slots: {
+        name: { ph: 'name', q: 'What is the character called?', opts: [
+          o('Mia', '', 'she'), o('Leo', '', 'he'), o('Zoe', '', 'she'), o('Max', '', 'he'), o('Nina', '', 'she'), o('Theo', '', 'he'), o('Ana', '', 'she'), o('Sam', '', 'he')] },
+        role: { ph: 'who', q: 'Who or what was the character?', opts: W(['a shy student', 'a young pirate', 'a clever detective', 'a famous singer', 'a new teacher', 'a lonely robot', 'a brave explorer', 'a hungry dragon']) },
+        adj: { ph: 'adjective', q: 'What was the character like?', opts: W(['funny', 'kind', 'brave', 'clumsy', 'curious', 'lazy', 'clever', 'loud']) },
+        want: { ph: 'wish', q: 'What did the character want?', opts: W(['to find a real friend', 'to win a big prize', 'to see the world', 'to be famous', 'to find a lost treasure', 'to help a stranger']) }
+      },
+      lines: ['{name} was {role}.', '{P} {was} very {adj}.', '{P} wanted {want}.'],
+      free: { label: 'Add one more sentence about the character.', ph: 'For example: The character loved ... but hated ...' },
+      bank: { title: 'Useful words', items: ['and', 'but', 'also', 'very', 'always', 'never'] } },
+    { ask: 'Where and when does it start?', hint: 'Choose the time and the place.',
+      slots: {
+        when: { ph: 'time', q: 'When was it?', opts: W(['a cold winter night', 'a hot summer afternoon', 'a rainy Monday morning', 'a quiet Sunday evening', 'the first day of school', 'a windy day in autumn']) },
+        place: { ph: 'place', q: 'Where was the character?', opts: W(['in a dark forest', 'on an old ship', 'in a small village', 'at a busy airport', 'in a big empty house', 'on a tall mountain', 'at the school library', 'in a strange city']) }
+      },
+      lines: ['It was {when}.', '{P} {was} {place}.'],
+      free: { label: 'Add one sentence about what the character could see or hear.', ph: 'For example: There was ... and the character could hear ...' },
+      bank: { title: 'Useful words', items: ['in', 'on', 'at', 'near', 'next to', 'behind', 'under', 'there was', 'there were'] } },
+    { ask: 'What happened?', hint: 'Something happens, the character reacts, and there is a problem.',
+      slots: {
+        event: { ph: 'event', q: 'What happened one day?', opts: W(['found a strange letter', 'heard a loud noise', 'saw a light in the window', 'met a stranger', 'lost an important key', 'opened a secret door']) },
+        action: { ph: 'action', q: 'What did the character do then?', opts: W(['decided to find out more', 'went outside', 'called a friend', 'hid under a table', 'took a photo', 'walked slowly to the door']) },
+        problem: { ph: 'problem', q: 'What was the problem?', opts: W(['it was too late', 'nobody believed {obj}', 'the door was locked', 'the phone did not work', 'it started to rain', 'a strange person followed {obj}']) }
+      },
+      lines: ['One day, {p} {event}.', 'Then {p} {action}.', 'But {problem}.'],
+      free: { label: 'Add one sentence with because or so.', ph: 'For example: The character was scared because ...' },
+      bank: { title: 'Useful words', items: ['one day', 'then', 'after that', 'suddenly', 'but', 'because', 'so', 'when', 'while', 'finally'] } },
+    { ask: 'What is the plot twist?', hint: 'Something surprising changes the story. The class chooses.',
+      slots: {
+        twist: { ph: 'surprise', q: 'What was the surprise?', opts: W(['a familiar voice said hello behind {obj}', 'the lights went out and someone laughed', 'a police officer knocked on the door', 'the whole day was a surprise party for {obj}', 'a tiny puppy ran out of the dark', 'someone shouted {poss} name from far away', 'the ground began to shake', 'a bright light filled the room']) },
+        react: { ph: 'reaction', q: 'What did the character do?', opts: W(['could not believe it', 'felt very nervous', 'started to laugh', 'screamed', 'did not move', 'smiled']) }
+      },
+      lines: ['Suddenly, {twist}.', '{P} {react}.'],
+      free: { label: 'Add one sentence about what happened next.', ph: 'For example: After that, ...' },
+      bank: { title: 'Useful words', items: ['suddenly', 'then', 'but', 'at that moment', 'so', 'because'] } },
+    { ask: 'How does it end?', hint: 'Choose what happened at the end and how the character felt.',
+      slots: {
+        ending: { ph: 'ending', q: 'What happened in the end?', opts: W(['found the answer', 'made a new friend', 'won the prize', 'went home safely', 'saved the day', 'learned something important', 'told everyone the story', 'forgot about the problem']) },
+        feel: { ph: 'feeling', q: 'How did the character feel after that?', opts: W(['very happy', 'very proud', 'tired but happy', 'a little sad', 'very lucky', 'ready for a new adventure']) }
+      },
+      lines: ['In the end, {p} {ending}.', 'After that, {p} {was} {feel}.'],
+      free: { label: 'Add a last sentence. What did the character learn?', ph: 'For example: The character learned that ...' },
+      bank: { title: 'Useful words', items: ['in the end', 'finally', 'after that', 'so', 'because', 'at last'] } }
+  ],
+  checks: [
+    { id: 'gaps', label: 'No blanks are left', test: (t) => t.length > 0 && !/_{3,}/.test(t) },
+    { id: 'past', label: 'Every verb about the past is in the past simple', note: 'Read it aloud and listen for verbs that are not in the past.' },
+    { id: 'link', label: 'A sentence of your own uses because, so, but, when or while', test: (t, c) => /\b(because|so|but|when|while)\b/i.test(c.freeText) },
+    { id: 'shape', label: 'There is a beginning, a problem and an ending', note: 'Tick it when the class agrees.' },
+    { id: 'len', label: 'The story is about 80 to 130 words', test: (t, c) => c.n >= 80 && c.n <= 130 }
+  ]
+};
+
+DATA.B1 = {
+  mode: 'free', target: [120, 180], timer: 300,
+  tagline: 'Guiding questions. The class writes its own sentences.',
+  how: [
+    'Read the questions aloud and give the class two minutes to talk in pairs.',
+    'Type the best sentences as the class dictates them, or let students write in notebooks and compare with the screen.',
+    'In stages 4 and 5, choose a type to give the class a direction. The starter chip adds an opening to the draft.'
+  ],
+  stages: [
+    { ask: 'Who is your main character?', hint: 'Answer in your own sentences. Two or three sentences are enough.',
+      questions: ['What are the character\'s name and age, and what do they do every day?', 'What does the character want more than anything?', 'What could stop them? Think of a fear, a rule or a person.'],
+      tip: '<b>Tip.</b> Show one thing the character does, not only what they are like. "Sam always sat at the back and never put up her hand" tells us more than "Sam was shy."',
+      starters: ['Meet ___, a ___ who ___.', '___ was the kind of person who ___.', 'Everyone in ___ knew ___.'],
+      bank: { title: 'Words for people', items: ['determined', 'curious', 'stubborn', 'generous', 'nervous', 'ambitious', 'reliable', 'impatient', 'easygoing', 'sensitive', 'who always', 'who never'] } },
+    { ask: 'Where and when does the story begin?', hint: 'Use two or three senses. Sounds and smells make a place feel real.',
+      questions: ['Where and when does the story begin?', 'What can the character see, hear or smell?', 'How does the place make the character feel?'],
+      tip: '<b>Tip.</b> Start with a time or a place, then add one detail that only this place has.',
+      starters: ['It was late on a ___ evening when ___.', 'The ___ was so ___ that ___.', 'The streets were completely empty except for ___.'],
+      bank: { title: 'Words for places and time', items: ['deserted', 'crowded', 'gloomy', 'peaceful', 'freezing', 'stuffy', 'noisy', 'spotless', 'at dawn', 'late at night', 'in the middle of winter', 'a few years ago', 'on the last day of the holidays'] } },
+    { ask: 'What happened?', hint: 'One problem starts, the character acts, and it gets harder.',
+      questions: ['What is the first thing that goes wrong or changes?', 'What does the character do about it?', 'Who or what makes it harder?'],
+      tip: '<b>Tip.</b> Use the past continuous for what was going on and the past simple for the event: "I was walking home when I heard a scream."',
+      starters: ['I was ___ when ___.', 'While ___ was ___, ___ suddenly ___.', 'At first ___, but then ___.'],
+      bank: { title: 'Linking words', items: ['while', 'when', 'as soon as', 'after that', 'meanwhile', 'so', 'however', 'although', 'because of this', 'eventually', 'at that moment', 'in spite of'] } },
+    { ask: 'What surprise changes everything?', hint: 'Choose a type of twist, then write it in your own words.',
+      questions: ['What surprising fact changes everything?', 'How does the character react?'],
+      tip: '<b>Tip.</b> Add one short sentence before the reveal to build tension, for example: "Then I noticed something strange."',
+      types: [
+        { id: 'identity', v: 'Hidden identity', hint: 'Someone is not who they seemed.', starter: 'It turned out that ___ was actually ___.' },
+        { id: 'trick', v: 'A trick or a test', hint: 'The problem was planned by someone.', starter: 'Everything had been planned by ___.' },
+        { id: 'mistake', v: 'A big misunderstanding', hint: 'The character read the situation wrongly.', starter: 'What ___ thought was ___ was really ___.' },
+        { id: 'helper', v: 'The helper is the problem', hint: 'The person who helps causes the trouble.', starter: 'The person who ___ was the reason for ___.' },
+        { id: 'secret', v: 'A secret comes out', hint: 'A hidden fact is finally told.', starter: 'Then ___ told everyone the truth about ___.' },
+        { id: 'place', v: 'Not the place it seemed', hint: 'The setting is different from what we thought.', starter: 'The ___ was not what it looked like. It was ___.' }],
+      bank: { title: 'Reveal phrases', items: ['suddenly', 'without warning', 'to my surprise', 'it turned out that', 'at that moment', 'just then', 'all of a sudden', 'what nobody knew was that'] } },
+    { ask: 'How does the story end?', hint: 'Choose an ending type, then finish the story.',
+      questions: ['How is the problem solved, or is it left open?', 'What did the character learn or change?', 'What is the last picture the reader sees?'],
+      tip: '<b>Tip.</b> Finish with a short sentence. A short last line is easy to remember.',
+      types: [
+        { id: 'happy', v: 'A happy ending', hint: 'The problem is solved and the character is glad.', starter: 'From that day on, ___.' },
+        { id: 'sad', v: 'A sad ending', hint: 'The character loses something, or someone moves away.', starter: 'In the end, ___ had to ___, and nothing was the same.' },
+        { id: 'open', v: 'An open ending', hint: 'The reader decides what happens next.', starter: 'Nobody knew what would happen next, but ___.' },
+        { id: 'funny', v: 'A funny ending', hint: 'A joke or a silly last detail.', starter: 'And that is why ___ never ___ again.' }],
+      bank: { title: 'Ending phrases', items: ['in the end', 'eventually', 'from that day on', 'looking back', 'ever since', 'finally', 'after all', 'at last'] } }
+  ],
+  checks: [
+    { id: 'gaps', label: 'No ___ gaps are left in the text', test: (t) => t.length > 0 && !/_{3,}/.test(t) },
+    { id: 'tenses', label: 'The story uses the past continuous and the past simple together', test: (t) => /\b(was|were)\s+\w+ing\b/i.test(t) },
+    { id: 'links', label: 'At least four different linking words are used', test: (t, c) => c.linkCount >= 4 },
+    { id: 'twist', label: 'The twist changes how we understand the story', note: 'Tick it when the class agrees.' },
+    { id: 'end', label: 'The ending shows what the character learned or felt', note: 'Tick it when the class agrees.' },
+    { id: 'len', label: 'The story is about 120 to 180 words', test: (t, c) => c.n >= 120 && c.n <= 180 }
+  ]
+};
+
+DATA.B2 = {
+  mode: 'free', target: [180, 250], timer: 480,
+  tagline: 'Open writing with one craft tip per stage. Plan the twist, then plant the clue.',
+  how: [
+    'In stage 2, write the planning note first: one small detail that will come back in the twist.',
+    'Ask for the twist only after stage 3. The screen shows the planning note so the class can check the clue.',
+    'Use the checklist for peer review before you copy the story.'
+  ],
+  stages: [
+    { ask: 'Who is your main character?', hint: 'Introduce them through what they do or say.',
+      questions: ['Who is the character, and what do they want?', 'What is standing in the way, outside them or inside them?'],
+      tip: '<b>Craft.</b> Introduce the character through an action, a habit or a line of dialogue, not a list of adjectives.',
+      starters: ['Maya, a nurse who had never taken a day off, ___.', 'Nobody at the office knew that ___.', '“___,” said ___, without looking up.'],
+      bank: { title: 'Words for people', items: ['reluctant', 'meticulous', 'restless', 'skeptical', 'resourceful', 'guarded', 'impulsive', 'sarcastic', 'who had never', 'the kind of person who'] } },
+    { ask: 'Where and when are we?', hint: 'Set the mood, and hide one detail for later.',
+      questions: ['Where and when are we, and what is the mood?', 'Which small detail will come back in the twist?'],
+      tip: '<b>Craft.</b> Choose one detail that sets the mood and one detail that will matter later.',
+      plan: { label: 'Planning note, not part of the story', ph: 'Which small detail will come back in the twist? For example: a broken watch, a locked drawer, a name on an envelope.' },
+      starters: ['By the time ___ arrived, the ___ had already ___.', 'Shivering in the doorway, ___.', 'The air smelled of ___, and somewhere a ___ was ___.'],
+      bank: { title: 'Atmosphere', items: ['eerie', 'dimly lit', 'cramped', 'deserted', 'sweltering', 'oppressive', 'tranquil', 'dilapidated', 'the air smelled of', 'a distant sound of'] } },
+    { ask: 'What happened?', hint: 'Build tension in three steps and include dialogue.',
+      questions: ['What changes the situation?', 'How does the character respond, and what does it cost them?', 'What makes it worse?'],
+      tip: '<b>Craft.</b> Something changes, the character responds, and it gets worse. Include at least one line of dialogue and punctuate it like this: “I can’t stay here,” she whispered.',
+      starters: ['No sooner had ___ than ___.', '“___,” ___ muttered, as if ___.', 'Despite ___, ___ decided to ___.'],
+      bank: { title: 'Speech and tension', items: ['whispered', 'muttered', 'snapped', 'admitted', 'insisted', 'hesitated', 'no sooner had ___ than', 'by the time', 'the moment', 'as if', 'despite'] } },
+    { ask: 'What is the truth behind it all?', hint: 'Choose a type of twist, then reveal it using the past perfect.',
+      questions: ['What is the truth that changes how we read everything before?', 'What had the character not known, or not seen, until now?'],
+      tip: '<b>Craft.</b> Use the past perfect for what was true all along, and check that a clue appeared earlier.',
+      remind: true,
+      types: [
+        { id: 'identity', v: 'Hidden identity', hint: 'Someone was not who they seemed.', starter: 'What ___ had not realized was that ___ had been ___ all along.' },
+        { id: 'narrator', v: 'The narrator hid something', hint: 'The person telling the story left something out.', starter: 'I had not told you everything about ___.' },
+        { id: 'roles', v: 'Roles reversed', hint: 'The victim and the villain swap places.', starter: 'Only then did ___ understand who had really ___.' },
+        { id: 'secret', v: 'A secret comes out', hint: 'A hidden fact changes the relationships.', starter: 'It dawned on ___ that ___ had known from the start.' },
+        { id: 'helper', v: 'The helper is the problem', hint: 'The person who helps causes the trouble.', starter: 'As it turned out, the person who had ___ was the one who ___.' },
+        { id: 'planned', v: 'It was all planned', hint: 'Someone arranged the events from the beginning.', starter: 'Little did ___ know, every step had been ___.' }],
+      bank: { title: 'Reveal phrases', items: ['little did ___ know', 'it dawned on ___ that', 'only then did ___ realize', 'as it turned out', 'all along', 'what ___ had not realized was that'] } },
+    { ask: 'How does the story end?', hint: 'Choose an ending type and think about the last line.',
+      questions: ['What has changed for the character?', 'What does the reader keep thinking about?'],
+      tip: '<b>Craft.</b> Make the last line echo the first, or leave one question open on purpose.',
+      types: [
+        { id: 'resolved', v: 'Resolved', hint: 'The problem is solved and we see the result.', starter: 'For the first time in years, ___.' },
+        { id: 'open', v: 'Open', hint: 'One question stays unanswered on purpose.', starter: 'Whether ___ would ever ___, nobody could say.' },
+        { id: 'circular', v: 'Circular', hint: 'The last line echoes the first.', starter: 'And so, once again, ___.' },
+        { id: 'bittersweet', v: 'Bittersweet', hint: 'The character wins something and loses something.', starter: 'What mattered now was ___, even though ___.' }],
+      bank: { title: 'Ending phrases', items: ['for once', 'at long last', 'in hindsight', 'what mattered now was', 'there was nothing left to say', 'all the same', 'for the first time in years'] } }
+  ],
+  checks: [
+    { id: 'gaps', label: 'No ___ gaps are left in the text', test: (t) => t.length > 0 && !/_{3,}/.test(t) },
+    { id: 'dialogue', label: 'There is a line of dialogue with correct punctuation', test: (t) => /["“][^"”“]{2,}[,.!?]["”]/.test(t) },
+    { id: 'perfect', label: 'The past perfect is used at least once', test: (t) => PAST_PERFECT.test(t) },
+    { id: 'clue', label: 'A detail from the setting comes back in the twist', note: 'Check it against the planning note. Tick it when the class agrees.' },
+    { id: 'starts', label: 'Sentences do not all start the same way', test: (t) => varied(t) },
+    { id: 'last', label: 'The last line echoes the first, or leaves a question open', note: 'Tick it when the class agrees.' },
+    { id: 'len', label: 'The story is about 180 to 250 words', test: (t, c) => c.n >= 180 && c.n <= 250 }
+  ]
+};
+
+const PAST_PERFECT = /\bhad\s+(?:not\s+|never\s+|already\s+|just\s+|only\s+|barely\s+)?(?:been|\w+ed|done|gone|seen|known|made|said|told|found|left|lost|met|read|run|come|become|taken|given|got|gotten|heard|felt|kept|thought|brought|bought|caught|taught|sent|spent|built|held|sat|stood|understood|won|written|driven|chosen|spoken|broken|hidden|shown|thrown|worn|begun|forgotten|fallen|grown|flown|drawn|swum)\b/i;
+
+/* ---------- text utilities ---------- */
+function paras(t) { return t.split(/\n+/).map(s => s.trim()).filter(Boolean); }
+function sentences(t) { return (t.replace(/_{3,}/g, ' ').match(/[^.!?]+[.!?]+["”']?/g) || []).map(s => s.trim()).filter(Boolean); }
+function wordCount(t) { return (t.replace(/_{2,}/g, ' ').match(/[A-Za-z0-9À-ÿ][A-Za-z0-9À-ÿ'’]*/g) || []).length; }
+function varied(t) {
+  const s = sentences(t);
+  if (s.length < 5) return false;
+  const c = {};
+  s.forEach(x => { const w = (x.match(/[A-Za-z']+/) || [''])[0].toLowerCase(); c[w] = (c[w] || 0) + 1; });
+  return Math.max.apply(null, Object.keys(c).map(k => c[k])) <= 3;
+}
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function cleanVal(v) { return String(v).replace(/\s+/g, ' ').replace(/^[\s"“”']+|[\s"“”'.,;:!?]+$/g, '').slice(0, 60); }
+
+/* ---------- state ---------- */
+const KEY = 'storylab.v1';
+const S = { level: 'A1', stage: 0, active: null, size: '1', drafts: {}, pendingReset: false };
+function newDraft() { return { slots: {}, pron: '', free: ['', '', '', '', ''], type: {}, plan: '', title: '', checks: {} }; }
+function D() { return S.drafts[S.level] || (S.drafts[S.level] = newDraft()); }
+function LV() { return DATA[S.level]; }
+
+function load() {
+  try {
+    const j = JSON.parse(store(KEY) || 'null');
+    if (!j) return;
+    if (LEVELS.indexOf(j.level) > -1) S.level = j.level;
+    if (j.size === '2' || j.size === '3') S.size = j.size;
+    LEVELS.forEach(l => {
+      const d = j.drafts && j.drafts[l];
+      if (!d) return;
+      const n = newDraft();
+      n.slots = (d.slots && typeof d.slots === 'object') ? d.slots : {};
+      n.pron = PRON[d.pron] ? d.pron : '';
+      if (Array.isArray(d.free)) for (let i = 0; i < 5; i++) n.free[i] = String(d.free[i] || '');
+      n.type = (d.type && typeof d.type === 'object') ? d.type : {};
+      n.plan = String(d.plan || ''); n.title = String(d.title || '');
+      n.checks = (d.checks && typeof d.checks === 'object') ? d.checks : {};
+      S.drafts[l] = n;
+    });
+  } catch (e) {}
+}
+let saveH = null;
+function persist() {
+  clearTimeout(saveH);
+  saveH = setTimeout(() => store(KEY, JSON.stringify({ level: S.level, size: S.size, drafts: S.drafts })), 250);
+}
+
+/* ---------- story building ---------- */
+function expand(str, d, ws) {
+  const out = []; let last = 0; const re = /\{(\w+)\}/g; let m;
+  while ((m = re.exec(str))) {
+    if (m.index > last) out.push({ t: 'text', s: str.slice(last, m.index) });
+    const k = m[1];
+    if (PRON_KEYS.indexOf(k) > -1) {
+      if (ws) out.push({ t: 'text', s: WS_PRON[k] });
+      else if (PRON[d.pron]) out.push({ t: 'text', s: PRON[d.pron][k] });
+      else out.push({ t: 'blank', k: 'pron' });
+    } else {
+      const val = d.slots[k];
+      if (val) out.push({ t: 'slot', k: k, s: derive(val, d.pron) });
+      else out.push({ t: 'blank', k: k });
+    }
+    last = re.lastIndex;
+  }
+  if (last < str.length) out.push({ t: 'text', s: str.slice(last) });
+  return out;
+}
+function derive(val, pron) { const p = PRON[pron] || PRON.they; return val.replace(/\{(obj|poss)\}/g, (m, k) => p[k]); }
+function segsText(segs, ws) { return segs.map(x => x.t === 'blank' ? (ws ? '__________' : '_____') : x.s).join(''); }
+function tidy(s) { return s.replace(/[ \t]+([.,!?;:])/g, '$1').replace(/[ \t]{2,}/g, ' ').trim(); }
+
+function stageSegs(li, si, d) {
+  const st = DATA[li].stages[si]; const out = [];
+  (st.lines || []).forEach((ln, i) => { if (i) out.push({ t: 'text', s: ' ' }); expand(ln, d).forEach(x => out.push(x)); });
+  return out;
+}
+function stageText(li, si, d) {
+  let s = segsText(stageSegs(li, si, d));
+  const f = (d.free[si] || '').trim();
+  if (f) s = (s ? s + ' ' : '') + f;
+  return tidy(s);
+}
+function fullText(li, d) {
+  const out = [];
+  for (let i = 0; i < 5; i++) { const t = stageText(li, i, d); if (t) out.push(t); }
+  return out.join('\n\n');
+}
+function countText(li, d) {
+  const out = [];
+  for (let i = 0; i < 5; i++) {
+    const st = DATA[li].stages[i]; const parts = [];
+    const anyFilled = !!st.lines && orderedSlots(st).some(k => d.slots[k]);
+    (st.lines || []).forEach(ln => {
+      const segs = expand(ln, d);
+      if (segs.some(x => x.t === 'blank')) return;
+      if (/\{\w+\}/.test(ln) || anyFilled) parts.push(segsText(segs));
+    });
+    const f = (d.free[i] || '').trim(); if (f) parts.push(f);
+    out.push(parts.join(' '));
+  }
+  return out.join(' ');
+}
+function countGaps(li, d) {
+  let n = 0;
+  for (let i = 0; i < 5; i++) stageSegs(li, i, d).forEach(x => { if (x.t === 'blank') n++; });
+  return n;
+}
+function orderedSlots(st) {
+  const ids = []; (st.lines || []).forEach(ln => { let m; const re = /\{(\w+)\}/g; while ((m = re.exec(ln))) if (PRON_KEYS.indexOf(m[1]) < 0 && ids.indexOf(m[1]) < 0) ids.push(m[1]); });
+  return ids;
+}
+function usesPron(st) { return (st.lines || []).some(l => /\{(P|p|was|obj|poss)\}/.test(l)); }
+function stageDone(li, si, d) {
+  const st = DATA[li].stages[si];
+  if (st.lines) return orderedSlots(st).every(k => d.slots[k]) && (!usesPron(st) || !!d.pron);
+  return (d.free[si] || '').trim().length > 0;
+}
+function linkWords(li) {
+  const set = {};
+  DATA[li].stages.forEach(st => { if (st.bank) st.bank.items.forEach(w => { if (w.indexOf('___') < 0) set[w.toLowerCase()] = 1; }); });
+  ['then', 'but', 'so', 'because', 'however', 'although', 'while', 'when', 'meanwhile', 'eventually', 'finally', 'after that', 'suddenly'].forEach(w => set[w] = 1);
+  return Object.keys(set);
+}
+function wordUsed(word, text) {
+  if (word.indexOf('___') > -1) return false;
+  return new RegExp('(^|[^A-Za-z])' + escRe(word) + '([^A-Za-z]|$)', 'i').test(text);
+}
+
+/* ---------- rendering: top, rail ---------- */
+function renderTop() {
+  $('levels').innerHTML = LEVELS.map(l => '<button type="button" class="lvl" data-level="' + l + '" aria-pressed="' + (l === S.level) + '">' + l + '</button>').join('');
+  document.documentElement.setAttribute('data-size', S.size);
+}
+function renderRail() {
+  const d = D(); const li = S.level;
+  $('rail').innerHTML = [0, 1, 2, 3, 4, 5].map(i => {
+    const name = i < 5 ? STAGE_NAMES[i] : 'The story';
+    const done = i < 5 && stageDone(li, i, d);
+    const mark = i === 5 ? '★' : (done ? '✓' : (i + 1));
+    return '<button type="button" class="step" data-stage="' + i + '" style="--c:var(--s' + i + ')"' + (i === S.stage ? ' aria-current="step"' : '') + '><span class="num">' + mark + '</span><span>' + name + '</span></button>';
+  }).join('');
+}
+
+/* ---------- rendering: stage ---------- */
+function chipHtml(opt, pressed, cards) {
+  return '<button type="button" class="chip" data-v="' + esc(opt.v) + '"' + (opt.p ? ' data-p="' + opt.p + '"' : '') + ' aria-pressed="' + pressed + '">' +
+    (opt.e ? '<span class="em" aria-hidden="true">' + opt.e + '</span>' : '') + '<span>' + esc(opt.v) + '</span></button>';
+}
+function bankHtml(bank, text) {
+  if (!bank) return '';
+  return '<h3>' + esc(bank.title) + '</h3><div class="chips" data-bank>' + bank.items.map(w =>
+    '<button type="button" class="chip small' + (wordUsed(w, text) ? ' used' : '') + '" data-ins="' + esc(w) + '">' + esc(w) + '</button>').join('') + '</div>';
+}
+function firstUnfilled(ids, d, from) {
+  const order = from == null ? ids : ids.slice(from + 1).concat(ids.slice(0, from + 1));
+  for (let i = 0; i < order.length; i++) if (!d.slots[order[i]]) return order[i];
+  return null;
+}
+
+function renderStage(focusSel) {
+  const host = $('stage'); const L = LV(); const d = D(); const si = S.stage;
+  host.style.setProperty('--c', 'var(--s' + si + ')');
+  if (si === 5) { renderReview(host, L, d); afterRender(focusSel); return; }
+  const st = L.stages[si];
+  let h = '<div class="kicker">Stage ' + (si + 1) + ' of 5</div><h2 id="stage-h" tabindex="-1">' + STAGE_NAMES[si] + '</h2>' +
+    '<p class="ask">' + esc(st.ask) + '</p><p class="hint">' + esc(st.hint) + '</p>';
+
+  if (L.mode === 'frames') {
+    const ids = orderedSlots(st);
+    if (ids.indexOf(S.active) < 0) S.active = firstUnfilled(ids, d) || ids[0] || null;
+    h += '<div class="pron" role="group" aria-label="The character is">The character is ' + L.prons.map(p =>
+      '<button type="button" class="chip small" data-pron="' + p + '" aria-pressed="' + (d.pron === p) + '">' + PRON[p].P + '</button>').join('') + '</div>';
+    h += '<div class="lines">' + st.lines.map(ln => '<p class="line">' + expand(ln, d).map(x => {
+      if (x.t === 'text') return esc(x.s);
+      if (x.t === 'slot') return '<button type="button" class="blank filled' + (x.k === S.active ? ' active' : '') + '" data-slot="' + x.k + '">' + esc(x.s) + '</button>';
+      if (x.k === 'pron') return '<button type="button" class="blank" data-pronblank="1">he / she</button>';
+      return '<button type="button" class="blank' + (x.k === S.active ? ' active' : '') + '" data-slot="' + x.k + '">' + esc(st.slots[x.k].ph) + '</button>';
+    }).join('') + '</p>').join('') + '</div>';
+    if (S.active) {
+      const sl = st.slots[S.active]; const cur = d.slots[S.active];
+      h += '<div class="opts"><div class="opts-head"><strong>' + esc(sl.q) + '</strong>' +
+        '<button type="button" class="btn ghost" data-act="surprise">🎲 Surprise me</button>' +
+        '<button type="button" class="btn ghost" data-act="clearslot"' + (cur ? '' : ' disabled') + '>Clear</button></div>' +
+        '<div class="chips' + (L.cards ? ' cards' : '') + '">' + sl.opts.map(op => chipHtml(op, cur === op.v, L.cards)).join('') + '</div>' +
+        '<div class="custom"><label for="custom">Or type your own</label><input id="custom" type="text" maxlength="60" autocomplete="off"><button type="button" class="btn" data-act="usecustom">Use it</button></div></div>';
+    } else {
+      h += '<p class="hint">Tap a blank to change it, or press Next.</p>';
+    }
+    if (st.free) {
+      h += '<label class="lab" for="draft">' + esc(st.free.label) + '</label><textarea id="draft" class="draft small" placeholder="' + esc(st.free.ph) + '">' + esc(d.free[si]) + '</textarea>' +
+        bankHtml(st.bank, fullText(S.level, d));
+    }
+  } else {
+    h += '<ol class="qs">' + st.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ol>';
+    if (st.tip) h += '<div class="tip">' + st.tip + '</div>';
+    if (st.plan) h += '<label class="lab" for="plan">' + esc(st.plan.label) + '</label><textarea id="plan" class="draft small" placeholder="' + esc(st.plan.ph) + '">' + esc(d.plan) + '</textarea>';
+    if (st.remind) {
+      h += d.plan.trim()
+        ? '<div class="note"><span>Your hidden detail from stage 2: <b>' + esc(d.plan.trim()) + '</b>. Does it appear in the twist?</span></div>'
+        : '<div class="note warn"><span>No hidden detail yet.</span><button type="button" class="btn" data-act="goto" data-stage="1">Add one in stage 2</button></div>';
+    }
+    if (st.types) {
+      const cur = d.type[si];
+      h += '<h3>Choose a type</h3><div class="chips">' + st.types.map(t =>
+        '<button type="button" class="chip" data-type="' + t.id + '" aria-pressed="' + (cur === t.id) + '">' + esc(t.v) + '</button>').join('') +
+        '<button type="button" class="btn ghost" data-act="randtype">🎲 Surprise me</button></div>';
+      const t = st.types.filter(x => x.id === cur)[0];
+      if (t) h += '<div class="typeinfo"><p><b>' + esc(t.v) + '.</b> ' + esc(t.hint) + '</p><p>Starter: <em>' + esc(t.starter) + '</em></p><button type="button" class="btn" data-ins="' + esc(t.starter) + '">Add the starter to the draft</button></div>';
+    }
+    if (st.starters) h += '<h3>Sentence starters</h3><div class="chips">' + st.starters.map(w => '<button type="button" class="chip small" data-ins="' + esc(w) + '">' + esc(w) + '</button>').join('') + '</div>';
+    h += bankHtml(st.bank, fullText(S.level, d));
+    h += '<label class="lab" for="draft">Class draft</label><textarea id="draft" class="draft" placeholder="Type what the class says here, or let students write in their notebooks.">' + esc(d.free[si]) + '</textarea>' +
+      '<div class="count" id="dcount"></div>';
+  }
+  h += '<div class="nav"><button type="button" class="btn" data-act="prev"' + (si === 0 ? ' disabled' : '') + '>← Back</button>' +
+    '<button type="button" class="btn primary" data-act="next">' + (si === 4 ? 'See the story →' : 'Next stage →') + '</button></div>';
+  host.innerHTML = h;
+  updateDraftCount();
+  afterRender(focusSel);
+}
+function afterRender(sel) {
+  if (!sel) return;
+  const el = document.querySelector(sel);
+  if (el && el.focus) el.focus();
+}
+function updateDraftCount() {
+  const el = $('dcount'); if (!el) return;
+  const n = wordCount(D().free[S.stage] || '');
+  el.textContent = n + (n === 1 ? ' word in this stage' : ' words in this stage');
+}
+
+/* ---------- review ---------- */
+function ctxFor(d) {
+  const t = fullText(S.level, d);
+  const free = d.free.join(' ');
+  let lc = 0; const lw = linkWords(S.level); lw.forEach(w => { if (wordUsed(w, t)) lc++; });
+  return { d: d, n: wordCount(countText(S.level, d)), freeText: free, linkCount: lc };
+}
+function checkState(c, d, t, ctx) {
+  if (Object.prototype.hasOwnProperty.call(d.checks, c.id)) return { on: !!d.checks[c.id], auto: false };
+  if (c.test) return { on: !!c.test(t, ctx), auto: true };
+  return { on: false, auto: false };
+}
+function renderReview(host, L, d) {
+  const t = fullText(S.level, d); const ctx = ctxFor(d);
+  let h = '<div class="kicker">Last step</div><h2 id="stage-h" tabindex="-1">Check the story</h2>' +
+    '<p class="ask">Read it aloud together, then tick what you find.</p><p class="hint">The checklist is a guide. It never stops you from finishing.</p><div class="checks">';
+  L.checks.forEach(c => {
+    const s = checkState(c, d, t, ctx);
+    h += '<button type="button" class="check" role="checkbox" aria-checked="' + s.on + '" data-check="' + c.id + '"><span class="box" aria-hidden="true">' + (s.on ? '✓' : '') + '</span><span>' + esc(c.label) +
+      '<small>' + (s.auto ? (s.on ? 'Found automatically. Tap to change.' : 'Not found yet. Tap to tick it yourself.') : (c.note || 'Tap to tick or untick.')) + '</small></span></button>';
+  });
+  h += '</div><div class="actions"><button type="button" class="btn primary" data-act="copy">Copy the story</button>' +
+    '<button type="button" class="btn" data-act="printstory">Print the story</button>' +
+    '<button type="button" class="btn" data-act="printsheet">Print the student sheet</button>' +
+    ('speechSynthesis' in window ? '<button type="button" class="btn" data-act="speak" id="speakbtn">🔊 Read aloud</button>' : '') + '</div>' +
+    '<h3>Go back and change something</h3><div class="chips">' + STAGE_NAMES.map((n, i) => '<button type="button" class="chip small" data-goto="' + i + '">' + (i + 1) + '. ' + n + '</button>').join('') + '</div>' +
+    '<div class="nav"><button type="button" class="btn" data-act="prev">← Back</button><button type="button" class="btn" data-act="reset" id="resetbtn">Start a new story</button></div>';
+  host.innerHTML = h;
+}
+
+/* ---------- rendering: story panel ---------- */
+function renderStory() {
+  const L = LV(); const d = D(); const host = $('story');
+  const paras_ = []; let total = '';
+  for (let i = 0; i < 5; i++) {
+    const segs = stageSegs(S.level, i, d); const f = (d.free[i] || '').trim();
+    const hasContent = segs.some(x => x.t !== 'blank' && x.t !== 'text') || f;
+    let html = segs.map(x => x.t === 'blank' ? '<span class="gap">_____</span>' : esc(x.s)).join('');
+    if (f) html += (html ? ' ' : '') + esc(f).replace(/\n/g, '<br>');
+    if (hasContent) paras_.push('<p class="para" style="--c:var(--s' + i + ')">' + html + '</p>');
+    else paras_.push('<p class="para empty" style="--c:var(--s' + i + ')">' + STAGE_NAMES[i] + ': not written yet.</p>');
+  }
+  total = fullText(S.level, d);
+  const n = wordCount(countText(S.level, d)); const lo = L.target[0], hi = L.target[1]; const scale = Math.round(hi * 1.3);
+  const cls = n >= lo && n <= hi ? 'ok' : (n > hi ? 'over' : '');
+  const gaps = countGaps(S.level, d);
+  host.innerHTML = '<div class="story-head"><h2>Your story</h2><span class="count">' + S.level + '</span></div>' +
+    '<label class="count" for="title" style="display:block">Title</label><input id="title" class="story-title" type="text" maxlength="80" placeholder="Give it a title" value="' + esc(d.title) + '">' +
+    paras_.join('') +
+    '<div class="meter ' + cls + '" aria-hidden="true"><span class="zone" style="left:' + (lo / scale * 100) + '%;width:' + ((hi - lo) / scale * 100) + '%"></span><i style="width:' + Math.min(100, n / scale * 100) + '%"></i></div>' +
+    '<div class="metertext"><span><b>' + n + '</b> words · target ' + lo + ' to ' + hi + '</span><span>' + (gaps ? gaps + (gaps === 1 ? ' blank left' : ' blanks left') : (n >= lo && n <= hi ? 'In the target' : n > hi ? 'A little long' : '')) + '</span></div>';
+}
+function updateStoryLive() {
+  // cheap refresh while typing: only the story panel and the used-chips
+  const focusId = document.activeElement && document.activeElement.id;
+  if (focusId === 'title') return;
+  renderStory();
+  const t = fullText(S.level, D());
+  document.querySelectorAll('[data-bank] .chip').forEach(ch => ch.classList.toggle('used', wordUsed(ch.getAttribute('data-ins'), t)));
+}
+
+/* ---------- actions ---------- */
+function setLevel(l) {
+  if (LEVELS.indexOf(l) < 0 || l === S.level) return;
+  S.level = l; S.stage = 0; S.active = null; S.pendingReset = false;
+  timerSetDefault(); renderAll(); persist();
+}
+function goStage(i, focus) {
+  if (i < 0 || i > 5) return;
+  S.stage = i; S.active = null; S.pendingReset = false;
+  timerStop(true); renderRail(); renderStage(focus === false ? null : '#stage-h'); renderStory();
+}
+function pickValue(id, opt) {
+  const d = D();
+  d.slots[id] = opt.v;
+  if (opt.p) d.pron = opt.p;
+  const ids = orderedSlots(LV().stages[S.stage]);
+  const idx = ids.indexOf(id);
+  S.active = firstUnfilled(ids, d, idx) || id;
+  renderRail(); renderStage('.blank.active'); renderStory(); persist();
+}
+function surprise() {
+  const L = LV(); const d = D(); const st = L.stages[S.stage];
+  if (L.mode === 'frames') {
+    if (!S.active) return;
+    const opts = st.slots[S.active].opts.filter(x => x.v !== d.slots[S.active]);
+    pickValue(S.active, opts[Math.floor(Math.random() * opts.length)]);
+  } else if (st.types) {
+    const list = st.types.filter(t => t.id !== d.type[S.stage]);
+    d.type[S.stage] = list[Math.floor(Math.random() * list.length)].id;
+    renderStage(); persist();
+  }
+}
+function insertText(ta, text) {
+  const s = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+  const e = ta.selectionEnd == null ? ta.value.length : ta.selectionEnd;
+  const pre = ta.value.slice(0, s), post = ta.value.slice(e);
+  const ins = (pre && !/\s$/.test(pre) ? ' ' : '') + text + (post && !/^\s/.test(post) ? ' ' : '');
+  ta.value = pre + ins + post;
+  const pos = (pre + ins).length;
+  try { ta.setSelectionRange(pos, pos); } catch (er) {}
+  ta.focus();
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 2200);
+}
+function copyText(text) {
+  const done = () => toast('Copied');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { toast('Select the text and copy it yourself'); }
+  document.body.removeChild(ta);
+}
+function storyPlain() {
+  const d = D(); const t = fullText(S.level, d);
+  return (d.title.trim() ? d.title.trim() + '\n\n' : '') + t;
+}
+function speak() {
+  const synth = window.speechSynthesis; if (!synth) return;
+  const btn = $('speakbtn');
+  if (synth.speaking) { synth.cancel(); if (btn) btn.textContent = '🔊 Read aloud'; return; }
+  const u = new SpeechSynthesisUtterance(storyPlain().replace(/_{3,}/g, 'blank'));
+  u.lang = 'en-US'; u.rate = 0.9;
+  u.onend = () => { const b = $('speakbtn'); if (b) b.textContent = '🔊 Read aloud'; };
+  if (btn) btn.textContent = '⏹ Stop';
+  synth.speak(u);
+}
+
+/* ---------- print ---------- */
+function printStory() {
+  const d = D(); const title = d.title.trim() || 'My story';
+  const ps = fullText(S.level, d).split(/\n\n/).map(p => '<p class="pp">' + esc(p).replace(/\n/g, '<br>') + '</p>').join('');
+  $('print').innerHTML = '<div class="ph"><span>Story Lab · ' + S.level + '</span><span>Name ____________________ Class ________ Date ________</span></div><h1>' + esc(title) + '</h1>' + ps +
+    '<p class="pf">Made with Story Lab · arschul.github.io/tools</p>';
+  window.print();
+}
+function printSheet() {
+  const L = LV(); const blank = newDraft();
+  let h = '<div class="ph"><span>Story Lab · ' + S.level + ' · Student sheet</span><span>Name ____________________ Class ________ Date ________</span></div><h1>My story</h1><p>Title: ______________________________________</p>';
+  L.stages.forEach((st, i) => {
+    h += '<section><h2>' + (i + 1) + '. ' + STAGE_NAMES[i] + '</h2><p class="q">' + esc(st.ask) + '</p>';
+    if (L.mode === 'frames') {
+      st.lines.forEach(ln => { h += '<p class="pp">' + esc(tidy(segsText(expand(ln, blank, true), true))) + '</p>'; });
+      orderedSlots(st).forEach(k => { h += '<p class="ol"><b>' + esc(st.slots[k].q) + '</b> ' + esc(st.slots[k].opts.map(x => x.v).join(', ')) + '</p>'; });
+      if (st.free) { h += '<p class="q">' + esc(st.free.label) + '</p><div class="wl"></div><div class="wl"></div>'; }
+    } else {
+      h += '<ol>' + st.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ol>';
+      if (st.types) h += '<p class="ol"><b>Types:</b> ' + esc(st.types.map(x => x.v).join(', ')) + '</p>';
+      const lines = S.level === 'B1' ? 4 : 5;
+      for (let k = 0; k < lines; k++) h += '<div class="wl"></div>';
+    }
+    h += '</section>';
+  });
+  h += '<p class="pf">Story Lab · arschul.github.io/tools</p>';
+  $('print').innerHTML = h;
+  window.print();
+}
+
+/* ---------- timer ---------- */
+const T = { sel: 120, left: 120, run: false, end: 0, h: null, ctx: null };
+const TIMES = [60, 120, 180, 300, 480, 600];
+function fmt(s) { const m = Math.floor(s / 60), r = s % 60; return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r; }
+function timerRender() {
+  const d = $('tdisp'); d.textContent = fmt(T.left); d.classList.toggle('up', T.left === 0);
+  $('tgo').textContent = T.run ? '⏸' : '▶'; $('tgo').setAttribute('aria-label', T.run ? 'Pause timer' : 'Start timer');
+}
+function timerSetDefault() { timerStop(true); T.sel = LV().timer; T.left = T.sel; $('tsel').value = String(T.sel); timerRender(); }
+function timerStop(reset) { clearInterval(T.h); T.h = null; T.run = false; if (reset) T.left = T.sel; timerRender(); }
+function timerToggle() {
+  if (T.run) { timerStop(false); return; }
+  if (T.left <= 0) T.left = T.sel;
+  T.run = true; T.end = Date.now() + T.left * 1000;
+  T.h = setInterval(() => {
+    T.left = Math.max(0, Math.ceil((T.end - Date.now()) / 1000));
+    if (T.left === 0) { timerStop(false); chime(); toast('Time is up'); }
+    timerRender();
+  }, 250);
+  timerRender();
+}
+function chime() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    T.ctx = T.ctx || new AC();
+    [660, 880, 1100].forEach((f, i) => {
+      const osc = T.ctx.createOscillator(), g = T.ctx.createGain(), t0 = T.ctx.currentTime + i * 0.22;
+      osc.frequency.value = f; osc.type = 'sine'; g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.4);
+      osc.connect(g); g.connect(T.ctx.destination); osc.start(t0); osc.stop(t0 + 0.45);
+    });
+  } catch (e) {}
+}
+
+/* ---------- help ---------- */
+function openHelp() {
+  const L = LV();
+  $('modal').innerHTML = '<h2 id="help-title">How to run Story Lab</h2><p>' + esc(L.tagline) + '</p>' +
+    '<h3>' + S.level + ': a way to run it</h3><ul>' + L.how.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+    '<h3>Keyboard</h3><ul>' +
+    '<li><kbd>←</kbd> <kbd>→</kbd> move between stages, <kbd>1</kbd> to <kbd>6</kbd> jump to a stage</li>' +
+    '<li><kbd>R</kbd> surprise me (random choice or twist type)</li>' +
+    '<li><kbd>T</kbd> start or pause the timer, <kbd>F</kbd> full screen, <kbd>A</kbd> text size, <kbd>?</kbd> this help</li></ul>' +
+    '<div class="actions"><button type="button" class="btn" data-act="printsheet">Print the student sheet</button><button type="button" class="btn primary" data-act="closehelp" id="closehelp">Close</button></div>';
+  $('overlay').hidden = false; $('closehelp').focus();
+}
+function closeHelp() { $('overlay').hidden = true; const b = $('bhelp'); if (b) b.focus(); }
+
+/* ---------- events ---------- */
+function renderAll() { renderTop(); renderRail(); renderStage(); renderStory(); }
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  const q = sel => t.closest(sel);
+  let el;
+  if ((el = q('[data-level]'))) { setLevel(el.getAttribute('data-level')); return; }
+  if ((el = q('.step'))) { goStage(+el.getAttribute('data-stage')); return; }
+  if ((el = q('[data-pron]'))) { D().pron = el.getAttribute('data-pron'); renderRail(); renderStage(); renderStory(); persist(); return; }
+  if (q('[data-pronblank]')) { const b = document.querySelector('[data-pron]'); if (b) b.focus(); return; }
+  if ((el = q('.blank[data-slot]'))) { S.active = el.getAttribute('data-slot'); renderStage('.opts .chip'); return; }
+  if ((el = q('.opts .chip'))) {
+    const st = LV().stages[S.stage]; const sl = st.slots[S.active];
+    const v = el.getAttribute('data-v'); pickValue(S.active, sl.opts.filter(x => x.v === v)[0]); return;
+  }
+  if ((el = q('[data-type]'))) { D().type[S.stage] = el.getAttribute('data-type'); renderStage(); persist(); return; }
+  if ((el = q('[data-ins]'))) { const ta = $('draft'); if (ta) insertText(ta, el.getAttribute('data-ins')); return; }
+  if ((el = q('[data-check]'))) {
+    const d = D(); const id = el.getAttribute('data-check'); const c = LV().checks.filter(x => x.id === id)[0];
+    const cur = checkState(c, d, fullText(S.level, d), ctxFor(d)).on;
+    d.checks[id] = !cur; renderStage(); persist(); return;
+  }
+  if ((el = q('[data-goto]'))) { goStage(+el.getAttribute('data-goto')); return; }
+  if ((el = q('[data-act]'))) {
+    const a = el.getAttribute('data-act');
+    if (a === 'prev') goStage(S.stage - 1);
+    else if (a === 'next') goStage(S.stage + 1);
+    else if (a === 'goto') goStage(+el.getAttribute('data-stage'));
+    else if (a === 'surprise' || a === 'randtype') surprise();
+    else if (a === 'clearslot') { delete D().slots[S.active]; renderRail(); renderStage(); renderStory(); persist(); }
+    else if (a === 'usecustom') useCustom();
+    else if (a === 'copy') copyText(storyPlain());
+    else if (a === 'printstory') printStory();
+    else if (a === 'printsheet') printSheet();
+    else if (a === 'speak') speak();
+    else if (a === 'closehelp') closeHelp();
+    else if (a === 'reset') {
+      if (!S.pendingReset) { S.pendingReset = true; el.textContent = 'Tap again to clear this story'; clearTimeout(S.rh); S.rh = setTimeout(() => { S.pendingReset = false; const b = $('resetbtn'); if (b) b.textContent = 'Start a new story'; }, 3500); return; }
+      S.drafts[S.level] = newDraft(); S.pendingReset = false; S.stage = 0; S.active = null; renderAll(); persist(); toast('New story ready');
+    }
+    return;
+  }
+  if (t === $('overlay')) closeHelp();
+});
+
+function useCustom() {
+  const inp = $('custom'); if (!inp) return;
+  const v = cleanVal(inp.value); if (!v) { inp.focus(); return; }
+  pickValue(S.active, { v: v });
+}
+
+document.addEventListener('input', e => {
+  const t = e.target; const d = D();
+  if (t.id === 'draft') { d.free[S.stage] = t.value; updateDraftCount(); updateStoryLive(); renderRailSoft(); persist(); }
+  else if (t.id === 'plan') { d.plan = t.value; persist(); }
+  else if (t.id === 'title') { d.title = t.value; persist(); }
+});
+function renderRailSoft() {
+  const d = D(); const li = S.level;
+  document.querySelectorAll('.step').forEach((b, i) => {
+    if (i > 4) return; const done = stageDone(li, i, d);
+    const num = b.querySelector('.num'); const want = done ? '✓' : String(i + 1);
+    if (num.textContent !== want) num.textContent = want;
+  });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'custom') { e.preventDefault(); useCustom(); return; }
+  if (e.key === 'Escape' && !$('overlay').hidden) { closeHelp(); return; }
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (k === 'ArrowRight') goStage(Math.min(5, S.stage + 1));
+  else if (k === 'ArrowLeft') goStage(Math.max(0, S.stage - 1));
+  else if (/^[1-6]$/.test(k)) goStage(+k - 1);
+  else if (k === 'r' || k === 'R') surprise();
+  else if (k === 't' || k === 'T') timerToggle();
+  else if (k === 'f' || k === 'F') toggleFull();
+  else if (k === 'a' || k === 'A') cycleSize();
+  else if (k === '?') openHelp();
+});
+
+function cycleSize() { S.size = S.size === '1' ? '2' : S.size === '2' ? '3' : '1'; document.documentElement.setAttribute('data-size', S.size); persist(); }
+function toggleFull() {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  } catch (e) {}
+}
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next); store('theme', next);
+}
+
+$('tgo').addEventListener('click', timerToggle);
+$('treset').addEventListener('click', () => timerStop(true));
+$('tsel').addEventListener('change', e => { T.sel = +e.target.value; timerStop(true); });
+$('bsize').addEventListener('click', cycleSize);
+$('btheme').addEventListener('click', toggleTheme);
+$('bfull').addEventListener('click', toggleFull);
+$('bhelp').addEventListener('click', openHelp);
+
+/* ---------- boot ---------- */
+$('tsel').innerHTML = TIMES.map(s => '<option value="' + s + '">' + (s / 60) + ' min</option>').join('');
+load();
+timerSetDefault();
+renderAll();
+
+window.StoryLab = { S: S, DATA: DATA, fullText: fullText, stageText: stageText, wordCount: wordCount, expand: expand, newDraft: newDraft, orderedSlots: orderedSlots, PRON: PRON, ctxFor: ctxFor, checkState: checkState };
+})();
+</script>
+</body>
+</html>
