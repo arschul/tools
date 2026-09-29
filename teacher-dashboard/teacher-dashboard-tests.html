@@ -67,7 +67,7 @@ function run(T, state){
   // ---------- expectedSessionsForClass (A4) ----------
   section('expectedSessionsForClass — schedule window + holidays');
   // Mon/Wed/Fri class, explicit 1-week window, one holiday on a Wed.
-  T._setState({ holidays:[{date:'2026-03-04', label:'Test holiday'}], classes:[] });
+  T._setState({ holidays:[{date:'2026-03-04', label:'Test holiday'}], classes:[], sessions:{} });
   const mwf = { id:'c1', days:[1,3,5], startDate:'2026-03-02', endDate:'2026-03-06' };
   // Mar 2 Mon, 4 Wed(holiday), 6 Fri -> 2 sessions (Wed excluded)
   eq('MWF week with 1 holiday', T.expectedSessionsForClass(mwf,'2026-03-02','2026-03-06'), 2);
@@ -346,6 +346,68 @@ function run(T, state){
   eq('counts only rubric activities', crit_.vocabulary.n, 2);
   eq('ungraded criterion absent', crit_.grammar, undefined);
   eq('derived letters still feed skill averages', T.studentSkillAverages('s1','c1').speaking.letter, 'B');
+
+  // ---------- Activities: group work ----------
+  section('Activities — groups');
+  const ga_ = { id:'ga', classId:'c1', skill:'writing', grades:{}, notes:{},
+    groups:[{id:'g1',name:'Group 1',memberIds:['s1','s2','s3']},{id:'g2',name:'Group 2',memberIds:['s4']}] };
+  T.applyGroupGrade(ga_, 'g1', 'grade', 'B');
+  eq('group letter reaches every member', [ga_.grades.s1, ga_.grades.s2, ga_.grades.s3], ['B','B','B']);
+  eq('other group untouched', ga_.grades.s4, undefined);
+  T.setMemberValue(ga_, 's2', 'grade', 'A');
+  ok('member tap marks adjusted', T.isAdjusted(ga_, 's2', 'grade') && ga_.grades.s2==='A');
+  T.applyGroupGrade(ga_, 'g1', 'grade', 'C');
+  eq('regrade skips adjusted member', [ga_.grades.s1, ga_.grades.s2, ga_.grades.s3], ['C','A','C']);
+  T.setMemberValue(ga_, 's2', 'grade', 'C');
+  ok('landing on group letter re-joins the group', !T.isAdjusted(ga_, 's2', 'grade') && ga_.grades.s2==='C');
+  T.setMemberValue(ga_, 's3', 'grade', 'C');
+  ok('tapping the current letter clears it as an adjustment', ga_.grades.s3===undefined && T.isAdjusted(ga_, 's3', 'grade'));
+  T.resetToGroup(ga_, 's3');
+  ok('reset puts the group letter back', ga_.grades.s3==='C' && !T.isAdjusted(ga_, 's3'));
+  T.applyGroupGrade(ga_, 'g1', 'grade', 'C');
+  eq('tapping the group letter again clears followers', [ga_.grades.s1, ga_.grades.s3], [undefined, undefined]);
+  T.applyGroupGrade(ga_, 'g1', 'grade', 'A');
+  T.moveToGroup(ga_, 's1', 'g2');
+  eq('move takes the new group letter (none yet)', ga_.grades.s1, undefined);
+  ok('move updates membership', T.activityGroupOf(ga_, 's1').id==='g2' && !ga_.groups[0].memberIds.includes('s1'));
+  T.setMemberValue(ga_, 's3', 'grade', 'D');
+  T.moveToGroup(ga_, 's3', null);
+  ok('moving out keeps the letter as their own', ga_.grades.s3==='D' && !T.activityGroupOf(ga_, 's3') && !T.isAdjusted(ga_, 's3'));
+  T.moveToGroup(ga_, 's3', 'g1');
+  ok('moving in drops an own letter for the group letter', ga_.grades.s3==='A');
+  T.setMemberValue(ga_, 's4', 'grade', 'B');
+  T.removeGroup(ga_, 'g2');
+  ok('removing a group keeps letters, clears flags', ga_.grades.s4==='B' && !T.activityGroupOf(ga_, 's4') && ga_.groups.length===1);
+  T.removeGroup(ga_, 'g1');
+  ok('removing the last group returns to individual', ga_.groups===undefined && ga_.groupGrades===undefined);
+  const g3_ = T.addGroup(ga_);
+  ok('addGroup names and colours', g3_.name==='Group 1' && !!g3_.colour && ga_.groups.length===1);
+
+  const ind_ = { id:'gi', classId:'c1', skill:'writing', grades:{} };
+  T.setMemberValue(ind_, 's1', 'grade', 'B'); T.setMemberValue(ind_, 's1', 'grade', 'B');
+  ok('ungrouped activity: tap sets, tap again clears, no flags', ind_.grades.s1===undefined && ind_.adjusted===undefined);
+
+  const gr_ = { id:'gr', classId:'c1', skill:'speaking', mode:'rubric', tier:'basic', rubric:{}, grades:{},
+    weights:{vocabulary:20,grammar:20,pronunciation:20,fluency:20,task:20},
+    groups:[{id:'g1',name:'G',memberIds:['s1','s2']}] };
+  T.applyGroupGrade(gr_, 'g1', 'task', 'A');
+  T.applyGroupGrade(gr_, 'g1', 'vocabulary', 'C');
+  ok('rubric: group criteria reach members and derive overall', gr_.rubric.s1.task==='A' && gr_.grades.s1==='B' && gr_.grades.s2==='B', gr_);
+  T.setMemberValue(gr_, 's2', 'pronunciation', 'F');
+  ok('rubric: adjustment is per criterion', T.isAdjusted(gr_, 's2', 'pronunciation') && !T.isAdjusted(gr_, 's2', 'task'));
+  T.applyGroupGrade(gr_, 'g1', 'pronunciation', 'A');
+  ok('rubric: adjusted criterion kept, follower set', gr_.rubric.s2.pronunciation==='F' && gr_.rubric.s1.pronunciation==='A');
+  T.applyGroupGrade(gr_, 'g1', 'task', 'C');
+  eq('rubric: adjusted student still follows other criteria', gr_.rubric.s2.task, 'C');
+  T.moveToGroup(gr_, 's2', null);
+  ok('rubric: leaving keeps criteria, overall intact', gr_.rubric.s2.pronunciation==='F' && !!gr_.grades.s2);
+
+  T._setState({ classes:[], students:[], sessions:{}, activities:[
+    { id:'x1', classId:'c1', date:'2026-09-01', ts:1, groups:[{id:'a',memberIds:['s1']}] },
+    { id:'x2', classId:'c1', date:'2026-09-03', ts:1, groups:[{id:'b',memberIds:['s1']}] },
+    { id:'x3', classId:'c1', date:'2026-09-05', ts:1, groups:[{id:'c',memberIds:[]}] },
+    { id:'x4', classId:'c2', date:'2026-09-09', ts:1, groups:[{id:'d',memberIds:['s1']}] }]});
+  eq('reuse picks newest grouped activity with members in this class', T.lastGroupedActivity('c1').id, 'x2');
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly

@@ -486,6 +486,28 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .rub-note.has-note{border-color:var(--accent);}
   .rub-wt{width:64px;text-align:center;}
   .rub-bands td{font-size:12px;white-space:normal;line-height:1.45;}
+  /* Group work inside an activity */
+  .grp-card{border:1px solid var(--border);border-left:4px solid var(--grp,var(--border));border-radius:10px;padding:8px 12px 4px;margin-bottom:10px;}
+  .grp-card.grp-none{border-left-style:dashed;}
+  .grp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:7px;border-bottom:1px solid var(--border);}
+  .grp-dot{width:10px;height:10px;border-radius:50%;background:var(--grp,var(--muted));flex-shrink:0;display:inline-block;}
+  .grp-name{flex:1;min-width:110px;font-family:inherit;font-weight:700;font-size:14px;border:1px solid transparent;border-radius:6px;background:none;color:var(--text);padding:4px 6px;}
+  .grp-name:hover{border-color:var(--border);}
+  .grp-name:focus{outline:none;border-color:var(--accent);}
+  .grp-count{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .grp-tag{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 8px;background:none;font-family:inherit;white-space:nowrap;}
+  button.grp-tag.adj{color:var(--amber);border-color:var(--amber);cursor:pointer;}
+  button.grp-tag.adj:hover{background:var(--amber-soft);}
+  select.grp-move{width:auto;max-width:140px;padding:4px 6px;font-size:12px;}
+  .act-grade-row .grp-tag,.act-grade-row select.grp-move{flex-shrink:0;}
+  table.rub-grid tr.rub-grp-row td{background:var(--accent-soft);border-top:2px solid var(--grp,var(--border));}
+  table.rub-grid tr.rub-grp-row td.rub-name{background:var(--accent-soft);}
+  table.rub-grid td.rub-name .grp-name{width:118px;min-width:0;flex:none;font-size:13px;}
+  table.rub-grid td.rub-name .grp-tag{margin-left:4px;}
+  .rub-seg.adj{outline:1px dashed var(--amber);outline-offset:2px;border-radius:6px;}
+  .act-gpick{max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:9px;}
+  .act-gpick-row{display:flex;align-items:center;gap:10px;padding:6px 10px;}
+  .act-gpick-row + .act-gpick-row{border-top:1px solid var(--border);}
   @media (max-width:700px){ .rub-l{width:26px;height:28px;} .rub-note{width:140px;min-width:130px;} }
   @media print{ .rub-wrap{overflow:visible;} }
   /* Roll Call view toggle + compact roster */
@@ -7801,7 +7823,7 @@ function renderRollCall(){
                 <button type="button" class="act-item" onclick="openActivityGrading('${a.id}')">
                   <span>${sk.emoji}</span>
                   <span style="flex:1;text-align:left;">${esc(a.description)}</span>
-                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${isRubricActivity(a)?'\uD83C\uDF99 rubric \u00b7 ':''}${g} graded${nNotes?` \u00b7 \u270E ${nNotes}`:''}${avg!=null?` \u00b7 avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
+                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;">${isRubricActivity(a)?'\uD83C\uDF99 rubric \u00b7 ':''}${hasGroups(a)?`👥 ${a.groups.length} group${a.groups.length===1?'':'s'} · `:''}${g} graded${nNotes?` \u00b7 \u270E ${nNotes}`:''}${avg!=null?` \u00b7 avg <b style="color:var(--accent);">${numToLetter(avg)}</b>`:''}</span>
                 </button>`;
               }).join('')}
               <button type="button" class="btn-ghost small" style="margin-top:4px;" onclick="openActivityModal('${cls.id}','${date}')">\uD83C\uDFAF New activity</button>`)}
@@ -8826,6 +8848,295 @@ function studentActivityGrades(studentId, classId){
     .sort((a,b)=> b.date<a.date?-1 : b.date>a.date?1 : (b.ts||0)-(a.ts||0));
 }
 function saveActivitiesStore(){ scheduleSave('activities', state.activities); }
+/* ---------- group work inside an activity ----------
+   A grouped activity carries a.groups = [{id,name,colour,memberIds}]. Grading a
+   group writes its letter into each member's normal slot (a.grades, or
+   a.rubric[sid][crit] in rubric mode), so every existing read — averages,
+   profile, report, overall letters — is untouched. a.adjusted[sid][key] marks a
+   member graded on their own for that key ('grade' in one-letter mode, a
+   criterion id in rubric mode); changing the group letter leaves them alone.
+   Group letters live in a.groupGrades[gid] / a.groupRubric[gid][crit]. */
+const ACT_GROUP_COLOURS = ['#2dd4bf','#f59e0b','#818cf8','#f472b6','#34d399','#60a5fa','#fb923c','#a78bfa'];
+function hasGroups(a){ return !!(a && a.groups && a.groups.length); }
+function activityGroupOf(a, sid){ return ((a && a.groups) || []).find(g=>(g.memberIds||[]).includes(sid)) || null; }
+function gradeKeys(a){ return isRubricActivity(a) ? ORAL_CRITERIA.map(c=>c.id) : ['grade']; }
+function groupValue(a, gid, key){
+  if(key==='grade') return (a.groupGrades||{})[gid] || null;
+  return ((a.groupRubric||{})[gid]||{})[key] || null;
+}
+function memberValue(a, sid, key){
+  if(key==='grade') return (a.grades||{})[sid] || null;
+  return ((a.rubric||{})[sid]||{})[key] || null;
+}
+function writeMemberValue(a, sid, key, v){
+  if(key==='grade'){
+    a.grades = a.grades || {};
+    if(v) a.grades[sid] = v; else delete a.grades[sid];
+    return;
+  }
+  a.rubric = a.rubric || {};
+  const r = a.rubric[sid] || {};
+  if(v) r[key] = v; else delete r[key];
+  if(Object.keys(r).length) a.rubric[sid] = r; else delete a.rubric[sid];
+  syncRubricOverall(a, sid);
+}
+function isAdjusted(a, sid, key){
+  const adj = (a.adjusted||{})[sid];
+  if(!adj) return false;
+  return key ? !!adj[key] : Object.keys(adj).length > 0;
+}
+function setAdjusted(a, sid, key, on){
+  a.adjusted = a.adjusted || {};
+  const adj = a.adjusted[sid] || {};
+  if(on) adj[key] = true; else delete adj[key];
+  if(Object.keys(adj).length) a.adjusted[sid] = adj; else delete a.adjusted[sid];
+  if(!Object.keys(a.adjusted).length) delete a.adjusted;
+}
+function clearAdjusted(a, sid){
+  if(!a.adjusted) return;
+  delete a.adjusted[sid];
+  if(!Object.keys(a.adjusted).length) delete a.adjusted;
+}
+/* A member tap. Tapping the current letter clears it; landing on the group's
+   own letter puts the student back on the group. */
+function setMemberValue(a, sid, key, letter){
+  const next = memberValue(a, sid, key)===letter ? null : letter;
+  const g = activityGroupOf(a, sid);
+  if(g) setAdjusted(a, sid, key, next !== groupValue(a, g.id, key));
+  writeMemberValue(a, sid, key, next);
+}
+/* A group tap — tap the same letter again to clear it. Members graded on
+   their own for this key keep their letter. */
+function applyGroupGrade(a, gid, key, letter){
+  const g = (a.groups||[]).find(x=>x.id===gid);
+  if(!g) return;
+  const next = groupValue(a, gid, key)===letter ? null : letter;
+  if(key==='grade'){
+    a.groupGrades = a.groupGrades || {};
+    if(next) a.groupGrades[gid] = next; else delete a.groupGrades[gid];
+  } else {
+    a.groupRubric = a.groupRubric || {};
+    const r = a.groupRubric[gid] || {};
+    if(next) r[key] = next; else delete r[key];
+    if(Object.keys(r).length) a.groupRubric[gid] = r; else delete a.groupRubric[gid];
+  }
+  (g.memberIds||[]).forEach(sid=>{ if(!isAdjusted(a, sid, key)) writeMemberValue(a, sid, key, next); });
+}
+function syncMemberFromGroup(a, sid){
+  const g = activityGroupOf(a, sid);
+  if(!g) return;
+  gradeKeys(a).forEach(k=>{ if(!isAdjusted(a, sid, k)) writeMemberValue(a, sid, k, groupValue(a, g.id, k)); });
+}
+function resetToGroup(a, sid){ clearAdjusted(a, sid); syncMemberFromGroup(a, sid); }
+/* Moving into a group puts the student on that group's letters; moving out of
+   every group leaves the letters they have, now as their own. */
+function moveToGroup(a, sid, gid){
+  (a.groups||[]).forEach(g=>{ g.memberIds = (g.memberIds||[]).filter(x=>x!==sid); });
+  clearAdjusted(a, sid);
+  const target = (a.groups||[]).find(g=>g.id===gid);
+  if(target){ target.memberIds.push(sid); syncMemberFromGroup(a, sid); }
+}
+function addGroup(a, name){
+  a.groups = a.groups || [];
+  const used = new Set(a.groups.map(g=>g.name));
+  let n = a.groups.length + 1;
+  while(used.has('Group '+n)) n++;
+  const g = { id: uid(), name: name || ('Group '+n),
+    colour: ACT_GROUP_COLOURS[a.groups.length % ACT_GROUP_COLOURS.length], memberIds: [] };
+  a.groups.push(g);
+  return g;
+}
+/* Former members keep the letters they have and are graded individually. */
+function removeGroup(a, gid){
+  const g = (a.groups||[]).find(x=>x.id===gid);
+  if(!g) return;
+  (g.memberIds||[]).forEach(sid=>clearAdjusted(a, sid));
+  a.groups = a.groups.filter(x=>x.id!==gid);
+  if(a.groupGrades) delete a.groupGrades[gid];
+  if(a.groupRubric) delete a.groupRubric[gid];
+  if(!a.groups.length){ delete a.groups; delete a.groupGrades; delete a.groupRubric; }
+}
+function lastGroupedActivity(classId){
+  return (state.activities||[])
+    .filter(a=>a.classId===classId && hasGroups(a) && a.groups.some(g=>(g.memberIds||[]).length))
+    .sort((x,y)=> x.date<y.date?1 : x.date>y.date?-1 : (y.ts||0)-(x.ts||0))[0] || null;
+}
+function letterOnCls(L){ return 'on '+(L==='A'?'ga':L==='F'?'gf':'gm'); }
+function memberTagHtml(a, sid){
+  if(!activityGroupOf(a, sid)) return '';
+  if(isAdjusted(a, sid)) return `<button type="button" class="grp-tag adj" title="Graded on their own — tap to follow the group again" onclick="actMemberReset('${a.id}','${sid}')">adjusted ↺</button>`;
+  return `<span class="grp-tag" title="Gets the group's letter">= group</span>`;
+}
+function groupMoveSelect(a, s){
+  const g = activityGroupOf(a, s.id);
+  return `<select class="grp-move" aria-label="Group for ${esc(s.name)}" onchange="actMoveMember('${a.id}','${s.id}', this.value)">
+    ${(a.groups||[]).map(x=>`<option value="${x.id}" ${g&&g.id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}
+    <option value="" ${g?'':'selected'}>No group</option>
+  </select>`;
+}
+/* ---------- group mutators (UI) ---------- */
+function reopenActivity(activityId){
+  const m = document.querySelector('#modal-root .modal');
+  const top = m ? m.scrollTop : 0;
+  openActivityGrading(activityId);
+  const m2 = document.querySelector('#modal-root .modal');
+  if(m2) m2.scrollTop = top;
+}
+function refreshGroupRows(a){
+  const roster = studentsInClass(a.classId);
+  if(isRubricActivity(a)){
+    (a.groups||[]).forEach(g=>{
+      for(const c of ORAL_CRITERIA){
+        const seg = document.getElementById('grprub-'+a.id+'-'+g.id+'-'+c.id);
+        if(!seg) return reopenActivity(a.id);
+        const v = groupValue(a, g.id, c.id);
+        seg.querySelectorAll('.rub-l').forEach(b=>{ const L = b.getAttribute('data-letter'); b.className = 'rub-l' + (v===L ? ' '+letterOnCls(L) : ''); });
+      }
+      const ov = document.getElementById('grpov-'+a.id+'-'+g.id);
+      if(ov){ const L = rubricCount((a.groupRubric||{})[g.id]) ? rubricOverallLetter(a.groupRubric[g.id], a.weights) : null; ov.textContent = L || '—'; }
+    });
+    roster.forEach(s=>refreshRubricRow(a, s.id));
+  } else {
+    (a.groups||[]).forEach(g=>{
+      const seg = document.getElementById('grpseg-'+a.id+'-'+g.id);
+      if(!seg) return reopenActivity(a.id);
+      const v = groupValue(a, g.id, 'grade');
+      seg.querySelectorAll('.act-letter').forEach(b=>{ const L = b.getAttribute('data-letter'); b.className = 'act-letter' + (v===L ? ' '+letterOnCls(L) : ''); });
+    });
+    roster.forEach(s=>refreshActivityRow(a, s.id));
+  }
+}
+function actGroupTap(activityId, groupId, key, letter){
+  const a = activityById(activityId);
+  if(!a) return;
+  applyGroupGrade(a, groupId, key, letter);
+  saveActivitiesStore();
+  refreshGroupRows(a);
+}
+function actMemberReset(activityId, studentId){
+  const a = activityById(activityId);
+  if(!a) return;
+  resetToGroup(a, studentId);
+  saveActivitiesStore();
+  refreshGroupRows(a);
+}
+function actMoveMember(activityId, studentId, groupId){
+  const a = activityById(activityId);
+  if(!a) return;
+  moveToGroup(a, studentId, groupId || null);
+  saveActivitiesStore();
+  reopenActivity(a.id);
+}
+function actAddGroup(activityId, count){
+  const a = activityById(activityId);
+  if(!a) return;
+  for(let i=0;i<(count||1);i++) addGroup(a);
+  saveActivitiesStore();
+  reopenActivity(a.id);
+}
+function actRemoveGroup(activityId, groupId){
+  const a = activityById(activityId);
+  if(!a) return;
+  const g = (a.groups||[]).find(x=>x.id===groupId);
+  if(!g) return;
+  const n = (g.memberIds||[]).length;
+  if(n && !confirm(`Remove "${g.name}"? Its ${n} student${n===1?'':'s'} keep their letters and move to "Not in a group".`)) return;
+  removeGroup(a, groupId);
+  saveActivitiesStore();
+  reopenActivity(a.id);
+}
+function actRenameGroup(activityId, groupId, val){
+  const a = activityById(activityId);
+  const g = a && (a.groups||[]).find(x=>x.id===groupId);
+  if(!g) return;
+  const t = (val||'').trim();
+  if(!t) return;
+  g.name = t;
+  saveActivitiesStore();
+  document.querySelectorAll('select.grp-move option[value="'+groupId+'"]').forEach(o=>{ o.textContent = t; });
+}
+/* ---------- step 1 group picker ----------
+   actGroupPicks maps studentId -> group index; absent means not in a group.
+   Membership is the teacher's call; Split and Shuffle only place students
+   present that day. */
+let actGroupPicks = {}, actGroupNames = [], actGroupCtx = { classId:null, date:null };
+function actGroupN(){
+  const el = document.getElementById('act-gn');
+  return Math.max(2, Math.min(12, Number(el ? el.value : 3) || 2));
+}
+function actGroupRoster(){
+  const session = state.sessions[actGroupCtx.classId+'_'+actGroupCtx.date] || {};
+  return studentsInClass(actGroupCtx.classId).map(s=>({ s, absent: session[s.id]?.attendance==='absent' }));
+}
+function actGroupSplit(shuffle){
+  const list = actGroupRoster().filter(x=>!x.absent).map(x=>x.s);
+  if(shuffle){
+    for(let i=list.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [list[i], list[j]] = [list[j], list[i]]; }
+  }
+  const n = actGroupN();
+  actGroupPicks = {};
+  list.forEach((s,i)=>{ actGroupPicks[s.id] = i % n; });
+  actGroupPreview();
+}
+function actGroupClear(){ actGroupPicks = {}; actGroupPreview(); }
+function actGroupCount(){
+  const n = actGroupN();
+  Object.keys(actGroupPicks).forEach(id=>{ if(actGroupPicks[id] >= n) delete actGroupPicks[id]; });
+  actGroupPreview();
+}
+function actGroupSetPick(studentId, val){
+  if(val==='') delete actGroupPicks[studentId];
+  else actGroupPicks[studentId] = Number(val);
+  actGroupPreview();
+}
+function actGroupReuse(){
+  const last = lastGroupedActivity(actGroupCtx.classId);
+  if(!last) return;
+  const groups = last.groups.slice(0, 12);
+  const el = document.getElementById('act-gn');
+  if(el) el.value = Math.max(2, groups.length);
+  const ids = new Set(studentsInClass(actGroupCtx.classId).map(s=>s.id));
+  actGroupPicks = {};
+  actGroupNames = groups.map(g=>g.name);
+  groups.forEach((g,i)=>(g.memberIds||[]).forEach(id=>{ if(ids.has(id)) actGroupPicks[id] = i; }));
+  actGroupPreview();
+}
+function actGroupLabel(i){ return actGroupNames[i] || ('Group '+(i+1)); }
+function actGroupPreview(){
+  const box = document.getElementById('act-group-roster');
+  if(!box) return;
+  const roster = actGroupRoster();
+  if(!roster.length){ box.innerHTML = '<p class="meta">This class has no students yet.</p>'; return; }
+  const n = actGroupN();
+  const counts = Array.from({length:n}, (_,i)=>roster.filter(x=>actGroupPicks[x.s.id]===i).length);
+  const placed = counts.reduce((x,y)=>x+y, 0);
+  box.innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;">
+      ${counts.map((c,i)=>{ const col = ACT_GROUP_COLOURS[i%ACT_GROUP_COLOURS.length];
+        return `<span style="font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;border:1px solid ${col};color:${col};">${esc(actGroupLabel(i))}: ${c}</span>`; }).join('')}
+      ${placed<roster.length?`<span class="meta">${roster.length-placed} not in a group</span>`:''}
+    </div>
+    <div class="act-gpick">
+      ${roster.map(({s, absent})=>{
+        const cur = actGroupPicks[s.id];
+        const col = cur!=null ? ACT_GROUP_COLOURS[cur%ACT_GROUP_COLOURS.length] : null;
+        return `<div class="act-gpick-row" style="${absent?'opacity:.6;':''}">
+          <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:${col||'transparent'};border:1px solid ${col||'var(--border)'};"></span>
+          <span style="flex:1;font-size:14px;">${esc(s.name)}${absent?' <span style="font-size:11px;color:var(--muted);">(absent)</span>':''}</span>
+          <select aria-label="Group for ${esc(s.name)}" onchange="actGroupSetPick('${s.id}', this.value)" style="width:auto;min-width:120px;padding:5px 8px;font-size:13px;">
+            <option value="" ${cur==null?'selected':''}>No group</option>
+            ${Array.from({length:n}, (_,i)=>`<option value="${i}" ${cur===i?'selected':''}>${esc(actGroupLabel(i))}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function toggleActivityFormat(){
+  const groups = document.querySelector('input[name="act-format"]:checked')?.value === 'groups';
+  const box = document.getElementById('act-group-opts');
+  if(box) box.style.display = groups ? '' : 'none';
+  if(groups) actGroupPreview();
+}
 function startActivity(classId, date){
   const skill = document.querySelector('input[name="act-skill"]:checked')?.value || 'other';
   const description = (document.getElementById('act-desc')?.value || '').trim();
@@ -8843,6 +9154,16 @@ function startActivity(classId, date){
     a.weights = { ...rubricPreset(presetId).weights };
     if(rs.defaultTier !== tier || rs.defaultId !== presetId) saveRubricSettings({ ...rs, defaultTier: tier, defaultId: presetId });
   }
+  if(document.querySelector('input[name="act-format"]:checked')?.value === 'groups'){
+    const n = actGroupN();
+    const ids = new Set(studentsInClass(classId).map(s=>s.id));
+    const made = [];
+    for(let i=0;i<n;i++) made.push(addGroup(a, actGroupLabel(i)));
+    Object.keys(actGroupPicks).forEach(id=>{
+      const g = made[actGroupPicks[id]];
+      if(g && ids.has(id)) g.memberIds.push(id);
+    });
+  }
   state.activities.push(a);
   saveActivitiesStore();
   openActivityGrading(a.id);
@@ -8850,9 +9171,7 @@ function startActivity(classId, date){
 function setActivityGrade(activityId, studentId, letter){
   const a = activityById(activityId);
   if(!a) return;
-  a.grades = a.grades || {};
-  if(a.grades[studentId] === letter) delete a.grades[studentId]; // tap again to clear
-  else a.grades[studentId] = letter;
+  setMemberValue(a, studentId, 'grade', letter);   // tap again to clear; group-aware
   saveActivitiesStore();
   refreshActivityRow(a, studentId);
 }
@@ -8866,6 +9185,8 @@ function refreshActivityRow(a, studentId){
     const L = btn.getAttribute('data-letter');
     btn.className = 'act-letter' + (cur===L ? ' on '+(L==='A'?'ga':L==='F'?'gf':'gm') : '');
   });
+  const tag = document.getElementById('acttag-'+a.id+'-'+studentId);
+  if(tag) tag.innerHTML = memberTagHtml(a, studentId);
   const foot = document.getElementById('actfoot-'+a.id);
   if(foot){
     const graded = Object.keys(a.grades||{}).length;
@@ -8902,12 +9223,7 @@ function syncRubricOverall(a, studentId){
 function setRubricGrade(activityId, studentId, critId, letter){
   const a = activityById(activityId);
   if(!a) return;
-  a.rubric = a.rubric || {};
-  a.rubric[studentId] = a.rubric[studentId] || {};
-  if(a.rubric[studentId][critId] === letter) delete a.rubric[studentId][critId];  // tap again to clear
-  else a.rubric[studentId][critId] = letter;
-  if(!rubricCount(a.rubric[studentId])) delete a.rubric[studentId];
-  syncRubricOverall(a, studentId);
+  setMemberValue(a, studentId, critId, letter);   // tap again to clear; group-aware; re-derives the overall
   saveActivitiesStore();
   refreshRubricRow(a, studentId);
 }
@@ -8944,7 +9260,10 @@ function refreshRubricRow(a, studentId){
       const L = btn.getAttribute('data-letter');
       btn.className = 'rub-l' + (rub[c.id]===L ? ' on '+(L==='A'?'ga':L==='F'?'gf':'gm') : '');
     });
+    seg.classList.toggle('adj', isAdjusted(a, studentId, c.id));
   }
+  const tag = document.getElementById('acttag-'+a.id+'-'+studentId);
+  if(tag) tag.innerHTML = memberTagHtml(a, studentId);
   const cell = document.getElementById('rubov-'+a.id+'-'+studentId);
   if(cell){
     const L = (a.grades||{})[studentId] || null;
@@ -8988,17 +9307,19 @@ function openBandKey(tier){
   `, true);
 }
 /* Compact whole-class grid: one row per student, one column per criterion. */
-function renderRubricGrid(a, students, dim){
-  const rows = students.map(s=>{
+function renderRubricGrid(a, students, dim, isAbsentFn){
+  const grouped = hasGroups(a);
+  const rowOf = s=>{
+    const d = isAbsentFn ? isAbsentFn(s) : dim;
     const rub = (a.rubric||{})[s.id] || {};
     const note = (a.notes||{})[s.id] || '';
     const L = (a.grades||{})[s.id] || null;
     return `
-    <tr class="${dim?'rub-absent':''}">
-      <td class="rub-name" title="${esc(s.name)}">${esc(s.name)}${dim?' <span style="font-size:10px;color:var(--muted);">(abs)</span>':''}</td>
+    <tr class="${d?'rub-absent':''}">
+      <td class="rub-name" title="${esc(s.name)}">${esc(s.name)}${d?' <span style="font-size:10px;color:var(--muted);">(abs)</span>':''}${grouped?`<span id="acttag-${a.id}-${s.id}">${memberTagHtml(a, s.id)}</span>`:''}</td>
       ${ORAL_CRITERIA.map(c=>`
         <td>
-          <div class="rub-seg" id="rubseg-${a.id}-${s.id}-${c.id}">
+          <div class="rub-seg ${grouped && isAdjusted(a, s.id, c.id)?'adj':''}" id="rubseg-${a.id}-${s.id}-${c.id}">
             ${ACTIVITY_LETTERS.map(LL=>`
               <button type="button" data-letter="${LL}" class="rub-l ${rub[c.id]===LL?'on '+(LL==='A'?'ga':LL==='F'?'gf':'gm'):''}"
                 title="${esc(c.label)} ${LL} — ${esc(bandText(c.id, a.tier, LL, false))}"
@@ -9010,8 +9331,10 @@ function renderRubricGrid(a, students, dim){
           title="${L?`${rubricCount(rub)}/${ORAL_CRITERIA.length} criteria graded`:'No criteria graded yet'}">${L||'—'}</td>
       <td><input type="text" id="actnote-${a.id}-${s.id}" class="rub-note ${note.trim()?'has-note':''}"
         value="${esc(note)}" placeholder="observation (report)" oninput="setActivityNote('${a.id}','${s.id}', this.value)"></td>
+      ${grouped?`<td>${groupMoveSelect(a, s)}</td>`:''}
     </tr>`;
-  }).join('');
+  };
+  const rows = Array.isArray(students) ? students.map(rowOf).join('') : students(rowOf);
   const w = activityWeights(a).pct;
   return `
   <div class="rub-wrap"><table class="rub-grid">
@@ -9020,9 +9343,79 @@ function renderRubricGrid(a, students, dim){
       ${ORAL_CRITERIA.map(c=>`<th title="${esc(c.label)} — ${Math.round(w[c.id])}% of the overall letter">${c.short}<div style="font-weight:400;opacity:.75;">${Math.round(w[c.id])}%</div></th>`).join('')}
       <th title="Weighted mean of the criteria graded">Overall</th>
       <th class="rub-name" style="position:static;text-align:left;">Observation</th>
+      ${grouped?'<th style="text-align:left;">Group</th>':''}
     </tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
+}
+/* Rubric mode with groups: one table, a group row (tap sets that criterion for
+   every member not graded on their own) followed by its members. */
+function renderRubricGroupedGrid(a, roster, isAbsent){
+  const groupRow = g=>{
+    const gr = (a.groupRubric||{})[g.id] || {};
+    const L = rubricCount(gr) ? rubricOverallLetter(gr, a.weights) : null;
+    const n = roster.filter(s=>(g.memberIds||[]).includes(s.id)).length;
+    return `
+    <tr class="rub-grp-row" style="--grp:${g.colour};">
+      <td class="rub-name"><span class="grp-dot"></span> <input class="grp-name" value="${esc(g.name)}" aria-label="Group name" onchange="actRenameGroup('${a.id}','${g.id}', this.value)"></td>
+      ${ORAL_CRITERIA.map(c=>`
+        <td>
+          <div class="rub-seg" id="grprub-${a.id}-${g.id}-${c.id}">
+            ${ACTIVITY_LETTERS.map(LL=>`
+              <button type="button" data-letter="${LL}" class="rub-l ${gr[c.id]===LL?letterOnCls(LL):''}"
+                title="${esc(g.name)} — ${esc(c.label)} ${LL} for every member"
+                onclick="actGroupTap('${a.id}','${g.id}','${c.id}','${LL}')">${LL}</button>`).join('')}
+          </div>
+        </td>`).join('')}
+      <td class="rub-overall" id="grpov-${a.id}-${g.id}" title="Group letter from the criteria set on this row">${L||'—'}</td>
+      <td><span class="grp-count">${n} student${n===1?'':'s'} · group row sets everyone</span></td>
+      <td><button type="button" class="icon-btn" title="Remove group" aria-label="Remove ${esc(g.name)}" onclick="actRemoveGroup('${a.id}','${g.id}')">✕</button></td>
+    </tr>`;
+  };
+  return renderRubricGrid(a, rowOf=>(a.groups||[]).map(g=>
+    groupRow(g) + roster.filter(s=>(g.memberIds||[]).includes(s.id)).map(rowOf).join('')
+  ).join(''), false, isAbsent);
+}
+/* One-letter mode with groups: a card per group, then everyone not in one. */
+function renderGroupedQuick(a, roster, isAbsent, row){
+  const inGroup = new Set();
+  (a.groups||[]).forEach(g=>(g.memberIds||[]).forEach(id=>inGroup.add(id)));
+  const cards = (a.groups||[]).map(g=>{
+    const members = roster.filter(s=>(g.memberIds||[]).includes(s.id));
+    const gv = groupValue(a, g.id, 'grade');
+    return `
+    <div class="grp-card" style="--grp:${g.colour};">
+      <div class="grp-head">
+        <span class="grp-dot"></span>
+        <input class="grp-name" value="${esc(g.name)}" aria-label="Group name" onchange="actRenameGroup('${a.id}','${g.id}', this.value)">
+        <span class="grp-count">${members.length} student${members.length===1?'':'s'}</span>
+        <div class="act-letter-seg" id="grpseg-${a.id}-${g.id}" role="group" aria-label="${esc(g.name)} letter">
+          ${ACTIVITY_LETTERS.map(L=>`
+            <button type="button" data-letter="${L}" class="act-letter ${gv===L?letterOnCls(L):''}"
+              title="${L} for every member of ${esc(g.name)}"
+              onclick="actGroupTap('${a.id}','${g.id}','grade','${L}')">${L}</button>`).join('')}
+        </div>
+        <button type="button" class="icon-btn" title="Remove group" aria-label="Remove ${esc(g.name)}" onclick="actRemoveGroup('${a.id}','${g.id}')">✕</button>
+      </div>
+      ${members.length ? members.map(s=>row(s, isAbsent(s))).join('')
+        : '<div class="empty" style="padding:8px 0;font-size:13px;">Nobody in this group yet — use the dropdown next to a student’s name to move them here.</div>'}
+    </div>`;
+  }).join('');
+  const loose = roster.filter(s=>!inGroup.has(s.id));
+  const loosePresent = loose.filter(s=>!isAbsent(s)), looseAbsent = loose.filter(isAbsent);
+  return cards + `
+    <button type="button" class="btn-ghost small" style="margin:0 0 10px;" onclick="actAddGroup('${a.id}')">+ Add group</button>
+    ${loose.length ? `
+    <div class="grp-card grp-none">
+      <div class="grp-head"><span style="font-weight:700;font-size:14px;">Not in a group</span>
+        <span class="grp-count">(${loose.length}) — graded individually</span></div>
+      ${loosePresent.length ? loosePresent.map(s=>row(s,false)).join('') : '<div class="empty" style="padding:8px 0;font-size:13px;">Everyone present is in a group.</div>'}
+      ${looseAbsent.length?`
+        <details style="margin-top:6px;">
+          <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${looseAbsent.length}) — grade if they hand it in later</summary>
+          ${looseAbsent.map(s=>row(s,true)).join('')}
+        </details>`:''}
+    </div>` : ''}`;
 }
 function deleteActivity(activityId){
   const idx = (state.activities||[]).findIndex(a=>a.id===activityId);
@@ -9052,6 +9445,8 @@ function openActivityModal(classId, date){
   const c = classById(classId);
   if(!c) return;
   const rs = rubricSettings();
+  actGroupPicks = {}; actGroupNames = []; actGroupCtx = { classId, date };
+  const lastGrp = lastGroupedActivity(classId);
   showModal(`${sizeModal('md')}
     <h3 style="margin-bottom:2px;">🎯 New activity</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${esc(c.name)} · ${formatDateLong(date)}</div>
@@ -9094,6 +9489,29 @@ function openActivityModal(classId, date){
         <button type="button" class="linkish" onclick="openBandKey(document.getElementById('act-tier').value)">See descriptors</button>
       </div>
     </div>
+    <div class="field"><label>Work format</label>
+      <div class="act-skill-row">
+        <label class="act-skill-opt">
+          <input type="radio" name="act-format" value="individual" checked onchange="toggleActivityFormat()">
+          <span>👤 Individual</span>
+        </label>
+        <label class="act-skill-opt">
+          <input type="radio" name="act-format" value="groups" onchange="toggleActivityFormat()">
+          <span>👥 Groups</span>
+        </label>
+      </div>
+    </div>
+    <div id="act-group-opts" style="display:none;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-4px 0 8px;">
+        <label style="font-size:13px;color:var(--muted);">Groups
+          <input type="number" id="act-gn" min="2" max="12" value="3" style="width:64px;margin-left:4px;" onchange="actGroupCount()"></label>
+        <button type="button" class="btn-ghost small" onclick="actGroupSplit(false)" title="Present students, in roster order">Split evenly</button>
+        <button type="button" class="btn-ghost small" onclick="actGroupSplit(true)" title="Present students, random order">🔀 Shuffle</button>
+        <button type="button" class="btn-ghost small" onclick="actGroupClear()">Clear all</button>
+        ${lastGrp?`<button type="button" class="btn-ghost small" onclick="actGroupReuse()" title="Same groups as “${esc(lastGrp.description)}”">↺ Reuse groups from “${esc(lastGrp.description.length>28?lastGrp.description.slice(0,27)+'…':lastGrp.description)}” (${formatDateShort(lastGrp.date)})</button>`:''}
+      </div>
+      <div id="act-group-roster" style="margin-bottom:12px;"></div>
+    </div>
     <div class="field"><label>Description</label>
       <input id="act-desc" type="text" style="width:100%;" placeholder="e.g. write a text about your last weekend"
         onkeydown="if(event.key==='Enter')startActivity('${classId}','${date}')">
@@ -9117,11 +9535,13 @@ function openActivityGrading(activityId){
   const present = roster.filter(s=>!isAbsent(s));
   const absent = roster.filter(isAbsent);
   if(isRubricActivity(a)) return openRubricGrading(a, c, sk, present, absent, roster);
+  const grouped = hasGroups(a);
   const row = (s, dim) => {
     const note = (a.notes||{})[s.id] || '';
     return `
     <div class="act-grade-row" style="${dim?'opacity:.55;':''}">
       <span style="flex:1;font-size:14px;">${esc(s.name)}${dim?' <span style="font-size:11px;color:var(--muted);">(absent)</span>':''}</span>
+      ${grouped?`<span id="acttag-${a.id}-${s.id}">${memberTagHtml(a, s.id)}</span>${groupMoveSelect(a, s)}`:''}
       <div class="act-letter-seg" id="actseg-${a.id}-${s.id}">
         ${ACTIVITY_LETTERS.map(L=>`
           <button type="button" data-letter="${L}" class="act-letter ${a.grades?.[s.id]===L?'on '+(L==='A'?'ga':L==='F'?'gf':'gm'):''}"
@@ -9145,19 +9565,23 @@ function openActivityGrading(activityId){
           ${ACTIVITY_SKILLS.map(x=>`<option value="${x.id}" ${a.skill===x.id?'selected':''}>${x.emoji} ${x.label}</option>`).join('')}
         </select></div>
     </div>
+    ${grouped ? `
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">GROUPS <span style="font-weight:400;">— a group letter goes to every member · tap a member’s own letter to grade them on their own</span></div>
+    ${renderGroupedQuick(a, roster, isAbsent, row)}` : `
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;">STUDENTS ${a.date===todayStr()?'PRESENT TODAY':'PRESENT'} <span style="font-weight:400;">— tap a letter again to clear it</span></div>
     ${present.length ? present.map(s=>row(s,false)).join('') : '<div class="empty" style="padding:8px 0;">Nobody marked present for this date.</div>'}
     ${absent.length?`
       <details style="margin-top:8px;">
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${absent.length}) — grade if they hand it in later</summary>
         ${absent.map(s=>row(s,true)).join('')}
-      </details>`:''}
-    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);">
+      </details>`:''}`}
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--muted);flex-wrap:wrap;">
       <span id="actfoot-${a.id}" style="display:flex;gap:10px;">
         <span>${graded}/${roster.length} graded</span>
         ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
       </span>
-      <button class="icon-btn danger" style="margin-left:auto;" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
+      ${grouped?'':`<button type="button" class="btn-ghost small" style="margin-left:auto;" onclick="actAddGroup('${a.id}', 2)" title="Grade this activity by group">👥 Work in groups</button>`}
+      <button class="icon-btn danger" style="${grouped?'margin-left:auto;':''}" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
     </div>
     <div class="modal-actions">
       <button class="btn-accent" onclick="closeModal();refreshView();">Done</button>
@@ -9170,6 +9594,13 @@ function openRubricGrading(a, c, sk, present, absent, roster){
   const avg = activityAvg(a);
   const w = activityWeights(a);
   const tm = tierMeta(a.tier);
+  const grouped = hasGroups(a);
+  const absentIds = new Set(absent.map(s=>s.id));
+  const isAbsentR = s=>absentIds.has(s.id);
+  const inGroup = new Set();
+  (a.groups||[]).forEach(g=>(g.memberIds||[]).forEach(id=>inGroup.add(id)));
+  const loose = roster.filter(s=>!inGroup.has(s.id));
+  const loosePresent = loose.filter(s=>!absentIds.has(s.id)), looseAbsent = loose.filter(s=>absentIds.has(s.id));
   showModal(`${sizeModal('xl sheet')}
     <h3 style="margin-bottom:2px;">🎙️ ${esc(a.description)}</h3>
     <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">${esc(c?.name||'')} · ${formatDateLong(a.date)} · ${sk.label} · ${tm.label} descriptors</div>
@@ -9186,15 +9617,28 @@ function openRubricGrading(a, c, sk, present, absent, roster){
         </select></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">
-      <span>STUDENTS ${a.date===todayStr()?'PRESENT TODAY':'PRESENT'} <span style="font-weight:400;">— tap a letter again to clear it · hover a letter for its descriptor</span></span>
+      ${grouped
+        ? `<span>GROUPS <span style="font-weight:400;">— a group row sets that criterion for every member · tap a member’s letter to grade them on their own (dashed outline)</span></span>`
+        : `<span>STUDENTS ${a.date===todayStr()?'PRESENT TODAY':'PRESENT'} <span style="font-weight:400;">— tap a letter again to clear it · hover a letter for its descriptor</span></span>`}
       <button type="button" class="btn-ghost small" style="margin-left:auto;" onclick="openBandKey('${a.tier||'basic'}')">📖 Descriptors</button>
     </div>
+    ${grouped ? `
+    ${renderRubricGroupedGrid(a, roster, isAbsentR)}
+    <button type="button" class="btn-ghost small" style="margin:8px 0 4px;" onclick="actAddGroup('${a.id}')">+ Add group</button>
+    ${loose.length ? `
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 5px;">NOT IN A GROUP (${loose.length}) <span style="font-weight:400;">— graded individually</span></div>
+      ${loosePresent.length ? renderRubricGrid(a, loosePresent, false) : '<div class="empty" style="padding:4px 0;font-size:13px;">Everyone present is in a group.</div>'}
+      ${looseAbsent.length?`
+        <details style="margin-top:8px;">
+          <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${looseAbsent.length}) — grade if they present later</summary>
+          ${renderRubricGrid(a, looseAbsent, true)}
+        </details>`:''}` : ''}` : `
     ${present.length ? renderRubricGrid(a, present, false) : '<div class="empty" style="padding:8px 0;">Nobody marked present for this date.</div>'}
     ${absent.length?`
       <details style="margin-top:8px;">
         <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Absent that day (${absent.length}) — grade if they present later</summary>
         ${renderRubricGrid(a, absent, true)}
-      </details>`:''}
+      </details>`:''}`}
     <details style="margin-top:10px;">
       <summary style="font-size:12px;color:var(--muted);cursor:pointer;">Weights for this activity — ${ORAL_CRITERIA.map(x=>Math.round(w.pct[x.id])+'%').join(' / ')}</summary>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:10px 2px 2px;">
@@ -9212,7 +9656,8 @@ function openRubricGrading(a, c, sk, present, absent, roster){
         <span>${graded}/${roster.length} graded</span>
         ${avg!=null?`<span>· class average <b style="color:var(--accent);">${numToLetter(avg)}</b></span>`:''}
       </span>
-      <button class="icon-btn danger" style="margin-left:auto;" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
+      ${grouped?'':`<button type="button" class="btn-ghost small" style="margin-left:auto;" onclick="actAddGroup('${a.id}', 2)" title="Grade this activity by group">👥 Work in groups</button>`}
+      <button class="icon-btn danger" style="${grouped?'margin-left:auto;':''}" onclick="deleteActivity('${a.id}')">🗑 Delete</button>
     </div>
     <div class="modal-actions">
       <button class="btn-accent" onclick="closeModal();refreshView();">Done</button>
@@ -10692,7 +11137,7 @@ function renderStudentProfile(){
         <div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <span>${sk.emoji}</span>
-            <span style="flex:1;">${esc(a.description)}</span>
+            <span style="flex:1;">${esc(a.description)}${(()=>{ const gg = activityGroupOf(a, student.id); return gg ? ` <span style="font-size:11.5px;color:var(--muted);white-space:nowrap;">(${esc(gg.name)})</span>` : ''; })()}</span>
             <span style="font-size:12px;color:var(--muted);">${formatDateShort(a.date)}</span>
             <b style="width:24px;text-align:center;color:${L==='A'?'#1c7c3c':L==='F'?'#b3261e':'var(--accent)'};">${L||'—'}</b>
           </div>
@@ -13199,6 +13644,15 @@ window.__testables = {
   rubricCount,
   studentCriterionAverages,
   bandText,
+  activityGroupOf,
+  applyGroupGrade,
+  setMemberValue,
+  isAdjusted,
+  moveToGroup,
+  resetToGroup,
+  addGroup,
+  removeGroup,
+  lastGroupedActivity,
   attendanceMonthly,
   hwMonthly,
   pointsMonthly,
@@ -13215,7 +13669,13 @@ window.__testables = {
   isDefaultRecord,
   getNextClassDate,
   // let tests inject fixture state
-  _setState: (s)=>{ Object.keys(state).forEach(k=>delete state[k]); Object.assign(state, s); }
+  _setState: (s)=>{
+    Object.keys(state).forEach(k=>delete state[k]);
+    // Empty collections for anything the fixture leaves out, so a sparse
+    // fixture can't crash an unrelated read and abort the rest of the run.
+    Object.assign(state, { classes:[], students:[], sessions:{}, events:[], holidays:[], sessionMeta:{},
+      lessonNotes:{}, homework:{}, promises:{}, activities:[], grades:{}, pointsLog:[] }, s);
+  }
 };
 
 // One-time cleanup: earlier versions seeded empty records just by opening a
