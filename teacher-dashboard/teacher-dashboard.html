@@ -1090,7 +1090,8 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .rc-text-row{display:none;}
   .rc-group.show-text .rc-text-row{display:table-row;}
   .rc-group.show-text .rc-row td{border-bottom:none;}
-  .rc-text{font-size:12.5px;line-height:1.55;color:var(--muted);padding-top:0 !important;white-space:normal;}
+  .rc-text{font-size:12.5px;line-height:1.55;color:var(--muted);padding-top:0 !important;white-space:pre-line;}
+  .rc-over{display:inline-block;margin-left:8px;font-weight:600;color:var(--red);}
 </style>
 </head>
 <body>
@@ -11950,6 +11951,7 @@ function rcGroupSectionHtml(cls, students, isPt){
   const rows = students.map(s=>{
     const lv = rcLevelsFor(s.id);
     const p0 = plan[s.id] || { note:'', copied:false };
+    const full = rcGroupText(s.id, p0.note);
     return `
       <tr class="rc-row${p0.copied?' is-copied':''}" data-sid="${s.id}">
         <td class="rc-name">${esc(s.name)}</td>
@@ -11966,7 +11968,7 @@ function rcGroupSectionHtml(cls, students, isPt){
                   onclick="rcGroupCopy('${s.id}', this)">${p0.copied?RC_ICON_DONE:RC_ICON_COPY}</button>
         </td>
       </tr>
-      <tr class="rc-text-row" data-for="${s.id}"><td colspan="5" class="rc-text">${esc(p0.note)}</td></tr>`;
+      <tr class="rc-text-row" data-for="${s.id}"><td colspan="5" class="rc-text">${esc(full)}${rcFitHtml(full)}</td></tr>`;
   }).join('');
   return `
     <div class="card rc-group no-print${rcShowText?' show-text':''}" id="rc-group">
@@ -11974,8 +11976,8 @@ function rcGroupSectionHtml(cls, students, isPt){
         <div>
           <h2>${isPt?'Texto para o boletim':'Report card comments'}</h2>
           <div class="meta">${isPt
-            ? 'Tudo começa em Excelente. Ajuste só quem precisa e clique no ícone para copiar o texto do aluno. Nenhuma frase se repete dentro da turma, e o texto de quem já foi copiado não muda mais.'
-            : 'Everything starts at Excellent. Adjust only who needs it and click the icon to copy that student\'s text (in Portuguese). No sentence repeats within the class, and a copied text never changes.'}</div>
+            ? 'Tudo começa em Excelente. Ajuste só quem precisa e clique no ícone para copiar o texto do aluno, com o resumo de frequência, atrasos, saídas antecipadas, lição de casa e English Club do período. Nenhuma frase se repete dentro da turma, e o texto de quem já foi copiado não muda mais.'
+            : 'Everything starts at Excellent. Adjust only who needs it and click the icon to copy that student\'s text (in Portuguese), followed by attendance, late arrivals, early departures, homework and English Club for the period. No sentence repeats within the class, and a copied text never changes.'}</div>
         </div>
         <div class="rc-group-tools">
           <span class="meta" id="rc-copied-count">${done}/${students.length} ${isPt?'copiados':'copied'}</span>
@@ -12003,6 +12005,55 @@ function rcGroupRow(id){
 function rcGroupClassId(){
   return (window._groupReportExport && window._groupReportExport.classId) || null;
 }
+
+/* Figures that follow the comments on the school's form, in Portuguese like
+   the comments: attendance, late arrivals, early departures, homework and the
+   English Club. They come from the same rows as the group report table (same
+   period, same rules), so the paper never disagrees with the screen. Zeroes
+   are written out ("nenhum") because the family reads an empty line as
+   missing data. Club: every session the student was called to in the period
+   counts as an invitation, and only a ticked "present" counts as attending. */
+function rcPlural(n, one, many){ return `${n} ${n===1?one:many}`; }
+function rcStatsLines(row){
+  if(!row) return [];
+  const out = [];
+  const base = (row.attBasis === 'schedule' && row.expected) ? row.expected : row.total;
+  if(!base && !row.total){
+    out.push('Frequência: sem registros de aula no período');
+  } else {
+    const faltas = row.absent ? rcPlural(row.absent, 'falta', 'faltas') : 'nenhuma falta';
+    out.push(`Frequência: ${row.attRate != null ? row.attRate + '%' : 'sem cálculo'} (${faltas} em ${rcPlural(base, 'aula', 'aulas')})`);
+    const atrasos = row.late ? `${row.late} (${row.lostLate} min no total)` : 'nenhum';
+    const saidas  = row.leftEarly ? `${row.leftEarly} (${row.lostEarly} min no total)` : 'nenhuma';
+    out.push(`Atrasos: ${atrasos} · Saídas antecipadas: ${saidas}`);
+  }
+  if(row.hwAvg != null) out.push(`Lição de casa: ${row.hwAvg}%`);
+  const ex = window._groupReportExport || {};
+  const club = (typeof clubReportRows === 'function') ? clubReportRows(row.s, ex.fromVal || null, ex.toVal || null) : [];
+  if(!club.length) out.push('English Club: nenhum convite no período');
+  else {
+    const went = club.filter(r=>r.status === 'present').length;
+    out.push(`English Club: ${rcPlural(club.length, 'convite', 'convites')}, ${went ? rcPlural(went, 'presença', 'presenças') : 'nenhuma presença'}`);
+  }
+  return out;
+}
+// Comments, a blank line, then the figures. Lines are not hard-wrapped: the
+// form wraps them, and rcCountLines() measures the result at its width.
+function rcGroupText(id, note){
+  const ex = window._groupReportExport || {};
+  const row = (ex.rows || []).find(r=>r.s && r.s.id === id);
+  const stats = rcStatsLines(row);
+  return stats.length ? note + '\n\n' + stats.join('\n') : note;
+}
+function rcFitInfo(text){
+  const p = rcPrintPrefs();
+  const used = rcCountLines(text.split('\n'), p.width);
+  return { used, max: p.maxLines, fits: used <= p.maxLines };
+}
+function rcFitHtml(text){
+  const f = rcFitInfo(text);
+  return f.fits ? '' : `<span class="rc-over">⚠ ${f.used}/${f.max} ${state.reportLang==='pt'?'linhas':'lines'}</span>`;
+}
 // Re-reads the plan and brings every row's mark, icon and preview up to date.
 function rcGroupSync(){
   const plan = rcClassPlan(rcGroupClassId());
@@ -12014,7 +12065,10 @@ function rcGroupSync(){
     const btn = row.querySelector('.rc-copy');
     if(btn) btn.innerHTML = p.copied ? RC_ICON_DONE : RC_ICON_COPY;
     const tr = row.nextElementSibling;
-    if(tr && tr.classList.contains('rc-text-row')) tr.firstElementChild.textContent = p.note;
+    if(tr && tr.classList.contains('rc-text-row')){
+      const full = rcGroupText(row.dataset.sid, p.note);
+      tr.firstElementChild.innerHTML = esc(full) + rcFitHtml(full);
+    }
   });
   const el = document.getElementById('rc-copied-count');
   if(el) el.textContent = `${done}/${total} ${state.reportLang==='pt'?'copiados':'copied'}`;
@@ -12056,7 +12110,7 @@ function rcGroupCopy(id, btn){
   const classId = rcGroupClassId();
   const plan = rcClassPlan(classId);
   if(!plan[id]) return;
-  rcCopyText(plan[id].note).then(()=>{
+  rcCopyText(rcGroupText(id, plan[id].note)).then(()=>{
     rcFreeze(classId, id);
     rcGroupSync();
   }).catch(()=>{
@@ -12121,7 +12175,9 @@ function renderGroupReport(){
     const partRecs  = filtered.filter(r=>partEffOf(r));
     const partAvg   = partRecs.length ? Math.round(100*(partRecs.filter(r=>partEffOf(r)==='great').length + partRecs.filter(r=>partEffOf(r)==='good').length*0.5)/partRecs.length) : null;
     const absRate   = expected ? Math.round(100*absent/expected) : null;
-    return {s, total, present, late, absent, attRate, attBasis, absRate, inClass, totalPoss, hwAvg, phone, partAvg};
+    const leftEarly = filtered.filter(r=>r.attendance!=='absent'&&(r.leftEarlyMin||0)>0).length;
+    return {s, total, present, late, absent, attRate, attBasis, absRate, inClass, totalPoss, hwAvg, phone, partAvg,
+            expected, leftEarly, lostLate, lostEarly};
   });
 
   // Stash for CSV export so the file matches exactly what's shown.
