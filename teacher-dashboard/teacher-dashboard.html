@@ -1068,6 +1068,29 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
   .sidebar :focus-visible{ outline-color:var(--sidebar-focus); outline-offset:1px; }
   .cal-cell :focus-visible{ outline-offset:1px; }
+  /* report card comments table (group report) */
+  .rc-group{margin-top:18px;padding:16px 18px;}
+  .rc-group-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .rc-group-head h2{font-size:17px;margin:0;}
+  .rc-group-head .meta{color:var(--muted);font-size:12.5px;margin-top:4px;max-width:560px;}
+  .rc-group-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .rc-toggle{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;}
+  .rc-table{min-width:720px;}
+  .rc-table td{padding:8px 12px;}
+  .rc-name{font-weight:600;white-space:nowrap;}
+  .rc-slider{display:flex;align-items:center;gap:10px;min-width:210px;}
+  .rc-slider input[type=range]{flex:1;min-width:70px;max-width:110px;accent-color:var(--accent);cursor:pointer;margin:0;}
+  .rc-slider .badge{min-width:118px;text-align:center;white-space:nowrap;}
+  .rc-copy-cell{text-align:center;width:72px;}
+  .rc-copy{width:42px;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+  .rc-copy:hover{color:var(--accent);border-color:var(--accent);}
+  .rc-row.is-copied .rc-copy{color:var(--green);border-color:var(--green);background:var(--green-soft);}
+  .rc-row.is-copied .rc-name{color:var(--muted);}
+  .rc-text-row{display:none;}
+  .rc-group.show-text .rc-text-row{display:table-row;}
+  .rc-group.show-text .rc-row td{border-bottom:none;}
+  .rc-text{font-size:12.5px;line-height:1.55;color:var(--muted);padding-top:0 !important;white-space:normal;}
 </style>
 </head>
 <body>
@@ -10055,155 +10078,265 @@ function openRollCallNav(){
 
    Numbers come from lastReportStats — the figures renderStudentProfile()
    already computed — so the text can never disagree with the on-screen report.
-
-   The prose comments come from a comment bank of five categories x five
-   levels x six phrasings, in Brazilian Portuguese, written as the teacher's
-   note to the family (third person, the student's first name) and woven into
-   paragraphs by rcCommentLines() so the block reads as a letter home, not a
-   list of graded labels. It sits at the very top of the report, before any
-   figure, because it is the part the family reads first.
-   Behavior and homework levels are auto-selected from measured
-   participation/homework; vocab, grammar and Portuguese use are not measured
-   here, so they stay off unless the teacher sets them, rather than putting an
-   unsupported grade on an official document.
 */
 let lastReportStats = null;
-let rcState = null;   // { levels:{behavior,homework,vocab,grammar,port}, nonce }
+let rcState = null;   // { includeProjects, includeHomework, mode, printWidth, printMax }
 
-const RC_COMMENTS = {"vocab": {"1": ["Tenho notado que {n} trava quando falta a palavra certa, e isso deixa a conversa mais difícil do que precisaria ser. Sugiro começar pequeno, com cinco palavras novas por aula anotadas num caderno separado e revisadas antes da aula seguinte.", "O repertório de palavras ainda está bem abaixo do que a turma usa, e dá para ver a frustração quando a ideia existe mas a palavra não vem. Dez minutos por dia com flashcards, no Anki ou no Quizlet, já mudariam bastante esse quadro.", "Nas atividades de fala, {n} tem coragem, mas fica sem palavras para sustentar a conversa. Vale montar listas por tema, como casa, escola e rotina, e revisá-las toda semana.", "Ainda faltam palavras básicas para as situações que trabalhamos em aula, e isso acaba travando o resto do aprendizado. Ler textos bem curtos em inglês, um por semana, é o jeito mais leve de começar a virar esse jogo.", "Percebo que {n} entende bastante coisa, mas na hora de produzir tem pouquíssimas palavras à mão. Repetir as palavras novas em voz alta e montar uma frase própria com cada uma ajuda muito a fixar.", "Esse é o ponto que mais precisa de atenção agora. Sem ampliar o vocabulário, os próximos conteúdos vão ficar pesados demais. Anotar e revisar toda palavra nova que aparece na aula já seria um ótimo começo."], "2": ["{n} já se vira nas situações mais simples, mas o vocabulário ainda é curto para conversas mais longas. Ler uma história ou uma notícia curta por semana ampliaria bastante o repertório.", "Dá para se comunicar, sim, mas ainda vejo muita repetição das mesmas palavras. Escolher três palavras novas por semana e usá-las de verdade em aula muda bastante o resultado.", "Tenho visto esforço, e o vocabulário básico está lá. O que falta é variedade para as ideias saírem do jeito que {n} quer. Rever as palavras da aula e criar exemplos próprios com elas é o exercício que mais funciona nessa fase.", "Vejo capacidade, mas o vocabulário ainda não acompanha o ritmo do curso. Uma lista pessoal de palavras, revisada antes de cada aula, resolveria boa parte disso.", "A falta de palavras às vezes interrompe a fala de {n} no meio da ideia. Assistir a vídeos curtos em inglês com legenda é um jeito leve de ir absorvendo mais vocabulário.", "O vocabulário já dá conta do essencial, mas precisa crescer para sustentar textos e conversas mais longas. Aplicativos de repetição espaçada, poucos minutos por dia, dão resultado rápido aqui."], "3": ["O vocabulário de {n} dá conta da maioria das situações de aula, e isso é bom de ver. O próximo passo é ganhar variedade. Manter um diário curto em inglês obriga a usar palavras que ainda ficam guardadas.", "A comunicação flui bem, e a falta de palavra só aparece em temas mais específicos. Ler textos um degrau acima do nível atual é um desafio saudável para agora.", "O que apresento em aula é absorvido bem. A dificuldade aparece quando o assunto foge do que já vimos. Buscar contato com inglês fora da sala, com série, podcast ou leitura, faria muita diferença.", "Vejo um desempenho consistente, com espaço claro para crescer. Dizer a mesma frase de outro jeito, usando sinônimos, é um exercício simples que enriquece o vocabulário.", "{n} entende bem o vocabulário das aulas, mas usa pouco dele quando fala e escreve. Textos curtos com regularidade ajudam a tornar essas palavras ativas.", "O caminho está certo, e continuar ampliando o vocabulário é o passo natural agora. Quinze minutos por semana com palavras do nível seguinte aceleram bastante essa evolução."], "4": ["{n} tem um vocabulário amplo e usa as palavras com segurança, o que deixa a comunicação bem clara. Para chegar ao topo, vale explorar collocations e expressões idiomáticas, que são o que dá naturalidade.", "Raramente vejo {n} parar por falta de palavra, e isso vem de trabalho consistente. O próximo desafio são textos mais longos, que testam os limites do repertório.", "O domínio do vocabulário se destaca na turma e sustenta uma fala fluente. Usar palavras menos comuns com a mesma naturalidade das frequentes é o passo seguinte.", "A escolha das palavras mostra maturidade e contato com inglês fora da sala, e isso dá para perceber. Reparar em como falantes nativos combinam palavras em contextos reais levaria {n} ainda mais longe.", "O repertório é rico e quase nunca compromete a comunicação. Para ir além, o foco agora pode ser reduzir repetições e variar mais as escolhas.", "Com esse nível de vocabulário, a fluência de {n} pode crescer rápido. Usar cada palavra nova logo depois de aprender é o que a torna permanente."], "5": ["O vocabulário de {n} é rico, variado e usado com muita precisão. É um prazer acompanhar isso em aula.", "As palavras vêm sempre certas e no contexto certo. Esse tipo de domínio não acontece por acaso, vem de muito esforço.", "{n} usa vocabulário com uma desenvoltura que puxa o nível da turma para cima. Parabéns de verdade.", "A riqueza de vocabulário foi um dos destaques do período e mostra curiosidade e leitura constantes.", "Em nenhum momento o vocabulário foi obstáculo. Pelo contrário, é o que dá cor e precisão ao que {n} diz.", "O repertório é ótimo e usado com criatividade. Continuar alimentando isso com leitura é o que vai manter o ritmo."]}, "grammar": {"1": ["As estruturas básicas ainda não estão firmes, e isso aparece em quase toda frase que {n} monta. Voltar ao começo com calma, com verbo to be e presente simples, é o caminho mais curto agora.", "Tenho visto {n} tentar, mas os erros de gramática são frequentes o bastante para atrapalhar a compreensão. Exercícios curtos todos os dias, começando pelo mais simples, dão resultado rápido.", "A montagem das frases ainda é bastante instável. Praticar sujeito, verbo e complemento até virar automático é um ótimo ponto de partida.", "Sem consolidar a gramática básica, os próximos conteúdos vão ficar pesados demais. Posso indicar exercícios extras de revisão, basta {n} me pedir em aula.", "A regra é entendida no momento da explicação, mas não sobrevive até a hora de usar. Anotar a regra com um exemplo próprio ajuda muito nessa passagem.", "Esse foi o ponto mais urgente do período. Rever uma estrutura por semana, com calma e repetição, mudaria bastante o cenário até a próxima etapa."], "2": ["{n} já se faz entender, mas os erros de gramática ainda comprometem a precisão com frequência. Anotar os erros que mais se repetem e montar um guia pessoal funciona muito bem.", "A estrutura das frases oscila bastante de um dia para o outro. Escrever um parágrafo curto por semana é o exercício que mais consolida nessa fase.", "A base existe, e a dificuldade está em aplicar a regra na hora certa. Vale pedir que eu marque os erros nos textos, assim fica visível o padrão que precisa mudar.", "Vejo os mesmos deslizes voltando aula após aula, o que mostra que falta revisão em casa. Uma estrutura por semana, revisada com calma, resolveria boa parte.", "A gramática ainda atrapalha a naturalidade da fala de {n}. Ouvir e repetir frases em voz alta é uma técnica simples que cria automatismo.", "Com foco nas estruturas mais básicas, o salto até a próxima etapa pode ser grande. Exercícios de completar frases nos pontos mais difíceis são um bom começo."], "3": ["A gramática de {n} dá conta da maioria das situações, e os tropeços aparecem nas construções mais complexas. Atenção especial aos tempos compostos e aos phrasal verbs renderia um bom salto.", "As frases saem certas na maior parte do tempo, com deslizes ocasionais. Reescrever parágrafos usando estruturas diferentes é um exercício muito útil agora.", "As regras estão entendidas, e ainda existe hesitação na hora de usar. Participar mais das atividades de fala é o que transforma conhecimento em automatismo.", "O desempenho é sólido e permite uma comunicação eficiente. Um caderno de erros, com a forma correta anotada ao lado, costuma eliminar os deslizes que restam.", "{n} ainda depende de conferir antes de arriscar estruturas mais elaboradas. Tentar construir frases complexas em aula, sem apoio, fortalece bastante.", "A base está bem estabelecida para o nível atual, e o próximo passo é precisão. Ler textos um pouco acima do nível, reparando nas estruturas, acelera muito."], "4": ["A gramática de {n} é sólida e as frases saem claras e corretas na grande maioria das vezes. Para refinar, vale trabalhar voz passiva e discurso indireto com mais naturalidade.", "Erros são raros e as regras são usadas com confiança. O próximo passo são as estruturas menos frequentes, como as condicionais mais complexas.", "O domínio das estruturas aparece com clareza na fala e na escrita. Explorar conectores e organizadores de texto deixaria a comunicação ainda mais sofisticada.", "A precisão gramatical de {n} está acima da média da turma. Arriscar estruturas novas, em vez de repetir as já dominadas, é o que amplia o repertório agora.", "A base é forte o bastante para sustentar conteúdos bem mais avançados. Praticar escrita formal é uma boa forma de aprofundar esse domínio.", "A gramática é um dos pontos fortes de {n} e ajuda muito na fluência. O foco ideal agora são os pequenos deslizes que ainda restam."], "5": ["A gramática de {n} está sempre correta, e isso deixa a comunicação precisa e natural em qualquer situação. Resultado claro de muito trabalho.", "Mesmo em fala espontânea, as estruturas saem certas, algo que poucos alunos alcançam nesta etapa. Parabéns.", "O domínio das regras é raro para o nível e coloca o desempenho de {n} no topo da turma.", "As construções são corretas e elegantes, com uma fluidez que eleva todo o nível da comunicação.", "Não vejo praticamente nada a corrigir na gramática de {n}. O que resta é seguir explorando estruturas cada vez mais sofisticadas.", "A precisão gramatical serve de referência para os colegas. Um orgulho ter {n} na turma."]}, "behavior": {"1": ["A postura de {n} em aula tem atrapalhado o próprio aprendizado e o dos colegas, e isso precisa mudar com urgência. Uma meta simples, como manter o foco por dez minutos seguidos, já seria um bom começo.", "As conversas paralelas e a agitação têm tomado boa parte da aula. Sentar mais perto de mim ajuda a manter a atenção, e podemos combinar isso já na próxima aula.", "Tenho precisado interromper a aula com frequência por causa da falta de atenção, e isso pesa para a turma toda. Guardar o celular durante toda a aula é uma mudança pequena com efeito grande.", "{n} tem dificuldade em seguir os combinados da sala, e isso vem custando conteúdo. Uma conversa fora do horário de aula sobre estratégias de foco pode abrir um caminho melhor.", "O comportamento está abaixo do que espero da turma e exige uma mudança de atitude. Criar uma rotina de chegada, com celular guardado e caderno aberto, ajuda a entrar no clima da aula.", "Preciso ser honesto. O comportamento foi o maior obstáculo de {n} neste período. Pensar no efeito disso sobre os colegas seria um exercício valioso agora."], "2": ["{n} acompanha o conteúdo, mas as conversas com os colegas acabam dispersando a turma. Sentar perto de quem mantém o foco costuma resolver boa parte.", "A capacidade está lá, e a distração frequente faz {n} perder partes importantes da aula. Anotar os pontos principais durante a explicação ajuda a segurar a atenção.", "A postura é aceitável, com bastante espaço para evoluir. Um desafio pessoal, como passar uma aula inteira sem tocar no celular, pode render bons resultados.", "Tenho visto bons momentos de participação, intercalados com outros de dispersão completa. Chegar à aula com uma pergunta preparada ajudaria a manter o engajamento.", "Pequenas mudanças de comportamento fariam uma diferença grande no aproveitamento de {n}. Responder pelo menos uma pergunta por aula já muda a postura toda.", "A atenção oscila, e junto com ela o aproveitamento. Anotar durante a explicação é o jeito mais simples de segurar o foco."], "3": ["A participação de {n} é boa na maior parte do tempo, com alguns momentos de dispersão nas atividades. Entrar com mais energia nas dinâmicas em grupo manteria o engajamento mais constante.", "A postura é adequada e respeitosa, e o que falta é iniciativa. Fazer perguntas durante a aula, mesmo as mais simples, mostra engajamento e acelera o aprendizado.", "{n} mantém o foco, mas às vezes fica de fora das discussões. Responder mesmo sem ter certeza é uma das melhores formas de crescer.", "O ambiente da sala é respeitado, e isso conta muito. O próximo passo é transformar essa postura tranquila em participação mais ativa.", "Vejo consistência no comportamento, com espaço para mais entusiasmo. Encarar cada aula com a curiosidade de descobrir algo novo muda bastante a experiência.", "Com uma atitude um pouco mais proativa, {n} aproveitaria muito mais as oportunidades da aula. Puxar as discussões nos trabalhos em grupo é um bom exercício."], "4": ["A postura de {n} em sala é muito boa. Participa, respeita os combinados e contribui com a turma. Para ir além, vale assumir mais a liderança nos momentos em grupo.", "Vejo engajamento real e responsabilidade nas atividades, o que mostra maturidade. Manter esse envolvimento também nos momentos mais difíceis é o desafio agora.", "A presença de {n} em aula é sempre positiva e faz diferença no clima da turma. Transformar esse engajamento em liderança seria o próximo passo natural.", "O foco é mantido com consistência e favorece muito o próprio aprendizado. Entrar com a mesma energia nas partes mais cansativas da aula é o que falta.", "É uma alegria ter {n} na turma, com respeito, atenção e boa vontade em todas as aulas. Usar o inglês espontaneamente, sem esperar ser chamado, é o passo seguinte.", "O comportamento mostra compromisso real com o curso. Um envolvimento ainda maior nas atividades de prática oral levaria isso ao topo."], "5": ["O comportamento de {n} não me deu um único motivo de preocupação. Respeito, foco e dedicação em cada aula.", "{n} é o tipo de aluno que muda a energia de uma sala para melhor, com participação sempre ativa e construtiva. Obrigado por isso.", "A maturidade e o respeito que {n} demonstra em aula merecem reconhecimento sincero.", "O entusiasmo vem junto com respeito, e essa combinação é rara e valiosa. As aulas rendem mais por causa disso.", "Não tenho nenhum registro negativo neste período. Pelo contrário, {n} ajuda a puxar a turma para cima.", "A seriedade com que {n} encara o aprendizado contagia os colegas ao redor. Parabéns."]}, "port": {"1": ["{n} ainda recorre ao português quase o tempo todo, e isso trava a imersão que faz a fluência acontecer. Começar pelo simples, com yes, okay, I don't know e can you repeat, já muda bastante.", "O português domina as interações de {n} em aula, inclusive em situações que já daria para resolver em inglês. Podemos combinar uma prenda divertida para cada escorregada.", "Sei que dá insegurança, mas evitar o inglês impede justamente a prática de que {n} mais precisa. Formular a dúvida em inglês primeiro, mesmo imperfeita, já é uma vitória.", "O hábito de falar português em aula limita a prática de {n} e a dos colegas em volta. Um pequeno glossário de frases úteis para usar em aula ajudaria muito.", "Quanto menos português na sala, mais rápida a evolução, e ainda estamos longe disso. Escolher uma frase em inglês por aula para usar com os colegas é um começo realista.", "Mesmo para perguntas simples, o português é a primeira escolha. Vale pedir que eu ensine as frases mais úteis e praticá-las toda aula."], "2": ["{n} usa inglês no básico, e o português ainda aparece com frequência. Tentar dizer a ideia em inglês, mesmo com erros, rende muito mais do que traduzir.", "Há vontade de se comunicar em inglês, e o português segue como saída fácil. Combinar com um colega para se cobrarem funciona muito bem.", "Quando o português escapa, vale repetir a mesma ideia em inglês logo em seguida. É um jeito simples de virar esse hábito.", "O progresso de {n} seria bem mais rápido com menos português em aula. Um desafio de uma aula inteira só em inglês costuma motivar bastante.", "Ainda vejo tradução mental antes de cada fala, e isso deixa tudo mais lento. Ouvir música e assistir a vídeos curtos em inglês em casa cria mais conforto com o idioma.", "O inglês ainda não é a primeira escolha na maioria das situações, e isso muda com prática. Preparar antes as frases que costumam vir em português ajuda bastante."], "3": ["{n} mantém o inglês na maior parte do tempo, com recaídas pontuais. Formular a dúvida em inglês antes de recorrer ao português é o desafio agora.", "O esforço para manter o inglês aparece e merece reconhecimento. Frases como How do you say that e Can you repeat that eliminam boa parte da necessidade do português.", "A disposição está lá, e falta constância nos momentos de dúvida. Tentar adivinhar a palavra em inglês antes de pedir ajuda é um ótimo exercício.", "Cada aula com menos português que a anterior já é uma vitória, e {n} tem conseguido isso. Manter o ritmo é o foco.", "Vejo evolução clara nesse ponto, com o português aparecendo cada vez menos. Posso avisar com discrição quando escapar, se {n} preferir, porque costuma ajudar na consciência.", "O próximo passo é sustentar o inglês também quando o assunto fica mais difícil, porque é aí que o português ainda volta."], "4": ["{n} usa inglês com frequência e segurança, e isso ajuda o ambiente de imersão da turma inteira. Manter o inglês nos momentos de frustração é o desafio final.", "O esforço para evitar o português aparece direto no ritmo de aprendizado. Usar o inglês de forma mais espontânea, fora das atividades, é o passo seguinte.", "Já existe muito conforto para se expressar em inglês, o que é um avanço grande no curso. Criar o hábito de pensar em inglês, e não só falar, mudaria bastante a fluência.", "O português raramente aparece, o que mostra disciplina e maturidade. Vale estender isso às conversas informais antes e depois da aula.", "A imersão de {n} é consistente e serve de exemplo para os colegas. Buscar o vocabulário direto em inglês, sem traduzir mentalmente, aceleraria ainda mais.", "{n} já entendeu que falar inglês o tempo todo é a chave. Agora é tornar isso automático, sem esforço consciente."], "5": ["{n} usa inglês exclusivamente em aula, e isso deixa o aprendizado muito mais rápido.", "A disciplina de manter o inglês do começo ao fim da aula contagia a turma.", "Mesmo nas situações difíceis, {n} não recorre ao português, e isso pesa muito na evolução.", "A imersão é completa e consciente. {n} entendeu exatamente onde a fluência é construída.", "É um modelo de postura para quem quer fluência de verdade. Parabéns pela consistência.", "Não preciso mais lembrar {n} de falar em inglês, já virou o padrão. Excelente."]}, "homework": {"1": ["As tarefas de {n} chegam raramente, e isso pesa direto na fixação do conteúdo. Um horário fixo na semana, mesmo curto, resolveria boa parte do problema.", "Sem prática em casa, o que vemos em aula não se consolida, e é isso que vem acontecendo. Vinte minutos logo depois da aula, com o conteúdo fresco, funcionam muito bem.", "A qualidade do que chega está bem abaixo do esperado, e dá para ver que é feito às pressas. Dividir a tarefa em partes menores muda bastante o resultado.", "A lição de casa é a continuação da aula, e no momento essa parte está sendo perdida. Lembretes no celular ajudam a criar o hábito de não deixar para depois.", "Preciso registrar que a falta de compromisso com as tarefas foi o ponto mais crítico do período. Posso marcar os exercícios mais importantes, se isso ajudar {n} a priorizar.", "{n} perde com frequência a chance de praticar em casa, e isso aparece no ritmo em aula. Fazer as tarefas junto com um colega, mesmo online, costuma aumentar a constância."], "2": ["As tarefas de {n} chegam, mas com pouco cuidado. Reler antes de entregar, só uma vez, já reduziria bastante os erros.", "Dá para ver que as atividades são feitas com pressa. Começar com um dia de antecedência permite uma revisão mais calma.", "A entrega é razoável, e a dedicação ainda está abaixo do que {n} pode dar. Um lugar tranquilo e sem distrações rende mais do que parece.", "Falta constância nas entregas para sustentar o progresso. Usar o caderno de aula como referência enquanto faz a tarefa evita boa parte dos erros.", "Com mais capricho, as tarefas mostrariam melhor o que {n} realmente sabe. Explicar em voz alta o que foi feito é uma boa forma de conferir.", "Entregas incompletas acabam não ajudando na fixação. Vale pedir dicas de estudo para cada tipo de atividade, porque o tempo em casa rende bem mais assim."], "3": ["As tarefas de {n} chegam com regularidade, e a qualidade varia de uma semana para outra. Uma releitura rápida antes de entregar deixaria tudo mais parelho.", "A dedicação é consistente, e isso já é meio caminho. Anotar as dúvidas que surgem na tarefa e trazê-las para a aula transforma o dever em aprendizado ativo.", "O caminho está certo, e falta revisar antes de entregar. Fazer a tarefa um dia antes do prazo dá tempo para isso.", "Às vezes a tarefa chega sem uma conferida final. Reler em voz alta ajuda a perceber erros que passam batido na leitura silenciosa.", "O hábito de entregar já está bem estabelecido, e isso merece reconhecimento. O próximo passo é ir além do mínimo pedido.", "As entregas de {n} são boas e melhorariam com um pouco mais de atenção aos pontos gramaticais da aula. Conferir esses pontos durante a tarefa muda o resultado."], "4": ["As tarefas de {n} chegam sempre em dia e com qualidade, o que mostra organização. Ir além do que é pedido, com exemplos extras, seria o próximo passo.", "A qualidade do trabalho em casa é muito boa e aparece direto no desempenho em aula. Um olhar mais crítico na revisão pegaria os pequenos erros que ainda escapam.", "Há compromisso sólido com as atividades, e o efeito disso aparece em aula. Usar as tarefas para experimentar estruturas e vocabulário novos renderia ainda mais.", "As entregas chegam pontuais e bem feitas. Antecipar a tarefa permitiria uma revisão ainda mais cuidadosa.", "A regularidade e a qualidade estão acima da média da turma. Atenção aos detalhes, como pontuação e concordância, é o refinamento que falta.", "{n} leva as tarefas a sério, e o resultado aparece. Pedir um retorno específico sobre o que poderia ter sido melhor é uma boa prática daqui em diante."], "5": ["Todas as tarefas de {n} chegaram no prazo e muito bem feitas neste período. Parabéns pelo compromisso.", "A dedicação às atividades de casa serve de referência para a turma.", "Cada trabalho entregue mostra cuidado e seriedade, e isso aparece nas notas.", "A organização de {n} com as tarefas não deixou nada a desejar. Não tive uma única falha para registrar.", "A disciplina fora da sala de aula é um dos maiores diferenciais de {n}, e vale muito o reconhecimento.", "As entregas são sempre completas, caprichadas e no prazo. Continue exatamente nesse ritmo."]}};
+/* ---------- report card comments ----------
+   One comment per parameter (behavior, English use, Portuguese in class),
+   three levels each, in Brazilian Portuguese and addressed to the student
+   ("você"). Every comment is a sandwich: something good, the point to work
+   on when the level is below Excelente, and something good to close. The
+   note opens with the student's first name ("Valentina, seu comportamento...")
+   and the three comments follow as one paragraph.
 
-const RC_LEVEL_LABELS_PT = {1:'Precisa melhorar muito',2:'Precisa melhorar',3:'Regular',4:'Muito Bom',5:'Excelente'};
-const RC_LEVEL_LABELS_EN = {1:'Needs much improvement',2:'Needs improvement',3:'Satisfactory',4:'Very good',5:'Excellent'};
-const RC_CAT_LABELS = {
+   No repeats inside a class. Each level of each parameter has 17 comments
+   (the largest class is 17 students) and no sentence appears twice in the
+   whole bank, so the class is written top to bottom drawing comments WITHOUT
+   replacement: two students in the same class never share a sentence.
+
+   Copied texts are frozen. Once a student's text is copied, its three
+   comments are reserved before anyone else is written, so changing a slider
+   or rewording later cannot hand an already pasted sentence to a classmate.
+   Changing that student's own levels releases the freeze. Copy marks, freezes
+   and the reword counter are kept per class in localStorage, so a class can
+   be done across several sittings.
+
+   Writing rules for the bank: no dashes, semicolons or colons; no adjective
+   that agrees with the student's gender; only generic advice (reading,
+   series, reviewing at home), never a specific language point; sentence
+   lengths deliberately uneven. */
+const RC_BANK = {"behavior": {"3": ["Seu comportamento em sala foi ótimo o período todo. Dá gosto dar aula para quem respeita os colegas e presta atenção como você.", "Em sala, sua postura foi exemplar. É sempre bom contar com você nas atividades em grupo, porque você ajuda quem está do lado e deixa o clima mais leve.", "Nunca precisei chamar sua atenção, e isso diz muito sobre a sua maturidade. Continue assim!", "Que bom ter você na turma! Você sabe a hora de falar e a hora de ouvir, e isso deixa as aulas muito mais gostosas.", "Foi um prazer ter você em sala. Você chega com vontade de aprender, e a turma inteira sente isso.", "Você é uma presença muito positiva nas aulas. Mesmo nos dias mais cansativos, mantém o foco e colabora com o grupo. Parabéns!", "Sobre o comportamento, não tenho nada a apontar. Foi um período excelente.", "Sua educação e o respeito com que você trata todo mundo chamam atenção. Agradeço por tornar as aulas tão tranquilas.", "Com todo mundo, você é gentil. Isso faz das nossas aulas um lugar muito bom de estar, e eu percebo o cuidado que você tem com os colegas.", "Durante as explicações, você acompanha tudo com cuidado e raramente perde o fio da meada. É um prazer ensinar assim.", "Que turma boa seria se todos agissem como você! Respeito e boa vontade nunca faltaram da sua parte, do primeiro dia até agora.", "Seu comportamento foi impecável do primeiro ao último dia. Só tenho a agradecer.", "Nas atividades em grupo, você sabe escutar os colegas e ajuda todo mundo a chegar no resultado. Uma atitude muito madura.", "Gostei muito do jeito como você participou das aulas, sempre com respeito e boa vontade. Foi ótimo!", "Sua postura em sala ajuda muito. Você entra nas atividades sem precisar de insistência, o que eu valorizo bastante.", "Comportamento nota dez! Você respeita a vez dos colegas e deixa o ambiente leve para todo mundo.", "Ao longo do período, você manteve uma postura muito bonita em sala. Parabéns pela maturidade com que leva as aulas."], "2": ["Seu comportamento em sala foi bom. Em alguns momentos a atenção se dispersa um pouco, então vale se esforçar para manter o foco até o fim da aula. Gosto muito de ter você na turma.", "A turma gosta muito de você, e você trata todos com respeito. Gostaria de ver você participando mais, sem medo de dar a sua opinião. Tenho certeza de que vai tirar isso de letra.", "Em sala, sua postura costuma ser bem tranquila. Só peço um pouco mais de atenção durante as explicações, porque é ali que muita coisa importante acontece. Mesmo assim, foi um bom período!", "Foi bom ter você nas aulas. De vez em quando você se distrai e acaba perdendo partes do conteúdo. Nada grave! Com um pouco mais de atenção, isso se resolve rápido.", "Respeito pelos colegas nunca faltou, e você se dá bem com todo mundo. Às vezes falta seguir os combinados da sala com mais cuidado, e isso dá para melhorar sem muito esforço. Conto com você!", "Seu jeito alegre deixa as aulas mais leves. O que eu peço é equilíbrio, para que a animação não atrapalhe a sua concentração nem a dos colegas. Você tem tudo para fazer um período ainda melhor.", "Gosto da sua participação nas atividades em grupo. Nas partes mais teóricas da aula, porém, percebo que fica mais difícil manter o foco. Tente se envolver também nesses momentos. No geral, estou contente com o seu comportamento.", "Em relação ao comportamento, você foi bem. Ainda assim, acho que dá para se envolver mais nas atividades e levantar a mão com mais frequência. Sei que você consegue!", "Você colabora com a turma e raramente causa problemas. Ainda assim, percebo que em alguns dias fica difícil manter a atenção do começo ao fim. Se conseguir equilibrar isso, vai aproveitar muito mais as aulas.", "Sua participação é boa e você respeita os colegas. O ponto a melhorar é a concentração, que às vezes acaba se perdendo no meio da aula. Com um pouco de esforço, isso melhora logo.", "Gosto da sua energia em sala! Só peço que ela venha junto com um pouco mais de atenção às orientações. Assim as aulas rendem mais para você e para todo mundo.", "No geral, seu comportamento é bom. Às vezes a conversa fala mais alto que a atividade, e aí o conteúdo fica para trás. Nada que não dê para ajustar. Confio em você!", "Seu comportamento foi bom. Dá para ver que você se importa com as aulas. Daqui para frente, tente participar com mais frequência, porque suas contribuições são muito boas.", "Em geral, você é uma presença calma na turma. Falta um pouco mais de iniciativa. Quando você se envolve nas atividades, as aulas ficam bem mais produtivas para você e para quem está ao redor.", "Você respeita as regras da sala e convive bem com todos. Em alguns momentos, porém, a distração aparece e você precisa de mais de um lembrete para voltar à atividade. Com mais autonomia nesse ponto, o período que vem promete!", "Gostei de ver você mais à vontade em sala ao longo do período. Agora o desafio é manter o foco mesmo quando a atividade não é das suas favoritas. Você já mostrou que dá conta.", "Sua convivência com a turma é boa, e isso ajuda bastante. Poderia aproveitar melhor o tempo de aula, principalmente nas atividades mais longas. Sei que dá para chegar lá."], "1": ["Sei que você tem muita capacidade e gosto quando você se envolve nas atividades. Mas a falta de atenção atrapalhou bastante o seu aproveitamento e também o da turma. Daqui para frente, peço mais foco e respeito aos combinados da sala. Acredito que você pode virar esse jogo!", "Seu jeito comunicativo pode ajudar muito nas aulas. O problema é que, muitas vezes, essa energia acabou virando distração. Precisamos mudar isso. Tente prestar mais atenção nas explicações e respeitar a vez de cada colega falar. Estou aqui para te ajudar no que precisar.", "Em sala, gosto do seu bom humor. Ainda assim, seu comportamento precisa melhorar bastante, porque foram muitos momentos de distração e isso pesa no aprendizado. Com mais foco, tenho certeza de que você vai longe.", "Quando você se concentra, faz ótimas contribuições para a aula. O desafio agora é manter essa concentração por mais tempo e deixar de lado o que tira a sua atenção. Isso depende muito de você. Conte comigo!", "Simpatia você tem de sobra. Por outro lado, seu comportamento em sala precisa melhorar, e isso já atrapalhou algumas aulas. Respeitar os combinados da turma ajuda todo mundo a aprender, inclusive você. Sei que você é capaz!", "Gosto quando você participa das atividades em grupo. Só que a distração foi frequente demais e acabou atrapalhando o andamento das aulas. Tente chegar com mais foco e vontade de aprender. Eu acredito em você!", "Tenho certeza de que você pode ir muito bem nas aulas. Para isso, o comportamento precisa mudar. Mais atenção, menos distração. Pode contar comigo para que o próximo período seja bem melhor.", "Você tem boas ideias e, quando quer, participa muito bem. O que falta é constância, porque em várias aulas a falta de foco falou mais alto. Que tal começar o próximo período com uma nova postura? Vai fazer toda a diferença.", "Dá para ver que você tem um bom coração pelo jeito como trata os colegas. Mesmo assim, o comportamento em aula ficou abaixo do esperado, com muita distração e pouca atenção às orientações. Preciso que isso mude. Com vontade, você dá a volta por cima.", "Gosto da sua sinceridade. O que precisa mudar é a postura durante as explicações, porque a falta de atenção tem atrapalhado o seu aprendizado. Que tal fazermos um combinado para o próximo período? Tenho confiança de que você vai cumprir.", "Quando você está bem, a turma fica mais animada. O problema é que, em muitos momentos, a agitação passou do ponto e a aula precisou parar. Peço mais equilíbrio e respeito aos colegas. Vou estar do seu lado para isso.", "Você tem muito a oferecer para a turma. Só que o comportamento deixou a desejar, e isso afetou o seu rendimento. Mais foco e menos conversa vão mudar bastante coisa. Tenho fé que você vai conseguir.", "Com a turma, você se dá muito bem, e isso é ótimo. Por outro lado, ainda falta respeitar os combinados da sala, como ouvir quando alguém está falando. Essa mudança depende só de você. Acredito na sua capacidade de mudar.", "Percebo que você quer aprender, e isso é o mais importante. Ainda assim, o seu comportamento em sala precisa melhorar bastante. Chegar com outra atitude e participar com respeito vai transformar as suas aulas. Você pode fazer isso.", "Criatividade é com você mesmo, e ideias não faltam. Mas, em muitas aulas, a falta de foco não deixou essas ideias aparecerem. Preciso de mais concentração e de mais respeito ao andamento da aula. Quero muito ver o seu melhor daqui para frente.", "Em alguns dias, sua participação foi ótima. Em outros, a distração tomou conta e atrapalhou você e os colegas. O objetivo agora é ter mais dias bons do que ruins. Conte com a minha ajuda!", "Gosto do seu jeito leve de lidar com as coisas. Mas o comportamento em sala precisa de mais seriedade, porque a falta de concentração acabou prejudicando o aprendizado. Respeitar o momento da explicação já seria um ótimo começo. Sei que você consegue mudar isso!"]}, "english": {"3": ["Seu inglês evoluiu muito. Dá para ver que você estuda e se dedica, e o resultado aparece em cada aula. Parabéns pelo empenho!", "Foi muito bom acompanhar o seu progresso no inglês. Hoje você se expressa com segurança e não se intimida quando erra, o que é ótimo de ver.", "Seu desempenho em inglês foi excelente! Continue praticando fora da sala, porque está dando muito certo.", "Você usa o inglês com muita naturalidade, e isso não acontece por acaso. É fruto de esforço. Fico muito feliz com o seu resultado.", "Que evolução! Suas falas em inglês estão cada vez mais completas e seguras. Siga nesse ritmo.", "No inglês, você foi um dos destaques da turma. Gosto muito de ver como você aproveita cada atividade para praticar, mesmo as mais difíceis. Muito bem!", "Seu vocabulário cresceu bastante. Você se comunica cada vez melhor, e é muito bom ver esse resultado depois de tanto empenho.", "Em relação ao inglês, só tenho elogios. Você foi muito bem nas atividades de sala e merece todo o reconhecimento por isso.", "Está ótimo o seu inglês! A segurança com que você fala e escreve cresceu muito, e isso aparece em tudo o que você faz em sala.", "Você aprende rápido e usa o que aprende. Essa combinação é rara, e é por isso que o seu resultado no inglês foi tão bom.", "No inglês, você foi muito além do esperado. Suas respostas são completas e bem pensadas, o que mostra que você realmente entende o conteúdo.", "Que bom ver você se comunicando em inglês com tanta tranquilidade. Dá para perceber o quanto você praticou. Mandou muito bem!", "O seu nível de inglês subiu bastante. Continue lendo e ouvindo inglês sempre que puder, porque está funcionando.", "Você tem facilidade com o inglês e, mais do que isso, não se acomoda. Sempre quer saber um pouco mais. Adoro isso!", "Foi um período excelente para o seu inglês. Em praticamente todas as atividades de sala, você mostrou que domina bem o conteúdo e sabe usar o que aprendeu.", "Ao longo do período, seu inglês ficou bem mais natural. É exatamente isso que eu espero de quem está nesse nível, e você chegou lá com muito trabalho.", "Participar em inglês com gosto, como você faz, muda tudo no aprendizado. Excelente trabalho!"], "2": ["Seu inglês está num bom nível e você acompanha bem as aulas. Para crescer ainda mais, recomendo ler textos curtos em inglês, como notícias ou histórias, pelo menos uma vez por semana. Você está indo bem!", "Você entende bem o conteúdo e consegue se comunicar com tranquilidade. O próximo passo é ganhar mais vocabulário, e assistir séries com legenda em inglês ajuda muito nisso. Gostei de ver a sua evolução.", "Você acompanha bem o ritmo das aulas de inglês. Às vezes a insegurança faz você falar menos do que poderia, então tente participar mais nas atividades orais. Você sabe mais do que imagina!", "Seu progresso no inglês foi bom. Uma revisão rápida do conteúdo em casa, logo depois da aula, já ajudaria bastante. Tenho certeza de que o próximo período vai ser ainda melhor.", "A sua base de inglês é boa. Para ir além, sugiro ouvir músicas e podcasts em inglês no dia a dia. Pode parecer pouco, mas funciona. Continue se dedicando assim!", "Gosto de ver o seu esforço nas aulas. Com um pouco mais de prática fora da sala, lendo em inglês por exemplo, você pode chegar bem mais longe. Já está num bom caminho!", "No inglês, você foi bem. Ainda tem espaço para melhorar a fala, e a melhor forma é praticar sempre que puder, mesmo errando. Estou gostando muito da sua evolução.", "Nas aulas de inglês, você se saiu bem. Recomendo reservar alguns minutos por dia para estudar, nem que sejam dez. Esse hábito parece pequeno, mas muda muita coisa, e você tem tudo para crescer.", "Você entende bem as aulas e acompanha o conteúdo sem grandes dificuldades. Para dar o próximo passo, tente usar em casa as palavras novas que aprende em sala, nem que seja escrevendo frases curtas. Seu inglês tem tudo para ficar ótimo.", "Seu inglês evoluiu ao longo do período, e dá para notar. Falta ganhar um pouco mais de segurança para falar, e isso vem com prática. Aproveite cada chance em sala, porque você já sabe bastante.", "Gosto do seu interesse pelo inglês. Para melhorar ainda mais, recomendo assistir vídeos curtos em inglês sobre assuntos de que você gosta, sem legenda em português. Com o tempo, você vai entender cada vez mais.", "O seu inglês está bom, e você se vira bem nas atividades. Revisar o caderno antes de cada aula ajudaria a fixar melhor o conteúdo. Estou gostando do seu ritmo.", "Bom período no inglês! Você ainda pode ampliar o vocabulário, e uma boa forma de fazer isso é ler um pouco todos os dias, mesmo que sejam só alguns parágrafos. Continue firme.", "Pelo que vejo, você entende bem o que estudamos em aula. Na hora de falar, ainda existe um pouco de hesitação, e o jeito de vencer isso é praticar sem medo. Logo você vai falar com mais confiança.", "Sua evolução no inglês foi boa. Para o próximo período, sugiro escrever pequenos textos em inglês, como um diário ou mensagens, para praticar o que aprendemos. Você já tem uma base boa para isso.", "Em inglês, você já se comunica bem. O próximo passo é sair da zona de conforto e tentar frases um pouco mais elaboradas. Vai dar certo, pode apostar.", "Que bom ver o seu progresso no inglês. Ainda há espaço para crescer, principalmente se você praticar um pouco fora da sala, com filmes ou podcasts. Você está no rumo certo e tem muito para ganhar."], "1": ["Percebo o seu esforço em algumas aulas, e isso é importante. Ainda assim, seu inglês precisa melhorar bastante para acompanhar o ritmo da turma. Recomendo revisar o conteúdo em casa e fazer todas as atividades propostas. Com dedicação, você chega lá!", "Você tem capacidade para ir muito bem no inglês. Mas faltou prática, e isso apareceu nas aulas. Tente estudar um pouco todos os dias, com leitura e vídeos em inglês. Estou aqui para ajudar no que precisar.", "Gosto quando você tenta falar em inglês, mesmo com dificuldade. Seu desempenho ainda está abaixo do esperado, então vamos precisar de mais estudo daqui para frente. Revise o caderno depois de cada aula. Aos poucos, tudo vai ficando mais fácil.", "Sei que o inglês ainda é um desafio para você, e tudo bem. O importante é não desistir. Recomendo praticar com coisas de que você gosta, como músicas, jogos ou séries, porque isso deixa o estudo mais leve. Acredito muito na sua evolução!", "Boa vontade nas aulas você tem, e isso conta muito. O seu inglês, porém, precisa de mais atenção. Tire suas dúvidas sempre que aparecerem e revise o que vimos em sala. Tenho certeza de que você vai se surpreender com o resultado.", "Já vi que, quando você se dedica, o resultado aparece. Desta vez o inglês ficou um pouco de lado, e a dificuldade aumentou. Separe um tempo fixo na semana para estudar. Pode contar comigo!", "A sua base no inglês está sendo construída, e cada aula conta. Ainda falta bastante prática para ganhar confiança, e a leitura é um ótimo ponto de partida. Não tenha medo de errar, porque é assim que se aprende!", "Em vários momentos, você mostrou interesse. Mesmo assim, seu inglês precisa avançar mais, e para isso a prática em casa não pode faltar. Faça as tarefas com calma e revise as palavras novas. Vamos juntos nessa!", "Gosto de ver que você não desiste, mesmo quando o conteúdo fica difícil. Seu inglês ainda precisa avançar bastante, e para isso é importante estudar um pouco toda semana. Revise as aulas e traga suas dúvidas. Vou te ajudar no que for preciso.", "Seu esforço em acompanhar as aulas não passa despercebido. Mesmo assim, o inglês ainda está abaixo do que você pode alcançar. Ler pequenos textos e repetir em voz alta as palavras novas vai ajudar muito. Confio no seu progresso.", "Você já entende várias coisas em inglês, e isso é um bom começo. Agora falta prática, principalmente na hora de falar e escrever. Faça os exercícios com calma em casa. Pouco a pouco, você vai ganhando confiança.", "Gostei de ver o seu interesse em vários momentos do período. O inglês, no entanto, ainda está difícil, e isso pede mais tempo de estudo fora da sala. Assistir séries com legenda em inglês é um jeito leve de começar. Estou confiante na sua melhora.", "Eu sei que você é capaz de aprender inglês muito bem. Só que faltou dedicação, e o resultado ficou abaixo do esperado. Separe vinte minutos por dia para revisar. Vamos virar essa página juntos!", "Nas aulas, gosto quando você arrisca uma resposta em inglês. Seu desempenho ainda precisa melhorar, e a melhor forma é praticar com frequência. Leia, ouça e fale inglês sempre que puder. Cada pequeno passo conta.", "Você tem curiosidade, e isso ajuda muito quem aprende um idioma novo. Para acompanhar a turma, porém, vai ser preciso estudar mais. Use o caderno para anotar as palavras novas e revise antes de cada aula. Com constância, a diferença aparece rápido.", "Mesmo com as dificuldades, você seguiu tentando, e isso merece reconhecimento. O inglês ainda precisa de bastante atenção. Recomendo rever o conteúdo de cada aula no mesmo dia, enquanto ainda está fresco na memória. Você vai evoluir, tenho certeza.", "É bom ter você na turma, e sei que você quer aprender. Por enquanto, o inglês ainda está um degrau abaixo do nível do grupo. Ler um pouco todos os dias é o melhor remédio para isso. Você vai chegar lá!"]}, "port": {"3": ["Você usa o inglês o tempo todo em sala, mesmo quando a resposta é difícil. Isso mostra muita maturidade. Meus parabéns!", "Quase nunca ouço você falando português na aula, e isso é ótimo. É assim que a fluência vem.", "Gostei muito de ver que você prefere se virar em inglês a recorrer ao português. Essa atitude ajuda você e ajuda a turma toda.", "Em sala, o português praticamente não aparece nas suas falas. Mantenha esse hábito!", "Seu esforço para falar só em inglês durante as aulas foi muito bonito de ver. Mesmo quando falta uma palavra, você encontra outro jeito de dizer. Muito bom!", "Você entendeu que a sala de aula é o lugar para praticar o inglês, e faz isso muito bem. Fico feliz em ver essa postura.", "Falar inglês o tempo todo não é fácil, mas você conseguiu. Parabéns pela disciplina!", "Quanto ao português em sala, não tenho nada a corrigir. Você se comunica em inglês com a turma e comigo, mesmo quando o assunto fica complicado, e faz isso sem medo nenhum.", "Até nas conversas rápidas com os colegas, você fala inglês com toda a naturalidade. Isso é ótimo!", "Durante as aulas, você se mantém no inglês o tempo inteiro. Que atitude bacana!", "Mesmo nos momentos de dúvida, você pergunta em inglês. Isso mostra que você entendeu o valor de praticar, e eu fico muito contente com isso.", "Você é uma das pessoas que mais falam inglês na turma, e isso puxa os colegas junto. Que orgulho!", "Seu hábito de falar inglês em sala está muito bem construído. Não mude nada!", "Em nenhum momento precisei pedir que você falasse em inglês. Você já faz isso por conta própria, e é exatamente assim que se ganha fluência de verdade.", "Gosto muito de ouvir você falando inglês nas aulas, mesmo quando a frase sai com algum erro. Essa coragem vale ouro.", "Para você, a sala de aula já é um espaço só do inglês. Isso é raro, e merece ser reconhecido.", "Português em sala? Praticamente nunca. Você leva a sério a regra de falar inglês, e isso aparece no seu aprendizado."], "2": ["Na maior parte do tempo, você se comunica em inglês nas aulas. Ainda escapa um pouco de português nos momentos de dúvida, então tente perguntar em inglês também. Você já está bem perto do ideal!", "Você se esforça para falar em inglês, e isso aparece. Às vezes o português volta quando a conversa esquenta ou quando bate alguma dúvida. Fique de olho nisso, porque o resto já está muito bom.", "Gosto de ver que você tenta usar o inglês em sala. O próximo passo é deixar o português de lado de vez, mesmo nas conversas rápidas com os colegas. Sei que você consegue.", "Seu uso do inglês em sala está bom. Quando faltar uma palavra, tente explicar de outro jeito em vez de trocar para o português. É um ótimo exercício, e você vai perceber o quanto já sabe.", "Já dá para ouvir bastante inglês de você nas aulas. Ainda assim, o português aparece de vez em quando, e vale prestar atenção nisso. Falta pouco!", "Foi bom ver a sua evolução nesse ponto. O português está aparecendo menos, mas ainda aparece. Continue se desafiando a falar só em inglês, porque está dando certo!", "Em sala, você costuma responder em inglês, e isso é muito bom. Nas dúvidas, porém, o português ainda é a primeira opção. Lembre que pedir ajuda em inglês também é prática. Você está num ótimo caminho!", "Durante as atividades, você usa bem o inglês. Nas conversas com os colegas, o português ainda aparece bastante. Que tal levar o inglês para esses momentos também? Vai ajudar muito.", "Você usa o inglês em boa parte da aula, e isso é muito positivo. Em alguns momentos o português ainda aparece, principalmente quando você quer falar rápido. Respire, pense em inglês e tente de novo. Você já está quase lá!", "O inglês já é a sua primeira escolha na maior parte do tempo. Só falta levar isso para os momentos mais descontraídos da aula, quando o português ainda escapa. Estou gostando muito do que vejo.", "Seu esforço para evitar o português está aparecendo. Ainda dá para melhorar nas conversas com os colegas, que muitas vezes acontecem em português. Você pode puxar essa mudança na turma, e todo mundo sai ganhando.", "Gostei de perceber que o português aparece cada vez menos nas suas falas. Para chegar ao ideal, tente pensar direto em inglês, sem traduzir antes de falar. É um exercício que dá resultado rápido.", "Nas atividades, você fala inglês com tranquilidade. Quando a dúvida aparece, porém, o português ainda vem primeiro. Uma dica simples é ter algumas frases prontas para pedir ajuda em inglês. Já está muito bom assim, e pode ficar perfeito.", "Na maioria das aulas, você fala inglês sem precisar de lembrete. Em alguns dias, o português volta com mais força. Tente manter o mesmo ritmo em todas as aulas, porque você já mostrou que é capaz.", "Que bom que você está usando mais o inglês em sala! Ainda vale cuidar daquelas palavrinhas em português que escapam no meio das frases. Com atenção, isso some rapidinho.", "Foi bom ver você se arriscando mais no inglês ao longo do período. O próximo passo é manter o inglês também quando a atividade fica difícil, que é quando o português costuma voltar. Você está bem perto disso.", "Sua atitude com o inglês em sala é boa. O português ainda aparece de vez em quando, e um bom truque é combinar com um colega de lembrarem um ao outro. Os dois vão ganhar com isso."], "1": ["Sei que falar inglês o tempo todo dá insegurança, e entendo isso. Mesmo assim, o português ainda aparece demais nas suas falas em sala. Comece pelo simples e use o inglês sempre que souber a frase. Cada tentativa conta!", "Você acompanha as aulas e se esforça para entender o conteúdo, o que é ótimo. O que precisa mudar é o hábito de responder em português. Não tenha medo de errar. A sala de aula é o lugar certo para isso, e você tem todo o meu apoio.", "Gosto da sua participação nas aulas. O problema é que ela acontece quase sempre em português. Para avançar no inglês é preciso praticar, e a aula é a melhor oportunidade para isso. Vamos tentar juntos?", "Ideias boas não faltam, e você gosta de contribuir com a turma. Agora o desafio é fazer isso em inglês. Mesmo que saia com erros, vale muito mais do que falar em português. Tenho certeza de que você vai pegar o jeito!", "Percebo que você quer participar, e isso é ótimo. Só que o português ainda é muito frequente nas suas falas, e isso atrapalha o seu progresso. Tente trocar uma frase por vez para o inglês. Aos poucos vira hábito, você vai ver!", "Em sala, você é uma pessoa bem participativa. Falta só fazer essa participação acontecer em inglês, e isso pede coragem para arriscar mesmo sem ter certeza de que a frase está certa. Prometo que vale a pena.", "Você tem tudo para melhorar nesse ponto. O português apareceu bastante nas aulas, e isso tira oportunidades de praticar. Escolha algumas frases úteis em inglês e use sempre que puder. Estou na torcida!", "Já percebi que, quando quer, você consegue se comunicar em inglês. Agora precisamos transformar isso em hábito. O português ainda aparece muito nas aulas, e cada vez que você troca para o inglês, aprende um pouco mais. Acredito que daqui para frente a gente vai ver uma grande diferença.", "Seu interesse pelas aulas é claro. O que ainda precisa mudar é o uso do português, que aparece em quase toda participação sua. Comece com frases curtas em inglês, mesmo que simples. O importante é dar o primeiro passo.", "Entendo que trocar o português pelo inglês não é simples, e respeito o seu tempo. Mesmo assim, preciso que você tente mais, porque a aula é o momento de praticar. Use palavras que você já conhece e não se preocupe com os erros. Estou aqui para te apoiar.", "Sua relação com a turma é ótima. Só que as conversas com os colegas quase sempre acontecem em português, e isso atrapalha a sua prática. Que tal transformar esses momentos em treino de inglês? Seria ótimo para todos.", "Quando você fala inglês, fala bem! O problema é que isso ainda acontece pouco, porque o português aparece na maior parte do tempo. Tente usar o inglês pelo menos nas perguntas e respostas da aula. Vai ver como fica mais fácil.", "Nas aulas, percebo que você acompanha o que é dito em inglês. Falta responder no mesmo idioma, já que o português ainda é a sua escolha na maioria das vezes. Arrisque! Errar faz parte e eu vou te ajudar.", "A sua participação é importante para a turma, não tenho dúvida. Só preciso que ela aconteça em inglês. Cada frase que você troca do português para o inglês é um treino a mais. Bora tentar?", "Você já sabe muito mais inglês do que usa em sala, e isso é um ótimo sinal. O português ainda é a sua saída mais fácil, e precisamos mudar esse hábito. Escolha um momento da aula para falar só em inglês e vá aumentando aos poucos. O resultado vai aparecer.", "Comunicação é o seu forte, e isso é uma vantagem enorme para aprender inglês. Agora falta colocar essa vontade de falar a serviço do inglês, deixando o português de lado. Comece pelas frases do dia a dia da aula. Logo isso vira natural.", "Tenho visto algumas tentativas suas de falar inglês, e isso me deixa feliz. Mas o português ainda domina as suas falas em sala, e precisamos inverter isso. Uma frase em inglês por aula já é um começo. Depois, duas. Depois, três. Você consegue!"]}};
+const RC_PARAMS = ['behavior','english','port'];
+const RC_PARAM_LABELS = {
   behavior:{pt:'Comportamento',en:'Behavior'},
-  homework:{pt:'Lição de casa',en:'Homework'},
-  vocab:{pt:'Vocabulário',en:'Vocabulary'},
-  grammar:{pt:'Gramática',en:'Grammar'},
-  port:{pt:'Uso do português',en:'Portuguese use'}
+  english:{pt:'Uso de inglês',en:'English use'},
+  port:{pt:'Português em sala',en:'Portuguese in class'}
 };
+const RC_LEVEL_LABELS = {
+  1:{pt:'Precisa melhorar',en:'Needs improvement'},
+  2:{pt:'Bom',en:'Good'},
+  3:{pt:'Excelente',en:'Excellent'}
+};
+const RC_LEVEL_BADGE = {1:'red', 2:'amber', 3:'green'};
+const RC_STEP = {behavior:1, english:3, port:5};
+const RC_STOCK = [/parab[eé]ns/i, /continue/i, /acredit/i, /tenho certeza/i, /cont[oe] com|pode contar/i,
+  /estou aqui/i, /voc[eê] consegue/i, /maturidade/i, /fico (muito )?(feliz|contente)/i, /nada a /i, /caminho|rumo/i,
+  /dando (muito )?certo/i, /resolve r[aá]pido/i, /medo de errar/i, /boas ideias/i, /bom per[ií]odo/i,
+  /d[aá] gosto/i, /diferen[cç]a/i, /muito bem!/i, /pr[oó]ximo per[ií]odo/i, /evolu/i, /estou gostando/i,
+  /surpreender/i, /confi[ao]/i, /na torcida/i, /chegar l[aá]|chega l[aá]/i, /te ajudar|te apoiar|minha ajuda/i];
+const RC_LEVELS_KEY = 'efl-dashboard:rc-levels';
+const RC_CLASS_KEY  = 'efl-dashboard:rc-class';
 
-const RC_OPENERS = {"high": ["Foi um prazer ter {n} em aula neste período.", "Acompanhar o desenvolvimento de {n} neste período foi muito gratificante.", "Escrevo com satisfação sobre o trabalho de {n} nestas últimas semanas.", "Neste período, {n} teve um desempenho que merece ser comemorado em casa.", "{n} fecha este período com um desempenho que veio de esforço real.", "Tenho boas notícias sobre o período de {n}."], "mid": ["Segue um panorama de como foi o período de {n} em aula.", "Tenho acompanhado {n} de perto neste período, e há bons pontos e alguns ajustes a fazer.", "Escrevo para contar como {n} tem se saído nas aulas.", "Este período de {n} teve avanços claros e também pontos que merecem atenção em casa.", "Resumo aqui o que tenho observado no dia a dia com {n}.", "{n} encerra o período com um desempenho consistente e alguns caminhos claros de melhora."], "low": ["Preciso ser honesto sobre como foi o período de {n}, para que possamos ajudar juntos.", "Este período de {n} exigiu bastante atenção da minha parte, e gostaria de dividir isso com vocês.", "Escrevo com preocupação sincera sobre o momento de {n} no curso, e com muita vontade de reverter isso.", "Há pontos importantes neste período de {n} que precisam de apoio também em casa.", "O período de {n} mostrou dificuldades que vale a pena enfrentarmos juntos, escola e família.", "Compartilho abaixo o que tenho observado com {n}, incluindo o que mais me preocupa no momento."]};
-const RC_CLOSERS = {"high": ["Sigo à disposição para conversar. Parabéns a {n} e à família pelo trabalho deste período.", "Espero seguir acompanhando essa evolução de perto no próximo período.", "Continuem incentivando em casa, porque {n} está num caminho muito bom.", "Qualquer dúvida, estou à disposição. Meus parabéns a {n}.", "Que o próximo período mantenha esse mesmo ritmo. Obrigado pela parceria.", "{n} tem tudo para ir ainda mais longe, e vai contar comigo para isso."], "mid": ["Com alguns ajustes, o próximo período pode ser bem melhor. Estou à disposição para conversar.", "Acredito muito no que {n} pode fazer e sigo à disposição da família.", "Nada aqui é irreversível. Com apoio em casa, a evolução vem rápido. Obrigado pela parceria.", "Sigo acompanhando de perto e aviso qualquer mudança. Qualquer dúvida, é só me procurar.", "Espero ver esses pontos melhorarem já no próximo período, e conto com a ajuda de vocês.", "{n} tem condições de crescer bastante, e vamos trabalhar isso juntos."], "low": ["Estou à disposição para conversarmos e montarmos um plano juntos, porque {n} pode virar esse quadro com apoio.", "Nada disso é irreversível, mas precisa de ação agora. Conto com a família nesse processo.", "Gostaria muito de marcar uma conversa para pensarmos em como apoiar {n} daqui em diante.", "Sigo torcendo e trabalhando por {n}, e o apoio de casa vai pesar muito.", "Com acompanhamento próximo em casa e na escola, acredito que o próximo período pode ser bem diferente.", "Me coloco à disposição para ajudar no que for preciso. O mais importante agora é agir cedo."]};
-/* Lines that name the grade right after the opening, because that is the
-   number a family looks for first. Picked by band, not by tone. "close" means
-   at or just above the target: the student passed, with little margin. */
-const RC_GRADELINES = {"good": ["A média de {n} ficou em {g}, acima do mínimo, e combina com o que vejo em aula.", "Nas provas, a média foi {g}, um resultado muito bom.", "A nota de {n} ficou em {g}, com folga em relação ao mínimo.", "Com média {g}, {n} passou com tranquilidade.", "O resultado nas provas foi {g}, fruto de esforço constante.", "A média de {g} mostra que o conteúdo foi bem assimilado."], "close": ["A média de {n} ficou em {g}, acima do mínimo, mas com pouca margem.", "Nas provas, {n} alcançou {g}. Passou, mas bem perto do limite.", "Com {g} de média, {n} atingiu o mínimo, e o próximo ciclo pede um pouco mais de folga.", "A nota ficou em {g}, suficiente para passar, mas abaixo do que {n} consegue.", "O resultado nas provas foi {g}. Está dentro do esperado, mas no limite.", "A média de {g} garante a aprovação, e ainda assim eu gostaria de ver uma margem maior."], "under": ["A média de {n} ficou em {g}, abaixo do mínimo, e isso me preocupa.", "Nas provas, a média foi {g}. Esse é o ponto que mais precisa de atenção agora.", "Com {g} de média, {n} ficou abaixo do mínimo exigido.", "A nota ficou em {g}, e sei que {n} consegue mais do que isso.", "O resultado de {g} nas provas está abaixo do que {n} mostra em aula.", "A média de {g} ficou abaixo do esperado e precisa ser recuperada no próximo ciclo."]};
-/* Same three bands for a TOEFL score, because "480 de média" is not what
-   that number is. Picked when the cycle is an Advanced TOEFL cycle. */
-const RC_GRADELINES_TOEFL = {"good": ["No TOEFL, {n} fez {g} e alcançou a meta.", "A nota de {n} no TOEFL foi {g}, acima da meta.", "Com {g} no TOEFL, a meta foi batida com tranquilidade.", "O TOEFL de {n} ficou em {g}, um ótimo resultado.", "A pontuação no TOEFL chegou a {g}, dentro da meta e com folga.", "O resultado de {g} no TOEFL veio de muito trabalho."], "close": ["No TOEFL, {n} fez {g} e alcançou a meta, mas com pouca margem.", "A nota no TOEFL ficou em {g}, dentro da meta, porém bem perto do limite.", "Com {g} no TOEFL, {n} atingiu a meta, e o próximo passo é ganhar folga.", "O TOEFL ficou em {g}. A meta foi alcançada, mas por pouco.", "A pontuação de {g} no TOEFL cumpre a meta, e ainda assim dá para ir além.", "No TOEFL, o resultado foi {g}, suficiente para a meta, sem muita sobra."], "under": ["No TOEFL, {n} fez {g}, abaixo da meta, e isso me preocupa.", "A nota no TOEFL ficou em {g}. Esse é o ponto que mais precisa de atenção agora.", "Com {g} no TOEFL, {n} ficou abaixo da meta definida.", "O TOEFL ficou em {g}, e sei que {n} consegue mais do que isso.", "A pontuação de {g} no TOEFL está abaixo do que {n} mostra em aula.", "O resultado de {g} no TOEFL precisa melhorar no próximo ciclo."]};
+/* Storage can throw (file://, blocked site data), so both stores live in
+   memory first and are written through on a best-effort basis. */
+let rcLevelMem = null;
+const rcClassMem = {};
+function rcReadJson(key){
+  try{ const o = JSON.parse(localStorage.getItem(key) || '{}'); return (o && typeof o === 'object') ? o : {}; }
+  catch(e){ return {}; }
+}
+function rcWriteJson(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
 
-/* The comment block is the part the family actually reads, so it is assembled
-   as a short note from the teacher rather than a table of labels: an opening
-   that names the student, the grade, a paragraph on language, a paragraph on
-   classroom habits, and a closing line to the family. Everything is in the
-   third person. Tone (warm / balanced / concerned) follows the average of
-   the levels the teacher set, and the grade line follows the grade itself, so a
-   good period can still carry a hard number and vice versa.
-
-   Placeholders: {n} first name, {g} the grade figure. rcFill() still resolves
-   {o} (the Portuguese masculine/feminine ending, from pmGenderOf()), but the
-   current bank avoids adjectives that agree with the student, so nothing uses it.
-
-   Each category draws a different index from its pool so no two sentences in a
-   paragraph open the same way. No dashes and no semicolons anywhere in the
-   bank: they read as machine-written in a note that should sound human.
-   Commas and full stops only. */
-function rcTone(avg){ return avg >= 4 ? 'high' : avg <= 2.3 ? 'low' : 'mid'; }
 function rcFirstName(full){
   const parts = String(full||'').trim().split(/\s+/);
-  return parts[0] || 'o aluno';
+  return parts[0] || '';
 }
-function rcFill(txt, name, fem){
-  return String(txt||'')
-    .replace(/\{n\}/g, name)
-    .replace(/\{o\}/g, fem ? 'a' : 'o');
+function rcLevelsFor(id){
+  if(!rcLevelMem) rcLevelMem = rcReadJson(RC_LEVELS_KEY);
+  const saved = rcLevelMem[id] || {};
+  const out = {};
+  RC_PARAMS.forEach(p=>{ const v = Number(saved[p]); out[p] = (v===1||v===2||v===3) ? v : 3; });
+  return out;
 }
-// The most recent cycle with a score in it, plus how that score stands
-// against the target, so the note can open with the number itself.
-function rcGradeFigure(s){
-  const g = s && s.grades;
-  if(!g || !g.cycles || !g.cycles.length) return null;
-  for(let i = g.cycles.length - 1; i >= 0; i--){
-    const st = g.cycles[i].status;
-    if(!st || !st.entered) continue;
-    const val = st.advanced ? st.final : st.avg;
-    if(val == null || val === '') continue;
-    return { val: val, toefl: !!st.advanced, band: st.under ? 'under' : st.close ? 'close' : 'good' };
+function rcSaveLevel(id, param, val){
+  if(!id || !RC_PARAMS.includes(param)) return;
+  const cur = rcLevelsFor(id);
+  cur[param] = Math.max(1, Math.min(3, Number(val) || 3));
+  rcLevelMem[id] = cur;
+  rcWriteJson(RC_LEVELS_KEY, rcLevelMem);
+}
+function rcLvKey(lv){ return RC_PARAMS.map(p=>lv[p]).join(''); }
+
+function rcClassState(classId){
+  const k = classId || '_';
+  if(!rcClassMem[k]){
+    const c = rcReadJson(RC_CLASS_KEY)[k] || {};
+    rcClassMem[k] = { nonce: Number(c.nonce) || 0,
+                      copied: (c.copied && typeof c.copied === 'object') ? c.copied : {} };
   }
-  return null;
+  return rcClassMem[k];
 }
-function rcPick(pool, nonce){ return (pool && pool.length) ? pool[nonce % pool.length] : ''; }
+function rcSaveClassState(classId){
+  const k = classId || '_';
+  const all = rcReadJson(RC_CLASS_KEY);
+  all[k] = rcClassMem[k];
+  rcWriteJson(RC_CLASS_KEY, all);
+}
+
+function rcFirstWord(s){ return (String(s).toLowerCase().match(/^[^\s,.!?]+/) || [''])[0]; }
+function rcClash(a, b){
+  if(rcFirstWord(a) === rcFirstWord(b)) return true;
+  return RC_STOCK.some(re => re.test(a) && re.test(b));
+}
+
+/* Three comments for one student. "used" holds every comment already given
+   to someone in the class. Preference: unused and reads well next to the
+   comments already in the note; then unused; then (only past 17 students)
+   anything that reads well. */
+function rcPicks(levels, slot, used){
+  const picked = [];
+  RC_PARAMS.forEach((p, k)=>{
+    const pool = (RC_BANK[p] && RC_BANK[p][levels[p]]) || [];
+    if(!pool.length) return;
+    const n = pool.length;
+    const start = (((slot * RC_STEP[p] + k * 5) % n) + n) % n;
+    const order = pool.map((_, t)=>pool[(start + t) % n]);
+    // "...Você está indo bem! Você tem tudo..." reads like a template, so the
+    // next comment may not open with the word that opened the last sentence.
+    const prevTail = picked.length ? rcFirstWord(picked[picked.length - 1].split(/[.!?]\s+/).pop()) : '';
+    const fresh  = c => !picked.some(q => rcClash(q, c)) && rcFirstWord(c) !== prevTail;
+    const unused = c => !used.has(c);
+    const choice = order.find(c => unused(c) && fresh(c)) || order.find(unused) || order.find(fresh) || order[0];
+    picked.push(choice);
+    used.add(choice);
+  });
+  return picked;
+}
+// True when a note reads like a template: two comments opening with the same
+// word or sharing a stock phrase, or a comment opening with the word that
+// opened the sentence right before it.
+function rcBadness(picks){
+  let n = 0;
+  for(let i = 0; i < picks.length; i++){
+    for(let j = i + 1; j < picks.length; j++) if(rcClash(picks[i], picks[j])) n++;
+    if(i && rcFirstWord(picks[i]) === rcFirstWord(picks[i - 1].split(/[.!?]\s+/).pop())) n++;
+  }
+  return n;
+}
+function rcClumsy(picks){ return rcBadness(picks) > 0; }
+/* The greedy pass in rcClassPlan runs short of good options near the end of
+   a full class, so a clumsy note is repaired afterwards: first by taking a
+   comment nobody in the class has, then by trading a comment with another
+   student at the same level whenever the trade lowers the total number of
+   clashes in the two notes (so a three-way clash can take two trades). Frozen
+   (copied) students are never touched, and nothing here can create a repeat,
+   since comments only move between students or come from the unused pile. */
+function rcRepair(entries, used){
+  const bad = e => rcBadness(e.picks);
+  for(let pass = 0; pass < 6; pass++){
+    let changed = false;
+    entries.forEach(e=>{
+      if(e.frozen || !bad(e)) return;
+      for(let k = 0; k < RC_PARAMS.length && bad(e); k++){
+        const p = RC_PARAMS[k];
+        const pool = RC_BANK[p][e.lv[p]] || [];
+        for(const c of pool){
+          if(used.has(c)) continue;
+          const old = e.picks[k], was = bad(e);
+          e.picks[k] = c;
+          if(bad(e) < was){ used.delete(old); used.add(c); changed = true; if(!bad(e)) break; continue; }
+          e.picks[k] = old;
+        }
+        if(!bad(e)) break;
+        for(const o of entries){
+          if(o === e || o.frozen || o.lv[p] !== e.lv[p]) continue;
+          const before = bad(e) + bad(o);
+          [e.picks[k], o.picks[k]] = [o.picks[k], e.picks[k]];
+          if(bad(e) + bad(o) < before){ changed = true; break; }
+          [e.picks[k], o.picks[k]] = [o.picks[k], e.picks[k]];
+        }
+      }
+    });
+    if(!changed) break;
+  }
+}
+function rcJoin(name, picks){
+  if(!picks.length) return '';
+  const out = picks.slice();
+  if(name) out[0] = name + ', ' + out[0].charAt(0).toLowerCase() + out[0].slice(1);
+  return out.join(' ');
+}
+// A frozen set of picks still counts only if it matches the student's
+// current levels and every comment is still in the bank.
+function rcFrozenValid(f, lv){
+  return !!(f && f.lv === rcLvKey(lv) && Array.isArray(f.picks) && f.picks.length === RC_PARAMS.length &&
+    f.picks.every((c, k)=>(RC_BANK[RC_PARAMS[k]][lv[RC_PARAMS[k]]] || []).includes(c)));
+}
+// Every student of a class: { id: { picks, note, copied } }, in list order.
+function rcClassPlan(classId){
+  const plan = {};
+  if(!classId) return plan;
+  const list = studentsInClass(classId);
+  const st = rcClassState(classId);
+  const used = new Set();
+  list.forEach(s=>{
+    const f = st.copied[s.id], lv = rcLevelsFor(s.id);
+    if(rcFrozenValid(f, lv) && f.picks.every(c=>!used.has(c))){
+      f.picks.forEach(c=>used.add(c));
+      plan[s.id] = { picks: f.picks.slice(), copied: true };
+    }
+  });
+  const open = [];
+  list.forEach((s, i)=>{
+    if(plan[s.id]) return;
+    const lv = rcLevelsFor(s.id);
+    plan[s.id] = { picks: rcPicks(lv, i + st.nonce, used), copied: false };
+    open.push({ lv, picks: plan[s.id].picks, frozen: false });
+  });
+  rcRepair(open, used);
+  list.forEach(s=>{ plan[s.id].note = rcJoin(rcFirstName(s.name), plan[s.id].picks); });
+  return plan;
+}
+function rcClassNotes(classId){
+  const plan = rcClassPlan(classId), out = {};
+  for(const id in plan) out[id] = plan[id].note;
+  return out;
+}
+function rcNoteFor(id, fullName, classId){
+  const plan = rcClassPlan(classId);
+  if(plan[id]) return plan[id].note;
+  return rcJoin(rcFirstName(fullName), rcPicks(rcLevelsFor(id), 0, new Set()));
+}
+function rcFreeze(classId, id){
+  const plan = rcClassPlan(classId);
+  if(!plan[id]) return;
+  rcClassState(classId).copied[id] = { lv: rcLvKey(rcLevelsFor(id)), picks: plan[id].picks };
+  rcSaveClassState(classId);
+}
+function rcUnfreeze(classId, id){
+  const st = rcClassState(classId);
+  if(!st.copied[id]) return false;
+  delete st.copied[id];
+  rcSaveClassState(classId);
+  return true;
+}
+// New phrasing for everyone not copied yet. Copied texts stay as they were.
+function rcReword(classId){
+  rcClassState(classId).nonce++;
+  rcSaveClassState(classId);
+}
+function rcResetCopied(classId){
+  rcClassState(classId).copied = {};
+  rcSaveClassState(classId);
+}
 
 function rcCommentLines(s, head){
-  if(!rcState) return [];
-  const lv = rcState.levels;
-  const language = ['vocab','grammar','port'].filter(c=>lv[c]);
-  const habits   = ['behavior','homework'].filter(c=>lv[c]);
-  const used = language.concat(habits);
-  if(!used.length) return [];
-
-  const name  = rcFirstName(s.name);
-  const fem   = s.gender === 'f';
-  const nonce = rcState.nonce || 0;
-  const tone  = rcTone(used.reduce((t,c)=>t+lv[c],0) / used.length);
-  const fill  = txt => rcFill(txt, name, fem);
-
-  let i = 0;   // keeps each category on a different phrasing in one generation
-  const para = cats => cats
-    .map(c=>fill(rcPhrase(c, lv[c], nonce + (i++))))
-    .filter(Boolean).join(' ');
-
-  // Opening line, then the grade if there is one, in the same breath.
-  const gf = rcGradeFigure(s);
-  // A warm opener next to a failing grade reads as if nobody looked at the
-  // number, so a grade under the target pulls the opening down a notch. The
-  // reverse is fine and deliberate: good grade, poor habits is a real period,
-  // and the note should say both.
-  const openTone = (gf && gf.band === 'under' && tone === 'high') ? 'mid' : tone;
-  const lead = [fill(rcPick(RC_OPENERS[openTone], nonce))];
-  if(gf){
-    const gbank = gf.toefl ? RC_GRADELINES_TOEFL : RC_GRADELINES;
-    lead.push(fill(rcPick(gbank[gf.band], nonce + 2)).replace(/\{g\}/g, gf.val));
-  }
-
-  const paras = [];
-  paras.push(lead.concat(para(language.length ? language : habits)).filter(Boolean).join(' '));
-  if(language.length && habits.length) paras.push(para(habits));
-  paras.push(fill(rcPick(RC_CLOSERS[tone], nonce)));
-
-  // The school's form gets the same note, heading and all figures aside: what
-  // was bloating that report was the numbers, not the words.
-  const out = head ? ['', head, ''] : [''];
-  paras.filter(Boolean).forEach((p,n)=>{ if(n) out.push(''); out.push(p); });
-  return out;
+  if(!s || !s.id) return [];
+  const note = rcNoteFor(s.id, s.name, s.classId);
+  if(!note) return [];
+  return head ? ['', head, '', note] : ['', note];
 }
 
 function fmtPct(v){ return v==null ? '—' : v+'%'; }
 
-// Measured percentage -> 1..5 level. Null percentage -> null (no data, no grade).
-function partToLevel(p){ if(p==null) return null; if(p>=90) return 5; if(p>=72) return 4; if(p>=48) return 3; if(p>=28) return 2; return 1; }
-function hwToLevel(p){ if(p==null) return null; if(p>=90) return 5; if(p>=75) return 4; if(p>=55) return 3; if(p>=35) return 2; return 1; }
-
-// Deterministic phrase pick from a pool given the regenerate nonce.
-function rcPhrase(cat, level, nonce){
-  const pool = RC_COMMENTS[cat] && RC_COMMENTS[cat][level];
-  if(!pool || !pool.length) return '';
-  return pool[nonce % pool.length];
-}
-
 function initRcState(s){
   rcState = {
-    levels: {
-      behavior: partToLevel(s.partScore),
-      homework: hwToLevel(s.hwAvg),
-      vocab: null, grammar: null, port: null
-    },
     includeProjects: true,
     includeHomework: true,
     mode: 'full',                 // 'full' | 'compact' (the school's form)
     printWidth: rcPrintPrefs().width,
-    printMax: rcPrintPrefs().maxLines,
-    nonce: 0
+    printMax: rcPrintPrefs().maxLines
   };
 }
 /* The form's width and line budget are a property of the school's paper, not
@@ -10620,24 +10753,23 @@ function buildFullReportText(s, lang){
 }
 
 function rcLevelSelect(cat, lang){
-  const isPt = lang==='pt';
-  const labels = isPt ? RC_LEVEL_LABELS_PT : RC_LEVEL_LABELS_EN;
-  const cur = rcState.levels[cat];
-  const opts = [`<option value="">${isPt?'— não incluir':'— exclude'}</option>`]
-    .concat([1,2,3,4,5].map(n=>`<option value="${n}" ${cur===n?'selected':''}>${n} · ${labels[n]}</option>`))
-    .join('');
+  const k = lang==='pt' ? 'pt' : 'en';
+  const cur = rcLevelsFor(lastReportStats && lastReportStats.id)[cat];
+  const opts = [3,2,1].map(n=>`<option value="${n}" ${cur===n?'selected':''}>${RC_LEVEL_LABELS[n][k]}</option>`).join('');
   return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-      <span style="min-width:118px;color:var(--muted);">${RC_CAT_LABELS[cat][isPt?'pt':'en']}</span>
+      <span style="min-width:140px;color:var(--muted);">${RC_PARAM_LABELS[cat][k]}</span>
       <select onchange="rcSetLevel('${cat}', this.value)" style="flex:1;">${opts}</select>
     </label>`;
 }
 
 function rcSetLevel(cat, val){
-  rcState.levels[cat] = val ? Number(val) : null;
+  if(!lastReportStats) return;
+  rcSaveLevel(lastReportStats.id, cat, val);
+  rcUnfreeze(lastReportStats.classId, lastReportStats.id);
   refreshReportTextArea();
 }
 function rcRegenerate(){
-  rcState.nonce = (rcState.nonce + 1) % 8;
+  if(lastReportStats) rcReword(lastReportStats.classId);
   refreshReportTextArea();
 }
 function refreshReportTextArea(){
@@ -10655,8 +10787,8 @@ function openReportTextModal(){
   const usedLines = isCompact ? rcCountLines(text.split('\n'), rcState.printWidth) : 0;
   const fits = !isCompact || usedLines <= rcState.printMax;
   const autoNote = isPt
-    ? 'Comportamento e lição de casa vêm dos dados. Vocabulário, gramática e português são opcionais. O texto sai como um bilhete do professor para a família, com o primeiro nome do aluno, e abre o relatório. Use ↻ Outra redação para trocar as frases.'
-    : 'Behavior and homework are set from the data; vocabulary, grammar and Portuguese use are optional. The comment reads as the teacher\'s note to the family, in Portuguese, using the student\'s first name, and opens the report. Use ↻ Reword to swap the phrasing.';
+    ? 'Os três níveis começam em Excelente e são os mesmos da tabela do relatório da turma. O comentário fala direto com o aluno, começa pelo primeiro nome e abre o relatório. Use ↻ Outra redação para trocar as frases.'
+    : 'All three levels start at Excellent and are shared with the table in the group report. The comment, in Portuguese, speaks to the student by first name and opens the report. Use ↻ Reword to swap the phrasing.';
 
   showModal(`${sizeModal('lg sheet')}
     <h2>${isPt?'Texto para o boletim':'Report card text'}</h2>
@@ -10668,7 +10800,7 @@ function openReportTextModal(){
       <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">${isPt?'Comentários':'Comments'}</div>
       <p class="meta" style="margin:0 0 12px;font-size:12px;">${autoNote}</p>
       <div style="display:grid;gap:8px;">
-        ${['behavior','homework','vocab','grammar','port'].map(c=>rcLevelSelect(c, lang)).join('')}
+        ${RC_PARAMS.map(c=>rcLevelSelect(c, lang)).join('')}
       </div>
       <button class="btn-ghost small" style="margin-top:12px;" onclick="rcRegenerate()">${isPt?'↻ Outra redação':'↻ Reword'}</button>
     </div>
@@ -10717,7 +10849,12 @@ function copyReportText(){
   const area = document.getElementById('report-text-area');
   const btn = document.getElementById('report-copy-btn');
   const isPt = state.reportLang==='pt';
-  const done = ()=>{ if(btn){ btn.textContent = isPt?'Copiado ✓':'Copied ✓'; setTimeout(()=>{ if(btn) btn.textContent = isPt?'Copiar':'Copy'; }, 1600); } };
+  const done = ()=>{
+    // The comments that went out with this copy are now reserved for this
+    // student, exactly as a copy from the group report would reserve them.
+    if(lastReportStats && lastReportStats.id) rcFreeze(lastReportStats.classId, lastReportStats.id);
+    if(btn){ btn.textContent = isPt?'Copiado ✓':'Copied ✓'; setTimeout(()=>{ if(btn) btn.textContent = isPt?'Copiar':'Copy'; }, 1600); }
+  };
   const fallback = ()=>{ area.focus(); area.select(); try{ document.execCommand('copy'); done(); }catch(e){ alert(isPt?'Selecione o texto e copie manualmente.':'Select the text and copy manually.'); } };
   if(navigator.clipboard?.writeText){
     navigator.clipboard.writeText(area.value).then(done).catch(fallback);
@@ -10897,6 +11034,7 @@ function renderStudentProfile(){
 
   // Stash for the plain-text report builder, so it can never disagree with what's shown.
   lastReportStats = {
+    id: student.id, classId: student.classId,
     name: student.name, className: cls?cls.name:null,
     gender: pmGenderOf(student),
     grades: gradesInfo,
@@ -11792,6 +11930,156 @@ function copyGroupReportText(){
   } else { fallback(); }
 }
 
+/* ===== Report card comments, one row per student =====
+   Three sliders per student (behavior, English use, Portuguese in class),
+   all at Excelente until the teacher moves them, and a copy button at the end
+   of the row, so a whole class goes into the school system without opening a
+   single student report. Moving a slider only touches its own row and the
+   text previews, so the table never re-renders under the teacher's mouse.
+   Copied rows stay marked (and their text frozen) until that student's
+   levels change or the teacher zeroes the marks for a new period. */
+let rcShowText = false;
+const RC_ICON_COPY = '<svg width="18" height="18" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="4.5" y="4.5" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8.5 4.5V3A1.5 1.5 0 007 1.5H3A1.5 1.5 0 001.5 3v4A1.5 1.5 0 003 8.5h1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+const RC_ICON_DONE = '<svg width="18" height="18" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M2 7l3.5 3.5L11 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function rcGroupSectionHtml(cls, students, isPt){
+  const k = isPt ? 'pt' : 'en';
+  if(!students.length) return '';
+  const plan = rcClassPlan(cls.id);
+  const done = students.filter(s=>plan[s.id] && plan[s.id].copied).length;
+  const rows = students.map(s=>{
+    const lv = rcLevelsFor(s.id);
+    const p0 = plan[s.id] || { note:'', copied:false };
+    return `
+      <tr class="rc-row${p0.copied?' is-copied':''}" data-sid="${s.id}">
+        <td class="rc-name">${esc(s.name)}</td>
+        ${RC_PARAMS.map(p=>`
+        <td><div class="rc-slider">
+          <input type="range" min="1" max="3" step="1" value="${lv[p]}" data-param="${p}"
+                 aria-label="${esc(RC_PARAM_LABELS[p][k])}, ${esc(s.name)}"
+                 oninput="rcGroupSet('${s.id}','${p}',this.value)">
+          <span class="badge ${RC_LEVEL_BADGE[lv[p]]}" data-lvl="${p}">${RC_LEVEL_LABELS[lv[p]][k]}</span>
+        </div></td>`).join('')}
+        <td class="rc-copy-cell">
+          <button type="button" class="rc-copy" title="${isPt?'Copiar texto':'Copy text'}"
+                  aria-label="${isPt?'Copiar texto de':'Copy text for'} ${esc(s.name)}"
+                  onclick="rcGroupCopy('${s.id}', this)">${p0.copied?RC_ICON_DONE:RC_ICON_COPY}</button>
+        </td>
+      </tr>
+      <tr class="rc-text-row" data-for="${s.id}"><td colspan="5" class="rc-text">${esc(p0.note)}</td></tr>`;
+  }).join('');
+  return `
+    <div class="card rc-group no-print${rcShowText?' show-text':''}" id="rc-group">
+      <div class="rc-group-head">
+        <div>
+          <h2>${isPt?'Texto para o boletim':'Report card comments'}</h2>
+          <div class="meta">${isPt
+            ? 'Tudo começa em Excelente. Ajuste só quem precisa e clique no ícone para copiar o texto do aluno. Nenhuma frase se repete dentro da turma, e o texto de quem já foi copiado não muda mais.'
+            : 'Everything starts at Excellent. Adjust only who needs it and click the icon to copy that student\'s text (in Portuguese). No sentence repeats within the class, and a copied text never changes.'}</div>
+        </div>
+        <div class="rc-group-tools">
+          <span class="meta" id="rc-copied-count">${done}/${students.length} ${isPt?'copiados':'copied'}</span>
+          <label class="rc-toggle"><input type="checkbox" ${rcShowText?'checked':''} onchange="rcGroupToggleText(this.checked)"> ${isPt?'Mostrar textos':'Show texts'}</label>
+          <button type="button" class="btn-ghost small" onclick="rcGroupReword()" title="${isPt?'Troca as frases de quem ainda não foi copiado':'New phrasing for everyone not copied yet'}">${isPt?'↻ Outra redação':'↻ Reword'}</button>
+          <button type="button" class="btn-ghost small" id="rc-reset-btn" onclick="rcGroupReset()" ${done?'':'disabled'}>${isPt?'Zerar copiados':'Clear copied'}</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="rc-table">
+          <thead><tr>
+            <th>${isPt?'Aluno':'Student'}</th>
+            ${RC_PARAMS.map(p=>`<th>${RC_PARAM_LABELS[p][k]}</th>`).join('')}
+            <th class="rc-copy-cell">${isPt?'Copiar':'Copy'}</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function rcGroupRow(id){
+  return Array.from(document.querySelectorAll('#rc-group .rc-row')).find(r=>r.dataset.sid===id) || null;
+}
+function rcGroupClassId(){
+  return (window._groupReportExport && window._groupReportExport.classId) || null;
+}
+// Re-reads the plan and brings every row's mark, icon and preview up to date.
+function rcGroupSync(){
+  const plan = rcClassPlan(rcGroupClassId());
+  let done = 0, total = 0;
+  document.querySelectorAll('#rc-group .rc-row').forEach(row=>{
+    const p = plan[row.dataset.sid]; if(!p) return;
+    total++; if(p.copied) done++;
+    row.classList.toggle('is-copied', p.copied);
+    const btn = row.querySelector('.rc-copy');
+    if(btn) btn.innerHTML = p.copied ? RC_ICON_DONE : RC_ICON_COPY;
+    const tr = row.nextElementSibling;
+    if(tr && tr.classList.contains('rc-text-row')) tr.firstElementChild.textContent = p.note;
+  });
+  const el = document.getElementById('rc-copied-count');
+  if(el) el.textContent = `${done}/${total} ${state.reportLang==='pt'?'copiados':'copied'}`;
+  const reset = document.getElementById('rc-reset-btn');
+  if(reset) reset.disabled = !done;
+}
+function rcGroupSet(id, param, val){
+  rcSaveLevel(id, param, val);
+  rcUnfreeze(rcGroupClassId(), id);
+  const v = rcLevelsFor(id)[param];
+  const row = rcGroupRow(id);
+  if(row){
+    const k = state.reportLang === 'pt' ? 'pt' : 'en';
+    const badge = row.querySelector(`[data-lvl="${param}"]`);
+    if(badge){ badge.className = 'badge ' + RC_LEVEL_BADGE[v]; badge.textContent = RC_LEVEL_LABELS[v][k]; }
+  }
+  rcGroupSync();
+}
+function rcCopyText(text){
+  return new Promise((resolve, reject)=>{
+    const fallback = ()=>{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try{ ok = document.execCommand('copy'); }catch(e){}
+      ta.remove();
+      ok ? resolve() : reject();
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(resolve).catch(fallback);
+    } else fallback();
+  });
+}
+function rcGroupCopy(id, btn){
+  const classId = rcGroupClassId();
+  const plan = rcClassPlan(classId);
+  if(!plan[id]) return;
+  rcCopyText(plan[id].note).then(()=>{
+    rcFreeze(classId, id);
+    rcGroupSync();
+  }).catch(()=>{
+    alert(state.reportLang==='pt' ? 'Não foi possível copiar. Marque "Mostrar textos" e copie manualmente.' : 'Could not copy. Tick "Show texts" and copy it manually.');
+  });
+}
+function rcGroupToggleText(on){
+  rcShowText = !!on;
+  const box = document.getElementById('rc-group');
+  if(box) box.classList.toggle('show-text', rcShowText);
+}
+function rcGroupReword(){
+  rcReword(rcGroupClassId());
+  renderGroupReport();
+}
+function rcGroupReset(){
+  const isPt = state.reportLang === 'pt';
+  if(!confirm(isPt ? 'Zerar as marcas de copiado desta turma? Use isso ao começar um novo período de boletins. Os textos já colados deixam de ser reservados.'
+                   : 'Clear the copied marks for this class? Use this when starting a new report period. Texts already pasted stop being reserved.')) return;
+  rcResetCopied(rcGroupClassId());
+  renderGroupReport();
+}
+
 function renderGroupReport(){
   const t = T[state.reportLang];
   const cls = classById(state.reportsSelection.classId);
@@ -11913,6 +12201,7 @@ function renderGroupReport(){
         </tbody>
       </table>
     </div>
+    ${rcGroupSectionHtml(cls, students, state.reportLang==='pt')}
     ${isAdvancedLevel(cls.level) ? toeflGroupTableHtml(cls, students, state.reportLang==='pt') : ''}
     ${isAdvancedLevel(cls.level) ? essayGroupTableHtml(cls, students, state.reportLang==='pt') : ''}
     <div style="font-size:11px;color:var(--muted);margin-top:10px;" class="no-print">
