@@ -1249,6 +1249,7 @@ let state = {
   clubSettings: null,          // English Club invite details — see CLUB_DEFAULTS
   clubSessionId: null,         // the English Club session open in the club view
   clubs: {},                   // English Club sessions: {eventId: {content, roster, att, done}}
+  reportComments: {},          // report card comments: levels, report card in progress, histories
   backupMeta: { lastBackupAt: null },
   privView: 'overview',
   privStudentFilter: 'active',
@@ -1783,6 +1784,7 @@ function isPlainObject(v){ return v && typeof v === 'object' && !Array.isArray(v
 function mergeBlob(key, serverVal, localVal){
   if(serverVal == null) return localVal;
   if(localVal == null) return serverVal;
+  if(key === 'reportComments' && isPlainObject(localVal) && isPlainObject(serverVal)) return mergeReportComments(serverVal, localVal);
   if(Array.isArray(localVal) && Array.isArray(serverVal)){
     const idd = arr => arr.every(x => x && typeof x === 'object' && x.id);
     if(!idd(localVal) || !idd(serverVal)) return localVal;
@@ -1802,6 +1804,26 @@ function mergeBlob(key, serverVal, localVal){
     return out;
   }
   return localVal;
+}
+
+/* Report card comments across two devices: this device's levels and report
+   cards in progress win per student / per class, but a history entry is never
+   dropped, because a lost entry is a comment the student could get again. */
+function mergeReportComments(serverVal, localVal){
+  const out = Object.assign({}, serverVal, localVal);
+  out.levels  = Object.assign({}, serverVal.levels || {}, localVal.levels || {});
+  out.classes = Object.assign({}, serverVal.classes || {}, localVal.classes || {});
+  const hs = serverVal.history || {}, hl = localVal.history || {};
+  out.history = {};
+  new Set(Object.keys(hs).concat(Object.keys(hl))).forEach(id=>{
+    const seen = new Set(), list = [];
+    (hs[id] || []).concat(hl[id] || []).forEach(r=>{
+      const sig = JSON.stringify([r.classId, r.round, r.picks]);
+      if(!seen.has(sig)){ seen.add(sig); list.push(r); }
+    });
+    out.history[id] = list;
+  });
+  return out;
 }
 
 /* Recover from "changed on another device" WITHOUT losing this device's work:
@@ -2338,7 +2360,8 @@ function setDashUpcomingRange(r){
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
   'lessonNotes','homework','promises','privateStudents','privateLessons','payments','checkpoints',
-  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','clubs','pointsLog','activities','rubricSettings','projects'];
+  'learningPoints','classFocus','privateSettings','grades','gradeSettings','clubSettings','clubs','pointsLog','activities','rubricSettings','projects',
+  'reportComments'];
 
 function daysSinceLastBackup(){
   const last = state.backupMeta?.lastBackupAt;
@@ -10099,9 +10122,19 @@ let rcState = null;   // { includeProjects, includeHomework, mode, printWidth, p
    Copied texts are frozen. Once a student's text is copied, its three
    comments are reserved before anyone else is written, so changing a slider
    or rewording later cannot hand an already pasted sentence to a classmate.
-   Changing that student's own levels releases the freeze. Copy marks, freezes
-   and the reword counter are kept per class in localStorage, so a class can
-   be done across several sittings.
+   Changing that student's own levels releases the freeze.
+
+   No repeats for a student across report cards either. A class works
+   through numbered report cards (Boletim 1, 2, 3). Starting the next one
+   moves every text copied in the current one into that student's history,
+   and no comment in a student's history is ever offered to them again. With
+   17 comments per level and at most 17 students the class can always be
+   written without a repeat for many report cards to come; when the greedy
+   pass gets stuck, a bipartite matching (rcResolve) finds the assignment.
+
+   All of it (levels, the report card in progress, histories) is the synced
+   "reportComments" key, so it follows the teacher across devices and lives
+   in the JSON backup like everything else.
 
    Writing rules for the bank: no dashes, semicolons or colons; no adjective
    that agrees with the student's gender; only generic advice (reading,
@@ -10126,26 +10159,46 @@ const RC_STOCK = [/parab[eé]ns/i, /continue/i, /acredit/i, /tenho certeza/i, /c
   /dando (muito )?certo/i, /resolve r[aá]pido/i, /medo de errar/i, /boas ideias/i, /bom per[ií]odo/i,
   /d[aá] gosto/i, /diferen[cç]a/i, /muito bem!/i, /pr[oó]ximo per[ií]odo/i, /evolu/i, /estou gostando/i,
   /surpreender/i, /confi[ao]/i, /na torcida/i, /chegar l[aá]|chega l[aá]/i, /te ajudar|te apoiar|minha ajuda/i];
-const RC_LEVELS_KEY = 'efl-dashboard:rc-levels';
-const RC_CLASS_KEY  = 'efl-dashboard:rc-class';
+const RC_LEGACY_LEVELS_KEY = 'efl-dashboard:rc-levels';   // before reportComments was synced
+const RC_LEGACY_CLASS_KEY  = 'efl-dashboard:rc-class';
 
-/* Storage can throw (file://, blocked site data), so both stores live in
-   memory first and are written through on a best-effort basis. */
-let rcLevelMem = null;
-const rcClassMem = {};
+/* state.reportComments:
+     levels  { studentId: {behavior, english, port} }   sliders of the current report card
+     classes { classId: { round, nonce, copied:{ studentId:{lv, picks} } } }   report card in progress
+     history { studentId: [ {round, classId, date, picks} ] }   texts given in finished report cards */
 function rcReadJson(key){
   try{ const o = JSON.parse(localStorage.getItem(key) || '{}'); return (o && typeof o === 'object') ? o : {}; }
   catch(e){ return {}; }
 }
-function rcWriteJson(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
+function rcPersist(){ scheduleSave('reportComments', state.reportComments); }
+function rcStore(){
+  let st = state.reportComments;
+  if(!st || typeof st !== 'object' || Array.isArray(st)) st = state.reportComments = {};
+  if(!st.levels  || typeof st.levels  !== 'object') st.levels  = {};
+  if(!st.classes || typeof st.classes !== 'object') st.classes = {};
+  if(!st.history || typeof st.history !== 'object') st.history = {};
+  if(!st.migrated){
+    // Texts copied before this was synced lived in this browser only. They
+    // become the first report card of their class, so they still count.
+    st.migrated = true;
+    const lv = rcReadJson(RC_LEGACY_LEVELS_KEY), cl = rcReadJson(RC_LEGACY_CLASS_KEY);
+    Object.keys(lv).forEach(id=>{ if(!st.levels[id]) st.levels[id] = lv[id]; });
+    Object.keys(cl).forEach(cid=>{
+      const c = cl[cid];
+      if(c && !st.classes[cid]) st.classes[cid] = { round: 1, nonce: Number(c.nonce) || 0,
+        copied: (c.copied && typeof c.copied === 'object') ? c.copied : {} };
+    });
+    rcPersist();
+  }
+  return st;
+}
 
 function rcFirstName(full){
   const parts = String(full||'').trim().split(/\s+/);
   return parts[0] || '';
 }
 function rcLevelsFor(id){
-  if(!rcLevelMem) rcLevelMem = rcReadJson(RC_LEVELS_KEY);
-  const saved = rcLevelMem[id] || {};
+  const saved = rcStore().levels[id] || {};
   const out = {};
   RC_PARAMS.forEach(p=>{ const v = Number(saved[p]); out[p] = (v===1||v===2||v===3) ? v : 3; });
   return out;
@@ -10154,25 +10207,30 @@ function rcSaveLevel(id, param, val){
   if(!id || !RC_PARAMS.includes(param)) return;
   const cur = rcLevelsFor(id);
   cur[param] = Math.max(1, Math.min(3, Number(val) || 3));
-  rcLevelMem[id] = cur;
-  rcWriteJson(RC_LEVELS_KEY, rcLevelMem);
+  rcStore().levels[id] = cur;
+  rcPersist();
 }
 function rcLvKey(lv){ return RC_PARAMS.map(p=>lv[p]).join(''); }
 
 function rcClassState(classId){
-  const k = classId || '_';
-  if(!rcClassMem[k]){
-    const c = rcReadJson(RC_CLASS_KEY)[k] || {};
-    rcClassMem[k] = { nonce: Number(c.nonce) || 0,
-                      copied: (c.copied && typeof c.copied === 'object') ? c.copied : {} };
-  }
-  return rcClassMem[k];
+  const all = rcStore().classes, k = classId || '_';
+  const c = all[k] || (all[k] = {});
+  if(!(Number(c.round) >= 1)) c.round = 1;
+  if(!(Number(c.nonce) >= 0)) c.nonce = 0;
+  if(!c.copied || typeof c.copied !== 'object') c.copied = {};
+  return c;
 }
-function rcSaveClassState(classId){
-  const k = classId || '_';
-  const all = rcReadJson(RC_CLASS_KEY);
-  all[k] = rcClassMem[k];
-  rcWriteJson(RC_CLASS_KEY, all);
+function rcSaveClassState(){ rcPersist(); }
+
+function rcHistory(id){
+  const h = rcStore().history[id];
+  return Array.isArray(h) ? h : [];
+}
+// Every comment this student has received in a finished report card.
+function rcBanned(id){
+  const out = new Set();
+  rcHistory(id).forEach(r=>(r.picks || []).forEach(c=>out.add(c)));
+  return out;
 }
 
 function rcFirstWord(s){ return (String(s).toLowerCase().match(/^[^\s,.!?]+/) || [''])[0]; }
@@ -10180,30 +10238,84 @@ function rcClash(a, b){
   if(rcFirstWord(a) === rcFirstWord(b)) return true;
   return RC_STOCK.some(re => re.test(a) && re.test(b));
 }
+function rcOrder(p, lv, slot, k){
+  const pool = (RC_BANK[p] && RC_BANK[p][lv[p]]) || [];
+  const n = pool.length;
+  if(!n) return [];
+  const start = (((slot * RC_STEP[p] + k * 5) % n) + n) % n;
+  return pool.map((_, t)=>pool[(start + t) % n]);
+}
 
 /* Three comments for one student. "used" holds every comment already given
-   to someone in the class. Preference: unused and reads well next to the
-   comments already in the note; then unused; then (only past 17 students)
-   anything that reads well. */
-function rcPicks(levels, slot, used){
+   to someone in the class this report card, "ban" the student's history.
+   Preference: allowed and reads well next to the comments already in the
+   note; then allowed. If nothing allowed is left the pick is provisional and
+   rcResolve() reassigns it. */
+function rcPicks(levels, slot, used, ban){
   const picked = [];
+  ban = ban || new Set();
   RC_PARAMS.forEach((p, k)=>{
-    const pool = (RC_BANK[p] && RC_BANK[p][levels[p]]) || [];
-    if(!pool.length) return;
-    const n = pool.length;
-    const start = (((slot * RC_STEP[p] + k * 5) % n) + n) % n;
-    const order = pool.map((_, t)=>pool[(start + t) % n]);
+    const order = rcOrder(p, levels, slot, k);
+    if(!order.length) return;
     // "...Você está indo bem! Você tem tudo..." reads like a template, so the
     // next comment may not open with the word that opened the last sentence.
     const prevTail = picked.length ? rcFirstWord(picked[picked.length - 1].split(/[.!?]\s+/).pop()) : '';
-    const fresh  = c => !picked.some(q => rcClash(q, c)) && rcFirstWord(c) !== prevTail;
-    const unused = c => !used.has(c);
-    const choice = order.find(c => unused(c) && fresh(c)) || order.find(unused) || order.find(fresh) || order[0];
+    const fresh   = c => !picked.some(q => rcClash(q, c)) && rcFirstWord(c) !== prevTail;
+    const allowed = c => !used.has(c) && !ban.has(c);
+    const choice = order.find(c => allowed(c) && fresh(c)) || order.find(allowed)
+      || order.find(c => !ban.has(c)) || order[0];
     picked.push(choice);
     used.add(choice);
   });
   return picked;
 }
+
+/* Hard rules first: per parameter, if any open student holds a comment that
+   is in their history, reserved by a copied text, or held by a classmate,
+   that parameter is reassigned for all open students with Kuhn's augmenting
+   path matching. Each student tries their current pick first, then their own
+   rotation of the pool, so the greedy result survives wherever it was legal. */
+function rcResolve(open, reserved){
+  RC_PARAMS.forEach((p, k)=>{
+    const seen = new Set();
+    const broken = open.some(e=>{
+      const c = e.picks[k];
+      const bad = !c || e.ban.has(c) || reserved.has(c) || seen.has(c);
+      seen.add(c);
+      return bad;
+    });
+    if(!broken) return;
+    const cands = open.map(e=>{
+      const pool = (RC_BANK[p] && RC_BANK[p][e.lv[p]]) || [];
+      return Array.from(new Set([e.picks[k]].concat(rcOrder(p, e.lv, e.slot, k))))
+        .filter(c => pool.includes(c) && !reserved.has(c) && !e.ban.has(c));
+    });
+    const owner = new Map();
+    const tryAssign = (i, visited)=>{
+      for(const c of cands[i]){
+        if(visited.has(c)) continue;
+        visited.add(c);
+        const j = owner.get(c);
+        if(j === undefined || tryAssign(j, visited)){ owner.set(c, i); return true; }
+      }
+      return false;
+    };
+    open.forEach((e, i)=>tryAssign(i, new Set()));
+    const got = new Map();
+    owner.forEach((i, c)=>got.set(i, c));
+    const taken = new Set(owner.keys());
+    open.forEach((e, i)=>{
+      if(got.has(i)){ e.picks[k] = got.get(i); return; }
+      // No legal assignment exists (more students than comments left). Never
+      // repeat the student's own history; repeat in the class only if forced.
+      const pool = (RC_BANK[p] && RC_BANK[p][e.lv[p]]) || [];
+      const c = pool.find(x => !e.ban.has(x) && !taken.has(x) && !reserved.has(x))
+             || pool.find(x => !e.ban.has(x)) || e.picks[k];
+      e.picks[k] = c; taken.add(c);
+    });
+  });
+}
+
 // True when a note reads like a template: two comments opening with the same
 // word or sharing a stock phrase, or a comment opening with the word that
 // opened the sentence right before it.
@@ -10216,24 +10328,22 @@ function rcBadness(picks){
   return n;
 }
 function rcClumsy(picks){ return rcBadness(picks) > 0; }
-/* The greedy pass in rcClassPlan runs short of good options near the end of
-   a full class, so a clumsy note is repaired afterwards: first by taking a
-   comment nobody in the class has, then by trading a comment with another
-   student at the same level whenever the trade lowers the total number of
-   clashes in the two notes (so a three-way clash can take two trades). Frozen
-   (copied) students are never touched, and nothing here can create a repeat,
-   since comments only move between students or come from the unused pile. */
+/* Style pass after the hard rules: a clumsy note takes a comment nobody in
+   the class holds, or trades one with a classmate at the same level, whenever
+   that lowers the total number of clashes in the two notes. A trade or swap
+   is only made when neither student has the incoming comment in their
+   history, so nothing here can create a repeat of any kind. */
 function rcRepair(entries, used){
   const bad = e => rcBadness(e.picks);
   for(let pass = 0; pass < 6; pass++){
     let changed = false;
     entries.forEach(e=>{
-      if(e.frozen || !bad(e)) return;
+      if(!bad(e)) return;
       for(let k = 0; k < RC_PARAMS.length && bad(e); k++){
         const p = RC_PARAMS[k];
         const pool = RC_BANK[p][e.lv[p]] || [];
         for(const c of pool){
-          if(used.has(c)) continue;
+          if(used.has(c) || e.ban.has(c)) continue;
           const old = e.picks[k], was = bad(e);
           e.picks[k] = c;
           if(bad(e) < was){ used.delete(old); used.add(c); changed = true; if(!bad(e)) break; continue; }
@@ -10241,7 +10351,8 @@ function rcRepair(entries, used){
         }
         if(!bad(e)) break;
         for(const o of entries){
-          if(o === e || o.frozen || o.lv[p] !== e.lv[p]) continue;
+          if(o === e || o.lv[p] !== e.lv[p]) continue;
+          if(e.ban.has(o.picks[k]) || o.ban.has(e.picks[k])) continue;
           const before = bad(e) + bad(o);
           [e.picks[k], o.picks[k]] = [o.picks[k], e.picks[k]];
           if(bad(e) + bad(o) < before){ changed = true; break; }
@@ -10259,10 +10370,11 @@ function rcJoin(name, picks){
   return out.join(' ');
 }
 // A frozen set of picks still counts only if it matches the student's
-// current levels and every comment is still in the bank.
-function rcFrozenValid(f, lv){
+// current levels, every comment is still in the bank, and none of them is in
+// the student's history.
+function rcFrozenValid(f, lv, ban){
   return !!(f && f.lv === rcLvKey(lv) && Array.isArray(f.picks) && f.picks.length === RC_PARAMS.length &&
-    f.picks.every((c, k)=>(RC_BANK[RC_PARAMS[k]][lv[RC_PARAMS[k]]] || []).includes(c)));
+    f.picks.every((c, k)=>(RC_BANK[RC_PARAMS[k]][lv[RC_PARAMS[k]]] || []).includes(c) && !(ban && ban.has(c))));
 }
 // Every student of a class: { id: { picks, note, copied } }, in list order.
 function rcClassPlan(classId){
@@ -10273,19 +10385,24 @@ function rcClassPlan(classId){
   const used = new Set();
   list.forEach(s=>{
     const f = st.copied[s.id], lv = rcLevelsFor(s.id);
-    if(rcFrozenValid(f, lv) && f.picks.every(c=>!used.has(c))){
+    if(rcFrozenValid(f, lv, rcBanned(s.id)) && f.picks.every(c=>!used.has(c))){
       f.picks.forEach(c=>used.add(c));
       plan[s.id] = { picks: f.picks.slice(), copied: true };
     }
   });
+  const reserved = new Set(used);
   const open = [];
   list.forEach((s, i)=>{
     if(plan[s.id]) return;
-    const lv = rcLevelsFor(s.id);
-    plan[s.id] = { picks: rcPicks(lv, i + st.nonce, used), copied: false };
-    open.push({ lv, picks: plan[s.id].picks, frozen: false });
+    const lv = rcLevelsFor(s.id), ban = rcBanned(s.id), slot = i + st.nonce;
+    const e = { lv, ban, slot, picks: rcPicks(lv, slot, used, ban) };
+    plan[s.id] = { picks: e.picks, copied: false };
+    open.push(e);
   });
-  rcRepair(open, used);
+  rcResolve(open, reserved);
+  const usedAll = new Set(reserved);
+  open.forEach(e=>e.picks.forEach(c=>usedAll.add(c)));
+  rcRepair(open, usedAll);
   list.forEach(s=>{ plan[s.id].note = rcJoin(rcFirstName(s.name), plan[s.id].picks); });
   return plan;
 }
@@ -10297,7 +10414,7 @@ function rcClassNotes(classId){
 function rcNoteFor(id, fullName, classId){
   const plan = rcClassPlan(classId);
   if(plan[id]) return plan[id].note;
-  return rcJoin(rcFirstName(fullName), rcPicks(rcLevelsFor(id), 0, new Set()));
+  return rcJoin(rcFirstName(fullName), rcPicks(rcLevelsFor(id), 0, new Set(), rcBanned(id)));
 }
 function rcFreeze(classId, id){
   const plan = rcClassPlan(classId);
@@ -10320,6 +10437,25 @@ function rcReword(classId){
 function rcResetCopied(classId){
   rcClassState(classId).copied = {};
   rcSaveClassState(classId);
+}
+/* Closes the current report card of a class: every copied text joins its
+   student's history for good, the levels of the class go back to Excelente,
+   and the next report card starts with nothing copied. Students who were not
+   copied leave nothing in their history, because they received nothing. */
+function rcStartNextRound(classId){
+  const st = rcClassState(classId), store = rcStore();
+  const today = todayStr();
+  Object.keys(st.copied).forEach(id=>{
+    const f = st.copied[id];
+    if(!f || !Array.isArray(f.picks)) return;
+    const h = Array.isArray(store.history[id]) ? store.history[id] : (store.history[id] = []);
+    h.push({ round: st.round, classId, date: today, picks: f.picks.slice() });
+  });
+  studentsInClass(classId).forEach(s=>{ delete store.levels[s.id]; });
+  st.copied = {};
+  st.nonce = 0;
+  st.round = Number(st.round) + 1;
+  rcPersist();
 }
 
 function rcCommentLines(s, head){
@@ -11974,16 +12110,17 @@ function rcGroupSectionHtml(cls, students, isPt){
     <div class="card rc-group no-print${rcShowText?' show-text':''}" id="rc-group">
       <div class="rc-group-head">
         <div>
-          <h2>${isPt?'Texto para o boletim':'Report card comments'}</h2>
+          <h2>${isPt?'Texto para o boletim':'Report card comments'} <span class="badge hw" style="vertical-align:middle;">${isPt?'Boletim':'Report card'} ${rcClassState(cls.id).round}</span></h2>
           <div class="meta">${isPt
-            ? 'Tudo começa em Excelente. Ajuste só quem precisa e clique no ícone para copiar o texto do aluno, com o resumo de frequência, atrasos, saídas antecipadas, lição de casa e English Club do período. Nenhuma frase se repete dentro da turma, e o texto de quem já foi copiado não muda mais.'
-            : 'Everything starts at Excellent. Adjust only who needs it and click the icon to copy that student\'s text (in Portuguese), followed by attendance, late arrivals, early departures, homework and English Club for the period. No sentence repeats within the class, and a copied text never changes.'}</div>
+            ? 'Tudo começa em Excelente. Ajuste só quem precisa e clique no ícone para copiar o texto do aluno, com o resumo de frequência, atrasos, saídas antecipadas, lição de casa e English Club do período. Nenhuma frase se repete dentro da turma nem para o mesmo aluno em boletins anteriores, e o texto de quem já foi copiado não muda mais.'
+            : 'Everything starts at Excellent. Adjust only who needs it and click the icon to copy that student\'s text (in Portuguese), followed by attendance, late arrivals, early departures, homework and English Club for the period. No sentence repeats within the class or for the same student across report cards, and a copied text never changes.'}</div>
         </div>
         <div class="rc-group-tools">
           <span class="meta" id="rc-copied-count">${done}/${students.length} ${isPt?'copiados':'copied'}</span>
           <label class="rc-toggle"><input type="checkbox" ${rcShowText?'checked':''} onchange="rcGroupToggleText(this.checked)"> ${isPt?'Mostrar textos':'Show texts'}</label>
           <button type="button" class="btn-ghost small" onclick="rcGroupReword()" title="${isPt?'Troca as frases de quem ainda não foi copiado':'New phrasing for everyone not copied yet'}">${isPt?'↻ Outra redação':'↻ Reword'}</button>
-          <button type="button" class="btn-ghost small" id="rc-reset-btn" onclick="rcGroupReset()" ${done?'':'disabled'}>${isPt?'Zerar copiados':'Clear copied'}</button>
+          <button type="button" class="btn-ghost small" id="rc-next-btn" onclick="rcGroupNextRound()" ${done?'':'disabled'}
+                  title="${isPt?'Guarda os textos copiados no histórico de cada aluno e começa o próximo boletim':'Keeps the copied texts in each student\'s history and starts the next report card'}">${isPt?`Começar Boletim ${rcClassState(cls.id).round + 1}`:`Start report card ${rcClassState(cls.id).round + 1}`}</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -12072,8 +12209,8 @@ function rcGroupSync(){
   });
   const el = document.getElementById('rc-copied-count');
   if(el) el.textContent = `${done}/${total} ${state.reportLang==='pt'?'copiados':'copied'}`;
-  const reset = document.getElementById('rc-reset-btn');
-  if(reset) reset.disabled = !done;
+  const next = document.getElementById('rc-next-btn');
+  if(next) next.disabled = !done;
 }
 function rcGroupSet(id, param, val){
   rcSaveLevel(id, param, val);
@@ -12126,14 +12263,24 @@ function rcGroupReword(){
   rcReword(rcGroupClassId());
   renderGroupReport();
 }
-function rcGroupReset(){
+function rcGroupNextRound(){
+  const classId = rcGroupClassId();
+  if(!classId) return;
   const isPt = state.reportLang === 'pt';
-  if(!confirm(isPt ? 'Zerar as marcas de copiado desta turma? Use isso ao começar um novo período de boletins. Os textos já colados deixam de ser reservados.'
-                   : 'Clear the copied marks for this class? Use this when starting a new report period. Texts already pasted stop being reserved.')) return;
-  rcResetCopied(rcGroupClassId());
+  const st = rcClassState(classId);
+  const list = studentsInClass(classId);
+  const copied = list.filter(s=>st.copied[s.id]).length;
+  const missing = list.length - copied;
+  const n = st.round, m = n + 1;
+  const msg = isPt
+    ? `Fechar o Boletim ${n} e começar o Boletim ${m}?\n\nOs textos copiados de ${copied} aluno${copied===1?'':'s'} entram no histórico, e nenhum desses comentários vai aparecer de novo para o mesmo aluno. Os níveis voltam para Excelente.`
+      + (missing ? `\n\nAtenção: ${missing} aluno${missing===1?' ainda não foi copiado':'s ainda não foram copiados'} neste boletim.` : '')
+    : `Close report card ${n} and start report card ${m}?\n\nThe copied texts of ${copied} student${copied===1?'':'s'} go into their history, and none of those comments will be offered to the same student again. Levels go back to Excellent.`
+      + (missing ? `\n\nNote: ${missing} student${missing===1?' has':'s have'} not been copied in this report card.` : '');
+  if(!confirm(msg)) return;
+  rcStartNextRound(classId);
   renderGroupReport();
 }
-
 function renderGroupReport(){
   const t = T[state.reportLang];
   const cls = classById(state.reportsSelection.classId);
@@ -14095,6 +14242,7 @@ async function init(){
   state.gradeSettings = loadKey('gradeSettings', { margin: 0 });
   state.clubSettings = loadKey('clubSettings', null);
   state.clubs = loadKey('clubs', {});
+  state.reportComments = loadKey('reportComments', {});
   state.backupMeta = loadKey('backupMeta', { lastBackupAt: null });
 
   sortStudentStore();
