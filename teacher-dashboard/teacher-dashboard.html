@@ -6204,7 +6204,8 @@ function renderClubList(){
         <td>${empty ? '—' : `${c.total} student${c.total===1?'':'s'}`}</td>
         <td>${empty ? '—' : `${c.present} present${c.absent?` · ${c.absent} absent`:''}${c.unmarked?` · ${c.unmarked} not marked`:''}`}</td>
         <td>${status}</td>
-        <td><button type="button" class="icon-btn" onclick="event.stopPropagation();goToClubSession('${e.id}')">Open →</button></td>
+        <td style="white-space:nowrap;"><button type="button" class="icon-btn" onclick="event.stopPropagation();goToClubSession('${e.id}')">Open →</button>
+          <button type="button" class="icon-btn danger" title="Delete this session" aria-label="Delete session ${pmShortDate(e.date)}" onclick="event.stopPropagation();deleteClubSession('${e.id}')">🗑</button></td>
       </tr>`;
   }).join('');
 
@@ -6272,6 +6273,33 @@ function navClubSession(dir){
   const n = clubNeighbors(state.clubSessionId);
   const target = dir < 0 ? n.prev : n.next;
   if(target) goToClubSession(target.id);
+}
+/* Deleting a session removes its calendar event and its attendance record
+   together — they are one thing. Undo puts both back exactly. */
+function deleteClubSession(eventId){
+  const ev = clubEventById(eventId);
+  if(!ev) return;
+  const c = clubCounts(eventId);
+  const rec = (state.clubs||{})[eventId];
+  const marked = c.present + c.absent;
+  const msg = `Delete the English Club session on ${formatDateLong(ev.date)}?`
+    + (c.total ? `\n\n${c.total} student${c.total===1?' is':'s are'} registered${marked?` and ${marked} ${marked===1?'has':'have'} attendance recorded`:''}. That record will be removed from their reports.` : '')
+    + `\n\nIt is also removed from the calendar.`;
+  if(!confirm(msg)) return;
+  const idx = state.events.indexOf(ev);
+  state.events.splice(idx, 1);
+  scheduleSave('events', state.events);
+  if(rec){
+    const next = Object.assign({}, state.clubs); delete next[eventId];
+    state.clubs = next; scheduleSave('clubs', state.clubs);
+  }
+  if(state.view === 'club' && state.clubSessionId === eventId) navigate('club-list'); else refreshView();
+  showUndoToast(`Deleted English Club — ${pmShortDate(ev.date)}`, ()=>{
+    state.events.splice(Math.min(idx, state.events.length), 0, ev);
+    scheduleSave('events', state.events);
+    if(rec){ state.clubs = Object.assign({}, state.clubs||{}, {[eventId]: rec}); scheduleSave('clubs', state.clubs); }
+    refreshView();
+  });
 }
 function setClubDate(eventId, date){
   if(!date) return;
@@ -6356,6 +6384,7 @@ function renderClubSession(){
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;">
           <input type="checkbox" ${rec.done?'checked':''} onchange="setClubDone('${eventId}', this.checked)"> Session complete
         </label>
+        <button type="button" class="icon-btn danger" title="Delete this session" onclick="deleteClubSession('${eventId}')">🗑 Delete session</button>
       </div>
     </div>
 
