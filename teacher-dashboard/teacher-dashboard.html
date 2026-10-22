@@ -978,6 +978,16 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .attn-sig{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;}
   .attn-sig-acts{display:flex;gap:6px;flex-wrap:wrap;}
   .attn-more{white-space:nowrap;}
+  .rs-set{border:0;padding:0;margin:0 0 14px;min-width:0;}
+  .rs-set legend{font-size:13px;font-weight:600;margin-bottom:6px;padding:0;}
+  .rs-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+  .rs-sig input{width:18px;height:18px;flex-shrink:0;}
+  .rs-actions{flex-wrap:wrap;}
+  .rs-pill{cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .rs-pill input{margin:0;}
+  .rs-pill:has(input:checked){background:var(--accent);color:#fff;border-color:var(--accent);}
+  .rs-pill:focus-within{outline:2px solid var(--accent);outline-offset:2px;}
+  .rs-text{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px;font-family:inherit;font-size:14px;background:var(--surface,inherit);color:inherit;}
   .hk-group{padding-top:10px;}
   .hk-group + .hk-group{margin-top:6px;border-top:1px solid var(--border);}
   .hk-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-bottom:2px;}
@@ -4333,7 +4343,12 @@ function _renderDashboard(el){
     if(!g || !g.cycles || !g.cycles.length) return;
     const cyc = g.cycles[g.cycles.length-1];
     const st = gradeStatus(c, cyc, s.id);
-    if(st && (st.under || st.close)) gradeAlerts.push({ id:s.id, name:s.name, classId:s.classId, st, cycleLabel:cyc.label });
+    if(st && (st.under || st.close)){
+      // Keyed on the cycle and the current scores: a resolution holds until a
+      // score changes, then the alert comes back on its own.
+      const key = attendanceAlertKey('grade', cyc.id || cyc.label, st.under?'under':'close', st.scores.map(v=>v==null?'':v).join('/'));
+      if(!alertHandled(s, key)) gradeAlerts.push({ id:s.id, name:s.name, classId:s.classId, st, key, cycleLabel:cyc.label });
+    }
   });
   gradeAlerts.sort((a,b)=>(b.st.under?1:0)-(a.st.under?1:0));
 
@@ -4355,7 +4370,9 @@ function _renderDashboard(el){
         if(session[s.id]?.attendance!=='absent') return;
         const score = studentScores(cyc, s.id, nT)[ti];
         if(score!=null && score!=='') return;      // make-up score already entered
-        missedTests.push({ id:s.id, name:s.name, classId:c.id, date:d, testLabel:testLabelFor(c,ti), cycleLabel:cyc.label });
+        const key = attendanceAlertKey('test', cyc.id || cyc.label, ti, d);
+        if(alertHandled(s, key)) return;
+        missedTests.push({ id:s.id, name:s.name, classId:c.id, date:d, key:key, testLabel:testLabelFor(c,ti), cycleLabel:cyc.label });
       });
     });
   });
@@ -4369,9 +4386,8 @@ function _renderDashboard(el){
      as closures rather than serialised into onclick strings, so student names
      and essay topics can contain anything without breaking or injecting. */
   const attnQueue = buildAttentionQueue({ cpStudents, twoInRow, missedAssess, missedEssay, missedTests, gradeAlerts, risks });
-  const attnActs = [];
-  const A = fn => { attnActs.push(fn); return attnActs.length-1; };
-  const actBtn = a => `<button class="btn-ghost small" ${a.danger?'style="color:var(--red);"':''}${a.title?` title="${esc(a.title)}"`:''} onclick="window._attnActions[${A(a.run)}]()">${esc(a.label)}</button>`;
+  window._attnRows = {};
+  attnQueue.forEach(r=>{ window._attnRows[r.studentId] = r; });
   const attnSevWord = n => n>=3 ? 'flagged' : n>=2 ? 'needs a call' : 'early warning';
   const attnHtml = attnQueue.length ? `
     <div class="card section" style="margin-top:16px;border-left:4px solid ${attnQueue[0].sev>=2?'var(--red)':'var(--amber)'};">
@@ -4379,7 +4395,6 @@ function _renderDashboard(el){
       ${attnQueue.map(r=>{
         const cls = classById(r.classId);
         const one = r.signals.length===1;
-        const open = dashAttnOpen.has(r.studentId);
         return `
         <div class="dash-row attn-row">
           <div class="dash-row-left">
@@ -4388,25 +4403,17 @@ function _renderDashboard(el){
               <div class="dash-row-title">${esc(r.name)}
                 ${r.signals.map(sg=>`<span class="badge ${sg.sev>=2?'red':'amber'}" style="margin-left:6px;font-size:11px;">${sg.icon} ${esc(sg.label)}</span>`).join('')}
               </div>
-              <div class="dash-row-sub">${esc(cls?cls.name:'')}${one?' · '+esc(r.signals[0].text):' · '+attnSevWord(r.sev)}</div>
-              ${!one && open ? `<div class="attn-detail">${r.signals.map(sg=>`
-                <div class="attn-sig">
-                  <div style="min-width:0;"><b>${sg.icon} ${esc(sg.label)}</b> — ${esc(sg.text)}</div>
-                  ${sg.actions.length?`<div class="attn-sig-acts">${sg.actions.map(actBtn).join('')}</div>`:''}
-                </div>`).join('')}</div>` : ''}
+              <div class="dash-row-sub">${esc(cls?cls.name:'')}${one?' · '+esc(r.signals[0].text):' · '+r.signals.length+' warnings · '+attnSevWord(r.sev)}</div>
             </div>
           </div>
           <div class="attn-acts">
-            ${one
-              ? r.signals[0].actions.map(actBtn).join('')
-              : `<button class="btn-ghost small attn-more" aria-expanded="${open}" onclick="toggleAttnRow('${r.studentId}')">${open?'▾ Hide':'▸ '+r.signals.length+' warnings'}</button>`}
+            <button class="btn-accent small" title="Record what was done and archive these warnings" onclick="openResolveModal('${r.studentId}')">✓ Resolve</button>
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${r.studentId}',studentProfileReturn:'classes'})">Report →</button>
             ${r.flagged?'':`<button class="icon-btn" title="Flag to contact parents" onclick="openContactParentsModal('${r.studentId}')">📞 Flag</button>`}
           </div>
         </div>`;
       }).join('')}
     </div>` : '';
-  window._attnActions = attnActs;
 
   const hkCount = (backupDays>=7?1:0) + pendingCompletions.length + staleLessons.length;
   const hkHtml = hkCount ? `
@@ -4471,63 +4478,67 @@ function buildAttentionQueue(src){
   };
   const dateS = d => (typeof formatDateShort==='function' ? formatDateShort(d) : d);
 
+  // Every signal carries a key. Resolving writes the keys into the student's
+  // contact history; a key already there is not shown again. Derived keys
+  // encode the current state, so a changed situation raises a fresh alert.
+  const handled = src.isHandled || ((id, key) => alertHandled(anyStudent(id), key));
+  const gradesLink = classId => ({ label:'Grades \u2192', run:()=>openGradesModal(classId) });
+
   (src.cpStudents||[]).forEach(s=> push(s.id, s.name, s.classId, {
-    kind:'flag', sev:3, icon:'\ud83d\udcde',
+    kind:'flag', key:'flag', sev:3, icon:'\ud83d\udcde',
     label: (s.contactParents && s.contactParents.category) || 'Flagged',
     text: (s.contactParents && s.contactParents.reason) || 'Flagged to contact parents',
-    actions:[
-      { label:'\u2713 Logged', title:'Log the call and clear the flag', run:()=>clearContactParents(s.id) },
-      { label:'\u2715 Discard', title:'No longer needed \u2014 nothing logged', danger:true, run:()=>discardContactParents(s.id) }
-    ]
+    actions:[]
   }));
 
   (src.twoInRow||[]).forEach(x=> push(x.id, x.name, x.classId, {
-    kind:'attendance', sev:2, icon:'\ud83d\udeaa', label:'2 in a row',
+    kind:'attendance', key:x.key, sev:2, icon:'\ud83d\udeaa', label:'2 in a row',
     text:`Absent ${dateS(x.d1)} & ${dateS(x.d2)}`,
-    actions:[{ label:'\u2713 Log call', title:'Log the call and clear this alert',
-      run:()=>openAttendanceCallModal(x.id, x.key, `Missed two classes in a row (${dateS(x.d1)} & ${dateS(x.d2)})`) }]
+    actions:[]
   }));
 
   (src.missedAssess||[]).forEach(x=>{
     const what = eventTypeLabel(x.type).toLowerCase();
     push(x.id, x.name, x.classId, {
-      kind:'missed-assessment', sev:2, icon:'\ud83d\udcc5', label:'Missed '+what,
+      kind:'missed-assessment', key:x.key, sev:2, icon:'\ud83d\udcc5', label:'Missed '+what,
       text:`Absent ${dateS(x.date)}${x.title?' \u00b7 '+x.title:''}`,
-      actions:[{ label:'\u2713 Log call', title:'Log the call and clear this alert',
-        run:()=>openAttendanceCallModal(x.id, x.key, `Absent for a ${what} on ${dateS(x.date)}${x.title?' \u2014 '+x.title:''}`) }]
+      actions:[]
     });
   });
 
   (src.missedEssay||[]).forEach(x=> push(x.id, x.name, x.classId, {
-    kind:'essay', sev:2, icon:'\u270d\ufe0f', label:x.label,
+    kind:'essay', key:x.key, sev:2, icon:'\u270d\ufe0f', label:x.label,
     text:`${x.wasAbsent?'Absent on':'No mark recorded for'} ${dateS(x.date)}${x.topic?' \u00b7 '+x.topic:''}`,
-    actions:[
-      { label:'Grades \u2192', title:'Enter the essay score', run:()=>{ openGradesModal(x.classId); gmSetTab('essays'); } },
-      { label:'\u2713 Log call', title:'Log the call and clear this alert',
-        run:()=>openAttendanceCallModal(x.id, x.key, `${x.label} not written \u2014 due ${dateS(x.date)}${x.topic?' \u2014 '+x.topic:''}${x.wasAbsent?' (absent that day)':''}`) }
-    ]
+    actions:[{ label:'Grades \u2192', run:()=>{ openGradesModal(x.classId); gmSetTab('essays'); } }]
   }));
 
   (src.missedTests||[]).forEach(x=> push(x.id, x.name, x.classId, {
-    kind:'missed-test', sev:2, icon:'\ud83d\udcdd', label:'Missed '+x.testLabel,
+    kind:'missed-test', key:x.key, sev:2, icon:'\ud83d\udcdd', label:'Missed '+x.testLabel,
     text:`Absent ${dateS(x.date)} \u2014 no make-up score entered yet`,
-    actions:[{ label:'Grades \u2192', run:()=>openGradesModal(x.classId) }]
+    actions:[gradesLink(x.classId)]
   }));
 
   (src.gradeAlerts||[]).forEach(x=> push(x.id, x.name, x.classId, {
-    kind:'grades', sev: x.st.under ? 2 : 1, icon:'\ud83d\udcdd',
+    kind:'grades', key:x.key, sev: x.st.under ? 2 : 1, icon:'\ud83d\udcdd',
     label: x.st.under ? (x.st.advanced?'TOEFL below target':'Avg under 80')
                       : (x.st.advanced?'Close to target':'Close to 80'),
     text: `${x.cycleLabel} \u00b7 ${gradeStatusLine(x.st,'en')}`,
-    actions:[{ label:'Grades \u2192', run:()=>openGradesModal(x.classId) }]
+    actions:[gradesLink(x.classId)]
   }));
 
   // riskAssess already gates itself at two or more co-occurring signals, so its
   // trends add context to a row rather than creating noisy single-signal ones.
   (src.risks||[]).forEach(r=> (r.signals||[]).forEach(sg=> push(r.studentId, r.name, r.classId, {
-    kind:'trend-'+sg.kind, sev: sg.sev || 1, icon: (typeof RISK_ICON!=='undefined' && RISK_ICON[sg.kind]) || '\u26a0\ufe0f',
+    kind:'trend-'+sg.kind, key:'trend:'+sg.kind+':'+sg.text, sev: sg.sev || 1,
+    icon: (typeof RISK_ICON!=='undefined' && RISK_ICON[sg.kind]) || '\u26a0\ufe0f',
     label: sg.kind, text: sg.text, actions:[]
   })));
+
+  // A manual flag is live state, not a derived alert: it is never "handled".
+  rows.forEach((r,id)=>{
+    r.signals = r.signals.filter(sg=> sg.kind==='flag' || !sg.key || !handled(id, sg.key));
+    if(!r.signals.length) rows.delete(id);
+  });
 
   return [...rows.values()].map(r=>{
     r.sev = r.signals.reduce((m,s)=>Math.max(m, s.sev||1), 0);
@@ -5407,7 +5418,104 @@ function attendanceAlertKey(kind){
   return [kind].concat(Array.prototype.slice.call(arguments, 1)).join(':');
 }
 function alertHandled(student, key){
-  return ((student && student.contactParentsHistory) || []).some(h => h.alertKey === key);
+  return ((student && student.contactParentsHistory) || []).some(h =>
+    h.alertKey === key || (Array.isArray(h.alertKeys) && h.alertKeys.includes(key)));
+}
+
+/* ================= RESOLVE (one flow for every warning) =================
+   However a warning was dealt with — on the teacher's own, with the student,
+   with the parents, or handed to reception/coordinator — it is closed the same
+   way: tick the warnings covered, say what was done and what the student will
+   do. One contactParentsHistory entry is written (it already feeds the report
+   and the Contacts view) carrying the keys of the warnings it covers, which
+   hides them from the dashboard. A ticked manual flag is cleared outright. */
+const RESOLVE_ACTIONS = [
+  { id:'self',        en:'Handled it myself',       pt:'Resolvido pelo professor' },
+  { id:'student',     en:'Talked to student',       pt:'Conversa com o aluno' },
+  { id:'parents',     en:'Talked to parents',       pt:'Conversa com os responsáveis' },
+  { id:'reception',   en:'Escalated to reception',  pt:'Encaminhado à recepção' },
+  { id:'coordinator', en:'Escalated to coordinator',pt:'Encaminhado à coordenação' }
+];
+function resolveActionLabel(id, lang){
+  const a = RESOLVE_ACTIONS.find(x=>x.id===id);
+  return a ? (lang==='pt' ? a.pt : a.en) : null;
+}
+let _resolveCtx = null;
+function openResolveModal(studentId){
+  const s = anyStudent(studentId);
+  const row = (window._attnRows||{})[studentId];
+  if(!s || !row || !row.signals.length) return;
+  const links = [];
+  _resolveCtx = { studentId, signals: row.signals.slice(), links };
+  const linkBtn = a => { links.push(a.run); return `<button type="button" class="btn-ghost small" onclick="closeModal();_resolveCtx.links[${links.length-1}]()">${esc(a.label)}</button>`; };
+  const hasFlag = row.signals.some(sg=>sg.kind==='flag');
+  showModal(`${sizeModal('md')}
+    <h3>✓ Resolve — ${esc(s.name)}</h3>
+    <fieldset class="field rs-set"><legend>Warnings</legend>
+      ${row.signals.map((sg,i)=>`
+        <label class="rs-sig">
+          <input type="checkbox" class="rs-sig-cb" data-i="${i}" checked>
+          <span style="min-width:0;flex:1;"><b>${sg.icon} ${esc(sg.label)}</b> <span style="color:var(--muted);">— ${esc(sg.text)}</span></span>
+          ${(sg.actions||[]).map(linkBtn).join('')}
+        </label>`).join('')}
+    </fieldset>
+    <fieldset class="field rs-set"><legend>What I did</legend>
+      <div class="pill-group rs-actions" role="radiogroup" aria-label="What I did">
+        ${RESOLVE_ACTIONS.map(a=>`<label class="pill rs-pill"><input type="radio" name="rs-action" value="${a.id}" ${a.id==='parents'?'checked':''}> ${a.en}</label>`).join('')}
+      </div>
+    </fieldset>
+    <div class="field"><label for="rs-date">Date</label><input id="rs-date" type="date" value="${todayStr()}"></div>
+    <div class="field"><label for="rs-did">What I did / what was said</label>
+      <textarea id="rs-did" rows="3" class="rs-text" placeholder="e.g. Called his mother about the absences and the low average. She didn't know about the missed classes."></textarea>
+    </div>
+    <div class="field"><label for="rs-will">What the student will do <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+      <textarea id="rs-will" rows="2" class="rs-text" placeholder="e.g. Attend every class until the test and redo homework units 3–4."></textarea>
+    </div>
+    <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
+      ${hasFlag?`<button class="btn-ghost" style="color:var(--red);margin-right:auto;" title="Remove the manual flag without logging anything" onclick="discardContactParents('${studentId}')">Discard flag without logging</button>`:''}
+      <button class="btn-ghost" onclick="_resolveCtx=null;closeModal()">Cancel</button>
+      <button class="btn-accent" onclick="confirmResolve()">✓ Resolve</button>
+    </div>
+  `);
+  setTimeout(()=>{ const t=document.getElementById('rs-did'); if(t) t.focus(); }, 0);
+}
+function confirmResolve(){
+  const ctx = _resolveCtx;
+  if(!ctx) return;
+  const s = anyStudent(ctx.studentId);
+  if(!s) return;
+  const picked = [...document.querySelectorAll('.rs-sig-cb')].filter(cb=>cb.checked).map(cb=>ctx.signals[+cb.dataset.i]).filter(Boolean);
+  if(!picked.length){ alert('Tick at least one warning to resolve.'); return; }
+  const did = document.getElementById('rs-did').value.trim();
+  if(!did){ alert('Write what you did.'); document.getElementById('rs-did').focus(); return; }
+  const will = document.getElementById('rs-will').value.trim();
+  const action = (document.querySelector('input[name="rs-action"]:checked')||{}).value || 'parents';
+  const date = document.getElementById('rs-date').value || todayStr();
+  const flagSig = picked.find(sg=>sg.kind==='flag');
+  const entry = {
+    id: uid(), date,
+    action,
+    category: resolveActionLabel(action,'en'),
+    reason: picked.map(sg=>`${sg.label}: ${sg.text}`).join(' · '),
+    summary: did,
+    alertKeys: picked.map(sg=>sg.key).filter(k=>k && k!=='flag')
+  };
+  if(will) entry.studentWill = will;
+  if(!s.contactParentsHistory) s.contactParentsHistory = [];
+  s.contactParentsHistory.unshift(entry);
+  const prevFlag = s.contactParents || null;
+  if(flagSig) s.contactParents = null;
+  _resolveCtx = null;
+  const save = () => { if(privStudent(s.id)) persistPrivate(); else scheduleSave('students', state.students); };
+  save();
+  closeModal();
+  refreshView();
+  showUndoToast(`Resolved ${picked.length} warning${picked.length===1?'':'s'} for ${s.name}`, ()=>{
+    s.contactParentsHistory = (s.contactParentsHistory||[]).filter(h=>h.id!==entry.id);
+    if(flagSig) s.contactParents = prevFlag;
+    save();
+    refreshView();
+  });
 }
 
 let _pendingCallCtx = null;   // set when logging a call for a derived alert
@@ -10671,7 +10779,7 @@ function buildFullReportText(s, lang){
     punctuality:'Pontualidade', late:'atrasos', hw:'Lição de casa', part:'Participação',
     phone:'Uso do celular', na:'sem dados',
     missedHead:'AULAS PERDIDAS', missedTopic:'conteúdo', noTopic:'(sem registro de conteúdo)',
-    contactHead:'CONTATO COM RESPONSÁVEIS', pending:'PENDENTE', reason:'Motivo', summary:'Resumo',
+    contactHead:'ACOMPANHAMENTO E CONTATO COM RESPONSÁVEIS', pending:'PENDENTE', reason:'Motivo', summary:'Resumo', studentWill:'Compromisso do aluno',
     commentHead:'COMENTÁRIOS'
   } : {
     title:'STUDENT REPORT', clazz:'Class', period:'Period', allTime:'All time',
@@ -10679,7 +10787,7 @@ function buildFullReportText(s, lang){
     punctuality:'Punctuality', late:'late arrivals', hw:'Homework', part:'Participation',
     phone:'Phone use', na:'no data',
     missedHead:'CLASSES MISSED', missedTopic:'topic', noTopic:'(no lesson topic recorded)',
-    contactHead:'PARENT CONTACT', pending:'PENDING', reason:'Reason', summary:'Summary',
+    contactHead:'FOLLOW-UP & PARENT CONTACT', pending:'PENDING', reason:'Reason', summary:'Summary', studentWill:'Student will',
     commentHead:'COMMENTS'
   };
   const per = s.fromVal
@@ -10880,9 +10988,10 @@ function buildFullReportText(s, lang){
       out.push(`- ${L.pending} — ${s.contactPending.category}: ${s.contactPending.reason}`);
     }
     (s.contactHistory||[]).forEach(h=>{
-      out.push(`- ${formatDateShort(h.date)} — ${h.category}`);
+      out.push(`- ${formatDateShort(h.date)} — ${resolveActionLabel(h.action, lang) || h.category}`);
       if(h.reason)  out.push(`    ${L.reason}: ${h.reason}`);
       if(h.summary) out.push(`    ${L.summary}: ${h.summary}`);
+      if(h.studentWill) out.push(`    ${L.studentWill}: ${h.studentWill}`);
     });
   }
 
@@ -11467,7 +11576,7 @@ function renderStudentProfile(){
     </div>
     ${(student.contactParents?.reason || student.contactParentsHistory?.length) ? `
     <div class="card section" id="sp-contact" data-sp-sec="${pt0?'Contato':'Contact'}" style="border-left:4px solid var(--red);">
-      <h3>📞 ${state.reportLang==='pt'?'Contato com Responsáveis':'Contact Parents'}</h3>
+      <h3>📞 ${state.reportLang==='pt'?'Acompanhamento e contato com responsáveis':'Follow-up & parent contact'}</h3>
       ${student.contactParents?.reason ? `
       <div style="margin-bottom:12px;padding:10px 14px;background:var(--red-soft);border-radius:10px;">
         <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px;">${state.reportLang==='pt'?'⚠ Pendente':'⚠ Pending'}</div>
@@ -11478,10 +11587,11 @@ function renderStudentProfile(){
       <div style="padding:10px 0;border-bottom:1px solid var(--border);">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <span style="font-size:12px;font-weight:600;color:var(--muted);">${formatDateShort(h.date)}</span>
-          <span class="badge red">${esc(h.category)}</span>
+          <span class="badge red">${esc(resolveActionLabel(h.action, state.reportLang) || h.category)}</span>
         </div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:4px;"><b>${state.reportLang==='pt'?'Motivo':'Reason'}:</b> ${esc(h.reason)}</div>
-        <div style="font-size:13px;color:var(--text);"><b>${state.reportLang==='pt'?'Resumo':'Summary'}:</b> ${esc(h.summary)}</div>
+        <div style="font-size:13px;color:var(--text);"><b>${h.action?(state.reportLang==='pt'?'O que foi feito':'What was done'):(state.reportLang==='pt'?'Resumo':'Summary')}:</b> ${esc(h.summary)}</div>
+        ${h.studentWill?`<div style="font-size:13px;color:var(--text);margin-top:4px;"><b>${state.reportLang==='pt'?'Compromisso do aluno':'Student will'}:</b> ${esc(h.studentWill)}</div>`:''}
       </div>`).join('')}
     </div>` : ''}
     ${(()=>{
@@ -12009,7 +12119,8 @@ function buildGroupReportText(lang){
       if(data.toVal && h.date > data.toVal) return;
       logged.push(formatDateShort(h.date) + ' — ' + nm(r)
         + (h.reason ? ' (' + h.reason + ')' : '')
-        + (h.summary ? ': ' + h.summary : ''));
+        + (h.summary ? ': ' + h.summary : '')
+        + (h.studentWill ? ' → ' + h.studentWill : ''));
     });
   });
   L.push('');
@@ -14111,6 +14222,8 @@ window.state = state;
 // interferes with normal use. See teacher-dashboard-tests.html.
 window.__testables = {
   buildAttentionQueue,
+  alertHandled,
+  resolveActionLabel,
   attendanceRate,
   pointsFor,
   hwEffOf,

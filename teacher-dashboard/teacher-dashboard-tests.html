@@ -408,6 +408,19 @@ function run(T, state){
     { id:'x3', classId:'c1', date:'2026-09-05', ts:1, groups:[{id:'c',memberIds:[]}] },
     { id:'x4', classId:'c2', date:'2026-09-09', ts:1, groups:[{id:'d',memberIds:['s1']}] }]});
   eq('reuse picks newest grouped activity with members in this class', T.lastGroupedActivity('c1').id, 'x2');
+
+  section('Resolve — warning keys');
+  ok('alertHandled: multi-key resolution', T.alertHandled({contactParentsHistory:[{alertKeys:['grade:c:under:72//','test:c:0:2026-10-01']}]}, 'test:c:0:2026-10-01'));
+  ok('alertHandled: legacy single key', T.alertHandled({contactParentsHistory:[{alertKey:'att2:a:b'}]}, 'att2:a:b'));
+  ok('alertHandled: unrelated key stays open', !T.alertHandled({contactParentsHistory:[{alertKeys:['x']}]}, 'y'));
+  const rq = T.buildAttentionQueue({
+    cpStudents:[{id:'s1',name:'A',classId:'c1',contactParents:{category:'Behavior',reason:'r'}}],
+    missedTests:[{id:'s1',name:'A',classId:'c1',date:'2026-10-01',key:'t1',testLabel:'First Test'},
+                 {id:'s2',name:'B',classId:'c1',date:'2026-10-01',key:'t2',testLabel:'First Test'}],
+    isHandled:(id,k)=> k==='t1' || k==='t2' || k==='flag' });
+  eq('queue: handled derived warnings drop, manual flag never does', rq.map(r=>[r.studentId, r.signals.map(s=>s.kind)]), [['s1',['flag']]]);
+  eq('action label PT', T.resolveActionLabel('coordinator','pt'), 'Encaminhado à coordenação');
+  eq('legacy entry has no action label', T.resolveActionLabel(undefined,'en'), null);
 }
 
 // second ledger fixture (fully paid) — defined on window so _setState can swap cleanly
