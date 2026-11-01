@@ -55,6 +55,9 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     background-attachment: fixed;
   }
   button { font-family: inherit; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  textarea, input { -webkit-user-select: text; user-select: text; }
+  a, img, svg, button { -webkit-user-drag: none; }
   :focus-visible { outline: 3px solid var(--brass-hi); outline-offset: 3px; }
 
   #scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -369,7 +372,6 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .beat textarea:focus { outline: none; border-color: var(--brass-lo); box-shadow: 0 0 0 3px rgba(201,162,74,.5); }
   .beat textarea::placeholder { color: var(--ink-soft); opacity: .7; }
 
-  .open { text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 3px; text-underline-offset: .18em; text-decoration-skip-ink: none; }
   .beat-src { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: 0 0 .45rem; }
   .src-lead { font-weight: 700; font-size: .95rem; color: var(--ink-soft); margin-right: .1rem; }
   .src-card {
@@ -735,7 +737,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     <div class="press-inner" id="pressInner">
       <div class="press-top">
         <span class="press-plate">Story Spark</span>
-        <span class="press-hint hide-on-big">The lock keeps a line and the arrows swap one. Underlined words are yours to decide.</span>
+        <span class="press-hint hide-on-big">The lock keeps a line and the arrows swap one. Space rolls them all.</span>
       </div>
       <div class="machine" id="machine"></div>
 
@@ -890,7 +892,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   <div class="panel td-panel" id="td-story" style="display:none">
     <div class="td-head">
       <span class="td-badge">Stories</span>
-      <span class="td-sub">Each team decides who the underlined someone is, then writes or tells their story. Score them together at the end.</span>
+      <span class="td-sub">Each team decides who the someone is, then writes or tells their story. Score them together at the end.</span>
       <span class="td-spacer"></span>
       <button class="btn-sm" type="button" onclick="tdPrintAll()">Print sheets</button>
       <button class="btn-sm" type="button" onclick="tdBackToTrade()">Back to trading</button>
@@ -2154,10 +2156,7 @@ var BEAT_SOURCES = {
   ending:  ["wants"]
 };
 
-/* "someone" and "something" are the open words students decide for themselves */
-function openWords(t) {
-  return esc(t).replace(/\b(someone|something|somewhere)\b/gi, '<span class="open">$1</span>');
-}
+function openWords(t) { return esc(t); }
 var uiMode = "quick";
 
 function save() {
@@ -2668,7 +2667,7 @@ function renderBeats() {
              '<div class="beat-head"><label class="beat-name" for="ta-' + b.id + '">' + b.name + '</label>' +
              '<span class="beat-q">' + esc(b.q) + '</span></div>' +
              '<div class="beat-src" id="src-' + b.id + '"></div>' +
-             '<textarea id="ta-' + b.id + '" placeholder="' + esc(b.q) + '"></textarea>' +
+             '<textarea id="ta-' + b.id + '" placeholder="' + esc(b.q) + '" spellcheck="false" autocorrect="off" autocapitalize="sentences"></textarea>' +
            '</div>';
   }).join("");
 
@@ -2756,6 +2755,11 @@ function toggleBig() {
 })();
 
 window.addEventListener("resize", fitStage);
+
+/* no text selection or dragging on the projected screen, except where students type */
+function isField(t) { return !!(t && t.closest && t.closest("textarea, input")); }
+document.addEventListener("dragstart", function (ev) { if (!isField(ev.target)) ev.preventDefault(); });
+document.addEventListener("selectstart", function (ev) { if (!isField(ev.target)) ev.preventDefault(); });
 
 document.addEventListener("keydown", function (ev) {
   var tg = ev.target, tn = tg && tg.tagName;
@@ -2983,7 +2987,7 @@ function tdRenderSetup() {
 
   document.getElementById("tdTeamNames").innerHTML = td.teams.map(function (t, i) {
     return '<input class="td-nameinput" data-i="' + i + '" value="' + esc(t.name) + '" maxlength="16" ' +
-           'aria-label="Team ' + (i + 1) + ' name" style="--tc:' + t.color + '">';
+           'aria-label="Team ' + (i + 1) + ' name" spellcheck="false" autocomplete="off" style="--tc:' + t.color + '">';
   }).join("");
   Array.prototype.forEach.call(document.querySelectorAll("#tdTeamNames .td-nameinput"), function (inp) {
     inp.addEventListener("input", function () {
