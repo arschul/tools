@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <!-- HUBGEN:leaf start -->
 <script>(function(){try{var k="arschul:theme",v=localStorage.getItem(k);
@@ -13,534 +13,298 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
 <!-- HUBGEN:leaf end -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Before & After — EFL Writing Workshop</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Before &amp; After: EFL Writing Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=Familjen+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0f0e0d;
-    --surface: #1a1816;
-    --card: #211f1c;
-    --border: #2e2b26;
-    --accent: #e8c547;
-    --text: #ede8df;
-    --muted: #8a847a;
-    --good: #5aad7e;
-    --bad: #d96b5a;
-    --a1: #7ec8e3;
-    --a2: #6db3d1;
-    --b1: #9d8fe0;
-    --b2: #c47fd4;
-  }
+:root,[data-theme="dark"]{
+  --desk1:#1d2735; --desk2:#111821; --lamp:rgba(255,206,130,.13); --stitch:rgba(233,224,200,.13);
+  --deskInk:#eef2f7; --deskMute:#a3b0c2; --deskLine:rgba(255,255,255,.08);
+}
+[data-theme="light"]{
+  --desk1:#cfd8e3; --desk2:#aab8c9; --lamp:rgba(255,244,214,.6); --stitch:rgba(20,32,48,.18);
+  --deskInk:#152030; --deskMute:#3e4f66; --deskLine:rgba(0,0,0,.1); --amp:#c98a00;
+}
+:root{
+  --paper:#f6efdf; --paper2:#efe5cf; --ink:#1f2630; --inkSoft:#5b6574; --rule:rgba(86,124,180,.28); --margin:rgba(214,92,80,.55);
+  --pencil:#c8322b; --pencilSoft:rgba(200,50,43,.55); --hi:#ffd84a; --green:#2e8b57; --greenSoft:rgba(46,139,87,.18);
+  --steel1:#e3e8ed; --steel2:#a6b0ba; --steelEdge:#69737e;
+  --A1:#7ec8e3; --A2:#5fa8d3; --B1:#9d8fe0; --B2:#c47fd4;
+  --display:'Anton',Impact,sans-serif; --ui:'Familjen Grotesk',system-ui,sans-serif; --type:'Courier Prime','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{
+  font-family:var(--ui); color:var(--deskInk); min-height:100vh; overflow-x:hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 82% -8%,var(--lamp),transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(170deg,var(--desk1),var(--desk2));
+  background-attachment:fixed;
+}
+body::before{content:"";position:fixed;inset:12px;border:2px dashed var(--stitch);border-radius:22px;pointer-events:none;z-index:0}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:4px solid var(--hi);outline-offset:4px;border-radius:8px}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+.back-link{position:fixed;top:24px;left:28px;z-index:1000;display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 20px;border-radius:24px;
+  background:linear-gradient(180deg,#2b3746,#1b2430);color:#eef2f7;text-decoration:none;font:600 17px var(--ui);
+  box-shadow:0 4px 0 #0b1017,0 10px 18px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .12s,box-shadow .12s}
+.back-link:hover{transform:translateX(-2px)}
+.back-link:active{transform:translateY(3px);box-shadow:0 1px 0 #0b1017,0 4px 8px rgba(0,0,0,.3)}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-weight: 300;
-  }
+#shaker{position:relative;z-index:1}
 
-  /* ── Header ── */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 24px 40px;
-    display: flex;
-    align-items: baseline;
-    gap: 20px;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
-  header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
-  header h1 span { color: var(--accent); font-style: italic; }
-  header p { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+/* top bar */
+.topbar{display:flex;align-items:flex-end;gap:32px;padding:22px 48px 0 220px;min-height:112px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:2px;padding-bottom:16px}
+.brand h1{font:400 clamp(40px,3.4vw,60px)/.95 var(--display);letter-spacing:.01em;color:var(--deskInk)}
+.brand h1 .amp{color:var(--amp,var(--hi));display:inline-block;transform:rotate(-6deg)}
+.brand p{font-size:17px;color:var(--deskMute)}
+.tabs{display:flex;gap:6px;align-items:flex-end;margin-left:auto}
+.tab{position:relative;min-width:132px;height:66px;padding:10px 20px 0;border-radius:16px 16px 0 0;text-align:left;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--lv) 70%,#fff),var(--lv));color:#10161e;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.55),inset 0 -10px 14px rgba(0,0,0,.12);
+  transition:height .18s cubic-bezier(.3,1.4,.5,1),filter .18s;filter:saturate(.55) brightness(.82)}
+.tab b{display:block;font:400 34px/1 var(--display)}
+.tab span{display:block;font-size:14px;font-weight:600;opacity:.75}
+.tab:hover{height:72px;filter:saturate(.8) brightness(.95)}
+.tab.on{height:84px;filter:none;z-index:4}
+.tabs{position:relative;z-index:1}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:10px;background:var(--lv)}
+.icons{display:flex;gap:12px;padding-bottom:18px}
+.icon-btn{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%,var(--steel1),var(--steel2) 75%);color:#1e2730;
+  box-shadow:0 4px 0 var(--steelEdge),0 10px 16px rgba(0,0,0,.35),inset 0 1px 0 #fff;transition:transform .12s,box-shadow .12s}
+.icon-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--steelEdge),0 4px 8px rgba(0,0,0,.3)}
+.icon-btn svg{width:26px;height:26px}
+.icon-btn .off{display:none}
+.icon-btn.muted .on{display:none}.icon-btn.muted .off{display:block}
+.levelbar{position:relative;z-index:3;height:8px;background:var(--lvNow,#7ec8e3);margin:0 24px;border-radius:4px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
 
-  /* ── Level Nav ── */
-  .level-nav {
-    display: flex;
-    gap: 4px;
-    padding: 16px 40px;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-    background: var(--bg);
-  }
-  .level-btn {
-    padding: 7px 18px;
-    border-radius: 40px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.76rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.05em;
-  }
-  .level-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .level-btn[data-level="A1"].active { background: var(--a1); border-color: var(--a1); color: #0f0e0d; }
-  .level-btn[data-level="A2"].active { background: var(--a2); border-color: var(--a2); color: #0f0e0d; }
-  .level-btn[data-level="B1"].active { background: var(--b1); border-color: var(--b1); color: #0f0e0d; }
-  .level-btn[data-level="B2"].active { background: var(--b2); border-color: var(--b2); color: #0f0e0d; }
+/* picker */
+.view{padding:36px 48px 80px;max-width:1720px;margin:0 auto}
+.view[hidden]{display:none}
+.picker-head{display:flex;align-items:baseline;gap:22px;margin-bottom:30px;flex-wrap:wrap}
+.picker-head h2{font:400 clamp(44px,3.6vw,64px)/1 var(--display);color:var(--deskInk)}
+.picker-head p{font-size:clamp(19px,1.25vw,24px);color:var(--deskMute);max-width:900px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:30px 26px}
+.icard{position:relative;height:168px;padding:18px 22px 16px 34px;text-align:left;border-radius:3px;color:var(--ink);
+  background:
+    linear-gradient(180deg,transparent 58px,rgba(214,92,80,.7) 58px,rgba(214,92,80,.7) 60px,transparent 60px),
+    repeating-linear-gradient(180deg,transparent 0 31px,var(--rule) 31px 32px) 0 60px/100% 100% no-repeat,
+    linear-gradient(180deg,#fdfaf2,#f3ecdc);
+  box-shadow:0 2px 0 #dcd2bc,0 14px 24px rgba(0,0,0,.35);transform:rotate(var(--rot,0deg));
+  transition:transform .2s cubic-bezier(.3,1.3,.5,1),box-shadow .2s}
+.icard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--lvNow)}
+.icard:hover{transform:translateY(-8px) rotate(0deg);box-shadow:0 2px 0 #dcd2bc,0 24px 34px rgba(0,0,0,.42)}
+.icard:active{transform:translateY(-2px) scale(.98)}
+.icard .n{font:400 40px/1 var(--display);color:var(--pencil)}
+.icard .t{display:block;margin-top:22px;font:600 clamp(21px,1.3vw,25px)/1.25 var(--ui)}
 
-  /* ── Main ── */
-  main { max-width: 820px; margin: 0 auto; padding: 36px 24px 80px; }
+/* desk */
+.desk{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:44px;align-items:start}
+.sheets{display:flex;flex-direction:column;gap:56px;min-width:0}
+.paper{position:relative;background:
+    linear-gradient(90deg,transparent 70px,var(--margin) 70px,var(--margin) 72px,transparent 72px),
+    radial-gradient(ellipse at 20% 0%,rgba(255,255,255,.5),transparent 60%),
+    linear-gradient(180deg,var(--paper),var(--paper2));
+  color:var(--ink);border-radius:2px;padding:34px 56px 56px 104px;
+  box-shadow:0 2px 0 #e3d8c0,4px 6px 0 -1px #ddd1b6,4px 6px 0 0 rgba(0,0,0,.08),0 34px 60px rgba(0,0,0,.45)}
+.paper.clean{background:
+    linear-gradient(90deg,transparent 70px,rgba(46,139,87,.45) 70px,rgba(46,139,87,.45) 72px,transparent 72px),
+    linear-gradient(180deg,#fbf8f0,#f1ecdf)}
+.clip{position:absolute;top:-26px;left:120px;width:46px;height:96px;filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+.paper-head{display:flex;align-items:center;gap:20px;min-height:96px;margin-bottom:18px}
+.paper-head .num{font:700 20px var(--type);color:var(--inkSoft)}
+.paper-head h2{font:400 clamp(36px,2.7vw,52px)/1.05 var(--display);color:var(--ink);flex:1}
+.stamp-slot{width:250px;height:96px;display:grid;place-items:center;flex-shrink:0}
+.stamp{display:inline-block;padding:6px 18px;border:7px double currentColor;border-radius:10px;font:400 44px/1 var(--display);
+  letter-spacing:.04em;transform:rotate(-8deg);opacity:.82;mix-blend-mode:multiply;color:var(--pencil);
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence baseFrequency='.7' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 2.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+.stamp.green{color:var(--green)}
+.stamp.grey{color:#7a6f63}
+.stamp.big{font-size:56px}
 
-  /* ── Level sections ── */
-  .level-section { display: none; }
-  .level-section.active { display: block; animation: fadeIn 0.25s ease; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.ms-text{--fs:clamp(21px,1.38vw,29px);--lh:calc(var(--fs)*1.9);font:400 var(--fs)/var(--lh) var(--type);color:var(--ink);
+  background:linear-gradient(180deg,transparent calc(var(--lh) - 2px),var(--rule) calc(var(--lh) - 2px),var(--rule) calc(var(--lh) - 1px),transparent calc(var(--lh) - 1px)) 0 0/100% var(--lh)}
+.ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.ink path{fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-  /* ── Level header ── */
-  .level-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .level-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 4px;
-    letter-spacing: 0.1em;
-    color: #0f0e0d;
-  }
-  .level-badge.A1 { background: var(--a1); }
-  .level-badge.A2 { background: var(--a2); }
-  .level-badge.B1 { background: var(--b1); }
-  .level-badge.B2 { background: var(--b2); }
-  .level-desc { font-size: 0.8rem; color: var(--muted); }
+.err{border-radius:3px}
+.show-errors .err{cursor:help;background:linear-gradient(180deg,transparent 50%,rgba(200,50,43,.2) 50%);
+  text-decoration:underline wavy var(--pencil) 2px;text-underline-offset:7px}
+.finding .ms-text{cursor:crosshair}
+.finding .w,.finding .err{cursor:pointer;position:relative;border-radius:3px;transition:background .12s}
+.finding .w:hover,.finding .err:not(.found):hover{background:rgba(255,216,74,.45)}
+.finding .err.found{cursor:help}
+.w.miss{animation:wmiss .45s;color:var(--pencil)}
+.w.miss::after{content:"";position:absolute;left:-3px;right:-3px;top:52%;height:3px;border-radius:2px;background:var(--pencil);transform-origin:left;animation:strike .45s forwards}
+@keyframes wmiss{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
+@keyframes strike{0%{transform:scaleX(0)}40%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
 
-  /* ── Topic picker ── */
-  .topic-picker {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 28px;
-  }
-  .topic-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.18s;
-    user-select: none;
-  }
-  .topic-item:hover { border-color: #3e3a34; background: #262320; }
-  .topic-item.active { border-color: var(--accent); background: #262218; }
-  .topic-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    flex-shrink: 0;
-    width: 28px;
-  }
-  .topic-title { font-size: 0.92rem; font-weight: 400; flex: 1; }
-  .topic-arrow { font-size: 0.75rem; color: var(--muted); transition: transform 0.2s, color 0.2s; }
-  .topic-item.active .topic-arrow { transform: rotate(90deg); color: var(--accent); }
-  .topic-item.active .topic-title { color: var(--accent); }
+.clean .ms-text .g{color:var(--green);font-weight:700;background:linear-gradient(180deg,transparent 58%,var(--greenSoft) 58%);border-radius:2px;display:inline}
+.changes-head{margin:38px 0 18px;font:400 34px/1 var(--display);color:var(--ink)}
+.changes{list-style:none;display:grid;gap:18px;counter-reset:c}
+.changes li{display:grid;grid-template-columns:44px 1fr;gap:4px 16px;align-items:start;font-size:clamp(18px,1.15vw,22px);line-height:1.45}
+.changes li::before{counter-increment:c;content:counter(c);grid-row:span 2;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  border:3px solid var(--green);color:var(--green);font:400 22px var(--display)}
+.swap{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.from{font:700 .95em var(--type);color:var(--pencil);text-decoration:line-through 2px}
+.to{font:700 .95em var(--type);color:var(--green);background:var(--greenSoft);padding:0 6px;border-radius:3px}
+.swap i{color:var(--inkSoft);font-style:normal}
+.why{color:var(--inkSoft)}
 
-  /* ── Card ── */
-  .para-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 32px;
-    animation: slideDown 0.28s ease;
-  }
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* rail */
+.rail{position:sticky;top:24px;display:flex;flex-direction:column;gap:18px}
+.plaque{position:relative;border-radius:14px;padding:18px 22px;color:#1d2630;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 2px,rgba(0,0,0,.03) 2px 4px),linear-gradient(180deg,var(--steel1),var(--steel2));
+  box-shadow:0 5px 0 var(--steelEdge),0 14px 22px rgba(0,0,0,.35),inset 0 1px 0 #fff}
+.plaque::before,.plaque::after{content:"";position:absolute;top:10px;width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#7d8791);box-shadow:inset 0 -1px 1px rgba(0,0,0,.4)}
+.plaque::before{left:10px}.plaque::after{right:10px}
+.counter{display:flex;align-items:center;gap:18px}
+.counter .big{font:400 76px/1 var(--display);color:#1a222c;min-width:1.2em;text-align:center}
+.counter .big small{font-size:.5em;color:#566170}
+.counter .lbl{font-size:21px;font-weight:600;line-height:1.2}
+.counter .lbl em{display:block;font-style:normal;font-weight:500;font-size:18px;color:#4c5764;margin-top:4px}
+.counter.done .big{color:var(--green)}
+.bump{animation:bump .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
 
-  .card-header {
-    padding: 14px 22px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .card-num { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
-  .card-topic-label { font-size: 0.9rem; font-weight: 500; font-family: 'Playfair Display', serif; }
+.act{--a1:#dfe5ea;--a2:#a9b3bd;--edge:#6b7580;--txt:#1e2730;position:relative;width:100%;min-height:72px;border-radius:20px;padding:0 70px 0 24px;
+  display:flex;align-items:center;font:700 23px/1.1 var(--ui);color:var(--txt);text-align:left;
+  background:linear-gradient(180deg,var(--a1),var(--a2));
+  box-shadow:0 8px 0 var(--edge),0 18px 28px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.4);transition:transform .12s,box-shadow .12s}
+.act:active,.act.on{transform:translateY(6px);box-shadow:0 2px 0 var(--edge),0 8px 14px rgba(0,0,0,.35),inset 0 2px 0 rgba(255,255,255,.25)}
+.act.on{background:linear-gradient(180deg,var(--a2),var(--a1))}
+.act kbd{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+  font:700 18px var(--ui);background:rgba(0,0,0,.14);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);color:inherit}
+.act.find{--a1:#ffe680;--a2:#f2c21b;--edge:#a8820a;--txt:#2a2100}
+.act.errs{--a1:#e5615a;--a2:#b52f29;--edge:#741b17;--txt:#fff}
+.act.pol{--a1:#4fbd82;--a2:#28875a;--edge:#175634;--txt:#fff}
+.act.small{min-height:62px;font-size:20px}
+.act[hidden]{display:none}
+.pop-in{animation:popin .32s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes popin{from{opacity:0;transform:translateY(30px) scale(.92)}}
+.breathe{animation:breathe 2.2s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 8px 0 var(--edge),0 18px 28px rgba(0,0,0,.4),0 0 0 6px color-mix(in srgb,var(--a1) 45%,transparent),inset 0 2px 0 rgba(255,255,255,.4)}}
+.navrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:6px}
+.navrow .act{padding:0;justify-content:center;text-align:center;min-height:62px;font-size:19px}
 
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.63rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-label::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: 0.2; }
-  .before-label { color: var(--bad); }
-  .after-label { color: var(--good); }
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.teams[hidden]{display:none}
+.team{position:relative;border-radius:16px;padding:12px 10px 10px;text-align:center;color:var(--tink);
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.45),transparent 50%),linear-gradient(180deg,color-mix(in srgb,var(--tc) 85%,#fff),var(--tc));
+  box-shadow:0 6px 0 color-mix(in srgb,var(--tc) 50%,#000),0 14px 20px rgba(0,0,0,.35);opacity:.6;transition:opacity .2s,transform .2s}
+.team.turn{opacity:1;transform:translateY(-4px);box-shadow:0 6px 0 color-mix(in srgb,var(--tc) 50%,#000),0 14px 20px rgba(0,0,0,.35),0 0 0 4px var(--hi)}
+.team .disc{width:52px;height:52px;margin:0 auto 4px;border-radius:50%;display:grid;place-items:center;font-size:30px;background:rgba(255,255,255,.85);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+.team .tn{display:block;font:700 19px var(--ui)}
+.team .ts{display:block;font:400 48px/1.05 var(--display)}
+.team kbd{position:absolute;top:8px;right:10px;font:700 14px var(--ui);opacity:.7}
 
-  .before-section { padding: 22px 24px 16px; }
+/* sticky note */
+.note{position:relative;margin-top:14px;padding:22px 22px 18px;background:linear-gradient(180deg,#fff2a0,#ffe56b);color:#2b2508;
+  font:500 21px/1.4 var(--ui);box-shadow:0 2px 0 #d9bf3b,0 18px 26px rgba(0,0,0,.4);transform:rotate(var(--nr,-1.5deg));
+  display:none}
+.note::before{content:"";position:absolute;top:-10px;left:50%;width:22px;height:22px;margin-left:-11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#ff8a80,#c62828);box-shadow:0 3px 4px rgba(0,0,0,.4)}
+.note.show{display:block;animation:notein .3s cubic-bezier(.3,1.5,.5,1)}
+@keyframes notein{from{opacity:0;transform:translateY(-14px) rotate(var(--nr,-1.5deg))}}
+.err.pointed{background:rgba(255,216,74,.6)!important;box-shadow:0 0 0 3px rgba(255,216,74,.6)}
 
-  .para-text { font-size: 0.97rem; line-height: 1.85; color: var(--text); }
+/* overlays */
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5000}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:4000;opacity:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(200,30,30,.75))}
+.banner{position:fixed;left:-5vw;right:-5vw;top:38vh;z-index:4500;height:150px;display:flex;align-items:center;justify-content:center;gap:28px;
+  background:var(--tc);color:var(--tink);transform:skewX(-12deg);box-shadow:0 20px 40px rgba(0,0,0,.45);pointer-events:none}
+.banner>*{transform:skewX(12deg)}
+.banner .disc{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;font-size:58px;background:rgba(255,255,255,.88)}
+.banner .bt{font:400 84px/1 var(--display)}
+.float{position:fixed;z-index:4600;font:400 46px/1 var(--display);pointer-events:none;color:var(--tc);text-shadow:0 3px 0 rgba(0,0,0,.35)}
 
-  /* Error spans — hidden by default, shown when .errors-visible is on parent */
-  .err { border-radius: 2px; padding: 0 2px; transition: background 0.15s; cursor: default; }
-  .errors-visible .err {
-    background: rgba(217, 107, 90, 0.18);
-    border-bottom: 2px solid var(--bad);
-    cursor: help;
-  }
-
-  /* ── Find Mode ── */
-  .find-active .para-text .w { cursor: pointer; border-radius: 2px; padding: 0 1px; }
-  .find-active .para-text .w:hover { background: rgba(232,197,71,0.10); }
-  .find-active .err { cursor: pointer; padding: 0 1px; }
-  .find-active .err:not(.found):hover { background: rgba(232,197,71,0.10); }
-  .find-active .err.found {
-    background: rgba(90,173,126,0.18);
-    border-bottom: 2px solid var(--good);
-  }
-  .find-active .err.found.revealed {
-    background: rgba(217,107,90,0.14);
-    border-bottom-color: var(--bad);
-  }
-  .w.miss { animation: shake 0.3s; background: rgba(217,107,90,0.28) !important; }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    75% { transform: translateX(3px); }
-  }
-  .find-bar {
-    display: none;
-    border-top: 1px solid var(--border);
-    padding: 10px 22px;
-    background: var(--surface);
-    align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
-    font-size: 0.8rem;
-  }
-  .find-bar.on { display: flex; }
-  .find-stat { color: var(--muted); }
-  .find-stat strong { color: var(--accent); font-weight: 500; }
-  .find-stat.done strong { color: var(--good); }
-  .team-chip {
-    padding: 5px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    color: var(--muted);
-    background: var(--card);
-    font-size: 0.78rem;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-  }
-  .team-chip.active { border-color: var(--accent); color: var(--accent); background: #262218; }
-  .find-mini {
-    margin-left: auto;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 6px;
-    padding: 5px 12px;
-    font-size: 0.74rem;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-  }
-  .find-mini:hover { border-color: var(--muted); color: var(--text); }
-
-  /* ── Action bar ── */
-  .action-bar {
-    border-top: 1px solid var(--border);
-    padding: 12px 22px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    background: var(--surface);
-  }
-  .error-count { font-size: 0.78rem; color: var(--muted); margin-right: auto; }
-  .error-count strong { color: var(--bad); font-weight: 500; }
-
-  .action-btn {
-    padding: 7px 16px;
-    border-radius: 6px;
-    border: 1px solid;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.18s;
-    white-space: nowrap;
-    background: transparent;
-  }
-  .btn-errors { border-color: var(--bad); color: var(--bad); }
-  .btn-errors:hover { background: rgba(217,107,90,0.12); }
-  .btn-errors.on { background: rgba(217,107,90,0.15); }
-
-  .btn-reveal { border-color: var(--accent); color: var(--accent); }
-  .btn-reveal:hover { background: rgba(232,197,71,0.12); }
-  .btn-reveal.revealed { border-color: var(--muted); color: var(--muted); }
-  .btn-reveal.revealed:hover { background: var(--border); color: var(--text); }
-
-  .btn-find { border-color: var(--good); color: var(--good); }
-  .btn-find:hover { background: rgba(90,173,126,0.12); }
-  .btn-find.on { background: rgba(90,173,126,0.15); }
-
-  /* ── After section ── */
-  .after-section {
-    padding: 22px 24px;
-    border-top: 1px solid var(--border);
-    background: rgba(90, 173, 126, 0.04);
-    display: none;
-  }
-  .after-section.visible { display: block; animation: fadeIn 0.25s ease; }
-
-  /* ── Changes list ── */
-  .changes-list { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
-  .changes-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.63rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-  .change-item {
-    display: grid;
-    grid-template-columns: 22px 1fr;
-    gap: 10px 12px;
-    margin-bottom: 10px;
-    align-items: start;
-    font-size: 0.84rem;
-  }
-  .change-icon {
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: rgba(90, 173, 126, 0.12);
-    border: 1px solid var(--good);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.62rem; color: var(--good);
-    flex-shrink: 0; margin-top: 1px;
-  }
-  .change-text { color: var(--text); line-height: 1.55; }
-  .change-text em { color: var(--bad); font-style: normal; font-family: 'DM Mono', monospace; font-size: 0.82em; }
-  .change-text strong { color: var(--good); font-weight: 500; font-family: 'DM Mono', monospace; font-size: 0.82em; }
-
-  /* ── Tooltip ── */
-  .tooltip-popup {
-    position: fixed;
-    background: #2e2b26;
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 9px 13px;
-    font-size: 0.77rem;
-    color: var(--text);
-    max-width: 240px;
-    z-index: 999;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    line-height: 1.5;
-  }
-  .tooltip-popup.show { opacity: 1; }
-
-  @media (max-width: 600px) {
-    header { padding: 18px 20px; flex-direction: column; gap: 4px; }
-    .level-nav { padding: 12px 20px; }
-    main { padding: 24px 14px 60px; }
-    .action-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .error-count { margin-right: 0; }
-  }
-
-  .back-link {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 100000;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 999px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.18);
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-  .back-link:hover {
-    background: rgba(0,0,0,0.78);
-    transform: translateX(-2px);
-  }
+@media (max-width:1180px){
+  .desk{grid-template-columns:1fr}
+  .rail{position:static;order:-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .topbar{padding-left:48px;padding-top:88px}
+}
+@media (max-width:720px){
+  .view{padding:24px 18px 60px}.topbar{padding:84px 18px 0}
+  .paper{padding:28px 20px 40px 44px;background-size:auto}
+  .paper{background:linear-gradient(90deg,transparent 30px,var(--margin) 30px,var(--margin) 32px,transparent 32px),linear-gradient(180deg,var(--paper),var(--paper2))}
+  .stamp-slot{width:150px}.stamp{font-size:30px}
+  .tab{min-width:0;flex:1;padding:8px 10px 0}.tabs{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
 <a class="back-link" href="../">← Tool Hub</a>
+<div id="shaker">
+  <header class="topbar">
+    <div class="brand">
+      <h1>Before <span class="amp">&amp;</span> After</h1>
+      <p>Find the mistakes. Fix the draft.</p>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Level"></nav>
+    <div class="icons">
+      <button class="icon-btn" id="muteBtn" aria-label="Sound on" title="Sound (M)">
+        <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+        <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+      </button>
+      <button class="icon-btn theme-btn" onclick="toggleTheme()" aria-label="Theme" title="Theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="levelbar" id="levelbar"></div>
 
-<header>
-  <h1>Before <span>&</span> After</h1>
-  <p>EFL Writing Workshop · CEFR A1–B2</p>
-</header>
+  <section class="view" id="pickerView">
+    <div class="picker-head"><h2 id="pickTitle"></h2><p id="pickDesc"></p></div>
+    <div class="cards" id="cards"></div>
+  </section>
 
-<nav class="level-nav">
-  <button class="level-btn active" data-level="A1" onclick="switchLevel('A1')">A1 Beginner</button>
-  <button class="level-btn" data-level="A2" onclick="switchLevel('A2')">A2 Elementary</button>
-  <button class="level-btn" data-level="B1" onclick="switchLevel('B1')">B1 Intermediate</button>
-  <button class="level-btn" data-level="B2" onclick="switchLevel('B2')">B2 Upper-Intermediate</button>
-</nav>
+  <section class="view" id="deskView" hidden>
+    <div class="desk">
+      <div class="sheets">
+        <article class="paper draft" id="draft">
+          <svg class="clip" viewBox="0 0 46 96" aria-hidden="true"><defs><linearGradient id="cg" x1="0" x2="1"><stop offset="0" stop-color="#eef2f5"/><stop offset=".5" stop-color="#9aa5b0"/><stop offset="1" stop-color="#dde3e8"/></linearGradient></defs><path d="M30 64V14a9 9 0 0 0-18 0v62a13 13 0 0 0 26 0V22" fill="none" stroke="url(#cg)" stroke-width="4.5" stroke-linecap="round"/></svg>
+          <div class="paper-head"><span class="num" id="dNum"></span><h2 id="dTitle"></h2><div class="stamp-slot" id="stampSlot"></div></div>
+          <p class="ms-text" id="msText"></p>
+          <svg class="ink" id="ink" aria-hidden="true"></svg>
+        </article>
+        <article class="paper clean" id="clean" hidden>
+          <div class="paper-head"><span class="num">Polished</span><h2 id="cTitle"></h2><div class="stamp-slot"><span class="stamp green">Final</span></div></div>
+          <p class="ms-text" id="cText"></p>
+          <h3 class="changes-head">What changed and why</h3>
+          <ol class="changes" id="changes"></ol>
+        </article>
+      </div>
+      <aside class="rail">
+        <div class="plaque counter" id="counter"></div>
+        <div class="teams" id="teams" hidden></div>
+        <button class="act find" data-act="find">Find mode<kbd>F</kbd></button>
+        <button class="act small" data-act="teams" hidden>Teams off<kbd>T</kbd></button>
+        <button class="act small" data-act="reveal" hidden>Reveal the rest<kbd>R</kbd></button>
+        <button class="act errs" data-act="errors">Show errors<kbd>E</kbd></button>
+        <button class="act pol" data-act="polished">Polished version<kbd>P</kbd></button>
+        <div class="navrow">
+          <button class="act" data-act="prev" title="Previous topic (Left arrow)">Prev</button>
+          <button class="act" data-act="topics" title="All topics (Esc)">Topics</button>
+          <button class="act" data-act="next" title="Next topic (Right arrow)">Next</button>
+        </div>
+        <div class="note" id="note" role="status" aria-live="polite"></div>
+      </aside>
+    </div>
+  </section>
+</div>
+<div id="flash"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
 
-<main>
-
-<section class="level-section active" id="level-A1">
-  <div class="level-header">
-    <span class="level-badge A1">A1</span>
-    <span class="level-desc">Errors: basic verb forms, articles, spelling, word order</span>
-  </div>
-  <div class="topic-picker" id="picker-A1">
-    <div class="topic-item" onclick="openTopic('A1',0,this)"><span class="topic-num">01</span><span class="topic-title">My Family</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',1,this)"><span class="topic-num">02</span><span class="topic-title">My Bedroom</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',2,this)"><span class="topic-num">03</span><span class="topic-title">A Typical Day</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',3,this)"><span class="topic-num">04</span><span class="topic-title">My Favorite Food</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',4,this)"><span class="topic-num">05</span><span class="topic-title">My Pet</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',5,this)"><span class="topic-num">06</span><span class="topic-title">My School</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',6,this)"><span class="topic-num">07</span><span class="topic-title">My Hobbies</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',7,this)"><span class="topic-num">08</span><span class="topic-title">The Weather</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',8,this)"><span class="topic-num">09</span><span class="topic-title">My Best Friend</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',9,this)"><span class="topic-num">10</span><span class="topic-title">My Town</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',10,this)"><span class="topic-num">11</span><span class="topic-title">My Clothes</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',11,this)"><span class="topic-num">12</span><span class="topic-title">My House</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',12,this)"><span class="topic-num">13</span><span class="topic-title">Shopping for Food</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',13,this)"><span class="topic-num">14</span><span class="topic-title">My Birthday</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',14,this)"><span class="topic-num">15</span><span class="topic-title">Animals I Like</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',15,this)"><span class="topic-num">16</span><span class="topic-title">At the Park</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',16,this)"><span class="topic-num">17</span><span class="topic-title">My Morning</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',17,this)"><span class="topic-num">18</span><span class="topic-title">My Favorite Color</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',18,this)"><span class="topic-num">19</span><span class="topic-title">My Teacher</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A1',19,this)"><span class="topic-num">20</span><span class="topic-title">My Weekend</span><span class="topic-arrow">›</span></div>
-  </div>
-  <div id="card-A1"></div>
-</section>
-
-<section class="level-section" id="level-A2">
-  <div class="level-header">
-    <span class="level-badge A2">A2</span>
-    <span class="level-desc">Errors: past tenses, prepositions, comparatives, countable/uncountable</span>
-  </div>
-  <div class="topic-picker" id="picker-A2">
-    <div class="topic-item" onclick="openTopic('A2',0,this)"><span class="topic-num">01</span><span class="topic-title">Last Weekend</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',1,this)"><span class="topic-num">02</span><span class="topic-title">Comparing Cities</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',2,this)"><span class="topic-num">03</span><span class="topic-title">Future Plans</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',3,this)"><span class="topic-num">04</span><span class="topic-title">Shopping</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',4,this)"><span class="topic-num">05</span><span class="topic-title">Describing a Person</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',5,this)"><span class="topic-num">06</span><span class="topic-title">My Neighborhood</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',6,this)"><span class="topic-num">07</span><span class="topic-title">A Special Meal</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',7,this)"><span class="topic-num">08</span><span class="topic-title">A Holiday Memory</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',8,this)"><span class="topic-num">09</span><span class="topic-title">My Daily Routine</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',9,this)"><span class="topic-num">10</span><span class="topic-title">Sports and Exercise</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',10,this)"><span class="topic-num">11</span><span class="topic-title">At the Restaurant</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',11,this)"><span class="topic-num">12</span><span class="topic-title">My Dream Job</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',12,this)"><span class="topic-num">13</span><span class="topic-title">A Famous Person</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',13,this)"><span class="topic-num">14</span><span class="topic-title">My Favorite Season</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',14,this)"><span class="topic-num">15</span><span class="topic-title">A Day Out</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',15,this)"><span class="topic-num">16</span><span class="topic-title">Moving to a New Place</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',16,this)"><span class="topic-num">17</span><span class="topic-title">A School Trip</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',17,this)"><span class="topic-num">18</span><span class="topic-title">My Childhood</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',18,this)"><span class="topic-num">19</span><span class="topic-title">Technology in My Life</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('A2',19,this)"><span class="topic-num">20</span><span class="topic-title">My Neighborhood Then and Now</span><span class="topic-arrow">›</span></div>
-  </div>
-  <div id="card-A2"></div>
-</section>
-
-<section class="level-section" id="level-B1">
-  <div class="level-header">
-    <span class="level-badge B1">B1</span>
-    <span class="level-desc">Errors: conditionals, passive, relative clauses, collocation, connectors</span>
-  </div>
-  <div class="topic-picker" id="picker-B1">
-    <div class="topic-item" onclick="openTopic('B1',0,this)"><span class="topic-num">01</span><span class="topic-title">Social Media</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',1,this)"><span class="topic-num">02</span><span class="topic-title">The Environment</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',2,this)"><span class="topic-num">03</span><span class="topic-title">A Film Review</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',3,this)"><span class="topic-num">04</span><span class="topic-title">Health and Lifestyle</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',4,this)"><span class="topic-num">05</span><span class="topic-title">Travel</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',5,this)"><span class="topic-num">06</span><span class="topic-title">Technology at Home</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',6,this)"><span class="topic-num">07</span><span class="topic-title">Learning a Language</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',7,this)"><span class="topic-num">08</span><span class="topic-title">Work and Careers</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',8,this)"><span class="topic-num">09</span><span class="topic-title">City vs Countryside</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',9,this)"><span class="topic-num">10</span><span class="topic-title">A Memorable Event</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',10,this)"><span class="topic-num">11</span><span class="topic-title">Online Shopping</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',11,this)"><span class="topic-num">12</span><span class="topic-title">Music and Identity</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',12,this)"><span class="topic-num">13</span><span class="topic-title">Tourism</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',13,this)"><span class="topic-num">14</span><span class="topic-title">Food and Culture</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',14,this)"><span class="topic-num">15</span><span class="topic-title">Volunteering</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',15,this)"><span class="topic-num">16</span><span class="topic-title">Television and Streaming</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',16,this)"><span class="topic-num">17</span><span class="topic-title">Animals and Conservation</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',17,this)"><span class="topic-num">18</span><span class="topic-title">Fashion and Identity</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',18,this)"><span class="topic-num">19</span><span class="topic-title">Advertising</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B1',19,this)"><span class="topic-num">20</span><span class="topic-title">Sport and Society</span><span class="topic-arrow">›</span></div>
-  </div>
-  <div id="card-B1"></div>
-</section>
-
-<section class="level-section" id="level-B2">
-  <div class="level-header">
-    <span class="level-badge B2">B2</span>
-    <span class="level-desc">Errors: register, hedging, complex syntax, advanced collocation, cohesion</span>
-  </div>
-  <div class="topic-picker" id="picker-B2">
-    <div class="topic-item" onclick="openTopic('B2',0,this)"><span class="topic-num">01</span><span class="topic-title">Artificial Intelligence</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',1,this)"><span class="topic-num">02</span><span class="topic-title">Urban Living</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',2,this)"><span class="topic-num">03</span><span class="topic-title">Education Systems</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',3,this)"><span class="topic-num">04</span><span class="topic-title">Remote Work</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',4,this)"><span class="topic-num">05</span><span class="topic-title">Cultural Identity</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',5,this)"><span class="topic-num">06</span><span class="topic-title">Consumer Society</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',6,this)"><span class="topic-num">07</span><span class="topic-title">Mental Health Awareness</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',7,this)"><span class="topic-num">08</span><span class="topic-title">Media and Journalism</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',8,this)"><span class="topic-num">09</span><span class="topic-title">Economic Inequality</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',9,this)"><span class="topic-num">10</span><span class="topic-title">Science and Ethics</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',10,this)"><span class="topic-num">11</span><span class="topic-title">Immigration and Society</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',11,this)"><span class="topic-num">12</span><span class="topic-title">Populism and Democracy</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',12,this)"><span class="topic-num">13</span><span class="topic-title">Gender and the Workplace</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',13,this)"><span class="topic-num">14</span><span class="topic-title">Climate Policy</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',14,this)"><span class="topic-num">15</span><span class="topic-title">The Arts and Public Funding</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',15,this)"><span class="topic-num">16</span><span class="topic-title">Privacy and Surveillance</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',16,this)"><span class="topic-num">17</span><span class="topic-title">Globalisation and Trade</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',17,this)"><span class="topic-num">18</span><span class="topic-title">Sport and Politics</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',18,this)"><span class="topic-num">19</span><span class="topic-title">Animal Rights</span><span class="topic-arrow">›</span></div>
-    <div class="topic-item" onclick="openTopic('B2',19,this)"><span class="topic-num">20</span><span class="topic-title">Space Exploration</span><span class="topic-arrow">›</span></div>
-  </div>
-  <div id="card-B2"></div>
-</section>
-
-</main>
-
-<div class="tooltip-popup" id="tooltip"></div>
-
-<script>
-// ─────────────────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────────────────
-const data = {
+<script id="data">
+var data = {
   A1: [
     {
       num:'01', topic:'My Family', errorCount:6,
@@ -1033,267 +797,496 @@ const data = {
     },
   ],
 };
+</script>
+<script id="ui">
+(function(){
+'use strict';
+function $(id){ return document.getElementById(id); }
+function store(k, v){
+  try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+  catch(e){ return null; }
+}
+if (typeof window.toggleTheme !== 'function') {
+  window.toggleTheme = function(){
+    var h = document.documentElement, n = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    h.setAttribute('data-theme', n); store('arschul:theme', n);
+  };
+}
+var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-// ─────────────────────────────────────────────────────────
-// RENDERING
-// ─────────────────────────────────────────────────────────
-function parseBefore(str) {
-  return str.replace(/<err tip="([^"]*)">([\s\S]*?)<\/err>/g,
-    (_, tip, text) => `<span class="err" data-tip="${tip}">${text}</span>`);
+var LEVELS = ['A1','A2','B1','B2'];
+var INFO = {
+  A1:{name:'Beginner', look:'Look for basic verb forms, articles, spelling and word order.'},
+  A2:{name:'Elementary', look:'Look for past tenses, prepositions, comparatives and countable nouns.'},
+  B1:{name:'Intermediate', look:'Look for conditionals, the passive, relative clauses, collocations and linking words.'},
+  B2:{name:'Upper-Int', look:'Look for register, hedging, complex sentences, advanced collocations and cohesion.'}
+};
+var LVCOL = {A1:'#7ec8e3',A2:'#5fa8d3',B1:'#9d8fe0',B2:'#c47fd4'};
+var TEAMS = [{name:'Foxes',emoji:'\u{1F98A}',color:'#ff7a2e'},{name:'Owls',emoji:'\u{1F989}',color:'#8f74ff'}];
+var KEY_LEVEL = 'ba-writing:level', KEY_MUTE = 'ba-writing:mute';
+
+var S = { level: LEVELS.indexOf(store(KEY_LEVEL)) >= 0 ? store(KEY_LEVEL) : 'A1', idx: null, view: 'picker', errors: false, polished: false };
+var F = null;
+
+function inkFor(hex){
+  var n = parseInt(hex.slice(1),16), r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  var l = (0.2126*r + 0.7152*g + 0.0722*b)/255;
+  return l > 0.6 ? '#141a22' : '#ffffff';
+}
+function rng(seed){ var s = seed >>> 0; return function(){ s = (s + 0x6D2B79F5) >>> 0; var t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function anim(el, frames, opts){ if (reduced || !el.animate) return null; try { return el.animate(frames, opts); } catch(e){ return null; } }
+function plural(level, n){ return level === 'B2' ? (n === 1 ? 'improvement' : 'improvements') : (n === 1 ? 'error' : 'errors'); }
+
+/* ---------- sound (effects only) ---------- */
+var AC = null, master = null, nbuf = null, muted = store(KEY_MUTE) === '1';
+function ac(){
+  if (!AC) {
+    var C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+    try { AC = new C(); master = AC.createGain(); master.gain.value = 0.7; master.connect(AC.destination); } catch(e){ AC = null; return null; }
+  }
+  if (AC.state === 'suspended') { try { AC.resume(); } catch(e){} }
+  return AC;
+}
+function noiseBuf(c){
+  if (nbuf) return nbuf;
+  nbuf = c.createBuffer(1, c.sampleRate, c.sampleRate);
+  var d = nbuf.getChannelData(0); for (var i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  return nbuf;
+}
+function tone(type, f0, f1, at, dur, vol){
+  var c = AC, t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20,f1), t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+}
+function noise(at, dur, vol, ftype, f0, q, f1){
+  var c = AC, t = c.currentTime + at, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = noiseBuf(c); f.type = ftype; f.Q.value = q || 0.8;
+  f.frequency.setValueAtTime(f0, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.02, dur/3)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random()*0.5); s.stop(t + dur + 0.05);
+}
+var SFX = {
+  tap: function(){ noise(0, .05, .22, 'highpass', 2400); },
+  slide: function(){ noise(0, .34, .32, 'bandpass', 700, .7, 2600); },
+  page: function(){ noise(0, .12, .28, 'bandpass', 3200, .7, 1500); noise(.09, .16, .22, 'bandpass', 2000, .7, 4200); },
+  pencil: function(){ for (var i=0;i<4;i++) noise(i*.065, .07, .34, 'bandpass', 3000 + Math.random()*2200, 2.2); tone('sine', 1320, 1980, .06, .14, .06); },
+  miss: function(){ noise(0, .14, .5, 'lowpass', 420); tone('square', 160, 85, 0, .2, .09); },
+  whoosh: function(){ noise(0, .55, .34, 'bandpass', 260, 1.1, 3000); },
+  stamp: function(){ noise(0, .1, .8, 'lowpass', 650); tone('sine', 110, 42, 0, .3, .65); },
+  fanfare: function(){ [523,659,784,1047].forEach(function(f,i){ tone('triangle', f, f, i*.11, .34, .2); tone('square', f*2, f*2, i*.11, .07, .03); }); tone('triangle', 1047, 1047, .44, .8, .18); tone('triangle', 1319, 1319, .44, .8, .12); },
+  win: function(){ SFX.fanfare(); [784,988,1175,1568].forEach(function(f,i){ tone('triangle', f, f, 1 + i*.12, .4, .16); }); },
+  checked: function(){ [587,494,392].forEach(function(f,i){ tone('sine', f, f*0.98, i*.14, .32, .18); }); },
+  chime: function(){ tone('sine', 880, 880, 0, .5, .14); tone('sine', 1318, 1318, .09, .7, .11); },
+  tick: function(i){ var f = 520 + (i||0)*70; tone('triangle', f, f*1.12, 0, .07, .12); }
+};
+function sfx(name, arg){ if (muted) return; var c = ac(); if (!c) return; try { SFX[name](arg); } catch(e){} }
+function unlock(){ if (!muted) ac(); removeEventListener('pointerdown', unlock); removeEventListener('keydown', unlock); }
+addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
+function paintMute(){ var b = $('muteBtn'); b.classList.toggle('muted', muted); b.setAttribute('aria-label', muted ? 'Sound off' : 'Sound on'); }
+function toggleMute(){ muted = !muted; store(KEY_MUTE, muted ? '1' : '0'); paintMute(); if (!muted) sfx('tap'); }
+
+/* ---------- effects ---------- */
+function shake(px, ms){
+  if (reduced) return; var el = $('shaker'), t0 = performance.now();
+  (function step(t){ var k = 1 - (t - t0)/ms; if (k <= 0){ el.style.transform = ''; return; } var a = px*k*k;
+    el.style.transform = 'translate(' + ((Math.random()*2-1)*a) + 'px,' + ((Math.random()*2-1)*a) + 'px) rotate(' + ((Math.random()*2-1)*a*.03) + 'deg)';
+    requestAnimationFrame(step); })(t0);
+}
+function flash(strength){ anim($('flash'), [{opacity:strength},{opacity:0}], {duration:700, easing:'ease-out'}); }
+
+var cv = $('fx'), cx = null, parts = [], running = false, dpr = 1;
+try { cx = cv.getContext ? cv.getContext('2d') : null; } catch(e){ cx = null; }
+function sizeFx(){ if (!cx) return; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = innerWidth*dpr; cv.height = innerHeight*dpr; cx.setTransform(dpr,0,0,dpr,0,0); }
+function emit(n, x, y, o){
+  if (reduced || !cx) return; o = o || {};
+  var colors = o.colors || ['#fff'];
+  for (var i=0;i<n;i++){
+    var ang = (o.angle != null ? o.angle : -Math.PI/2) + (Math.random()-.5)*(o.spread != null ? o.spread : Math.PI*2);
+    var sp = (o.speed || 6) * (0.4 + Math.random()*0.8);
+    parts.push({ x:x, y:y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, g:o.g != null ? o.g : .25, life:1, decay:(o.decay || .02)*(0.7+Math.random()*.6),
+      size:(o.size || 4)*(0.6+Math.random()*.8), kind:o.kind || 'dot', color:colors[i % colors.length], rot:Math.random()*6.28, vr:(Math.random()-.5)*.4,
+      w:o.w || 10, h:o.h || 6 });
+  }
+  if (!running){ running = true; requestAnimationFrame(loop); }
+}
+function loop(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  for (var i=parts.length-1;i>=0;i--){
+    var p = parts[i]; p.vy += p.g; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= p.decay;
+    if (p.life <= 0 || p.y > innerHeight + 60){ parts.splice(i,1); continue; }
+    cx.globalAlpha = Math.max(0, Math.min(1, p.life*1.4)); cx.fillStyle = p.color;
+    if (p.kind === 'confetti'){ cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot); cx.scale(1, Math.cos(p.rot*2)); cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore(); }
+    else { var r = p.kind === 'puff' ? p.size*(1 + (1-p.life)*2.5) : p.size; cx.beginPath(); cx.arc(p.x, p.y, Math.max(0.1, r), 0, 6.283); cx.fill(); }
+  }
+  cx.globalAlpha = 1;
+  if (parts.length) requestAnimationFrame(loop); else { running = false; cx.clearRect(0,0,cv.width,cv.height); }
+}
+function floatText(txt, x, y, color){
+  var el = document.createElement('div'); el.className = 'float'; el.textContent = txt; el.style.setProperty('--tc', color);
+  el.style.left = (x - 30) + 'px'; el.style.top = (y - 50) + 'px'; document.body.appendChild(el);
+  var a = anim(el, [{transform:'translateY(10px) scale(.6)',opacity:0},{transform:'translateY(-20px) scale(1.15)',opacity:1,offset:.25},{transform:'translateY(-90px) scale(1)',opacity:0}], {duration:1100, easing:'ease-out'});
+  setTimeout(function(){ el.remove(); }, a ? 1150 : 700);
+}
+function banner(team, text, hold){
+  var t = TEAMS[team], el = document.createElement('div');
+  el.className = 'banner'; el.style.setProperty('--tc', t.color); el.style.setProperty('--tink', inkFor(t.color));
+  el.innerHTML = '<span class="disc">' + t.emoji + '</span><span class="bt"></span>';
+  el.querySelector('.bt').textContent = text;
+  document.body.appendChild(el); sfx('whoosh');
+  var total = hold || 1500;
+  var a = anim(el, [{transform:'skewX(-12deg) translateX(-115%)'},{transform:'skewX(-12deg) translateX(0)',offset:.2},{transform:'skewX(-12deg) translateX(0)',offset:.8},{transform:'skewX(-12deg) translateX(115%)'}], {duration:total, easing:'cubic-bezier(.5,0,.3,1)'});
+  setTimeout(function(){ el.remove(); }, a ? total : 900);
 }
 
-// Find Mode: errors stay as .err spans; every other word becomes a clickable .w span
-function tokenizeBefore(str) {
-  return str.split(/(<err tip="[^"]*">[\s\S]*?<\/err>)/g).map(part => {
-    const m = part.match(/^<err tip="([^"]*)">([\s\S]*?)<\/err>$/);
-    if (m) return `<span class="err" data-tip="${m[1]}">${m[2]}</span>`;
+/* ---------- note (error explanations) ---------- */
+var note = $('note'), noteFor = null, noteSticky = false;
+function showNote(el, sticky){
+  if (!el || !el.dataset.tip) return;
+  noteSticky = !!sticky;
+  if (noteFor === el) return;
+  if (noteFor) noteFor.classList.remove('pointed');
+  note.textContent = el.dataset.tip; noteFor = el; el.classList.add('pointed');
+  note.style.setProperty('--nr', (((el.textContent.length * 7) % 5) - 2) * 0.6 + 'deg');
+  note.classList.remove('show'); void note.offsetWidth; note.classList.add('show');
+}
+function hideNote(){ note.classList.remove('show'); if (noteFor) noteFor.classList.remove('pointed'); noteFor = null; noteSticky = false; }
+
+/* ---------- parsing ---------- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function parseBefore(str){ return str.replace(/<err tip="([^"]*)">([\s\S]*?)<\/err>/g, function(_, tip, t){ return '<span class="err" data-tip="' + tip + '">' + t + '</span>'; }); }
+function tokenizeBefore(str){
+  return str.split(/(<err tip="[^"]*">[\s\S]*?<\/err>)/g).map(function(part){
+    var m = part.match(/^<err tip="([^"]*)">([\s\S]*?)<\/err>$/);
+    if (m) return '<span class="err" data-tip="' + m[1] + '">' + m[2] + '</span>';
     return part.replace(/(\S+)/g, '<span class="w">$1</span>');
   }).join('');
 }
+function parseAfter(str){ return str.replace(/<g>([\s\S]*?)<\/g>/g, function(_, t){ return '<span class="g">' + t + '</span>'; }); }
 
-function parseAfter(str) {
-  return str.replace(/<g>([\s\S]*?)<\/g>/g,
-    (_, t) => `<strong style="color:var(--good)">${t}</strong>`);
+/* ---------- level tabs + picker ---------- */
+function renderTabs(){
+  $('tabs').innerHTML = LEVELS.map(function(l, i){
+    return '<button class="tab' + (l === S.level ? ' on' : '') + '" data-level="' + l + '" style="--lv:' + LVCOL[l] + '" title="Level ' + l + ' (' + (i+1) + ')"><b>' + l + '</b><span>' + INFO[l].name + '</span></button>';
+  }).join('');
+  document.documentElement.style.setProperty('--lvNow', LVCOL[S.level]);
 }
-
-function buildCard(level, idx) {
-  const d = data[level][idx];
-  const changesHTML = d.changes.map(([from, to, why]) => `
-    <div class="change-item">
-      <div class="change-icon">✓</div>
-      <div class="change-text"><em>${from}</em> → <strong>${to}</strong>: ${why}</div>
-    </div>`).join('');
-
-  return `
-    <div class="para-card" data-level="${level}" data-idx="${idx}">
-      <div class="card-header">
-        <span class="card-num">${d.num} / ${data[level].length}</span>
-        <span class="card-topic-label">${d.topic}</span>
-      </div>
-      <div class="before-section">
-        <div class="section-label before-label">Before</div>
-        <p class="para-text">${parseBefore(d.before)}</p>
-      </div>
-      <div class="action-bar">
-        <span class="error-count"><strong>${d.errorCount}</strong> ${level === 'B2' ? 'improvements' : 'errors'} to find</span>
-        <button class="action-btn btn-find" onclick="toggleFind(this)">Find Mode</button>
-        <button class="action-btn btn-errors" onclick="toggleErrors(this)">Show Errors</button>
-        <button class="action-btn btn-reveal" onclick="toggleAfter(this)">Show Polished Version ↓</button>
-      </div>
-      <div class="find-bar"></div>
-      <div class="after-section">
-        <div class="section-label after-label">After</div>
-        <p class="para-text">${parseAfter(d.after)}</p>
-        <div class="changes-list">
-          <div class="changes-title">What changed &amp; why</div>
-          ${changesHTML}
-        </div>
-      </div>
-    </div>`;
-}
-
-// ─────────────────────────────────────────────────────────
-// INTERACTIONS
-// ─────────────────────────────────────────────────────────
-function switchLevel(level) {
-  F = null;
-  tooltip.classList.remove('show');
-  document.querySelectorAll('.level-section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('level-' + level).classList.add('active');
-  document.querySelector(`.level-btn[data-level="${level}"]`).classList.add('active');
-  document.getElementById('card-' + level).innerHTML = '';
-  document.querySelectorAll(`#picker-${level} .topic-item`).forEach(i => i.classList.remove('active'));
-}
-
-function openTopic(level, idx, el) {
-  const cardEl = document.getElementById('card-' + level);
-  const pickerItems = document.querySelectorAll(`#picker-${level} .topic-item`);
-  F = null;
-  tooltip.classList.remove('show');
-
-  if (el.classList.contains('active')) {
-    el.classList.remove('active');
-    cardEl.innerHTML = '';
-    return;
-  }
-
-  pickerItems.forEach(i => i.classList.remove('active'));
-  el.classList.add('active');
-  cardEl.innerHTML = buildCard(level, idx);
-  bindTooltips();
-
-  setTimeout(() => cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
-}
-
-function toggleErrors(btn) {
-  const beforeSec = btn.closest('.para-card').querySelector('.before-section');
-  const isOn = beforeSec.classList.contains('errors-visible');
-  beforeSec.classList.toggle('errors-visible', !isOn);
-  btn.textContent = isOn ? 'Show Errors' : 'Hide Errors';
-  btn.classList.toggle('on', !isOn);
-  if (isOn) tooltip.classList.remove('show');
-}
-
-// ─────────────────────────────────────────────────────────
-// FIND MODE
-// ─────────────────────────────────────────────────────────
-let F = null; // state for the currently open card's Find Mode
-let tipTimer = null;
-
-function toggleFind(btn) {
-  const card = btn.closest('.para-card');
-  const beforeSec = card.querySelector('.before-section');
-  const para = beforeSec.querySelector('.para-text');
-  const errBtn = card.querySelector('.btn-errors');
-  const bar = card.querySelector('.find-bar');
-  const d = data[card.dataset.level][card.dataset.idx];
-  const turningOn = !beforeSec.classList.contains('find-active');
-
-  tooltip.classList.remove('show');
-
-  if (turningOn) {
-    beforeSec.classList.remove('errors-visible');
-    errBtn.style.display = 'none';
-    errBtn.textContent = 'Show Errors'; errBtn.classList.remove('on');
-    beforeSec.classList.add('find-active');
-    para.innerHTML = tokenizeBefore(d.before);
-    F = { card, total: d.errorCount, found: 0, misses: 0, teams: false, scores: [0, 0], turn: 0 };
-    para.onclick = handleFindClick;
-    para.onmousemove = handleFindHover;
-    para.onmouseleave = () => tooltip.classList.remove('show');
-    btn.textContent = 'Exit Find Mode';
-    btn.classList.add('on');
-    bar.classList.add('on');
-    renderFindBar();
-  } else {
-    beforeSec.classList.remove('find-active');
-    para.innerHTML = parseBefore(d.before);
-    para.onclick = null;
-    para.onmousemove = null;
-    para.onmouseleave = null;
-    bindTooltips();
-    errBtn.style.display = '';
-    btn.textContent = 'Find Mode';
-    btn.classList.remove('on');
-    bar.classList.remove('on');
-    F = null;
-  }
-}
-
-function handleFindClick(e) {
-  if (!F) return;
-  const err = e.target.closest('.err');
-  if (err) {
-    if (err.classList.contains('found')) { showTipAt(err.dataset.tip, e); return; }
-    err.classList.add('found');
-    F.found++;
-    if (F.teams) F.scores[F.turn] += 10;
-    showTipAt(err.dataset.tip, e);
-    renderFindBar();
-    return;
-  }
-  const w = e.target.closest('.w');
-  if (w && !w.classList.contains('miss')) {
-    tooltip.classList.remove('show');
-    w.classList.add('miss');
-    setTimeout(() => w.classList.remove('miss'), 400);
-    F.misses++;
-    if (F.teams) F.scores[F.turn] -= 5;
-    renderFindBar();
-  }
-}
-
-function showTipAt(text, e) {
-  tooltip.textContent = text;
-  tooltip.classList.add('show');
-  positionTooltip(e);
-  clearTimeout(tipTimer);
-}
-
-// While in Find Mode, hovering a FOUND error keeps its explanation visible
-// (mirrors normal mode); moving off any found error hides it. Un-found errors
-// never reveal their tip on hover, so answers aren't given away.
-function handleFindHover(e) {
-  if (!F) return;
-  const found = e.target.closest('.err.found');
-  if (found) {
-    tooltip.textContent = found.dataset.tip;
-    tooltip.classList.add('show');
-    positionTooltip(e);
-  } else {
-    tooltip.classList.remove('show');
-  }
-}
-
-function renderFindBar() {
-  if (!F) return;
-  const bar = F.card.querySelector('.find-bar');
-  const done = F.found === F.total;
-  let html = `<span class="find-stat${done ? ' done' : ''}">Found <strong>${F.found} / ${F.total}</strong></span>
-    <span class="find-stat">Misses <strong>${F.misses}</strong></span>`;
-  if (F.teams) {
-    html += F.scores.map((s, i) =>
-      `<button class="team-chip${F.turn === i ? ' active' : ''}" onclick="setTurn(${i})">Team ${i === 0 ? 'A' : 'B'} · ${s}</button>`
-    ).join('');
-  }
-  html += `<button class="find-mini" onclick="toggleTeams()">${F.teams ? 'Teams: On' : 'Teams: Off'}</button>`;
-  if (!done) html += `<button class="find-mini" onclick="revealRemaining()">Reveal remaining</button>`;
-  else html += `<span class="find-stat done"><strong>All found! 🎉</strong></span>`;
-  bar.innerHTML = html;
-}
-
-function setTurn(i) { if (F) { F.turn = i; renderFindBar(); } }
-
-function toggleTeams() {
-  if (!F) return;
-  F.teams = !F.teams;
-  renderFindBar();
-}
-
-function revealRemaining() {
-  if (!F) return;
-  F.card.querySelectorAll('.before-section .err:not(.found)').forEach(el => el.classList.add('found', 'revealed'));
-  F.found = F.total;
-  renderFindBar();
-}
-
-function toggleAfter(btn) {
-  const afterSec = btn.closest('.para-card').querySelector('.after-section');
-  const isVisible = afterSec.classList.contains('visible');
-  afterSec.classList.toggle('visible', !isVisible);
-  btn.textContent = isVisible ? 'Show Polished Version ↓' : 'Hide Polished Version ↑';
-  btn.classList.toggle('revealed', !isVisible);
-}
-
-// ─────────────────────────────────────────────────────────
-// TOOLTIP
-// ─────────────────────────────────────────────────────────
-const tooltip = document.getElementById('tooltip');
-
-function bindTooltips() {
-  document.querySelectorAll('.err').forEach(el => {
-    el.addEventListener('mouseenter', e => {
-      if (!el.closest('.before-section').classList.contains('errors-visible')) return;
-      tooltip.textContent = el.dataset.tip;
-      tooltip.classList.add('show');
-      positionTooltip(e);
-    });
-    el.addEventListener('mousemove', e => {
-      if (!el.closest('.before-section').classList.contains('errors-visible')) return;
-      positionTooltip(e);
-    });
-    el.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+function renderPicker(animate){
+  var lv = S.level;
+  $('pickTitle').textContent = lv + ' ' + INFO[lv].name;
+  $('pickDesc').textContent = INFO[lv].look;
+  $('cards').innerHTML = data[lv].map(function(d, i){
+    var rot = ((i*37 + lv.charCodeAt(1)*11) % 7 - 3) * 0.45;
+    return '<button class="icard" data-idx="' + i + '" style="--rot:' + rot.toFixed(2) + 'deg"><span class="n">' + d.num + '</span><span class="t">' + d.topic + '</span></button>';
+  }).join('');
+  if (animate) Array.prototype.forEach.call($('cards').children, function(c, i){
+    anim(c, [{opacity:0, transform:'translateY(40px) rotate(' + c.style.getPropertyValue('--rot') + ') scale(.94)'},{opacity:1, transform:'rotate(' + c.style.getPropertyValue('--rot') + ')'}], {duration:420, delay:i*28, easing:'cubic-bezier(.3,1.3,.5,1)', fill:'backwards'});
   });
 }
-
-function positionTooltip(e) {
-  const x = e.clientX + 14, y = e.clientY - 10;
-  const tw = tooltip.offsetWidth;
-  tooltip.style.left = (x + tw > window.innerWidth ? e.clientX - tw - 14 : x) + 'px';
-  const th = tooltip.offsetHeight;
-  tooltip.style.top = Math.min(Math.max(8, y), Math.max(8, window.innerHeight - th - 8)) + 'px';
+function setLevel(lv){
+  if (LEVELS.indexOf(lv) < 0) return;
+  var changed = lv !== S.level; S.level = lv; store(KEY_LEVEL, lv);
+  renderTabs(); hideNote();
+  if (S.view !== 'picker' || changed){ showPicker(changed); }
+  sfx('page');
 }
+function showPicker(animate){
+  F = null; S.idx = null; S.view = 'picker'; hideNote();
+  $('deskView').hidden = true; $('pickerView').hidden = false;
+  renderPicker(animate !== false);
+}
+
+/* ---------- desk ---------- */
+function cur(){ return data[S.level][S.idx]; }
+function openTopic(idx){
+  idx = +idx; var list = data[S.level]; if (!(idx >= 0 && idx < list.length)) return;
+  S.idx = idx; S.view = 'desk'; S.errors = false; S.polished = false; F = null; hideNote();
+  var d = cur();
+  $('pickerView').hidden = true; $('deskView').hidden = false;
+  $('dNum').textContent = d.num + ' / ' + list.length;
+  $('dTitle').textContent = d.topic; $('cTitle').textContent = d.topic;
+  $('stampSlot').innerHTML = '<span class="stamp">Draft</span>';
+  $('draft').classList.remove('show-errors','finding');
+  $('msText').innerHTML = parseBefore(d.before);
+  $('ink').innerHTML = '';
+  $('cText').innerHTML = parseAfter(d.after);
+  $('changes').innerHTML = d.changes.map(function(c){
+    return '<li><div class="swap"><span class="from">' + esc(c[0]) + '</span><i>to</i><span class="to">' + esc(c[1]) + '</span></div><p class="why">' + c[2] + '</p></li>';
+  }).join('');
+  $('clean').hidden = true;
+  renderRail(true);
+  sfx('slide');
+  anim($('draft'), [{opacity:0, transform:'translateY(70px) rotate(-2.5deg) scale(.96)'},{opacity:1, transform:'none'}], {duration:520, easing:'cubic-bezier(.25,1.25,.45,1)'});
+  try { window.scrollTo({top:0, behavior: reduced ? 'auto' : 'smooth'}); } catch(e){ try { window.scrollTo(0,0); } catch(e2){} }
+}
+function step(dir){ if (S.view !== 'desk') return; var n = data[S.level].length; openTopic((S.idx + dir + n) % n); }
+
+function renderRail(entering){
+  var d = cur(), rail = document.querySelector('.rail');
+  var btnFind = rail.querySelector('[data-act="find"]'), btnErr = rail.querySelector('[data-act="errors"]'),
+      btnPol = rail.querySelector('[data-act="polished"]'), btnTeams = rail.querySelector('[data-act="teams"]'),
+      btnRev = rail.querySelector('[data-act="reveal"]');
+  var total = F ? F.total : d.errorCount;
+  var c = $('counter');
+  if (F){
+    var done = F.found === F.total, sub = F.misses + (F.misses === 1 ? ' miss' : ' misses');
+    if (F.revealed) sub += ', ' + F.revealed + ' revealed';
+    c.className = 'plaque counter' + (done ? ' done' : '');
+    c.innerHTML = '<div class="big">' + F.found + '<small>/' + F.total + '</small></div><div class="lbl">found<em>' + sub + '</em></div>';
+  } else {
+    c.className = 'plaque counter';
+    c.innerHTML = '<div class="big">' + total + '</div><div class="lbl">' + plural(S.level, total) + ' to find<em>' + INFO[S.level].name + ' draft</em></div>';
+  }
+  btnFind.innerHTML = (F ? 'Exit find mode' : 'Find mode') + '<kbd>F</kbd>';
+  btnFind.classList.toggle('on', !!F);
+  btnErr.hidden = !!F;
+  btnErr.innerHTML = (S.errors ? 'Hide errors' : 'Show errors') + '<kbd>E</kbd>';
+  btnErr.classList.toggle('on', S.errors);
+  btnPol.innerHTML = (S.polished ? 'Hide polished version' : 'Polished version') + '<kbd>P</kbd>';
+  btnPol.classList.toggle('on', S.polished);
+  btnTeams.hidden = !F;
+  btnTeams.innerHTML = (F && F.teams ? 'Teams on' : 'Teams off') + '<kbd>T</kbd>';
+  btnTeams.classList.toggle('on', !!(F && F.teams));
+  btnRev.hidden = !F || F.done;
+  btnFind.classList.toggle('breathe', !F && !S.errors && !S.polished);
+  renderTeams();
+  if (entering) [btnFind, btnTeams, btnRev, btnErr, btnPol].forEach(function(b, i){
+    if (b.hidden) return; b.classList.remove('pop-in'); void b.offsetWidth; b.style.animationDelay = (i*70) + 'ms'; b.classList.add('pop-in');
+  });
+}
+function renderTeams(){
+  var box = $('teams');
+  box.hidden = !(F && F.teams);
+  if (box.hidden) return;
+  box.innerHTML = TEAMS.map(function(t, i){
+    return '<button class="team' + (F.turn === i ? ' turn' : '') + '" data-team="' + i + '" style="--tc:' + t.color + ';--tink:' + inkFor(t.color) + '" title="' + t.name + "' turn (" + (i+1) + ')"><kbd>' + (i+1) + '</kbd><span class="disc">' + t.emoji + '</span><span class="tn">' + t.name + '</span><span class="ts">' + F.scores[i] + '</span></button>';
+  }).join('');
+}
+function bumpCounter(){ var b = document.querySelector('#counter .big'); if (b && !reduced){ b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); } }
+
+function toggleErrors(){
+  if (S.view !== 'desk' || F) return;
+  S.errors = !S.errors; hideNote();
+  $('draft').classList.toggle('show-errors', S.errors);
+  sfx('page'); renderRail();
+  if (S.errors) Array.prototype.forEach.call(document.querySelectorAll('#msText .err'), function(e, i){
+    anim(e, [{opacity:.25},{opacity:1}], {duration:320, delay:i*60, fill:'backwards'});
+  });
+}
+function togglePolished(){
+  if (S.view !== 'desk') return;
+  S.polished = !S.polished; var clean = $('clean'); hideNote();
+  if (S.polished){
+    clean.hidden = false; sfx('slide'); setTimeout(function(){ sfx('chime'); }, 260);
+    anim(clean, [{opacity:0, transform:'translateY(90px) rotate(1.8deg)'},{opacity:1, transform:'none'}], {duration:560, easing:'cubic-bezier(.25,1.2,.45,1)'});
+    Array.prototype.forEach.call(clean.querySelectorAll('.g'), function(g, i){
+      var a = anim(g, [{color:'#1f2630'},{color:'#2e8b57'}], {duration:420, delay:420 + i*110, fill:'backwards'});
+      if (a) setTimeout(function(){ sfx('tick', i); }, 420 + i*110);
+    });
+    setTimeout(function(){ try { clean.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'}); } catch(e){} }, 120);
+  } else {
+    sfx('page');
+    var a = anim(clean, [{opacity:1, transform:'none'},{opacity:0, transform:'translateY(60px) rotate(1.5deg)'}], {duration:280, easing:'ease-in'});
+    if (a) a.onfinish = function(){ if (!S.polished) clean.hidden = true; }; else clean.hidden = true;
+    try { $('draft').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'}); } catch(e){}
+  }
+  renderRail();
+}
+
+/* ---------- find mode ---------- */
+function toggleFind(){
+  if (S.view !== 'desk') return;
+  var d = cur(), draft = $('draft'), para = $('msText');
+  hideNote();
+  if (!F){
+    S.errors = false; draft.classList.remove('show-errors'); draft.classList.add('finding');
+    para.innerHTML = tokenizeBefore(d.before);
+    var errs = para.querySelectorAll('.err');
+    errs.forEach(function(e, i){ e.dataset.i = i; });
+    F = { total: errs.length, found: 0, revealed: 0, misses: 0, teams: false, scores: [0,0], turn: 0, marks: [], done: false };
+    sfx('tap');
+  } else {
+    F = null; draft.classList.remove('finding'); para.innerHTML = parseBefore(d.before);
+    $('ink').innerHTML = ''; $('stampSlot').innerHTML = '<span class="stamp">Draft</span>';
+    sfx('page');
+  }
+  renderRail();
+}
+function toggleTeams(){
+  if (!F) return; F.teams = !F.teams; renderRail();
+  if (F.teams) banner(F.turn, TEAMS[F.turn].name + ', your turn'); else sfx('tap');
+}
+function setTurn(i){
+  if (!F || !F.teams || F.turn === i) return;
+  F.turn = i; renderTeams(); banner(i, TEAMS[i].name + ', your turn');
+}
+
+/* pencil loops */
+function loopPath(r, seed, tight){
+  var R = rng(seed), cx0 = r.x + r.w/2, cy0 = r.y + r.h/2;
+  var rx = r.w/2 + (tight ? 8 : 12) + R()*4, ry = r.h/2 + 3 + R()*3;
+  var a0 = -2.3 + R()*0.6, turns = 1.1 + R()*0.12, n = 34, pts = [];
+  for (var i=0;i<=n;i++){ var t = i/n, a = a0 + t*turns*6.2832, wob = 1 + (R()-.5)*0.05 + t*0.05;
+    pts.push([cx0 + Math.cos(a)*rx*wob, cy0 + Math.sin(a)*ry*wob + Math.sin(a*3 + seed)*1.2]); }
+  var dstr = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1), len = 0;
+  for (var j=1;j<pts.length-1;j++){
+    var mx = (pts[j][0] + pts[j+1][0])/2, my = (pts[j][1] + pts[j+1][1])/2;
+    dstr += ' Q' + pts[j][0].toFixed(1) + ' ' + pts[j][1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+  }
+  for (var k=1;k<pts.length;k++) len += Math.hypot(pts[k][0]-pts[k-1][0], pts[k][1]-pts[k-1][1]);
+  return { d: dstr, len: len };
+}
+function drawMark(m, animated, delay){
+  var el = document.querySelector('#msText .err[data-i="' + m.i + '"]'); if (!el) return;
+  var pr = $('draft').getBoundingClientRect(), rects = el.getClientRects(), svg = $('ink'), NS = 'http://www.w3.org/2000/svg';
+  Array.prototype.forEach.call(rects, function(rc, j){
+    if (rc.width < 1) return;
+    var p = loopPath({x: rc.left - pr.left, y: rc.top - pr.top, w: rc.width, h: rc.height}, m.i*97 + j*13 + 5, rc.width < 30);
+    var path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', p.d);
+    path.setAttribute('stroke', m.revealed ? 'rgba(122,111,99,.75)' : '#c8322b');
+    path.setAttribute('stroke-width', m.revealed ? '3' : '4');
+    if (m.revealed) path.setAttribute('stroke-dasharray', '9 7');
+    path.setAttribute('opacity', '.9');
+    svg.appendChild(path);
+    if (animated && !reduced && !m.revealed && path.animate){
+      path.style.strokeDasharray = p.len; path.style.strokeDashoffset = p.len;
+      var a = path.animate([{strokeDashoffset: p.len},{strokeDashoffset: 0}], {duration:380, delay:(delay||0) + j*120, easing:'cubic-bezier(.5,.1,.3,1)', fill:'forwards'});
+      a.onfinish = function(){ path.style.strokeDasharray = ''; path.style.strokeDashoffset = ''; };
+    } else if (animated && !reduced && path.animate){
+      path.animate([{opacity:0},{opacity:.9}], {duration:300, delay:(delay||0), fill:'backwards'});
+    }
+  });
+}
+function redrawInk(){ if (!F) return; $('ink').innerHTML = ''; F.marks.forEach(function(m){ drawMark(m, false); }); }
+
+function stampIn(text, cls){
+  var slot = $('stampSlot');
+  slot.innerHTML = '<span class="stamp big ' + (cls || '') + '"></span>';
+  var s = slot.firstChild; s.textContent = text;
+  anim(s, [{transform:'rotate(-8deg) scale(3.2)', opacity:0},{transform:'rotate(-8deg) scale(.92)', opacity:.9, offset:.7},{transform:'rotate(-8deg) scale(1)', opacity:.82}], {duration:340, easing:'cubic-bezier(.6,0,.9,.6)'});
+  setTimeout(function(){ sfx('stamp'); shake(10, 450); var r = s.getBoundingClientRect();
+    emit(8, r.left + r.width/2, r.bottom - 6, {kind:'puff', colors:['rgba(150,140,120,.14)'], speed:2.5, g:-.02, size:7, decay:.04}); }, reduced ? 0 : 300);
+}
+function celebrate(){
+  F.done = true;
+  stampIn('Proofread', 'green');
+  var c = $('counter').getBoundingClientRect();
+  setTimeout(function(){
+    sfx(F && F.teams ? 'win' : 'fanfare');
+    emit(110, c.left + c.width/2, c.top + 20, {kind:'confetti', colors:['#ffd84a','#2e8b57','#c8322b','#f6efdf','#7ec8e3'], speed:13, g:.28, decay:.008, spread:1.6, w:12, h:7});
+  }, 340);
+  if (F.teams){
+    var a = F.scores[0], b = F.scores[1];
+    setTimeout(function(){
+      if (a === b) banner(0, "It's a tie!", 2400);
+      else { var w = a > b ? 0 : 1; banner(w, TEAMS[w].name + ' win!', 2600); fireworks(w); }
+    }, 900);
+  }
+}
+function fireworks(w){
+  if (reduced) return; var n = 0;
+  var id = setInterval(function(){
+    emit(46, innerWidth*(.2 + Math.random()*.6), innerHeight*(.15 + Math.random()*.3), {kind:'dot', colors:[TEAMS[w].color,'#ffd84a','#ffffff'], speed:8, g:.12, decay:.018, size:3.5});
+    if (++n >= 10) clearInterval(id);
+  }, 380);
+}
+function revealRest(){
+  if (!F || F.done) return;
+  hideNote();
+  var rest = Array.prototype.filter.call(document.querySelectorAll('#msText .err:not(.found)'), function(){ return true; });
+  rest.forEach(function(e, k){
+    e.classList.add('found','revealed');
+    var m = {i: +e.dataset.i, revealed: true}; F.marks.push(m); drawMark(m, true, k*140);
+    setTimeout(function(){ sfx('tick', k); }, reduced ? 0 : k*140);
+  });
+  F.revealed = rest.length; F.done = true; renderRail();
+  setTimeout(function(){ sfx('checked'); stampIn('Checked', 'grey'); }, reduced ? 0 : rest.length*140 + 200);
+}
+function handleFindClick(e){
+  var err = e.target.closest('.err');
+  if (err){
+    if (err.classList.contains('found') || F.done){ if (err.classList.contains('found')) showNote(err, true); return; }
+    err.classList.add('found'); F.found++;
+    var m = {i: +err.dataset.i, revealed:false}; F.marks.push(m); drawMark(m, true, 0);
+    sfx('pencil'); showNote(err, true);
+    var r = err.getBoundingClientRect();
+    emit(14, r.left + r.width/2, r.top + r.height/2, {kind:'dot', colors:['#c8322b','#3a3a3a','#ffd84a'], speed:5, g:.15, decay:.035, size:2.4});
+    if (F.teams){ F.scores[F.turn] += 10; floatText('+10', r.left + r.width/2, r.top, TEAMS[F.turn].color); }
+    var won = F.found === F.total && !F.done; if (won) F.done = true;
+    renderRail(); bumpCounter();
+    if (won) celebrate();
+    return;
+  }
+  var w = e.target.closest('.w');
+  if (w && !w.classList.contains('miss') && !F.done){
+    hideNote(); w.classList.add('miss'); setTimeout(function(){ w.classList.remove('miss'); }, 460);
+    F.misses++; sfx('miss'); shake(7, 300); flash(.35);
+    if (F.teams){ F.scores[F.turn] -= 5; var r2 = w.getBoundingClientRect(); floatText('-5', r2.left + r2.width/2, r2.top, '#e5615a'); }
+    renderRail();
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', function(e){
+  var t;
+  if ((t = e.target.closest('.tab'))) { setLevel(t.dataset.level); return; }
+  if ((t = e.target.closest('.icard'))) { openTopic(t.dataset.idx); return; }
+  if ((t = e.target.closest('.team'))) { setTurn(+t.dataset.team); return; }
+  if ((t = e.target.closest('#muteBtn'))) { toggleMute(); return; }
+  if ((t = e.target.closest('[data-act]'))) { act(t.dataset.act); return; }
+  if (e.target.closest('#msText')){
+    if (F) { handleFindClick(e); return; }
+    var err = e.target.closest('.err');
+    if (S.errors && err){ if (noteFor === err && noteSticky) hideNote(); else showNote(err, true); }
+    return;
+  }
+  if (!e.target.closest('.rail')) hideNote();
+});
+function act(a){
+  if (a !== 'find' && a !== 'reveal') sfx('tap');
+  switch (a){
+    case 'find': toggleFind(); break;
+    case 'errors': toggleErrors(); break;
+    case 'polished': togglePolished(); break;
+    case 'teams': toggleTeams(); break;
+    case 'reveal': revealRest(); break;
+    case 'prev': step(-1); break;
+    case 'next': step(1); break;
+    case 'topics': showPicker(true); sfx('page'); break;
+  }
+}
+$('msText').addEventListener('mousemove', function(e){
+  var err = e.target.closest('.err');
+  var ok = err && ((F && err.classList.contains('found')) || (!F && S.errors));
+  if (ok){ if (noteFor !== err) showNote(err, false); }
+  else if (noteFor && !noteSticky && !noteFor.contains(e.target)) hideNote();
+});
+$('msText').addEventListener('mouseleave', function(){ if (!noteSticky) hideNote(); });
+var rz; addEventListener('resize', function(){ sizeFx(); hideNote(); clearTimeout(rz); rz = setTimeout(redrawInk, 80); });
+document.addEventListener('keydown', function(e){
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  var tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'textarea') return;
+  var k = e.key.toLowerCase();
+  if (k === 'm'){ toggleMute(); return; }
+  if (S.view === 'picker'){
+    var n = parseInt(k, 10); if (n >= 1 && n <= 4){ setLevel(LEVELS[n-1]); e.preventDefault(); }
+    return;
+  }
+  var map = {f:'find', e:'errors', p:'polished', t:'teams', r:'reveal', arrowleft:'prev', arrowright:'next', escape:'topics'};
+  if (map[k]){
+    if (map[k] === 'errors' && F) return;
+    if ((map[k] === 'teams' || map[k] === 'reveal') && !F) return;
+    act(map[k]); e.preventDefault(); return;
+  }
+  if (k === '1' || k === '2'){ setTurn(+k - 1); e.preventDefault(); }
+});
+
+/* ---------- boot ---------- */
+paintMute(); sizeFx(); renderTabs(); renderPicker(true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawInk).catch(function(){});
+window.__ba = { S: S, get F(){ return F; }, openTopic: openTopic, setLevel: setLevel, act: act, setTurn: setTurn };
+})();
 </script>
 </body>
 </html>
