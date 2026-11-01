@@ -135,9 +135,10 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 .show-errors .err{cursor:help;background:linear-gradient(180deg,transparent 50%,rgba(200,50,43,.2) 50%);
   text-decoration:underline wavy var(--pencil) 2px;text-underline-offset:7px}
 .finding .ms-text{cursor:crosshair}
-.finding .w,.finding .err{cursor:pointer;position:relative;border-radius:3px;transition:background .12s}
-.finding .w:hover,.finding .err:not(.found):hover{background:rgba(255,216,74,.45)}
-.finding .err.found{cursor:help}
+.finding .w{cursor:pointer;position:relative;border-radius:3px;transition:background .12s}
+.finding .w:hover{background:rgba(255,216,74,.45)}
+.finding .err.found .w{cursor:help}
+.finding .err.found .w:hover{background:none}
 .w.miss{animation:wmiss .45s;color:var(--pencil)}
 .w.miss::after{content:"";position:absolute;left:-3px;right:-3px;top:52%;height:3px;border-radius:2px;background:var(--pencil);transform-origin:left;animation:strike .45s forwards}
 @keyframes wmiss{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}}
@@ -958,7 +959,7 @@ function parseBefore(str){ return str.replace(/<err tip="([^"]*)">([\s\S]*?)<\/e
 function tokenizeBefore(str){
   return str.split(/(<err tip="[^"]*">[\s\S]*?<\/err>)/g).map(function(part){
     var m = part.match(/^<err tip="([^"]*)">([\s\S]*?)<\/err>$/);
-    if (m) return '<span class="err" data-tip="' + m[1] + '">' + m[2] + '</span>';
+    if (m) return '<span class="err" data-tip="' + m[1] + '">' + m[2].replace(/(\S+)/g, '<span class="w">$1</span>') + '</span>';
     return part.replace(/(\S+)/g, '<span class="w">$1</span>');
   }).join('');
 }
@@ -1139,8 +1140,15 @@ function loopPath(r, seed, tight){
 function drawMark(m, animated, delay){
   var el = document.querySelector('#msText .err[data-i="' + m.i + '"]'); if (!el) return;
   var pr = $('draft').getBoundingClientRect(), rects = el.getClientRects(), svg = $('ink'), NS = 'http://www.w3.org/2000/svg';
-  Array.prototype.forEach.call(rects, function(rc, j){
+  var lines = [];
+  Array.prototype.forEach.call(rects, function(rc){
     if (rc.width < 1) return;
+    var ln = null; for (var q=0;q<lines.length;q++){ if (Math.abs(lines[q].top - rc.top) < 4 || Math.abs(lines[q].bottom - rc.bottom) < 4){ ln = lines[q]; break; } }
+    if (ln){ ln.left = Math.min(ln.left, rc.left); ln.right = Math.max(ln.right, rc.right); ln.top = Math.min(ln.top, rc.top); ln.bottom = Math.max(ln.bottom, rc.bottom); }
+    else lines.push({left: rc.left, right: rc.right, top: rc.top, bottom: rc.bottom});
+  });
+  lines.forEach(function(L, j){
+    var rc = {left: L.left, top: L.top, width: L.right - L.left, height: L.bottom - L.top};
     var p = loopPath({x: rc.left - pr.left, y: rc.top - pr.top, w: rc.width, h: rc.height}, m.i*97 + j*13 + 5, rc.width < 30);
     var path = document.createElementNS(NS, 'path');
     path.setAttribute('d', p.d);
@@ -1204,7 +1212,8 @@ function revealRest(){
   setTimeout(function(){ sfx('checked'); stampIn('Checked', 'grey'); }, reduced ? 0 : rest.length*140 + 200);
 }
 function handleFindClick(e){
-  var err = e.target.closest('.err');
+  var w = e.target.closest('.w'); if (!w) return;
+  var err = w.closest('.err');
   if (err){
     if (err.classList.contains('found') || F.done){ if (err.classList.contains('found')) showNote(err, true); return; }
     err.classList.add('found'); F.found++;
@@ -1218,8 +1227,7 @@ function handleFindClick(e){
     if (won) celebrate();
     return;
   }
-  var w = e.target.closest('.w');
-  if (w && !w.classList.contains('miss') && !F.done){
+  if (!w.classList.contains('miss') && !F.done){
     hideNote(); w.classList.add('miss'); setTimeout(function(){ w.classList.remove('miss'); }, 460);
     F.misses++; sfx('miss'); shake(7, 300); flash(.35);
     if (F.teams){ F.scores[F.turn] -= 5; var r2 = w.getBoundingClientRect(); floatText('-5', r2.left + r2.width/2, r2.top, '#e5615a'); }
