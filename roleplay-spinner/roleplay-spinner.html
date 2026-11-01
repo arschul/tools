@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <!-- HUBGEN:leaf start -->
 <script>(function(){try{var k="arschul:theme",v=localStorage.getItem(k);
@@ -14,1107 +14,1099 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Role Play Roulette</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Limelight&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0d0f;
-    --surface: #16161a;
-    --card: #1e1e24;
-    --accent1: #f5c842;
-    --accent2: #e8553e;
-    --accent3: #4ec9b0;
-    --accent4: #c586c0;
-    --text: #f0eff4;
-    --muted: #7a7a8c;
-    --border: #2a2a35;
-  }
+:root{
+  --velvet:#6E0F1E; --velvet-hi:#9A1D30; --velvet-lo:#3A0610;
+  --brass:#C9A04A; --brass-hi:#F1D589; --brass-lo:#7A5A1C;
+  --cream:#F2E6C9; --cream-lo:#D9C79D; --ink:#2A1A12; --ink-soft:#6B5440;
+  --spot:#FFE9A8; --ok:#3FA66B; --stamp:#B3261E;
+  --p1:#2BB3A3; --p2:#9B5DE5; --p3:#F29E1F;
+  /* scene (theme) variables */
+  --wall-top:#0B0607; --wall-mid:#1A0D10; --wall-bot:#120A0C;
+  --floor-a:#3B2516; --floor-b:#2A190F; --floor-line:rgba(0,0,0,.45);
+  --stage-ink:#F2E6C9; --stage-muted:#B89F86; --glow:rgba(255,233,168,.10);
+  --page:#070405;
+}
+:root[data-theme="light"]{
+  --wall-top:#CDB894; --wall-mid:#E6D6B4; --wall-bot:#D9C59E;
+  --floor-a:#A9784A; --floor-b:#93633A; --floor-line:rgba(60,30,10,.35);
+  --stage-ink:#2A1A12; --stage-muted:#6B5440; --glow:rgba(255,255,255,.35);
+  --page:#BFA77F;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--page);overflow:hidden;font-family:'Spline Sans',system-ui,sans-serif;color:var(--stage-ink)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:4px solid var(--spot);outline-offset:4px;border-radius:10px}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+.back-link{position:fixed;top:16px;left:16px;z-index:100000;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(0,0,0,.6);color:#fff;text-decoration:none;border-radius:999px;font:600 13px 'Spline Sans',system-ui,sans-serif;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);transition:background .2s,transform .2s}
+.back-link:hover{background:rgba(0,0,0,.8);transform:translateX(-2px)}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden}
+#shaker{position:absolute;inset:0}
+/* back wall + floor */
+#wall{position:absolute;inset:0;background:
+  radial-gradient(ellipse 900px 520px at 960px 380px,var(--glow),transparent 70%),
+  linear-gradient(180deg,var(--wall-top),var(--wall-mid) 45%,var(--wall-bot))}
+#wall::after{content:"";position:absolute;inset:0;opacity:.5;background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 2px,transparent 2px 120px)}
+#floor{position:absolute;left:0;right:0;bottom:0;height:300px;
+  background:
+   linear-gradient(180deg,rgba(0,0,0,.55),transparent 40px),
+   repeating-linear-gradient(90.6deg,rgba(255,255,255,.035) 0 3px,transparent 3px 11px),
+   repeating-linear-gradient(89.4deg,rgba(0,0,0,.06) 0 2px,transparent 2px 17px),
+   repeating-linear-gradient(180deg,var(--floor-line) 0 2px,transparent 2px 60px),
+   linear-gradient(180deg,var(--floor-a),var(--floor-b))}
+#floor::before{content:"";position:absolute;left:0;right:0;top:0;height:14px;background:linear-gradient(180deg,#1a0f08,#4a3018 60%,#2a190f);box-shadow:0 4px 10px rgba(0,0,0,.5)}
+/* curtains */
+.drape{position:absolute;top:0;bottom:0;width:96px;z-index:3;pointer-events:none;
+  background:
+   repeating-linear-gradient(90deg,rgba(0,0,0,.42) 0,rgba(255,255,255,.07) 11px,rgba(0,0,0,.18) 22px,rgba(0,0,0,.5) 32px),
+   linear-gradient(180deg,var(--velvet-hi),var(--velvet) 50%,var(--velvet-lo))}
+.drape.l{left:0;box-shadow:12px 0 30px rgba(0,0,0,.55);border-bottom-right-radius:60px 260px}
+.drape.r{right:0;box-shadow:-12px 0 30px rgba(0,0,0,.55);border-bottom-left-radius:60px 260px}
+#valance{position:absolute;left:0;right:0;top:0;height:64px;z-index:4;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.35) 0,rgba(255,255,255,.08) 18px,rgba(0,0,0,.35) 36px),linear-gradient(180deg,var(--velvet-lo),var(--velvet) 60%,var(--velvet-hi));
+  -webkit-mask:radial-gradient(circle 46px at 46px 18px,#000 98%,transparent) 0 0/92px 64px repeat-x,linear-gradient(#000,#000) 0 0/100% 20px no-repeat;
+          mask:radial-gradient(circle 46px at 46px 18px,#000 98%,transparent) 0 0/92px 64px repeat-x,linear-gradient(#000,#000) 0 0/100% 20px no-repeat;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.6))}
+#valance-trim{position:absolute;left:0;right:0;top:56px;height:0;z-index:4}
+.tassel{position:absolute;top:0;width:10px;height:26px;border-radius:0 0 5px 5px;background:linear-gradient(90deg,var(--brass-lo),var(--brass-hi),var(--brass-lo))}
 
-  /* Grain overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
-    opacity: 0.4;
-    pointer-events: none;
-    z-index: 999;
-  }
+/* marquee title */
+#marquee{position:absolute;left:150px;top:84px;width:520px;height:86px;z-index:5;border-radius:16px;
+  background:linear-gradient(180deg,#2a1810,#140a06);box-shadow:0 0 0 5px var(--brass),0 0 0 9px var(--brass-lo),0 14px 26px rgba(0,0,0,.55),inset 0 0 22px rgba(0,0,0,.9);
+  display:flex;align-items:center;justify-content:center}
+#marquee h1{font:400 46px/1 'Limelight',serif;color:var(--spot);letter-spacing:.01em;text-shadow:0 0 14px rgba(255,200,90,.65),0 2px 0 #000}
+.bulbs{position:absolute;inset:-4px;pointer-events:none}
+.bulb{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#ffe08a 45%,#c98b1a);box-shadow:0 0 8px 2px rgba(255,214,110,.7)}
+.bulb.dim{animation:twinkle 2.4s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.35;box-shadow:none}}
 
-  header {
-    text-align: center;
-    padding: 3rem 1rem 1.5rem;
-    position: relative;
-  }
+/* top controls */
+#controls{position:absolute;right:120px;top:84px;z-index:5;display:flex;gap:26px;align-items:center}
+.ctl-group{display:flex;align-items:center;gap:12px}
+.ctl-label{font:600 22px 'Spline Sans';color:var(--stage-muted)}
+.chip{min-width:64px;height:64px;padding:0 18px;border-radius:14px;font:700 26px 'Spline Sans';color:#3a2608;
+  background:linear-gradient(180deg,#e9cf8b,#b8913f);box-shadow:0 5px 0 #6d4f18,0 10px 16px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.5);transition:transform .12s,box-shadow .12s,filter .2s;filter:saturate(.35) brightness(.72)}
+.chip.on{filter:none;transform:translateY(3px);box-shadow:0 2px 0 #6d4f18,0 5px 10px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.5),0 0 0 3px var(--spot)}
+.chip:active{transform:translateY(5px);box-shadow:0 0 0 #6d4f18}
+.icon-btn{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#f6dd9a,#b8913f 60%,#6d4f18);box-shadow:0 5px 0 #5a3f10,0 10px 16px rgba(0,0,0,.4);color:#3a2608}
+.icon-btn svg{width:30px;height:30px}
+.icon-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #5a3f10}
 
-  header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--accent1) 0%, var(--accent2) 50%, var(--accent4) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* wheel */
+#wheelWrap{position:absolute;left:105px;top:220px;width:610px;height:610px;z-index:2}
+#wheelShadow{position:absolute;inset:-6px;border-radius:50%;box-shadow:0 30px 50px rgba(0,0,0,.6),0 0 0 2px rgba(0,0,0,.4)}
+#wheel{position:absolute;inset:0;will-change:transform}
+#wheel svg{width:100%;height:100%;display:block}
+#cone{position:absolute;left:410px;top:0;width:360px;height:470px;margin-left:-180px;z-index:1;pointer-events:none;opacity:0;
+  background:linear-gradient(180deg,rgba(255,240,190,.55),rgba(255,233,168,.12) 80%,transparent);clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);filter:blur(6px);mix-blend-mode:screen}
+#pointer{position:absolute;left:410px;top:192px;width:64px;height:84px;margin-left:-32px;z-index:3;transform-origin:50% 18px}
+#pointer svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 6px 6px rgba(0,0,0,.55))}
 
-  header p {
-    color: var(--muted);
-    font-size: 1rem;
-    margin-top: 0.5rem;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.05em;
-  }
+/* spin button */
+#spinBtn{position:absolute;left:160px;top:870px;width:500px;height:110px;z-index:5;border-radius:24px;
+  font:400 50px 'Limelight',serif;color:#3a2006;letter-spacing:.02em;
+  background:linear-gradient(180deg,#f6dc96,#d1a64a 55%,#a77a26);
+  box-shadow:0 10px 0 #6a4812,0 22px 30px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.6),inset 0 -6px 12px rgba(120,70,0,.35);transition:transform .12s,box-shadow .12s}
+#spinBtn small{display:block;font:600 18px 'Spline Sans';opacity:.75;margin-top:-2px}
+#spinBtn:active,#spinBtn.pressed{transform:translateY(8px);box-shadow:0 2px 0 #6a4812,0 8px 14px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.6)}
+#spinBtn:disabled{cursor:default;filter:saturate(.4) brightness(.8)}
+#spinBtn.breathe{animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 10px 0 #6a4812,0 22px 30px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.6),0 0 40px 8px rgba(255,214,110,.45)}}
 
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1rem 1.5rem 4rem;
-  }
+/* playbill */
+#playbill{position:absolute;left:830px;top:172px;width:970px;height:262px;z-index:2;border-radius:6px;padding:24px 44px 0 44px;color:var(--ink);
+  background:
+   radial-gradient(ellipse at 20% 0,rgba(255,255,255,.45),transparent 50%),
+   repeating-linear-gradient(0deg,rgba(120,90,40,.035) 0 2px,transparent 2px 5px),
+   linear-gradient(180deg,#F6ECD3,var(--cream) 60%,#E7D6AE);
+  box-shadow:0 18px 30px rgba(0,0,0,.5),inset 0 0 0 10px #F6ECD3,inset 0 0 0 12px var(--velvet),inset 0 0 0 16px #F6ECD3,inset 0 0 0 17px var(--brass-lo)}
+.pin{position:absolute;top:-10px;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff1c2,var(--brass) 45%,var(--brass-lo));box-shadow:0 4px 5px rgba(0,0,0,.5)}
+#pbKicker{font:600 20px 'Spline Sans';color:var(--ink-soft)}
+#pbPlace{font:400 64px/1.15 'Limelight',serif;color:var(--velvet);margin:2px 0 4px;white-space:nowrap;overflow:hidden;max-width:740px}
+.orn{height:14px;width:360px;margin:2px 0 12px;background:
+  radial-gradient(circle at 50% 50%,var(--brass-lo) 4px,transparent 5px) center/14px 14px no-repeat,
+  linear-gradient(90deg,transparent,var(--brass-lo) 20%,var(--brass-lo) 45%,transparent 46%,transparent 54%,var(--brass-lo) 55%,var(--brass-lo) 80%,transparent) 0 6px/100% 2px no-repeat}
+#pbPrompt{font:600 35px/1.2 'Spline Sans';max-width:860px;height:88px;overflow:hidden}
+#seal{position:absolute;right:40px;top:26px;width:118px;height:118px;display:grid;place-items:center;
+  font:400 40px 'Limelight',serif;color:#ffe3d6;text-shadow:0 2px 0 rgba(0,0,0,.35);
+  background:radial-gradient(circle at 36% 30%,#d8524a,#9b1b1b 55%,#5a0a0a);border-radius:47% 53% 50% 50%/52% 46% 54% 48%;
+  box-shadow:0 6px 10px rgba(0,0,0,.45),inset 0 0 0 9px rgba(0,0,0,.12),inset 0 0 0 11px rgba(255,255,255,.12)}
+#seal small{display:block;font:600 15px 'Spline Sans';text-align:center;margin-top:-4px;opacity:.85}
+#seal.hide{opacity:0}
 
-  /* Controls */
-  .controls {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.75rem;
-    flex-wrap: wrap;
-  }
+/* ticket slot + tickets */
+#slot{position:absolute;left:770px;top:470px;width:44px;height:220px;z-index:4;border-radius:10px;
+  background:linear-gradient(90deg,var(--brass-lo),var(--brass-hi) 40%,var(--brass) 60%,var(--brass-lo));box-shadow:0 10px 18px rgba(0,0,0,.5)}
+#slot::after{content:"";position:absolute;right:8px;top:24px;bottom:24px;width:8px;border-radius:4px;background:#120806;box-shadow:inset 0 3px 6px #000}
+#slot span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-90deg);font:600 15px 'Spline Sans';color:#3a2608;white-space:nowrap;margin-left:-4px}
+#tickets{position:absolute;left:830px;top:456px;width:970px;height:260px;z-index:3;display:flex;gap:26px}
+.ticket{position:relative;flex:1;min-width:0;height:256px;display:flex;color:var(--ink);will-change:transform;
+  --pc:var(--p1);
+  filter:drop-shadow(0 12px 14px rgba(0,0,0,.45))}
+.ticket .tk-body{position:relative;flex:1;display:flex;border-radius:14px;overflow:hidden;
+  background:
+   repeating-linear-gradient(0deg,rgba(120,90,40,.04) 0 2px,transparent 2px 5px),
+   linear-gradient(180deg,#F8EFD8,var(--cream));
+  -webkit-mask:radial-gradient(circle 16px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 16px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 16px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 16px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat}
+.tk-stub{width:70px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--pc);border-right:3px dashed rgba(0,0,0,.25);color:var(--stub-ink,#fff)}
+.tk-sym{font-size:36px;line-height:1}
+.tk-s{font:400 28px 'Limelight',serif}
+.tk-main{flex:1;padding:16px 16px 14px 18px;display:flex;flex-direction:column;min-width:0}
+.tk-kicker{font:600 18px 'Spline Sans';white-space:nowrap;color:var(--ink-soft)}
+.tk-role{font:700 32px/1.1 'Spline Sans';margin:4px 0 10px;color:var(--ink)}
+.ticket.empty .tk-role{color:#9c8a6f;font-weight:500}
+.ticket.empty .tk-stub{filter:grayscale(.6) brightness(.85)}
+/* envelope flip */
+.env{position:relative;margin-top:auto;height:112px;flex:none;width:100%;perspective:900px;text-align:left}
+.env-inner{position:absolute;inset:0;transition:transform .55s cubic-bezier(.3,1.35,.5,1);transform-style:preserve-3d}
+.env.open .env-inner{transform:rotateX(180deg)}
+.env-face{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center}
+.env-front{background:linear-gradient(160deg,#e9dcbc,#d6c394);box-shadow:inset 0 0 0 2px rgba(110,80,30,.25);padding:0 12px;gap:10px;overflow:hidden}
+.env-front::before{content:"";position:absolute;left:0;right:0;top:0;height:60%;background:linear-gradient(160deg,#efe3c6,#dccb9f);clip-path:polygon(0 0,100% 0,50% 100%);box-shadow:inset 0 -1px 0 rgba(0,0,0,.1)}
+.wax{position:relative;z-index:1;flex:none;width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 36% 30%,color-mix(in srgb,var(--pc) 60%,#fff),var(--pc) 55%,color-mix(in srgb,var(--pc) 45%,#000));box-shadow:0 3px 5px rgba(0,0,0,.35),inset 0 0 0 5px rgba(0,0,0,.12);display:grid;place-items:center;color:#fff;font-size:22px}
+.env-front .ef{position:relative;z-index:1;display:flex;flex-direction:column;white-space:nowrap}
+.env-front b{font:700 21px 'Spline Sans';color:var(--ink)}
+.env-front i{font:600 16px 'Spline Sans';font-style:normal;color:var(--ink-soft)}
+.env-back{transform:rotateX(180deg);background:linear-gradient(180deg,#fffaf0,#f3e7cc);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--pc) 60%,transparent);padding:8px 14px;font:600 21px/1.18 'Spline Sans';color:var(--ink)}
+.no-goal{margin-top:auto;font:500 20px 'Spline Sans';color:#9c8a6f}
 
-  .controls label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    display: block;
-  }
+/* challenge words */
+#words{position:absolute;left:830px;top:740px;width:990px;z-index:3}
+#wordsHead{font:600 24px 'Spline Sans';color:var(--stage-ink);text-shadow:0 2px 4px rgba(0,0,0,.4)}
+#wordsHead em{font-style:normal;color:var(--brass-hi)}
+:root[data-theme="light"] #wordsHead{text-shadow:none}
+:root[data-theme="light"] #wordsHead em{color:var(--velvet)}
+#tags{margin-top:52px;display:flex;flex-wrap:wrap;gap:46px 18px;align-items:flex-start}
+.tag{position:relative;height:84px;min-width:140px;padding:0 24px 0 48px;display:flex;align-items:center;justify-content:center;white-space:nowrap;
+  font:700 28px 'Spline Sans';color:#3a2608;transform-origin:50% -30px;
+  background:linear-gradient(180deg,#f4d98f,#c99b3f);clip-path:polygon(22px 0,100% 0,100% 100%,22px 100%,0 50%);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5)}
+.tag-wrap{position:relative;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45));transform-origin:30px -30px}
+.tag-wrap::before{content:"";position:absolute;left:24px;top:-34px;width:2px;height:40px;background:linear-gradient(#6b4a1c,#c79a52);transform:rotate(-8deg);transform-origin:bottom}
+.tag::after{content:"";position:absolute;left:24px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:#2a170a;box-shadow:inset 0 2px 3px #000,0 0 0 3px rgba(255,255,255,.35)}
+.tag-wrap.swing{animation:swing 2.8s ease-in-out infinite}
+@keyframes swing{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+.tag-wrap .stampU{position:absolute;right:-14px;top:-22px;transform:translate(0,0) rotate(-12deg) scale(1);font:400 22px/1.2 'Limelight',serif;color:#fff;border:3px double #fff;border-radius:8px;padding:2px 10px;background:var(--stamp);box-shadow:0 3px 6px rgba(0,0,0,.4);pointer-events:none;opacity:0}
+.tag-wrap.used .stampU{opacity:1}
+.tag-wrap.used .tag{background:linear-gradient(180deg,#cfe6c8,#8fbf86);text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:rgba(58,38,8,.55)}
+.tags-empty{font:500 24px 'Spline Sans';color:var(--stage-muted);padding-top:0;margin-top:-20px}
 
-  .student-selector, .level-selector {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-    margin-top: 0.5rem;
-  }
+/* overlays */
+#flash{position:absolute;inset:0;pointer-events:none;z-index:40;opacity:0;background:radial-gradient(ellipse at 410px 300px,rgba(255,240,190,.55),transparent 55%)}
+#fx{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;z-index:60}
+.cc-curtain{position:absolute;top:0;bottom:0;width:50%;z-index:50;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0,rgba(255,255,255,.08) 22px,rgba(0,0,0,.2) 44px,rgba(0,0,0,.55) 64px),linear-gradient(180deg,var(--velvet-hi),var(--velvet) 55%,var(--velvet-lo))}
+.cc-curtain.l{left:0;transform:translateX(-100%)} .cc-curtain.r{right:0;transform:translateX(100%)}
+#ccBanner{position:absolute;left:0;right:0;top:390px;z-index:55;text-align:center;pointer-events:none;opacity:0}
+#ccBanner h2{font:400 130px/1 'Limelight',serif;color:var(--spot);text-shadow:0 0 30px rgba(255,200,90,.7),0 6px 0 #3a0610}
+#ccBanner p{font:600 36px 'Spline Sans';color:#fff3d6;margin-top:16px;text-shadow:0 2px 6px #000}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
-  .num-btn {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-  }
-
-  .num-btn:hover { border-color: var(--accent1); color: var(--accent1); }
-  .num-btn.active { border-color: var(--accent1); background: var(--accent1); color: #000; }
-
-  .lvl-btn {
-    padding: 0.45rem 0.9rem;
-    border-radius: 999px;
-    border: 2px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .lvl-btn:hover { border-color: var(--accent3); color: var(--accent3); }
-  .lvl-btn.active { border-color: var(--accent3); background: var(--accent3); color: #000; }
-
-  .spin-btn {
-    margin-left: auto;
-    padding: 0.9rem 2.5rem;
-    background: var(--accent1);
-    color: #000;
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    font-size: 0.95rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-    align-self: flex-end;
-  }
-
-  .spin-btn:hover { transform: scale(1.04); box-shadow: 0 0 30px rgba(245,200,66,0.4); }
-  .spin-btn:active { transform: scale(0.97); }
-  .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  /* Slot machine area */
-  .slots {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .slot-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    position: relative;
-    overflow: hidden;
-    min-height: 130px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .slot-card.full-width { grid-column: 1 / -1; }
-
-  .slot-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-  }
-
-  .slot-card.location::before { background: linear-gradient(135deg, rgba(245,200,66,0.07), transparent); }
-  .slot-card.scenario::before { background: linear-gradient(135deg, rgba(232,85,62,0.07), transparent); }
-  .slot-card.roles::before { background: linear-gradient(135deg, rgba(78,201,176,0.07), transparent); }
-  .slot-card.words::before { background: linear-gradient(135deg, rgba(197,134,192,0.07), transparent); }
-
-  .slot-card.revealed::before { opacity: 1; }
-
-  .slot-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .slot-card.location .slot-label { color: var(--accent1); }
-  .slot-card.scenario .slot-label { color: var(--accent2); }
-  .slot-card.roles .slot-label { color: var(--accent3); }
-  .slot-card.words .slot-label { color: var(--accent4); }
-
-  .lvl-badge {
-    display: inline-block;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.66rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    padding: 0.18rem 0.5rem;
-    border-radius: 6px;
-    background: rgba(232,85,62,0.15);
-    color: var(--accent2);
-    margin-left: 0.6rem;
-  }
-
-  .slot-display {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(1.2rem, 3vw, 1.8rem);
-    font-weight: 700;
-    line-height: 1.3;
-    min-height: 2.6rem;
-    display: flex;
-    align-items: center;
-  }
-
-  .slot-display.spinning {
-    animation: flicker 0.08s infinite;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 1rem;
-  }
-
-  @keyframes flicker {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
-  }
-
-  .slot-card.location .slot-display { color: var(--accent1); }
-  .slot-card.scenario .slot-display { color: var(--text); }
-  .slot-card.roles .slot-display { color: var(--accent3); }
-
-  .role-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    width: 100%;
-  }
-
-  .role-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 1rem;
-  }
-
-  .role-badge {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    font-family: 'DM Mono', monospace;
-    flex-shrink: 0;
-    margin-top: 0.15rem;
-  }
-
-  .role-item:nth-child(1) .role-badge { background: rgba(78,201,176,0.2); color: var(--accent3); }
-  .role-item:nth-child(2) .role-badge { background: rgba(197,134,192,0.2); color: var(--accent4); }
-  .role-item:nth-child(3) .role-badge { background: rgba(245,200,66,0.2); color: var(--accent1); }
-
-  .role-content { display: flex; flex-direction: column; gap: 0.3rem; }
-
-  .role-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.2;
-  }
-
-  .mission-btn {
-    align-self: flex-start;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 0.05em;
-    padding: 0.28rem 0.7rem;
-    border-radius: 999px;
-    border: 1px dashed var(--border);
-    background: transparent;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .mission-btn:hover { border-color: var(--accent1); color: var(--accent1); }
-
-  .mission-text {
-    display: none;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    color: var(--accent1);
-    font-style: italic;
-    padding: 0.5rem 0.75rem;
-    background: rgba(245,200,66,0.08);
-    border-radius: 8px;
-    border-left: 2px solid var(--accent1);
-    max-width: 520px;
-  }
-  .mission-text.show { display: block; }
-
-  /* Challenge words */
-  .words-hint {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 0.9rem;
-    letter-spacing: 0.03em;
-  }
-  .word-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .word-chip {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    font-size: 1rem;
-    padding: 0.45rem 0.9rem;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-  .word-chip:hover { border-color: var(--accent4); }
-  .word-chip.used {
-    border-color: var(--accent3);
-    color: var(--accent3);
-    background: rgba(78,201,176,0.12);
-  }
-  .word-chip.used::before { content: '✓ '; }
-
-  /* Placeholder state */
-  .placeholder {
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-  }
-
-  /* Tip bar */
-  .tip-bar {
-    text-align: center;
-    padding: 1rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    line-height: 1.6;
-  }
-
-  .tip-bar span { color: var(--accent1); }
-
-  /* Pulse on reveal */
-  @keyframes reveal-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.015); }
-    100% { transform: scale(1); }
-  }
-
-  .slot-card.pop { animation: reveal-pulse 0.4s ease; }
-
-  .back-link {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    z-index: 100000;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 999px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.18);
-    transition: background 0.2s ease, transform 0.2s ease;
-  }
-  .back-link:hover {
-    background: rgba(0,0,0,0.78);
-    transform: translateX(-2px);
-  }
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <a class="back-link" href="../">← Tool Hub</a>
 
-<header>
-  <h1>Role Play Roulette</h1>
-  <p>// place · scenario · matched roles · challenge words</p>
-</header>
+<div id="stage">
+ <div id="shaker">
+  <div id="wall"></div>
+  <div id="floor"></div>
+  <div class="drape l"></div><div class="drape r"></div>
+  <div id="valance"></div><div id="valance-trim"></div>
 
-<div class="container">
-  <div class="controls">
-    <div>
-      <label>Students</label>
-      <div class="student-selector">
-        <button class="num-btn" data-n="2">2</button>
-        <button class="num-btn active" data-n="3">3</button>
-      </div>
+  <div id="marquee"><div class="bulbs" id="bulbs"></div><h1>Role Play Roulette</h1></div>
+
+  <div id="controls">
+    <div class="ctl-group" role="group" aria-label="Number of students">
+      <span class="ctl-label">Students</span>
+      <button class="chip" data-n="2" aria-pressed="false">2</button>
+      <button class="chip on" data-n="3" aria-pressed="true">3</button>
     </div>
-    <div>
-      <label>Level</label>
-      <div class="level-selector">
-        <button class="lvl-btn active" data-level="all">All</button>
-        <button class="lvl-btn" data-level="A1">A1</button>
-        <button class="lvl-btn" data-level="A2">A2</button>
-        <button class="lvl-btn" data-level="B1">B1</button>
-        <button class="lvl-btn" data-level="B2">B2</button>
-      </div>
+    <div class="ctl-group" role="group" aria-label="Level">
+      <span class="ctl-label">Level</span>
+      <button class="chip on" data-level="all" aria-pressed="true">All</button>
+      <button class="chip" data-level="A1" aria-pressed="false">A1</button>
+      <button class="chip" data-level="A2" aria-pressed="false">A2</button>
+      <button class="chip" data-level="B1" aria-pressed="false">B1</button>
+      <button class="chip" data-level="B2" aria-pressed="false">B2</button>
     </div>
-    <button class="spin-btn" id="spinBtn">⟳ &nbsp;SPIN</button>
+    <button class="icon-btn" id="muteBtn" aria-label="Sound on" title="Sound (M)"></button>
+    <button class="icon-btn" id="themeBtn" aria-label="Switch theme" title="Light or dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button>
   </div>
 
-  <div class="slots">
-    <div class="slot-card location" id="cardLocation">
-      <div class="slot-label">📍 Location</div>
-      <div class="slot-display placeholder" id="displayLocation">press spin to begin</div>
-    </div>
-    <div class="slot-card scenario" id="cardScenario">
-      <div class="slot-label">🎭 Scenario <span class="lvl-badge" id="levelBadge" style="display:none"></span></div>
-      <div class="slot-display placeholder" id="displayScenario">press spin to begin</div>
-    </div>
-    <div class="slot-card roles full-width" id="cardRoles">
-      <div class="slot-label">🎤 Roles &amp; Secret Goals</div>
-      <div class="slot-display placeholder" id="displayRoles">press spin to begin</div>
-    </div>
-    <div class="slot-card words full-width" id="cardWords" style="display:none">
-      <div class="slot-label">🔤 Challenge Words</div>
-      <div class="words-hint">Use every word in your role play — tap to tick each one off.</div>
-      <div class="word-chips" id="wordChips"></div>
-    </div>
+  <div id="cone"></div>
+  <div id="wheelWrap"><div id="wheelShadow"></div><div id="wheel"></div></div>
+  <div id="pointer"><svg viewBox="0 0 64 84"><defs><linearGradient id="pg" x1="0" x2="1"><stop offset="0" stop-color="#7A5A1C"/><stop offset=".45" stop-color="#F1D589"/><stop offset="1" stop-color="#8a6420"/></linearGradient></defs><path d="M32 82 L10 26 Q32 8 54 26 Z" fill="url(#pg)" stroke="#5a3f10" stroke-width="2"/><circle cx="32" cy="18" r="13" fill="url(#pg)" stroke="#5a3f10" stroke-width="2"/><circle cx="32" cy="18" r="5" fill="#5a3f10"/></svg></div>
+
+  <button id="spinBtn" class="breathe" aria-keyshortcuts="Space">Spin<small>Space</small></button>
+
+  <section id="playbill" aria-live="polite">
+    <span class="pin" style="left:30px"></span><span class="pin" style="right:30px"></span>
+    <div id="pbKicker">Tonight's scene</div>
+    <div id="pbPlace">Spin the wheel</div>
+    <div class="orn"></div>
+    <div id="pbPrompt">Press Space or the brass button to cast a new scene.</div>
+    <div id="seal" class="hide"><div><span id="sealLv">A1</span><small>level</small></div></div>
+  </section>
+
+  <div id="slot"><span>Box office</span></div>
+  <div id="tickets"></div>
+
+  <div id="words">
+    <div id="wordsHead">Challenge words: <em>use them all</em> and tap a tag when someone says it.</div>
+    <div id="tags"><div class="tags-empty">Five challenge words appear after the spin.</div></div>
   </div>
 
-  <div class="tip-bar">
-    Every spin gives a <span>coherent</span> scene — roles always fit the situation.<br>
-    Tap a student's <span>secret goal</span> to reveal it (only that student should look!) · tick off <span>challenge words</span> as you use them.
-  </div>
+  <div class="cc-curtain l" id="ccL"></div><div class="cc-curtain r" id="ccR"></div>
+  <div id="ccBanner"><h2>Curtain call!</h2><p>Every word used. Take a bow.</p></div>
+  <div id="flash"></div>
+ </div>
+ <canvas id="fx" width="1920" height="1080"></canvas>
 </div>
+<div class="sr" id="live" aria-live="polite"></div>
 
 <script>
-// Each scene is self-contained: roles are BOUND to the scenario, so combinations
-// always make sense. cefr sets the level; words = must-use challenge vocabulary;
-// missions = optional hidden goal per role (keyed by exact role name).
-const SCENES = [
-  // ===== RESTAURANT =====
-  { place:"Restaurant", cefr:"A1",
+/* Scene data. Roles are bound to their scenario, so every spin makes sense.
+   cefr = level, words = challenge vocabulary, missions = secret goal per role. */
+var SCENES = [
+  // Restaurant
+  {place:"Restaurant", cefr:"A1",
     roles2:["Waiter","Customer"], roles3:["Waiter","Customer","Manager"],
     prompt:"You want to order food and drinks.",
-    words:["menu","please","water","bill","thank you"],
-    missions:{ "Customer":"You're very hungry — order a lot.", "Waiter":"Recommend the most expensive dish." } },
-  { place:"Restaurant", cefr:"A2",
+    words:["menu","please","water","check","thank you"],
+    missions:{"Customer":"You're very hungry. Order a lot.","Waiter":"Recommend the most expensive dish.","Manager":"You want every customer to leave happy."}},
+  {place:"Restaurant", cefr:"A2",
     roles2:["Waiter","Customer"], roles3:["Waiter","Customer","Manager"],
     prompt:"Your order arrives completely wrong.",
     words:["order","wrong","sorry","instead","mistake"],
-    missions:{ "Customer":"You're in a hurry — you have 5 minutes.", "Waiter":"It was your mistake, but don't admit it easily." } },
-  { place:"Restaurant", cefr:"A2",
+    missions:{"Customer":"You're in a hurry. You have 5 minutes.","Waiter":"It was your mistake, but don't admit it easily.","Manager":"This is the third mistake today. You are not happy."}},
+  {place:"Restaurant", cefr:"A2",
     roles2:["Waiter","Customer"], roles3:["Chef","Waiter","Customer"],
     prompt:"There is a hair in your soup.",
     words:["complain","disgusting","replace","apologize","free"],
-    missions:{ "Customer":"You want a free meal out of this.", "Waiter":"The kitchen is very busy tonight." } },
-  { place:"Restaurant", cefr:"B1",
+    missions:{"Customer":"You want a free meal out of this.","Waiter":"The kitchen is very busy tonight.","Chef":"You are very proud of your soup."}},
+  {place:"Restaurant", cefr:"B1",
     roles2:["Manager","Unhappy Customer"], roles3:["Waiter","Manager","Unhappy Customer"],
-    prompt:"The bill is much higher than expected.",
+    prompt:"The check is much higher than expected.",
     words:["charge","extra","service","refund","misunderstanding"],
-    missions:{ "Unhappy Customer":"You actually did order the extra items.", "Manager":"Keep the customer happy without losing money." } },
-  { place:"Restaurant", cefr:"B2",
+    missions:{"Unhappy Customer":"You actually did order the extra items.","Manager":"Keep the customer happy without losing money.","Waiter":"You remember exactly what the customer ordered."}},
+  {place:"Restaurant", cefr:"B2",
     roles2:["Manager","Food Critic"], roles3:["Chef","Manager","Food Critic"],
     prompt:"A famous food critic is unimpressed and hints at a bad review.",
     words:["reputation","presentation","compensate","reconsider","standards"],
-    missions:{ "Food Critic":"You'll soften your review if they truly impress you.", "Manager":"Save the restaurant's reputation at all costs." } },
-
-  // ===== AIRPORT =====
-  { place:"Airport", cefr:"A1",
+    missions:{"Food Critic":"You'll soften your review if they truly impress you.","Manager":"Save the restaurant's reputation at all costs.","Chef":"You think your food is perfect and the critic is wrong."}},
+  // Airport
+  {place:"Airport", cefr:"A1",
     roles2:["Check-in Agent","Passenger"], roles3:["Check-in Agent","Passenger","Supervisor"],
     prompt:"You are checking in for your flight.",
     words:["passport","ticket","bag","gate","flight"],
-    missions:{ "Passenger":"You really want a window seat.", "Check-in Agent":"The flight is nearly full." } },
-  { place:"Airport", cefr:"A2",
+    missions:{"Passenger":"You really want a window seat.","Check-in Agent":"The flight is nearly full.","Supervisor":"Help the passenger, but don't break the rules."}},
+  {place:"Airport", cefr:"A2",
     roles2:["Check-in Agent","Passenger"], roles3:["Check-in Agent","Passenger","Supervisor"],
     prompt:"A passenger's bag is 5kg overweight.",
     words:["heavy","weight","fee","pay","remove"],
-    missions:{ "Passenger":"You refuse to pay the extra fee.", "Check-in Agent":"Rules are rules." } },
-  { place:"Airport", cefr:"B1",
+    missions:{"Passenger":"You refuse to pay the extra fee.","Check-in Agent":"Rules are rules.","Supervisor":"You can say yes to one small exception today."}},
+  {place:"Airport", cefr:"B1",
     roles2:["Gate Agent","Late Passenger"], roles3:["Gate Agent","Late Passenger","Supervisor"],
     prompt:"A passenger missed the boarding call because they fell asleep.",
     words:["missed","boarding","available","rebook","next"],
-    missions:{ "Late Passenger":"This is the last flight home today.", "Gate Agent":"You already closed the gate." } },
-  { place:"Airport", cefr:"B2",
+    missions:{"Late Passenger":"This is the last flight home today.","Gate Agent":"You already closed the gate.","Supervisor":"There is one seat left on a flight tomorrow morning."}},
+  {place:"Airport", cefr:"B2",
     roles2:["Check-in Agent","Passenger"], roles3:["Gate Agent","Passenger","Supervisor"],
     prompt:"Your flight has been canceled and there are no more seats today.",
     words:["canceled","compensation","alternative","overnight","refund"],
-    missions:{ "Passenger":"You have a crucial meeting tomorrow morning.", "Gate Agent":"You can only offer a hotel voucher." } },
-
-  // ===== HOSPITAL =====
-  { place:"Hospital", cefr:"A2",
+    missions:{"Passenger":"You have a crucial meeting tomorrow morning.","Gate Agent":"You can only offer a hotel voucher.","Check-in Agent":"You can offer a flight tomorrow, but not a hotel.","Supervisor":"You have one seat on another airline tonight, but it is very expensive."}},
+  // Hospital
+  {place:"Hospital", cefr:"A2",
     roles2:["Receptionist","Patient"], roles3:["Receptionist","Doctor","Patient"],
     prompt:"A patient has been waiting a long time to see a doctor.",
     words:["appointment","wait","pain","doctor","soon"],
-    missions:{ "Patient":"You feel worse and worse.", "Receptionist":"There are many emergencies today." } },
-  { place:"Hospital", cefr:"B1",
+    missions:{"Patient":"You feel worse and worse.","Receptionist":"There are many emergencies today.","Doctor":"You are tired after a long shift, but you want to help."}},
+  {place:"Hospital", cefr:"B1",
     roles2:["Doctor","Patient"], roles3:["Doctor","Nurse","Patient"],
     prompt:"A patient is terrified of needles and needs a blood test.",
     words:["afraid","relax","quick","breathe","tiny"],
-    missions:{ "Patient":"You almost faint at the sight of blood.", "Doctor":"You must get the sample somehow." } },
-  { place:"Hospital", cefr:"B1",
+    missions:{"Patient":"You almost faint at the sight of blood.","Doctor":"You must get the sample somehow.","Nurse":"You are great at making nervous patients laugh."}},
+  {place:"Hospital", cefr:"B1",
     roles2:["Doctor","Patient"], roles3:["Doctor","Patient","Nervous Family Member"],
     prompt:"A patient insists they found their own cure on the internet.",
     words:["research","evidence","recommend","risk","trust"],
-    missions:{ "Patient":"You don't really trust doctors.", "Doctor":"Be patient but honest." } },
-  { place:"Hospital", cefr:"B2",
+    missions:{"Patient":"You don't really trust doctors.","Doctor":"Be patient but honest.","Nervous Family Member":"You want the patient to listen to the doctor."}},
+  {place:"Hospital", cefr:"B2",
     roles2:["Doctor","Patient"], roles3:["Doctor","Patient","Nervous Family Member"],
     prompt:"A doctor must deliver difficult news as kindly as possible.",
     words:["condition","unfortunately","options","support","difficult"],
-    missions:{ "Doctor":"Be honest, but gentle.", "Patient":"You already suspect something is wrong." } },
-
-  // ===== SUPERMARKET =====
-  { place:"Supermarket", cefr:"A1",
+    missions:{"Doctor":"Be honest, but gentle.","Patient":"You already suspect something is wrong.","Nervous Family Member":"Ask a lot of questions. You want to understand everything."}},
+  // Supermarket
+  {place:"Supermarket", cefr:"A1",
     roles2:["Cashier","Customer"], roles3:["Cashier","Customer","Store Manager"],
     prompt:"You are paying for your shopping.",
     words:["price","bag","card","total","change"],
-    missions:{ "Customer":"You only have cash.", "Cashier":"The card machine is very slow." } },
-  { place:"Supermarket", cefr:"A2",
+    missions:{"Customer":"You only have cash.","Cashier":"The card machine is very slow.","Store Manager":"You want the line to move faster."}},
+  {place:"Supermarket", cefr:"A2",
     roles2:["Cashier","Customer"], roles3:["Cashier","Customer","Store Manager"],
     prompt:"A price tag says one price but the item scans as another.",
     words:["cheaper","tag","scan","correct","discount"],
-    missions:{ "Customer":"You want the lower price.", "Cashier":"You must call the manager to approve it." } },
-  { place:"Supermarket", cefr:"B1",
-    roles2:["Customer Service","Angry Customer"], roles3:["Customer Service Rep","Angry Customer","Store Manager"],
+    missions:{"Customer":"You want the lower price.","Cashier":"You must call the manager to approve it.","Store Manager":"You think the customer changed the tag."}},
+  {place:"Supermarket", cefr:"B1",
+    roles2:["Customer Service Rep","Angry Customer"], roles3:["Customer Service Rep","Angry Customer","Store Manager"],
     prompt:"A customer tries to return expired food they bought months ago.",
     words:["receipt","return","expired","refund","policy"],
-    missions:{ "Angry Customer":"You've lost the receipt.", "Customer Service":"No receipt, no refund." } },
-  { place:"Supermarket", cefr:"B1",
+    missions:{"Angry Customer":"You've lost the receipt.","Customer Service Rep":"No receipt, no refund.","Store Manager":"You want to keep the customer, but not lose money."}},
+  {place:"Supermarket", cefr:"B1",
     roles2:["Store Manager","Shoplifting Suspect"], roles3:["Security Guard","Shoplifting Suspect","Store Manager"],
     prompt:"A customer is accused of hiding an item in their bag.",
     words:["accuse","prove","misunderstanding","apologize","embarrassing"],
-    missions:{ "Shoplifting Suspect":"You are completely innocent.", "Store Manager":"Be careful — you might be wrong." } },
-
-  // ===== HOTEL =====
-  { place:"Hotel", cefr:"A2",
+    missions:{"Shoplifting Suspect":"You are completely innocent.","Store Manager":"Be careful. You might be wrong.","Security Guard":"You saw something, but you are not sure what."}},
+  // Hotel
+  {place:"Hotel", cefr:"A2",
     roles2:["Receptionist","Guest"], roles3:["Receptionist","Guest","Manager"],
     prompt:"A guest is checking in to their room.",
     words:["reservation","key","floor","breakfast","luggage"],
-    missions:{ "Guest":"You want a room with a nice view.", "Receptionist":"Only noisy rooms are left." } },
-  { place:"Hotel", cefr:"B1",
+    missions:{"Guest":"You want a room with a nice view.","Receptionist":"Only noisy rooms are left.","Manager":"You can give a better room for a small extra cost."}},
+  {place:"Hotel", cefr:"B1",
     roles2:["Receptionist","Guest"], roles3:["Housekeeper","Guest","Manager"],
     prompt:"The room hasn't been cleaned when the guest arrives.",
     words:["dirty","clean","wait","upgrade","sorry"],
-    missions:{ "Guest":"You're exhausted from traveling.", "Receptionist":"No clean rooms are ready yet." } },
-  { place:"Hotel", cefr:"B1",
+    missions:{"Guest":"You're exhausted from traveling.","Receptionist":"No clean rooms are ready yet.","Housekeeper":"You need 30 more minutes and you are working as fast as you can.","Manager":"You can offer a free dinner, but not a free night."}},
+  {place:"Hotel", cefr:"B1",
     roles2:["Hotel Manager","Unsatisfied Guest"], roles3:["Receptionist","Hotel Manager","Unsatisfied Guest"],
     prompt:"A guest complains about extreme noise from the room next door.",
     words:["noise","complain","move","refund","quiet"],
-    missions:{ "Unsatisfied Guest":"You demand a free night.", "Hotel Manager":"The hotel is fully booked." } },
-  { place:"Hotel", cefr:"B2",
+    missions:{"Unsatisfied Guest":"You demand a free night.","Hotel Manager":"The hotel is fully booked.","Receptionist":"The noisy guests are VIPs. Be careful what you say."}},
+  {place:"Hotel", cefr:"B2",
     roles2:["Hotel Manager","Unsatisfied Guest"], roles3:["Receptionist","Hotel Manager","Unsatisfied Guest"],
     prompt:"The hotel is overbooked and a guest must be turned away.",
     words:["overbooked","apologize","alternative","compensate","arrange"],
-    missions:{ "Unsatisfied Guest":"You booked this months ago.", "Hotel Manager":"Find any solution to avoid a scene." } },
-
-  // ===== SCHOOL / CLASSROOM =====
-  { place:"School / Classroom", cefr:"A2",
+    missions:{"Unsatisfied Guest":"You booked this months ago.","Hotel Manager":"Find any solution to avoid a scene.","Receptionist":"You know the hotel across the street has rooms."}},
+  // School
+  {place:"School", cefr:"A2",
     roles2:["Teacher","Student"], roles3:["Teacher","Student","Parent"],
     prompt:"A student hasn't done their homework again.",
     words:["homework","forgot","late","excuse","promise"],
-    missions:{ "Student":"Invent a creative excuse.", "Teacher":"You've heard every excuse before." } },
-  { place:"School / Classroom", cefr:"B1",
+    missions:{"Student":"Invent a creative excuse.","Teacher":"You've heard every excuse before.","Parent":"You helped with the homework last night. You think."}},
+  {place:"School", cefr:"B1",
     roles2:["Teacher","Parent"], roles3:["Principal","Teacher","Parent"],
     prompt:"A parent accuses a teacher of being unfair.",
     words:["fair","grade","effort","explain","improve"],
-    missions:{ "Parent":"You think your child is perfect.", "Teacher":"Stay calm and professional." } },
-  { place:"School / Classroom", cefr:"B1",
+    missions:{"Parent":"You think your child is perfect.","Teacher":"Stay calm and professional.","Principal":"Listen to both sides before you decide anything."}},
+  {place:"School", cefr:"B1",
     roles2:["Teacher","Student"], roles3:["Principal","Teacher","Student"],
     prompt:"A student is caught cheating during an exam.",
     words:["cheat","honest","consequence","sorry","mistake"],
-    missions:{ "Student":"You were desperate to pass.", "Teacher":"Decide how strict to be." } },
-  { place:"School / Classroom", cefr:"B2",
+    missions:{"Student":"You were desperate to pass.","Teacher":"Decide how strict to be.","Principal":"This is the student's second time. School rules are strict."}},
+  {place:"School", cefr:"B2",
     roles2:["Principal","Parent"], roles3:["Principal","Teacher","Parent"],
     prompt:"A parent strongly disagrees with a new school policy.",
     words:["policy","concern","reasonable","compromise","decision"],
-    missions:{ "Parent":"You want the rule changed today.", "Principal":"Defend the school's decision firmly." } },
-
-  // ===== BANK =====
-  { place:"Bank", cefr:"B1",
+    missions:{"Parent":"You want the rule changed today.","Principal":"Defend the school's decision firmly.","Teacher":"You secretly agree with the parent."}},
+  // Bank
+  {place:"Bank", cefr:"B1",
     roles2:["Bank Teller","Customer"], roles3:["Bank Teller","Customer","Manager"],
     prompt:"A customer wants to withdraw more cash than their balance allows.",
     words:["account","balance","withdraw","limit","transfer"],
-    missions:{ "Customer":"You urgently need the money.", "Bank Teller":"You cannot break the rules." } },
-  { place:"Bank", cefr:"B1",
+    missions:{"Customer":"You urgently need the money.","Bank Teller":"You cannot break the rules.","Manager":"You can approve a small exception, but only once."}},
+  {place:"Bank", cefr:"B1",
     roles2:["Bank Teller","Customer"], roles3:["Bank Teller","Customer","Security Guard"],
     prompt:"A charge the customer didn't make appears on their account.",
     words:["charge","dispute","fraud","refund","investigate"],
-    missions:{ "Customer":"You're worried and a little angry.", "Bank Teller":"Reassure them and follow procedure." } },
-  { place:"Bank", cefr:"B2",
+    missions:{"Customer":"You're worried and a little angry.","Bank Teller":"Reassure them and follow procedure.","Security Guard":"You noticed the same problem with two other customers today."}},
+  {place:"Bank", cefr:"B2",
     roles2:["Financial Advisor","Client"], roles3:["Financial Advisor","Client","Manager"],
     prompt:"A customer wants a large loan for a risky business idea.",
     words:["loan","risk","interest","guarantee","reconsider"],
-    missions:{ "Client":"You're certain your idea will succeed.", "Financial Advisor":"You have serious doubts about the plan." } },
-  { place:"Bank", cefr:"B2",
+    missions:{"Client":"You're certain your idea will succeed.","Financial Advisor":"You have serious doubts about the plan.","Manager":"You like the idea, but the numbers worry you."}},
+  {place:"Bank", cefr:"B2",
     roles2:["Bank Manager","Angry Customer"], roles3:["Bank Teller","Bank Manager","Angry Customer"],
     prompt:"A customer discovers their mortgage payment doubled without warning.",
     words:["mortgage","increase","notice","unfair","review"],
-    missions:{ "Angry Customer":"You feel completely cheated.", "Bank Manager":"The change was technically legal." } },
-
-  // ===== JOB INTERVIEW =====
-  { place:"Job Interview", cefr:"B1",
+    missions:{"Angry Customer":"You feel completely cheated.","Bank Manager":"The change was technically legal.","Bank Teller":"You warned the customer about this last year."}},
+  // Job Interview
+  {place:"Job Interview", cefr:"B1",
     roles2:["Interviewer","Applicant"], roles3:["Interviewer","Applicant","HR Manager"],
     prompt:"A candidate arrives late with a surprising excuse.",
     words:["late","apologize","traffic","impression","chance"],
-    missions:{ "Applicant":"Make your excuse sound believable.", "Interviewer":"First impressions matter a lot to you." } },
-  { place:"Job Interview", cefr:"B2",
+    missions:{"Applicant":"Make your excuse sound believable.","Interviewer":"First impressions matter a lot to you.","HR Manager":"You liked the applicant's résumé a lot."}},
+  {place:"Job Interview", cefr:"B2",
     roles2:["Interviewer","Applicant"], roles3:["Interviewer","Applicant","HR Manager"],
     prompt:"The applicant is extremely overqualified for the job.",
     words:["experience","overqualified","motivation","salary","challenge"],
-    missions:{ "Applicant":"You really need this job right now.", "Interviewer":"You worry they'll leave quickly." } },
-  { place:"Job Interview", cefr:"B2",
+    missions:{"Applicant":"You really need this job right now.","Interviewer":"You worry they'll leave quickly.","HR Manager":"You want to hire them for a better job instead."}},
+  {place:"Job Interview", cefr:"B2",
     roles2:["HR Manager","Nervous Candidate"], roles3:["Interviewer","Nervous Candidate","HR Manager"],
-    prompt:"A candidate admits they slightly lied on their CV.",
+    prompt:"A candidate admits they slightly lied on their résumé.",
     words:["honest","admit","qualification","trust","reconsider"],
-    missions:{ "Nervous Candidate":"You want a chance to explain.", "HR Manager":"Decide if honesty makes up for the lie." } },
-
-  // ===== POST OFFICE =====
-  { place:"Post Office", cefr:"A2",
+    missions:{"Nervous Candidate":"You want a chance to explain.","HR Manager":"Decide if honesty makes up for the lie.","Interviewer":"You lied on your own résumé once, years ago."}},
+  // Post Office
+  {place:"Post Office", cefr:"A2",
     roles2:["Postal Worker","Customer"], roles3:["Postal Worker","Customer","Manager"],
-    prompt:"You want to send a parcel abroad.",
-    words:["parcel","weight","stamp","address","cost"],
-    missions:{ "Customer":"You want the cheapest option.", "Postal Worker":"The cheap option is very slow." } },
-  { place:"Post Office", cefr:"B1",
+    prompt:"You want to send a package abroad.",
+    words:["package","weight","stamp","address","cost"],
+    missions:{"Customer":"You want the cheapest option.","Postal Worker":"The cheap option is very slow.","Manager":"You want to sell the more expensive service."}},
+  {place:"Post Office", cefr:"B1",
     roles2:["Postal Worker","Customer"], roles3:["Postal Worker","Manager","Frustrated Customer"],
     prompt:"An important package has been lost.",
     words:["lost","track","delivery","complaint","compensation"],
-    missions:{ "Customer":"The package was valuable to you.", "Postal Worker":"It's not technically your fault." } },
-  { place:"Post Office", cefr:"B1",
+    missions:{"Customer":"The package was valuable to you.","Postal Worker":"It's not technically your fault.","Manager":"You can offer a refund, but only with a receipt.","Frustrated Customer":"The package was a birthday present for your grandmother."}},
+  {place:"Post Office", cefr:"B1",
     roles2:["Delivery Driver","Customer"], roles3:["Delivery Driver","Customer","Neighbor"],
     prompt:"A package was left with a neighbor who won't hand it back.",
     words:["neighbor","deliver","collect","sign","misunderstanding"],
-    missions:{ "Customer":"You need the package today.", "Neighbor":"You're convinced it's actually yours." } },
-
-  // ===== GYM =====
-  { place:"Gym", cefr:"A2",
+    missions:{"Customer":"You need the package today.","Neighbor":"You're convinced it's actually yours.","Delivery Driver":"You are sure you put it at the right door."}},
+  // Gym
+  {place:"Gym", cefr:"A2",
     roles2:["Gym Receptionist","New Member"], roles3:["Gym Receptionist","New Member","Personal Trainer"],
     prompt:"A new member wants to join the gym.",
     words:["membership","price","open","equipment","tour"],
-    missions:{ "New Member":"You want a discount.", "Gym Receptionist":"Convince them to join today." } },
-  { place:"Gym", cefr:"B1",
+    missions:{"New Member":"You want a discount.","Gym Receptionist":"Convince them to join today.","Personal Trainer":"You want a new client for your expensive classes."}},
+  {place:"Gym", cefr:"B1",
     roles2:["Personal Trainer","Client"], roles3:["Personal Trainer","Client","Gym Manager"],
     prompt:"A client sees no results and blames the trainer.",
     words:["progress","effort","diet","patience","routine"],
-    missions:{ "Client":"You secretly skip half your workouts.", "Personal Trainer":"Stay encouraging but honest." } },
-  { place:"Gym", cefr:"B1",
+    missions:{"Client":"You secretly skip half your workouts.","Personal Trainer":"Stay encouraging but honest.","Gym Manager":"You want to keep both the client and the trainer happy."}},
+  {place:"Gym", cefr:"B1",
     roles2:["Gym Manager","Member"], roles3:["Gym Receptionist","Member","Gym Manager"],
     prompt:"A member wants to cancel but is locked in a contract.",
     words:["cancel","contract","refund","terms","exception"],
-    missions:{ "Member":"You can't afford it anymore.", "Gym Manager":"You must follow company policy." } },
-
-  // ===== TAXI / RIDE SHARE =====
-  { place:"Taxi / Ride Share", cefr:"A1",
+    missions:{"Member":"You can't afford it anymore.","Gym Manager":"You must follow company policy.","Gym Receptionist":"You are new and don't know the rules very well."}},
+  // Taxi
+  {place:"Taxi", cefr:"A1",
     roles2:["Driver","Passenger"], roles3:["Driver","Passenger","Another Passenger"],
     prompt:"You tell the driver where you want to go.",
     words:["address","stop","left","right","how much"],
-    missions:{ "Passenger":"You're in a big hurry.", "Driver":"You don't know the area well." } },
-  { place:"Taxi / Ride Share", cefr:"A2",
+    missions:{"Passenger":"You're in a big hurry.","Driver":"You don't know the area well.","Another Passenger":"You are going to a different place."}},
+  {place:"Taxi", cefr:"A2",
     roles2:["Driver","Difficult Passenger"], roles3:["Driver","Difficult Passenger","Another Passenger"],
     prompt:"A passenger wants the driver to play music very loudly.",
     words:["music","loud","mind","turn down","polite"],
-    missions:{ "Difficult Passenger":"You love your music.", "Driver":"You have a headache." } },
-  { place:"Taxi / Ride Share", cefr:"B1",
-    roles2:["Driver","Passenger"], roles3:["Driver","Passenger","Dispatcher on phone"],
+    missions:{"Difficult Passenger":"You love your music.","Driver":"You have a headache.","Another Passenger":"You want to sleep."}},
+  {place:"Taxi", cefr:"B1",
+    roles2:["Driver","Passenger"], roles3:["Driver","Passenger","Dispatcher"],
     prompt:"The driver takes a much longer route than expected.",
     words:["route","shortcut","meter","overcharge","complain"],
-    missions:{ "Passenger":"You think you're being cheated.", "Driver":"There was traffic on the normal road." } },
-  { place:"Taxi / Ride Share", cefr:"B2",
+    missions:{"Passenger":"You think you're being cheated.","Driver":"There was traffic on the normal road.","Dispatcher":"The computer shows the driver took the fastest road."}},
+  {place:"Taxi", cefr:"B2",
     roles2:["Driver","Passenger"], roles3:["Angry Passenger","Driver","Another Passenger"],
     prompt:"The app price surged massively and the passenger is furious.",
     words:["surge","fare","refuse","refund","reasonable"],
-    missions:{ "Passenger":"You won't pay double.", "Driver":"The price isn't your decision." } },
-
-  // ===== PHARMACY =====
-  { place:"Pharmacy", cefr:"A2",
+    missions:{"Passenger":"You won't pay double.","Driver":"The price isn't your decision.","Angry Passenger":"You won't pay double.","Another Passenger":"You are happy to pay. You just want to go home."}},
+  // Pharmacy
+  {place:"Pharmacy", cefr:"A2",
     roles2:["Pharmacist","Customer"], roles3:["Pharmacist","Customer","Worried Family Member"],
     prompt:"A customer asks for medicine for a cold.",
     words:["medicine","cold","tablets","times a day","feel better"],
-    missions:{ "Customer":"You want the strongest thing they have.", "Pharmacist":"Give safe, sensible advice." } },
-  { place:"Pharmacy", cefr:"B1",
+    missions:{"Customer":"You want the strongest thing they have.","Pharmacist":"Give safe, sensible advice.","Worried Family Member":"You think a doctor is a better idea."}},
+  {place:"Pharmacy", cefr:"B1",
     roles2:["Pharmacist","Customer"], roles3:["Pharmacist","Customer","Doctor"],
     prompt:"A medication is out of stock and the customer needs it today.",
     words:["stock","prescription","alternative","order","urgent"],
-    missions:{ "Customer":"You've run out completely.", "Pharmacist":"You can't give what you don't have." } },
-  { place:"Pharmacy", cefr:"B2",
+    missions:{"Customer":"You've run out completely.","Pharmacist":"You can't give what you don't have.","Doctor":"You can write a new prescription for a different medicine."}},
+  {place:"Pharmacy", cefr:"B2",
     roles2:["Pharmacist","Customer"], roles3:["Senior Pharmacist","Trainee Pharmacist","Customer"],
     prompt:"A customer tries to get prescription medication without a prescription.",
     words:["prescription","legal","refuse","doctor","policy"],
-    missions:{ "Customer":"You insist you truly need it.", "Pharmacist":"You cannot break the law." } },
-
-  // ===== TRAIN STATION =====
-  { place:"Train Station", cefr:"A1",
+    missions:{"Customer":"You insist you truly need it.","Pharmacist":"You cannot break the law.","Senior Pharmacist":"You cannot break the law, but you want to be kind.","Trainee Pharmacist":"You feel sorry for the customer and want to help."}},
+  // Train Station
+  {place:"Train Station", cefr:"A1",
     roles2:["Station Staff","Confused Tourist"], roles3:["Station Staff","Confused Tourist","Another Passenger"],
     prompt:"A tourist needs help buying a ticket.",
-    words:["ticket","platform","time","single","return"],
-    missions:{ "Confused Tourist":"You don't speak much English.", "Station Staff":"Be patient and very clear." } },
-  { place:"Train Station", cefr:"A2",
-    roles2:["Ticket Inspector","Passenger"], roles3:["Ticket Inspector","Passenger","Guard"],
+    words:["ticket","platform","time","one-way","round-trip"],
+    missions:{"Confused Tourist":"You don't speak much English.","Station Staff":"Be patient and very clear.","Another Passenger":"You are in a hurry and the tourist is in your way."}},
+  {place:"Train Station", cefr:"A2",
+    roles2:["Conductor","Passenger"], roles3:["Conductor","Passenger","Guard"],
     prompt:"A passenger has the wrong ticket and the train is leaving.",
     words:["ticket","wrong","fine","platform","hurry"],
-    missions:{ "Passenger":"It was an honest mistake.", "Ticket Inspector":"The rules say you must pay a fine." } },
-  { place:"Train Station", cefr:"B1",
+    missions:{"Passenger":"It was an honest mistake.","Conductor":"The rules say you must pay a fine.","Guard":"You saw the passenger run to the train. They really tried."}},
+  {place:"Train Station", cefr:"B1",
     roles2:["Station Staff","Passenger"], roles3:["Station Staff","Passenger","Guard"],
     prompt:"The last train home has been canceled.",
     words:["canceled","refund","alternative","taxi","compensation"],
-    missions:{ "Passenger":"You live far away.", "Station Staff":"There are no more trains tonight." } },
-
-  // ===== LIBRARY =====
-  { place:"Library", cefr:"A2",
+    missions:{"Passenger":"You live far away.","Station Staff":"There are no more trains tonight.","Guard":"You can call a taxi company you know."}},
+  // Library
+  {place:"Library", cefr:"A2",
     roles2:["Librarian","Visitor"], roles3:["Librarian","Assistant Librarian","Visitor"],
     prompt:"A visitor wants to borrow a book but has no library card.",
     words:["card","borrow","register","address","free"],
-    missions:{ "Visitor":"You need the book urgently.", "Librarian":"The rules require a card." } },
-  { place:"Library", cefr:"B1",
+    missions:{"Visitor":"You need the book urgently.","Librarian":"The rules require a card.","Assistant Librarian":"You can make a card in five minutes, but the computer is slow."}},
+  {place:"Library", cefr:"B1",
     roles2:["Librarian","Visitor"], roles3:["Head Librarian","Assistant","Visitor"],
     prompt:"A visitor returns a book with pages torn out.",
     words:["damage","fine","replace","careful","responsible"],
-    missions:{ "Visitor":"It wasn't you who tore it.", "Librarian":"The damage must be paid for." } },
-  { place:"Library", cefr:"B1",
+    missions:{"Visitor":"It wasn't you who tore it.","Librarian":"The damage must be paid for.","Head Librarian":"This visitor has returned damaged books before.","Assistant":"You saw who really damaged the book."}},
+  {place:"Library", cefr:"B1",
     roles2:["Librarian","Noisy Student"], roles3:["Librarian","Noisy Student","Annoyed Visitor"],
     prompt:"Someone is talking loudly on the phone and won't stop.",
     words:["quiet","phone","disturb","polite","warning"],
-    missions:{ "Noisy Student":"It's an important call.", "Librarian":"Keep the library quiet.", "Annoyed Visitor":"You're trying to study for an exam." } },
-
-  // ===== CLOTHING SHOP =====
-  { place:"Clothing Shop", cefr:"A1",
-    roles2:["Shop Assistant","Customer"], roles3:["Shop Assistant","Customer","Manager"],
+    missions:{"Noisy Student":"It's an important call.","Librarian":"Keep the library quiet.","Annoyed Visitor":"You're trying to study for an exam."}},
+  // Clothing Store
+  {place:"Clothing Store", cefr:"A1",
+    roles2:["Salesperson","Customer"], roles3:["Salesperson","Customer","Manager"],
     prompt:"A customer is looking for a specific size.",
     words:["size","try on","color","fitting room","price"],
-    missions:{ "Customer":"You're very picky.", "Shop Assistant":"Be helpful and patient." } },
-  { place:"Clothing Shop", cefr:"A2",
-    roles2:["Shop Assistant","Customer"], roles3:["Shop Assistant","Customer","Manager"],
-    prompt:"The sale price on the tag is different from the till price.",
+    missions:{"Customer":"You're very picky.","Salesperson":"Be helpful and patient.","Manager":"Sell something more expensive."}},
+  {place:"Clothing Store", cefr:"A2",
+    roles2:["Salesperson","Customer"], roles3:["Salesperson","Customer","Manager"],
+    prompt:"The sale price on the tag is different from the register price.",
     words:["sale","tag","cheaper","discount","correct"],
-    missions:{ "Customer":"You want the sale price honoured.", "Shop Assistant":"You must check with the manager." } },
-  { place:"Clothing Shop", cefr:"B1",
-    roles2:["Store Manager","Customer"], roles3:["Shop Assistant","Customer","Store Manager"],
+    missions:{"Customer":"You want the sale price honored.","Salesperson":"You must check with the manager.","Manager":"The sale ended yesterday."}},
+  {place:"Clothing Store", cefr:"B1",
+    roles2:["Store Manager","Customer"], roles3:["Salesperson","Customer","Store Manager"],
     prompt:"A customer wants a refund for a dress they clearly wore.",
     words:["refund","worn","receipt","policy","exchange"],
-    missions:{ "Customer":"You insist you never wore it.", "Store Manager":"The dress smells of perfume." } },
-
-  // ===== DENTIST =====
-  { place:"Dentist", cefr:"A2",
+    missions:{"Customer":"You insist you never wore it.","Store Manager":"The dress smells of perfume.","Salesperson":"You remember this customer from last week."}},
+  // Dentist
+  {place:"Dentist", cefr:"A2",
     roles2:["Dental Receptionist","Late Patient"], roles3:["Dental Receptionist","Late Patient","Dentist"],
     prompt:"A patient arrives late for their appointment.",
     words:["appointment","late","wait","reschedule","sorry"],
-    missions:{ "Late Patient":"You have a bad toothache.", "Dental Receptionist":"The dentist is fully booked." } },
-  { place:"Dentist", cefr:"B1",
+    missions:{"Late Patient":"You have a bad toothache.","Dental Receptionist":"The dentist is fully booked.","Dentist":"You can see the patient in one hour."}},
+  {place:"Dentist", cefr:"B1",
     roles2:["Dentist","Very Nervous Patient"], roles3:["Dentist","Dental Nurse","Very Nervous Patient"],
     prompt:"A patient is terrified and refuses to open their mouth.",
     words:["relax","gentle","afraid","quick","trust"],
-    missions:{ "Very Nervous Patient":"You had a bad experience before.", "Dentist":"You must examine the tooth." } },
-  { place:"Dentist", cefr:"B2",
+    missions:{"Very Nervous Patient":"You had a bad experience before.","Dentist":"You must examine the tooth.","Dental Nurse":"You know how to make patients feel calm."}},
+  {place:"Dentist", cefr:"B2",
     roles2:["Dentist","Patient"], roles3:["Dentist","Patient","Insurance Representative"],
     prompt:"A patient doesn't believe an expensive procedure is necessary.",
     words:["procedure","necessary","cost","opinion","recommend"],
-    missions:{ "Patient":"You think they just want your money.", "Dentist":"You genuinely believe it's needed." } },
-
-  // ===== COFFEE SHOP =====
-  { place:"Coffee Shop", cefr:"A1",
+    missions:{"Patient":"You think they just want your money.","Dentist":"You genuinely believe it's needed.","Insurance Representative":"The insurance only pays for half."}},
+  // Coffee Shop
+  {place:"Coffee Shop", cefr:"A1",
     roles2:["Barista","Customer"], roles3:["Barista","Customer","Manager"],
     prompt:"You order a coffee and a snack.",
-    words:["coffee","milk","sugar","small","takeaway"],
-    missions:{ "Customer":"You want it made exactly right.", "Barista":"You're new and a bit slow." } },
-  { place:"Coffee Shop", cefr:"A2",
+    words:["coffee","milk","sugar","small","to go"],
+    missions:{"Customer":"You want it made exactly right.","Barista":"You're new and a bit slow.","Manager":"You are watching the new barista closely."}},
+  {place:"Coffee Shop", cefr:"A2",
     roles2:["Barista","Customer"], roles3:["Barista","Customer","Manager"],
     prompt:"The café has run out of oat milk and the customer reacts dramatically.",
     words:["sorry","instead","alternative","normal","calm"],
-    missions:{ "Customer":"Oat milk is essential to you.", "Barista":"Stay calm and friendly." } },
-  { place:"Coffee Shop", cefr:"B1",
+    missions:{"Customer":"Oat milk is essential to you.","Barista":"Stay calm and friendly.","Manager":"You have almond milk in the back."}},
+  {place:"Coffee Shop", cefr:"B1",
     roles2:["Café Manager","Customer"], roles3:["Barista","Customer","Café Manager"],
     prompt:"A customer has sat for hours with just one cup of water.",
     words:["seat","order","busy","polite","understand"],
-    missions:{ "Customer":"You're working and don't want to move.", "Café Manager":"You need the table for paying customers." } },
-
-  // ===== ESTATE AGENT / REAL ESTATE =====
-  { place:"Estate Agent / Real Estate", cefr:"B1",
-    roles2:["Estate Agent","Buyer"], roles3:["Estate Agent","Buyer","Seller"],
-    prompt:"The flat is much smaller in person than in the photos.",
+    missions:{"Customer":"You're working and don't want to move.","Café Manager":"You need the table for paying customers.","Barista":"You feel sorry for the customer. They look stressed."}},
+  // Real Estate Office
+  {place:"Real Estate Office", cefr:"B1",
+    roles2:["Real Estate Agent","Buyer"], roles3:["Real Estate Agent","Buyer","Seller"],
+    prompt:"The apartment is much smaller in person than in the photos.",
     words:["space","photos","honest","expectation","viewing"],
-    missions:{ "Buyer":"You feel misled.", "Estate Agent":"Sell the good points of the flat." } },
-  { place:"Estate Agent / Real Estate", cefr:"B2",
-    roles2:["Landlord","Tenant"], roles3:["Landlord","Tenant","Estate Agent"],
+    missions:{"Buyer":"You feel misled.","Real Estate Agent":"Sell the good points of the apartment.","Seller":"You need to sell the apartment this month."}},
+  {place:"Real Estate Office", cefr:"B2",
+    roles2:["Landlord","Tenant"], roles3:["Landlord","Tenant","Real Estate Agent"],
     prompt:"A tenant discovers the landlord never fixed the heating as promised.",
     words:["repair","promise","responsibility","urgent","withhold rent"],
-    missions:{ "Tenant":"It's freezing and you're furious.", "Landlord":"You're short of money for repairs." } },
-  { place:"Estate Agent / Real Estate", cefr:"B2",
-    roles2:["Buyer","Buyer's Partner"], roles3:["Estate Agent","Buyer","Buyer's Partner"],
+    missions:{"Tenant":"It's freezing and you're furious.","Landlord":"You're short of money for repairs.","Real Estate Agent":"You want to keep both people happy."}},
+  {place:"Real Estate Office", cefr:"B2",
+    roles2:["Buyer","Buyer's Partner"], roles3:["Real Estate Agent","Buyer","Buyer's Partner"],
     prompt:"A buyer loves the house but their partner hates it.",
     words:["compromise","budget","location","decision","persuade"],
-    missions:{ "Buyer":"You've already fallen in love with it.", "Buyer's Partner":"You see all the hidden problems." } },
-
-  // ===== MECHANIC / GARAGE =====
-  { place:"Mechanic / Garage", cefr:"A2",
+    missions:{"Buyer":"You've already fallen in love with it.","Buyer's Partner":"You see all the hidden problems.","Real Estate Agent":"You really want to close this sale today."}},
+  // Auto Repair Shop
+  {place:"Auto Repair Shop", cefr:"A2",
     roles2:["Mechanic","Car Owner"], roles3:["Receptionist","Car Owner","Mechanic"],
     prompt:"A customer describes a strange noise in their car.",
     words:["noise","engine","check","fix","cost"],
-    missions:{ "Car Owner":"You know nothing about cars.", "Mechanic":"Explain it simply." } },
-  { place:"Mechanic / Garage", cefr:"B1",
+    missions:{"Car Owner":"You know nothing about cars.","Mechanic":"Explain it simply.","Receptionist":"The mechanic is very busy today."}},
+  {place:"Auto Repair Shop", cefr:"B1",
     roles2:["Service Manager","Unhappy Customer"], roles3:["Service Manager","Mechanic","Unhappy Customer"],
     prompt:"The repair costs three times the original estimate.",
     words:["estimate","expensive","extra","explain","agree"],
-    missions:{ "Unhappy Customer":"You only agreed to the first price.", "Service Manager":"The extra work was really necessary." } },
-  { place:"Mechanic / Garage", cefr:"B2",
+    missions:{"Unhappy Customer":"You only agreed to the first price.","Service Manager":"The extra work was really necessary.","Mechanic":"You found a much bigger problem than expected."}},
+  {place:"Auto Repair Shop", cefr:"B2",
     roles2:["Mechanic","Car Owner"], roles3:["Mechanic","Apprentice","Car Owner"],
     prompt:"A mechanic discovers the car is actually not safe to drive.",
     words:["dangerous","safety","recommend","refuse","serious"],
-    missions:{ "Car Owner":"You can't afford a big repair.", "Mechanic":"You can't let them drive it away." } },
-
-  // ===== POLICE STATION =====
-  { place:"Police Station", cefr:"B1",
+    missions:{"Car Owner":"You can't afford a big repair.","Mechanic":"You can't let them drive it away.","Apprentice":"This is your first week. You noticed the problem first."}},
+  // Police Station
+  {place:"Police Station", cefr:"B1",
     roles2:["Police Officer","Witness"], roles3:["Police Officer","Witness","Second Witness"],
     prompt:"A witness reports something they saw but can't remember the details.",
     words:["report","remember","describe","happened","statement"],
-    missions:{ "Witness":"You're not totally sure what you saw.", "Police Officer":"Get clear, useful details." } },
-  { place:"Police Station", cefr:"B1",
+    missions:{"Witness":"You're not totally sure what you saw.","Police Officer":"Get clear, useful details.","Second Witness":"You remember different details."}},
+  {place:"Police Station", cefr:"B1",
     roles2:["Police Officer","Person filing a complaint"], roles3:["Desk Sergeant","Police Officer","Person filing a complaint"],
     prompt:"Someone wants to report a noisy neighbor dispute.",
     words:["complaint","neighbor","noise","evidence","calm"],
-    missions:{ "Person filing a complaint":"You're very frustrated.", "Police Officer":"To you it's a minor issue." } },
-  { place:"Police Station", cefr:"B2",
+    missions:{"Person filing a complaint":"You're very frustrated.","Police Officer":"To you it's a minor issue.","Desk Sergeant":"You think the two neighbors need to talk."}},
+  {place:"Police Station", cefr:"B2",
     roles2:["Witness A","Witness B"], roles3:["Detective","Witness A","Witness B"],
     prompt:"Two witnesses give completely different stories about the same event.",
     words:["accuse","truth","evidence","conflict","alibi"],
-    missions:{ "Witness A":"You're protecting a friend.", "Witness B":"You're telling the whole truth." } },
-
-  // ===== AT A PARTY =====
-  { place:"At a Party", cefr:"A2",
+    missions:{"Witness A":"You're protecting a friend.","Witness B":"You're telling the whole truth.","Detective":"You think both witnesses are hiding something."}},
+  // Party
+  {place:"Party", cefr:"A2",
     roles2:["Host","Uninvited Guest"], roles3:["Host","Uninvited Guest","Another Guest"],
     prompt:"An uninvited guest shows up at the door.",
     words:["invite","sorry","leave","mistake","polite"],
-    missions:{ "Uninvited Guest":"You're sure you were invited.", "Host":"You don't want a scene." } },
-  { place:"At a Party", cefr:"A2",
+    missions:{"Uninvited Guest":"You're sure you were invited.","Host":"You don't want a scene.","Another Guest":"You know the uninvited guest. They're your friend."}},
+  {place:"Party", cefr:"A2",
     roles2:["Guest A","Guest B"], roles3:["Guest A","Guest B","Host"],
     prompt:"Two guests who don't know each other start talking.",
     words:["hello","name","know","how","nice"],
-    missions:{ "Guest A":"You're quite shy.", "Guest B":"You're very talkative." } },
-  { place:"At a Party", cefr:"B1",
+    missions:{"Guest A":"You're quite shy.","Guest B":"You're very talkative.","Host":"You want them to become friends."}},
+  {place:"Party", cefr:"B1",
     roles2:["Host","Neighbor"], roles3:["Host","Guest","Neighbor"],
     prompt:"The neighbor arrives to complain about the noise.",
     words:["noise","late","sorry","turn down","reasonable"],
-    missions:{ "Neighbor":"You have work early tomorrow.", "Host":"It's a special celebration." } },
-
-  // ===== VET CLINIC =====
-  { place:"Vet Clinic", cefr:"A2",
+    missions:{"Neighbor":"You have work early tomorrow.","Host":"It's a special celebration.","Guest":"You want the party to continue."}},
+  // Vet Clinic
+  {place:"Vet Clinic", cefr:"A2",
     roles2:["Receptionist","Anxious Owner"], roles3:["Receptionist","Anxious Owner","Vet"],
     prompt:"An owner brings in a sick pet and is worried.",
     words:["pet","sick","appointment","wait","okay"],
-    missions:{ "Anxious Owner":"You fear the worst.", "Receptionist":"Reassure them calmly." } },
-  { place:"Vet Clinic", cefr:"B1",
-    roles2:["Vet","Pet Owner"], roles3:["Vet","Vet Nurse","Pet Owner"],
+    missions:{"Anxious Owner":"You fear the worst.","Receptionist":"Reassure them calmly.","Vet":"The pet only has a small problem."}},
+  {place:"Vet Clinic", cefr:"B1",
+    roles2:["Vet","Pet Owner"], roles3:["Vet","Vet Tech","Pet Owner"],
     prompt:"A pet owner refuses to believe their dog needs surgery.",
     words:["surgery","necessary","recover","cost","decision"],
-    missions:{ "Pet Owner":"You're scared of the operation.", "Vet":"The dog really needs it." } },
-  { place:"Vet Clinic", cefr:"B2",
+    missions:{"Pet Owner":"You're scared of the operation.","Vet":"The dog really needs it.","Vet Tech":"You want to show the owner it's safe."}},
+  {place:"Vet Clinic", cefr:"B2",
     roles2:["Vet","Owner"], roles3:["Vet","Owner","Worried Child"],
     prompt:"The vet bill is enormous and the owner can't pay.",
     words:["bill","afford","payment plan","treatment","options"],
-    missions:{ "Owner":"You love your pet but have no money.", "Vet":"You want to help, but it's a business." } },
-
-  // ===== MUSEUM =====
-  { place:"Museum", cefr:"A2",
+    missions:{"Owner":"You love your pet but have no money.","Vet":"You want to help, but it's a business.","Worried Child":"You want your pet to come home today."}},
+  // Museum
+  {place:"Museum", cefr:"A2",
     roles2:["Museum Guide","Visitor"], roles3:["Museum Guide","Visitor","Another Visitor"],
     prompt:"A visitor asks about the exhibits.",
     words:["old","painting","history","interesting","photo"],
-    missions:{ "Visitor":"You ask lots of questions.", "Museum Guide":"Show off your knowledge." } },
-  { place:"Museum", cefr:"B1",
+    missions:{"Visitor":"You ask lots of questions.","Museum Guide":"Show off your knowledge.","Another Visitor":"You think the guide is wrong about something."}},
+  {place:"Museum", cefr:"B1",
     roles2:["Security Guard","Visitor"], roles3:["Security Guard","Curator","Visitor"],
-    prompt:"A visitor touches a priceless artefact and the alarm goes off.",
+    prompt:"A visitor touches a priceless artifact and the alarm goes off.",
     words:["touch","careful","valuable","sorry","rules"],
-    missions:{ "Visitor":"It was a complete accident.", "Security Guard":"You take your job seriously." } },
-  { place:"Museum", cefr:"B2",
+    missions:{"Visitor":"It was a complete accident.","Security Guard":"You take your job seriously.","Curator":"The artifact is not damaged, but you are angry."}},
+  {place:"Museum", cefr:"B2",
     roles2:["Ticket Seller","Visitor"], roles3:["Museum Guide","Visitor","Curator"],
     prompt:"A visitor wants a refund because the main exhibit is closed.",
     words:["refund","closed","disappointed","alternative","reasonable"],
-    missions:{ "Visitor":"You came especially for that exhibit.", "Ticket Seller":"Refunds aren't normally allowed." } },
-
-  // ===== HAIRDRESSER / BARBER =====
-  { place:"Hairdresser / Barber", cefr:"A2",
+    missions:{"Visitor":"You came especially for that exhibit.","Ticket Seller":"Refunds aren't normally allowed.","Museum Guide":"You can offer a free private tour.","Curator":"You can give free tickets for next month."}},
+  // Hair Salon
+  {place:"Hair Salon", cefr:"A2",
     roles2:["Hairdresser","Client"], roles3:["Hairdresser","Client","Manager"],
     prompt:"A client explains the haircut they want.",
     words:["short","long","style","color","like"],
-    missions:{ "Client":"You're not sure what you want.", "Hairdresser":"Suggest something bold." } },
-  { place:"Hairdresser / Barber", cefr:"B1",
+    missions:{"Client":"You're not sure what you want.","Hairdresser":"Suggest something bold.","Manager":"Make sure the client is happy before they leave."}},
+  {place:"Hair Salon", cefr:"B1",
     roles2:["Hairdresser","Client"], roles3:["Hairdresser","Client","Next Client"],
     prompt:"The client's hair turns out a completely different color than agreed.",
     words:["color","wrong","fix","upset","apologize"],
-    missions:{ "Client":"You have an event tonight.", "Hairdresser":"You did exactly what they asked." } },
-  { place:"Hairdresser / Barber", cefr:"B2",
+    missions:{"Client":"You have an event tonight.","Hairdresser":"You did exactly what they asked.","Next Client":"Your appointment should have started already."}},
+  {place:"Hair Salon", cefr:"B2",
     roles2:["Salon Manager","Unsatisfied Client"], roles3:["Hairdresser","Unsatisfied Client","Salon Manager"],
     prompt:"A client refuses to pay because they hate the result.",
     words:["refuse","pay","result","compromise","reasonable"],
-    missions:{ "Unsatisfied Client":"You're embarrassed to go out like this.", "Salon Manager":"You can't let people leave without paying." } },
+    missions:{"Unsatisfied Client":"You're embarrassed to go out like this.","Salon Manager":"You can't let people leave without paying.","Hairdresser":"You think the haircut looks great."}},
+];
+</script>
+<script>
+(function(){
+'use strict';
+function $(id){ return document.getElementById(id); }
+function store(k, v){
+  try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+  catch(e){ return null; }
+}
+if (typeof window.toggleTheme !== 'function') {
+  window.toggleTheme = function(){
+    var h = document.documentElement, n = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    h.setAttribute('data-theme', n); store('arschul:theme', n);
+  };
+}
+var reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+var FAST = window.__RPR_FAST ? 0.03 : 1;          // test hook: compress timings
+function T(ms){ return Math.round(ms * FAST); }
+function later(fn, ms){ return setTimeout(fn, T(ms)); }
+function anim(el, kf, opt){
+  if (reduced || !el || !el.animate || FAST < 1) return null;
+  try { return el.animate(kf, opt); } catch(e){ return null; }
+}
+
+/* ---------- places on the wheel ---------- */
+var SHORT = {"Real Estate Office":"Real Estate","Auto Repair Shop":"Auto Repair","Clothing Store":"Clothes Store","Police Station":"Police","Train Station":"Train Station","Job Interview":"Job Interview"};
+var PLACES = [];
+SCENES.forEach(function(s){ if (PLACES.indexOf(s.place) < 0) PLACES.push(s.place); });
+var N = PLACES.length, SEG = 360 / N;
+var STUDENT = [
+  {c:'var(--p1)', hex:'#2BB3A3', sym:'★'},
+  {c:'var(--p2)', hex:'#9B5DE5', sym:'◆'},
+  {c:'var(--p3)', hex:'#F29E1F', sym:'●'}
 ];
 
-let numStudents = 3;
-let level = 'all';
-let isSpinning = false;
+/* ---------- state ---------- */
+var S = { n: 3, level: 'all', busy: false, angle: 0, scene: null, last: null, used: [] };
 
-// Student count buttons
-document.querySelectorAll('.num-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    numStudents = parseInt(btn.dataset.n);
-  });
-});
+/* ---------- stage scale ---------- */
+var scale = 1;
+function fit(){
+  var w = innerWidth, h = innerHeight; scale = Math.min(w / 1920, h / 1080);
+  $('stage').style.transform = 'translate(' + ((w - 1920 * scale) / 2) + 'px,' + ((h - 1080 * scale) / 2) + 'px) scale(' + scale + ')';
+}
+addEventListener('resize', fit); fit();
+function local(el){ var r = el.getBoundingClientRect(), s = $('stage').getBoundingClientRect();
+  return { x:(r.left - s.left) / scale, y:(r.top - s.top) / scale, w:r.width / scale, h:r.height / scale }; }
 
-// Level buttons
-document.querySelectorAll('.lvl-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.lvl-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    level = btn.dataset.level;
-  });
-});
+/* ---------- decor ---------- */
+(function(){
+  var b = $('bulbs'), W = 528, H = 94, k = 0, i;
+  function bulb(x, y){ var d = document.createElement('span'); d.className = 'bulb' + (k++ % 3 === 0 ? ' dim' : ''); d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.animationDelay = (k * 0.37 % 2.4) + 's'; b.appendChild(d); }
+  for (i = 0; i <= 16; i++){ bulb(10 + i * (W - 20) / 16, 0); bulb(10 + i * (W - 20) / 16, H); }
+  for (i = 1; i < 3; i++){ bulb(0, i * H / 3); bulb(W, i * H / 3); }
+  var t = $('valance-trim');
+  for (i = 0; i < 21; i++){ var q = document.createElement('span'); q.className = 'tassel'; q.style.left = (41 + i * 92) + 'px'; t.appendChild(q); }
+})();
 
-document.getElementById('spinBtn').addEventListener('click', spin);
-
-function rand(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+/* ---------- wheel ---------- */
+function polar(r, a){ var t = (a - 90) * Math.PI / 180; return [r * Math.cos(t), r * Math.sin(t)]; }
+function buildWheel(){
+  var R = 262, out = [];
+  out.push('<svg viewBox="-305 -305 610 610" aria-hidden="true"><defs>',
+    '<radialGradient id="rim" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#F7E1A0"/><stop offset=".45" stop-color="#C9A04A"/><stop offset="1" stop-color="#5e4212"/></radialGradient>',
+    '<radialGradient id="hub" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#FFF1C2"/><stop offset=".4" stop-color="#C9A04A"/><stop offset="1" stop-color="#5e4212"/></radialGradient>',
+    '<radialGradient id="sheen" cx="35%" cy="25%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></radialGradient>',
+    '<linearGradient id="segR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A3192C"/><stop offset="1" stop-color="#5E0B18"/></linearGradient>',
+    '<linearGradient id="segK" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E2224"/><stop offset="1" stop-color="#120A0B"/></linearGradient>',
+    '</defs>');
+  out.push('<circle r="300" fill="url(#rim)"/><circle r="284" fill="#2a1a0a"/><circle r="276" fill="url(#rim)"/><circle r="' + (R + 4) + '" fill="#1b0e06"/>');
+  for (var i = 0; i < N; i++){
+    var a0 = i * SEG, a1 = a0 + SEG, p0 = polar(R, a0), p1 = polar(R, a1), am = a0 + SEG / 2;
+    out.push('<path class="seg" data-i="' + i + '" d="M0 0 L' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2) + ' A' + R + ' ' + R + ' 0 0 1 ' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2) + ' Z" fill="url(#seg' + (i % 2 ? 'K' : 'R') + ')"/>');
+    var flip = am > 180;
+    out.push('<g transform="rotate(' + (flip ? am + 90 : am - 90).toFixed(2) + ')"><text class="lbl" data-i="' + i + '" x="' + (flip ? -246 : 246) + '" y="0" text-anchor="' + (flip ? 'start' : 'end') + '" dominant-baseline="central" font-family="Limelight, serif" font-size="19" fill="#F2E6C9">' + (SHORT[PLACES[i]] || PLACES[i]) + '</text></g>');
+  }
+  for (i = 0; i < N; i++){
+    var q = polar(R, i * SEG), st = polar(270, i * SEG);
+    out.push('<line x1="0" y1="0" x2="' + q[0].toFixed(2) + '" y2="' + q[1].toFixed(2) + '" stroke="#C9A04A" stroke-width="2.4" opacity=".9"/>');
+    out.push('<circle cx="' + st[0].toFixed(2) + '" cy="' + st[1].toFixed(2) + '" r="5" fill="url(#hub)" stroke="#5e4212" stroke-width="1"/>');
+  }
+  out.push('<path id="winHi" d="" fill="#FFE9A8" opacity="0" style="mix-blend-mode:screen"/>');
+  out.push('<circle r="' + R + '" fill="url(#sheen)" pointer-events="none"/>');
+  out.push('<circle r="86" fill="#1b0e06"/><circle r="80" fill="url(#hub)"/><circle r="56" fill="none" stroke="#5e4212" stroke-width="2" opacity=".6"/>');
+  for (i = 0; i < 8; i++){ var e = polar(70, i * 45 + 22.5); out.push('<circle cx="' + e[0].toFixed(2) + '" cy="' + e[1].toFixed(2) + '" r="5" fill="#5e4212" opacity=".55"/>'); }
+  out.push('<path d="M0 -40 L9 -12 L38 -12 L15 5 L23 33 L0 16 L-23 33 L-15 5 L-38 -12 L-9 -12 Z" fill="#8a1424" stroke="#F1D589" stroke-width="2"/>');
+  out.push('</svg>');
+  $('wheel').innerHTML = out.join('');
+}
+buildWheel();
+function setAngle(a){ S.angle = a; $('wheel').style.transform = 'rotate(' + a + 'deg)'; }
+function dimWheel(){
+  var avail = {};
+  SCENES.forEach(function(s){ if (S.level === 'all' || s.cefr === S.level) avail[s.place] = 1; });
+  var segs = document.querySelectorAll('.seg'), lbls = document.querySelectorAll('.lbl');
+  for (var i = 0; i < N; i++){
+    var on = !!avail[PLACES[i]];
+    segs[i].setAttribute('opacity', on ? '1' : '.28');
+    lbls[i].setAttribute('opacity', on ? '1' : '.3');
+  }
+}
+function highlight(i){
+  var hi = document.getElementById('winHi');
+  if (i == null){ hi.setAttribute('opacity', '0'); return; }
+  var R = 262, p0 = polar(R, i * SEG), p1 = polar(R, i * SEG + SEG);
+  hi.setAttribute('d', 'M0 0 L' + p0[0] + ' ' + p0[1] + ' A' + R + ' ' + R + ' 0 0 1 ' + p1[0] + ' ' + p1[1] + ' Z');
+  hi.setAttribute('opacity', '.38');
 }
 
-function pool() {
-  return SCENES.filter(s => level === 'all' || s.cefr === level);
+/* ---------- sound (Web Audio, effects only) ---------- */
+var AC = null, muted = store('rpr-muted') === '1';
+function ac(){ if (!AC){ try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ AC = null; } } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+addEventListener('pointerdown', ac, {once:true}); addEventListener('keydown', ac, {once:true});
+function tone(f, d, type, vol, slideTo, delay){
+  var c = AC; if (!c || muted) return; var t = c.currentTime + (delay || 0);
+  var o = c.createOscillator(), g = c.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + 0.02);
+}
+function noise(d, vol, filt, freq, delay, q){
+  var c = AC; if (!c || muted) return; var t = c.currentTime + (delay || 0);
+  var n = Math.floor(c.sampleRate * d), buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
+  for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  var s = c.createBufferSource(); s.buffer = buf; var f = c.createBiquadFilter(); f.type = filt || 'lowpass'; f.frequency.value = freq || 1200; if (q) f.Q.value = q;
+  var g = c.createGain(); g.gain.setValueAtTime(vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  s.connect(f); f.connect(g); g.connect(c.destination); s.start(t);
+}
+var SFX = {
+  tick: function(){ noise(0.03, 0.22, 'bandpass', 3200, 0, 6); tone(1900, 0.03, 'square', 0.03); },
+  land: function(){ noise(0.25, 0.3, 'lowpass', 500); tone(160, 0.18, 'sine', 0.25, 90); },
+  ding: function(){ [784, 1175, 1568].forEach(function(f, i){ tone(f, 0.6, 'sine', 0.09, null, i * 0.07); }); },
+  drop: function(){ noise(0.18, 0.18, 'lowpass', 900); tone(220, 0.12, 'triangle', 0.12, 140); },
+  whoosh: function(i){ noise(0.32, 0.16, 'bandpass', 900 + (i || 0) * 300, 0, 1.2); tone(420 + (i || 0) * 120, 0.16, 'sine', 0.06, 760 + (i || 0) * 120, 0.18); },
+  flip: function(){ noise(0.08, 0.18, 'highpass', 2500); tone(520, 0.1, 'triangle', 0.08, 880); },
+  close: function(){ noise(0.06, 0.14, 'highpass', 2000); tone(700, 0.08, 'triangle', 0.06, 420); },
+  stamp: function(){ noise(0.12, 0.45, 'lowpass', 700); tone(110, 0.14, 'sine', 0.3, 60); },
+  unstamp: function(){ tone(500, 0.08, 'sine', 0.06, 320); },
+  call: function(){ [523, 659, 784, 1047].forEach(function(f, i){ tone(f, 0.35, 'triangle', 0.12, null, i * 0.12); tone(f / 2, 0.35, 'square', 0.03, null, i * 0.12); }); tone(1047, 0.9, 'triangle', 0.12, null, 0.5); noise(1.2, 0.08, 'highpass', 4000, 0.3); }
+};
+function sfx(n, a){ try { ac(); SFX[n](a); } catch(e){} }
+function drawMute(){
+  $('muteBtn').innerHTML = muted
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+  $('muteBtn').setAttribute('aria-label', muted ? 'Sound off' : 'Sound on');
+}
+function toggleMute(){ muted = !muted; store('rpr-muted', muted ? '1' : '0'); drawMute(); }
+drawMute();
+
+/* ---------- juice: shake, flash, particles ---------- */
+function shake(px, ms){ if (reduced || FAST < 1) return; var el = $('shaker'), t0 = performance.now();
+  (function step(t){ var k = 1 - (t - t0) / ms; if (k <= 0){ el.style.transform = ''; return; } var a = px * k * k;
+    el.style.transform = 'translate(' + ((Math.random() * 2 - 1) * a) + 'px,' + ((Math.random() * 2 - 1) * a) + 'px) rotate(' + ((Math.random() * 2 - 1) * a * .03) + 'deg)';
+    requestAnimationFrame(step); })(t0); }
+var fx = $('fx'), ctx = null; try { ctx = fx.getContext && fx.getContext('2d'); } catch(e){ ctx = null; }
+var parts = [], running = false;
+function emit(n, x, y, o){
+  if (reduced || !ctx) return; o = o || {};
+  for (var i = 0; i < n; i++){
+    var ang = (o.angle != null ? o.angle : -Math.PI / 2) + (Math.random() - 0.5) * (o.spread != null ? o.spread : Math.PI * 2);
+    var sp = (o.speed || 4) * (0.4 + Math.random() * 0.8);
+    parts.push({ k:o.kind || 'dot', x:x, y:y, vx:Math.cos(ang) * sp, vy:Math.sin(ang) * sp, g:o.g != null ? o.g : 0.15, life:1,
+      decay:(o.decay || 0.02) * (0.7 + Math.random() * 0.6), r:(o.size || 3) * (0.6 + Math.random() * 0.8),
+      c:(o.colors || ['#FFE9A8'])[Math.floor(Math.random() * (o.colors || [1]).length)], rot:Math.random() * 6, vr:(Math.random() - 0.5) * 0.4,
+      w:o.w || 10, h:o.h || 6 });
+  }
+  if (!running){ running = true; requestAnimationFrame(loop); }
+}
+function loop(){
+  ctx.clearRect(0, 0, 1920, 1080);
+  for (var i = parts.length - 1; i >= 0; i--){
+    var p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= 0.985; p.life -= p.decay; p.rot += p.vr;
+    if (p.life <= 0 || p.y > 1140){ parts.splice(i, 1); continue; }
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+    if (p.k === 'confetti'){ ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2 * Math.cos(p.rot * 2), p.w, p.h); ctx.restore(); }
+    else if (p.k === 'puff'){ ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.1, p.r * (2.2 - p.life)), 0, 7); ctx.fill(); }
+    else { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.1, p.r), 0, 7); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+  if (parts.length) requestAnimationFrame(loop); else { running = false; ctx.clearRect(0, 0, 1920, 1080); }
 }
 
-function spinText(el, finalText, duration, onDone) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  const scramble = () => {
-    let result = '';
-    for (let i = 0; i < Math.max(finalText.length, 8); i++) {
-      result += rand(chars.split(''));
+/* ---------- picking ---------- */
+function pool(){ return SCENES.filter(function(s){ return S.level === 'all' || s.cefr === S.level; }); }
+function pick(){
+  var p = pool(); if (!p.length) return null;
+  var c = p.filter(function(s){ return s !== S.last; }); if (!c.length) c = p;
+  return c[Math.floor(Math.random() * c.length)];
+}
+
+/* ---------- empty views ---------- */
+function renderTickets(roles, scene){
+  var box = $('tickets'); box.innerHTML = '';
+  for (var i = 0; i < S.n; i++){
+    var st = STUDENT[i], role = roles ? roles[i] : null, mission = scene && scene.missions[role];
+    var t = document.createElement('div'); t.className = 'ticket' + (role ? '' : ' empty'); t.style.setProperty('--pc', st.hex);
+    t.innerHTML = '<div class="tk-body"><div class="tk-stub" style="--stub-ink:' + (i === 2 ? '#3a2006' : '#fff') + '"><span class="tk-sym" aria-hidden="true">' + st.sym + '</span><span class="tk-s">S' + (i + 1) + '</span></div>' +
+      '<div class="tk-main"><div class="tk-kicker">Student ' + (i + 1) + ' plays</div><div class="tk-role"></div></div></div>';
+    t.querySelector('.tk-role').textContent = role || 'Waiting for a role';
+    var main = t.querySelector('.tk-main');
+    if (role && mission){
+      var b = document.createElement('button'); b.className = 'env'; b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-keyshortcuts', String(i + 1)); b.dataset.i = i;
+      b.innerHTML = '<span class="env-inner"><span class="env-face env-front"><span class="wax" aria-hidden="true">' + st.sym + '</span><span class="ef"><b>Secret goal</b><i>Tap or press ' + (i + 1) + '</i></span></span><span class="env-face env-back"></span></span>';
+      b.querySelector('.env-back').textContent = mission;
+      b.addEventListener('click', function(){ toggleGoal(+this.dataset.i); });
+      main.appendChild(b);
+    } else if (role){
+      var ng = document.createElement('div'); ng.className = 'no-goal'; ng.textContent = 'No secret goal. Just play the role.'; main.appendChild(ng);
     }
-    return result;
-  };
-
-  el.classList.add('spinning');
-  el.classList.remove('placeholder');
-
-  const interval = setInterval(() => {
-    el.textContent = scramble();
-  }, 60);
-
-  setTimeout(() => {
-    clearInterval(interval);
-    el.classList.remove('spinning');
-    el.textContent = finalText;
-    if (onDone) onDone();
-  }, duration);
+    box.appendChild(t);
+  }
+  fitAll();
 }
-
-function spin() {
-  if (isSpinning) return;
-
-  const scenes = pool();
-  if (scenes.length === 0) return; // safety; every level has scenes
-
-  isSpinning = true;
-  document.getElementById('spinBtn').disabled = true;
-
-  const scene = rand(scenes);
-  const roles = numStudents === 2 ? scene.roles2 : scene.roles3;
-
-  const locEl = document.getElementById('displayLocation');
-  const scenEl = document.getElementById('displayScenario');
-  const rolesEl = document.getElementById('displayRoles');
-  const badgeEl = document.getElementById('levelBadge');
-  const wordsCard = document.getElementById('cardWords');
-  const wordChips = document.getElementById('wordChips');
-
-  const cardLoc = document.getElementById('cardLocation');
-  const cardScen = document.getElementById('cardScenario');
-  const cardRoles = document.getElementById('cardRoles');
-
-  [cardLoc, cardScen, cardRoles, wordsCard].forEach(c => c.classList.remove('revealed', 'pop'));
-
-  // Hide words card until roles are revealed
-  wordsCard.style.display = 'none';
-  wordChips.innerHTML = '';
-  badgeEl.style.display = 'none';
-
-  // Location
-  locEl.innerHTML = '';
-  locEl.classList.remove('placeholder');
-  spinText(locEl, scene.place, 1200, () => {
-    cardLoc.classList.add('revealed', 'pop');
-    setTimeout(() => cardLoc.classList.remove('pop'), 400);
+function fitText(el, max, min, lines){ if (!el) return; var f = max; el.style.fontSize = f + 'px';
+  while (f > min && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1 || (lines && el.offsetHeight > f * 1.12 * lines))){ f -= 1; el.style.fontSize = f + 'px'; } }
+function fitAll(){
+  var r = document.querySelectorAll('#tickets .tk-role'); for (var i = 0; i < r.length; i++) fitText(r[i], 32, 20, 2);
+  var g = document.querySelectorAll('#tickets .env-back'); for (i = 0; i < g.length; i++) fitText(g[i], 21, 15);
+  fitText($('pbPlace'), 64, 40); fitText($('pbPrompt'), 35, 26);
+}
+function renderTags(words){
+  var box = $('tags'); box.innerHTML = '';
+  if (!words){ box.innerHTML = '<div class="tags-empty">Five challenge words appear after the spin.</div>'; return; }
+  words.forEach(function(w, i){
+    var wrap = document.createElement('div'); wrap.className = 'tag-wrap swing'; wrap.style.animationDelay = (-i * 0.6) + 's';
+    var b = document.createElement('button'); b.className = 'tag'; b.textContent = w; b.setAttribute('aria-pressed', 'false');
+    var st = document.createElement('span'); st.className = 'stampU'; st.textContent = 'Used';
+    b.addEventListener('click', function(){ toggleWord(i, wrap, b); });
+    wrap.appendChild(b); wrap.appendChild(st); box.appendChild(wrap);
   });
-
-  // Scenario
-  scenEl.innerHTML = '';
-  scenEl.classList.remove('placeholder');
-  setTimeout(() => {
-    spinText(scenEl, scene.prompt, 1400, () => {
-      badgeEl.textContent = scene.cefr;
-      badgeEl.style.display = 'inline-block';
-      cardScen.classList.add('revealed', 'pop');
-      setTimeout(() => cardScen.classList.remove('pop'), 400);
-    });
-  }, 700);
-
-  // Roles + secret goals
-  rolesEl.innerHTML = '';
-  rolesEl.classList.remove('placeholder');
-  setTimeout(() => {
-    const tempEl = document.createElement('span');
-    tempEl.textContent = '';
-    rolesEl.appendChild(tempEl);
-    spinText(tempEl, '...', 1600, () => {
-      rolesEl.innerHTML = '';
-      const list = document.createElement('div');
-      list.className = 'role-list';
-
-      roles.forEach((role, i) => {
-        const item = document.createElement('div');
-        item.className = 'role-item';
-
-        const badge = document.createElement('div');
-        badge.className = 'role-badge';
-        badge.textContent = 'S' + (i + 1);
-
-        const content = document.createElement('div');
-        content.className = 'role-content';
-
-        const name = document.createElement('div');
-        name.className = 'role-name';
-        name.textContent = role;
-        content.appendChild(name);
-
-        const mission = scene.missions && scene.missions[role];
-        if (mission) {
-          const btn = document.createElement('button');
-          btn.className = 'mission-btn';
-          btn.textContent = '🎯 secret goal';
-
-          const text = document.createElement('div');
-          text.className = 'mission-text';
-          text.textContent = mission;
-
-          btn.addEventListener('click', () => {
-            text.classList.toggle('show');
-            btn.textContent = text.classList.contains('show') ? '🙈 hide goal' : '🎯 secret goal';
-          });
-
-          content.appendChild(btn);
-          content.appendChild(text);
-        }
-
-        item.appendChild(badge);
-        item.appendChild(content);
-        list.appendChild(item);
-      });
-
-      rolesEl.appendChild(list);
-      cardRoles.classList.add('revealed', 'pop');
-      setTimeout(() => cardRoles.classList.remove('pop'), 400);
-
-      // Challenge words
-      scene.words.forEach(w => {
-        const chip = document.createElement('button');
-        chip.className = 'word-chip';
-        chip.textContent = w;
-        chip.addEventListener('click', () => chip.classList.toggle('used'));
-        wordChips.appendChild(chip);
-      });
-      wordsCard.style.display = 'flex';
-      requestAnimationFrame(() => wordsCard.classList.add('revealed', 'pop'));
-      setTimeout(() => wordsCard.classList.remove('pop'), 400);
-
-      setTimeout(() => {
-        isSpinning = false;
-        document.getElementById('spinBtn').disabled = false;
-      }, 200);
-    });
-  }, 1400);
 }
+
+/* ---------- interactions ---------- */
+function toggleGoal(i){
+  var env = document.querySelectorAll('#tickets .env'), e = null;
+  for (var k = 0; k < env.length; k++) if (+env[k].dataset.i === i) e = env[k];
+  if (!e) return;
+  var open = !e.classList.contains('open');
+  e.classList.toggle('open', open); e.setAttribute('aria-expanded', open ? 'true' : 'false');
+  sfx(open ? 'flip' : 'close');
+  if (open){ var r = local(e); emit(10, r.x + r.w / 2, r.y + r.h / 2, {colors:[STUDENT[i].hex, '#FFE9A8'], speed:4, g:0.1, decay:0.04, size:2.5}); }
+}
+function hideGoals(){ var env = document.querySelectorAll('#tickets .env.open'); for (var k = 0; k < env.length; k++){ env[k].classList.remove('open'); env[k].setAttribute('aria-expanded', 'false'); } if (env.length) sfx('close'); }
+function toggleWord(i, wrap, b){
+  if (S.busy) return;
+  var on = !S.used[i]; S.used[i] = on;
+  wrap.classList.toggle('used', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on){
+    sfx('stamp');
+    anim(wrap.querySelector('.stampU'), [{transform:'rotate(-12deg) scale(2.6)', opacity:0}, {transform:'rotate(-12deg) scale(.92)', opacity:1, offset:.7}, {transform:'rotate(-12deg) scale(1)', opacity:1}], {duration:280, easing:'cubic-bezier(.5,0,.6,1)'});
+    var r = local(wrap); emit(16, r.x + r.w / 2, r.y + r.h / 2, {colors:['#FFE9A8', '#F1D589', '#ffffff'], speed:6, g:0.18, decay:0.035, size:2.6});
+    shake(4, 220);
+    if (S.used.length && S.used.every(Boolean)) later(curtainCall, 420);
+  } else sfx('unstamp');
+  $('live').textContent = b.textContent + (on ? ' used' : ' not used');
+}
+function curtainCall(){
+  if (!S.used.every(Boolean)) return;
+  sfx('call'); $('live').textContent = 'Curtain call! Every word used.';
+  var L = $('ccL'), R = $('ccR'), B = $('ccBanner');
+  if (reduced || !L.animate || FAST < 1){
+    B.style.opacity = '1'; later(function(){ B.style.opacity = '0'; }, 2200); return;
+  }
+  var kf = function(from){ return [{transform:'translateX(' + from + ')'}, {transform:'translateX(' + (from[0] === '-' ? '-42%' : '42%') + ')', offset:.25}, {transform:'translateX(' + (from[0] === '-' ? '-42%' : '42%') + ')', offset:.75}, {transform:'translateX(' + from + ')'}]; };
+  L.animate(kf('-100%'), {duration:2800, easing:'cubic-bezier(.45,0,.3,1)'});
+  R.animate(kf('100%'), {duration:2800, easing:'cubic-bezier(.45,0,.3,1)'});
+  B.animate([{opacity:0, transform:'translateY(40px) scale(.9)'}, {opacity:1, transform:'translateY(0) scale(1.04)', offset:.2}, {opacity:1, transform:'scale(1)', offset:.8}, {opacity:0, transform:'scale(1.02)'}], {duration:2800, easing:'ease-out'});
+  setTimeout(function(){ for (var k = 0; k < 4; k++) (function(k){ setTimeout(function(){ emit(60, 360 + k * 400, -10, {kind:'confetti', colors:['#FFE9A8', '#C9A04A', '#ffffff', '#2BB3A3', '#9B5DE5', '#F29E1F', '#d8524a'], speed:9, g:0.2, decay:0.006, spread:1.4, angle:Math.PI / 2, w:14, h:8}); }, k * 160); })(k); }, 500);
+  shake(8, 500);
+}
+
+/* ---------- spin ---------- */
+function setChips(sel, attr, val){ var b = document.querySelectorAll(sel); for (var i = 0; i < b.length; i++){ var on = b[i].dataset[attr] === String(val); b[i].classList.toggle('on', on); b[i].setAttribute('aria-pressed', on ? 'true' : 'false'); } }
+function spin(){
+  if (S.busy) return;
+  var scene = pick(); if (!scene) return;
+  S.busy = true; S.scene = scene; S.last = scene; S.used = scene.words.map(function(){ return false; });
+  var btn = $('spinBtn'); btn.disabled = true; btn.classList.remove('breathe');
+  btn.classList.add('pressed'); later(function(){ btn.classList.remove('pressed'); }, 140);
+  highlight(null); $('cone').style.opacity = '0';
+  // clear the previous cast
+  anim($('playbill'), [{transform:'none', opacity:1}, {transform:'translateY(-30px) rotate(1deg)', opacity:.0}], {duration:300, fill:'forwards'});
+  renderTickets(null, null); renderTags(null);
+  var idx = PLACES.indexOf(scene.place);
+  var jitter = (Math.random() - 0.5) * SEG * 0.6;
+  var targetMod = ((-(idx * SEG + SEG / 2) + jitter) % 360 + 360) % 360;
+  var cur = S.angle, curMod = ((cur % 360) + 360) % 360;
+  var delta = targetMod - curMod; if (delta < 0) delta += 360;
+  var spins = 4 + Math.floor(Math.random() * 2);
+  var final = cur + delta + 360 * spins;
+  var dur = reduced ? 0 : T(4400 + Math.random() * 600);
+  var t0 = performance.now(), lastSeg = Math.floor(cur / SEG), ptr = $('pointer');
+  function ease(x){ return 1 - Math.pow(1 - x, 4); }
+  function frame(now){
+    var k = dur ? Math.min(1, (now - t0) / dur) : 1, a = cur + (final - cur) * ease(k);
+    setAngle(a);
+    var sg = Math.floor(a / SEG);
+    if (sg !== lastSeg){ lastSeg = sg; sfx('tick');
+      var flick = Math.min(26, 6 + (1 - k) * 30);
+      anim(ptr, [{transform:'rotate(0)'}, {transform:'rotate(' + flick + 'deg)', offset:.25}, {transform:'rotate(0)'}], {duration:160, easing:'ease-out'}); }
+    if (k < 1) requestAnimationFrame(frame); else landed(scene, idx);
+  }
+  if (dur) requestAnimationFrame(frame); else { setAngle(final); landed(scene, idx); }
+  $('live').textContent = 'Spinning';
+}
+function landed(scene, idx){
+  setAngle(((S.angle % 360) + 360) % 360);
+  highlight(idx);
+  sfx('land'); later(function(){ sfx('ding'); }, 60);
+  shake(10, 450);
+  var cone = $('cone'); cone.style.transition = 'none'; cone.style.opacity = '1';
+  anim(cone, [{opacity:0}, {opacity:1, offset:.15}, {opacity:.65}], {duration:900, easing:'ease-out'});
+  anim($('flash'), [{opacity:.9}, {opacity:0}], {duration:700, easing:'ease-out'});
+  emit(14, 410, 240, {kind:'dot', colors:['#FFE9A8', '#F1D589', '#fff'], speed:6, g:0.16, decay:0.03, size:2.8});
+  later(function(){ showPlaybill(scene); }, 450);
+}
+function showPlaybill(scene){
+  $('pbKicker').textContent = 'Tonight’s scene';
+  $('pbPlace').textContent = scene.place;
+  $('pbPrompt').textContent = scene.prompt;
+  $('sealLv').textContent = scene.cefr; fitText($('pbPlace'), 64, 40); fitText($('pbPrompt'), 35, 26);
+  var pb = $('playbill'), seal = $('seal');
+  seal.classList.add('hide');
+  var a = anim(pb, [{transform:'translateY(-120px) rotate(-3deg)', opacity:0}, {transform:'translateY(10px) rotate(.6deg)', opacity:1, offset:.7}, {transform:'none', opacity:1}], {duration:620, easing:'cubic-bezier(.3,.9,.4,1.1)', fill:'forwards'});
+  if (!a){ pb.getAnimations && pb.getAnimations().forEach(function(x){ x.cancel(); }); }
+  sfx('drop');
+  later(function(){
+    seal.classList.remove('hide'); sfx('stamp');
+    anim(seal, [{transform:'scale(2.6) rotate(-20deg)', opacity:0}, {transform:'scale(.92) rotate(-6deg)', opacity:1, offset:.7}, {transform:'scale(1) rotate(-6deg)', opacity:1}], {duration:300, easing:'cubic-bezier(.5,0,.6,1)'});
+    var r = local(seal); emit(8, r.x + r.w / 2, r.y + r.h, {kind:'puff', colors:['rgba(120,60,40,.18)'], speed:2.2, g:-0.01, size:8, decay:0.035});
+    dealTickets(scene);
+  }, 560);
+}
+function dealTickets(scene){
+  var roles = S.n === 2 ? scene.roles2 : scene.roles3;
+  renderTickets(roles, scene);
+  var tks = document.querySelectorAll('#tickets .ticket'), slot = local($('slot'));
+  var sx = slot.x + slot.w - 10, sy = slot.y + slot.h / 2;
+  for (var i = 0; i < tks.length; i++){
+    (function(t, i){
+      var r = local(t), dx = sx - (r.x + r.w / 2), dy = sy - (r.y + r.h / 2), lift = Math.min(200, 70 + Math.abs(dx) * 0.25);
+      t.style.opacity = (reduced || FAST < 1) ? '1' : '0';
+      later(function(){
+        t.style.opacity = '1'; sfx('whoosh', i);
+        anim(t, [
+          {transform:'translate(' + dx + 'px,' + dy + 'px) scale(.25) rotate(-90deg)', opacity:.3},
+          {transform:'translate(' + (dx / 2) + 'px,' + (dy / 2 - lift) + 'px) scale(1.08) rotate(-12deg)', opacity:1, offset:.55},
+          {transform:'translate(0,0) scale(1) rotate(0)', opacity:1}
+        ], {duration:620, easing:'cubic-bezier(.35,.1,.3,1)'});
+        later(function(){
+          anim(t, [{transform:'scale(1.06,.9)'}, {transform:'scale(.98,1.03)'}, {transform:'none'}], {duration:240, easing:'ease-out'});
+          sfx('drop');
+          emit(7, r.x + r.w / 2, r.y + r.h, {kind:'puff', colors:['rgba(200,170,120,.18)'], speed:2.4, g:-0.02, size:7, decay:0.04});
+        }, 620);
+      }, i * 260);
+    })(tks[i], i);
+  }
+  later(function(){ showTags(scene); }, tks.length * 260 + 650);
+}
+function showTags(scene){
+  S.used = scene.words.map(function(){ return false; });
+  renderTags(scene.words);
+  var w = document.querySelectorAll('#tags .tag-wrap');
+  for (var i = 0; i < w.length; i++){
+    (function(el, i){ anim(el, [{transform:'translateY(-160px) rotate(10deg)', opacity:0}, {transform:'translateY(8px) rotate(-3deg)', opacity:1, offset:.7}, {transform:'none', opacity:1}], {duration:480, delay:i * 70, easing:'cubic-bezier(.3,.9,.4,1.1)', fill:'backwards'}); })(w[i], i);
+  }
+  later(function(){ S.busy = false; var b = $('spinBtn'); b.disabled = false; b.classList.add('breathe');
+    $('live').textContent = scene.place + '. ' + scene.prompt + ' Level ' + scene.cefr + '.'; }, 500);
+}
+
+/* ---------- wiring ---------- */
+$('spinBtn').addEventListener('click', spin);
+var nb = document.querySelectorAll('[data-n]');
+for (var i = 0; i < nb.length; i++) nb[i].addEventListener('click', function(){
+  if (S.busy) return; S.n = +this.dataset.n; setChips('[data-n]', 'n', S.n);
+  if (S.scene){ S.busy = true; $('spinBtn').disabled = true; $('spinBtn').classList.remove('breathe'); renderTags(null); dealTickets(S.scene); }
+  else renderTickets(null, null);
+});
+var lb = document.querySelectorAll('[data-level]');
+for (i = 0; i < lb.length; i++) lb[i].addEventListener('click', function(){
+  S.level = this.dataset.level; setChips('[data-level]', 'level', S.level); dimWheel();
+});
+$('muteBtn').addEventListener('click', toggleMute);
+$('themeBtn').addEventListener('click', function(){ window.toggleTheme(); });
+document.addEventListener('pointerup', function(e){ var b = e.target.closest && e.target.closest('button'); if (b && e.pointerType === 'mouse') b.blur(); });
+document.addEventListener('keydown', function(e){
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  var onBtn = e.target && e.target.tagName === 'BUTTON';
+  if ((e.key === ' ' || e.code === 'Space') && !onBtn){ e.preventDefault(); spin(); }
+  else if (e.key === '1' || e.key === '2' || e.key === '3'){ toggleGoal(+e.key - 1); }
+  else if (e.key === 'Escape'){ hideGoals(); }
+  else if (e.key === 'm' || e.key === 'M'){ toggleMute(); }
+});
+
+renderTickets(null, null); dimWheel(); setAngle(-SEG / 2);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fit(); fitAll(); });
+function cast(i){ var s = SCENES[i]; S.scene = S.last = s; $('pbPlace').textContent = s.place; $('pbPrompt').textContent = s.prompt; $('sealLv').textContent = s.cefr; $('seal').classList.remove('hide'); fitText($('pbPlace'), 64, 40); fitText($('pbPrompt'), 35, 26);
+  renderTickets(S.n === 2 ? s.roles2 : s.roles3, s); S.used = s.words.map(function(){ return false; }); renderTags(s.words); }
+window.RPR = { S:S, SCENES:SCENES, PLACES:PLACES, spin:spin, toggleGoal:toggleGoal, hideGoals:hideGoals, cast:cast };
+})();
 </script>
 </body>
 </html>
