@@ -10301,7 +10301,9 @@ const RC_LEGACY_CLASS_KEY  = 'efl-dashboard:rc-class';
 
 /* state.reportComments:
      levels  { studentId: {behavior, english, port} }   sliders of the current report card
-     classes { classId: { round, nonce, copied:{ studentId:{lv, picks} } } }   report card in progress
+     classes { classId: { round, nonce, copied:{ studentId:{lv, picks} }, sent:{ studentId:[picks…] } } }   report card in progress
+       copied  what the row shows as done right now; a level change clears it
+       sent    every text that left by copy in this report card; only closing it clears it
      history { studentId: [ {round, classId, date, picks} ] }   texts given in finished report cards */
 function rcReadJson(key){
   try{ const o = JSON.parse(localStorage.getItem(key) || '{}'); return (o && typeof o === 'object') ? o : {}; }
@@ -10355,9 +10357,43 @@ function rcClassState(classId){
   if(!(Number(c.round) >= 1)) c.round = 1;
   if(!(Number(c.nonce) >= 0)) c.nonce = 0;
   if(!c.copied || typeof c.copied !== 'object') c.copied = {};
+  if(!c.sent || typeof c.sent !== 'object'){
+    // Report cards started before "sent" existed: what is marked copied was sent.
+    c.sent = {};
+    Object.keys(c.copied).forEach(id=>{
+      const f = c.copied[id];
+      if(f && Array.isArray(f.picks)) c.sent[id] = [f.picks.slice()];
+    });
+  }
   return c;
 }
 function rcSaveClassState(){ rcPersist(); }
+function rcSentFor(st, id){ return Array.isArray(st.sent[id]) ? st.sent[id] : []; }
+// Students of the class with at least one text sent in the current report card.
+function rcSentCount(classId){
+  const st = rcClassState(classId);
+  return studentsInClass(classId).filter(s=>rcSentFor(st, s.id).length || st.copied[s.id]).length;
+}
+/* A level change on a student whose text already went out usually means the
+   teacher has moved on to the next test and forgot to close this report card.
+   Asks once per class and report card; true means "start the next one". */
+const rcKeepEditing = new Set();
+function rcAskNextRound(classId, id){
+  if(!classId) return false;
+  const st = rcClassState(classId);
+  if(!rcSentFor(st, id).length) return false;
+  const key = classId + ':' + st.round;
+  if(rcKeepEditing.has(key)) return false;
+  const s = state.students.find(x=>x.id===id);
+  const name = rcFirstName(s && s.name);
+  const n = st.round, m = n + 1;
+  const isPt = state.reportLang === 'pt';
+  const ok = confirm(isPt
+    ? `O texto do Boletim ${n} de ${name} já foi copiado.\n\nVocê está começando o Boletim ${m}?\n\nOK: fecha o Boletim ${n} (os textos copiados vão para o histórico), começa o Boletim ${m} e aplica esta mudança.\nCancelar: continua editando o Boletim ${n}.`
+    : `${name}'s report card ${n} text was already copied.\n\nAre you starting report card ${m}?\n\nOK: closes report card ${n} (copied texts go into history), starts report card ${m} and applies this change.\nCancel: keep editing report card ${n}.`);
+  if(!ok) rcKeepEditing.add(key);
+  return ok;
+}
 
 function rcHistory(id){
   const h = rcStore().history[id];
@@ -10556,7 +10592,10 @@ function rcNoteFor(id, fullName, classId){
 function rcFreeze(classId, id){
   const plan = rcClassPlan(classId);
   if(!plan[id]) return;
-  rcClassState(classId).copied[id] = { lv: rcLvKey(rcLevelsFor(id)), picks: plan[id].picks };
+  const st = rcClassState(classId);
+  st.copied[id] = { lv: rcLvKey(rcLevelsFor(id)), picks: plan[id].picks };
+  const sent = rcSentFor(st, id), sig = JSON.stringify(plan[id].picks);
+  if(!sent.some(x=>JSON.stringify(x) === sig)) st.sent[id] = sent.concat([plan[id].picks.slice()]);
   rcSaveClassState(classId);
 }
 function rcUnfreeze(classId, id){
@@ -10582,14 +10621,24 @@ function rcResetCopied(classId){
 function rcStartNextRound(classId){
   const st = rcClassState(classId), store = rcStore();
   const today = todayStr();
-  Object.keys(st.copied).forEach(id=>{
+  // Every text that went out in this report card, including ones whose row
+  // mark was cleared by a later level change: they all reached the family.
+  new Set(Object.keys(st.copied).concat(Object.keys(st.sent))).forEach(id=>{
+    const sets = rcSentFor(st, id).slice();
     const f = st.copied[id];
-    if(!f || !Array.isArray(f.picks)) return;
+    if(f && Array.isArray(f.picks)) sets.push(f.picks);
     const h = Array.isArray(store.history[id]) ? store.history[id] : (store.history[id] = []);
-    h.push({ round: st.round, classId, date: today, picks: f.picks.slice() });
+    const seen = new Set(h.filter(r=>r.classId===classId && r.round===st.round).map(r=>JSON.stringify(r.picks)));
+    sets.forEach(picks=>{
+      const sig = JSON.stringify(picks);
+      if(seen.has(sig)) return;
+      seen.add(sig);
+      h.push({ round: st.round, classId, date: today, picks: picks.slice() });
+    });
   });
   studentsInClass(classId).forEach(s=>{ delete store.levels[s.id]; });
   st.copied = {};
+  st.sent = {};
   st.nonce = 0;
   st.round = Number(st.round) + 1;
   rcPersist();
@@ -11039,6 +11088,12 @@ function rcLevelSelect(cat, lang){
 
 function rcSetLevel(cat, val){
   if(!lastReportStats) return;
+  if(rcAskNextRound(lastReportStats.classId, lastReportStats.id)){
+    rcStartNextRound(lastReportStats.classId);
+    rcSaveLevel(lastReportStats.id, cat, val);
+    refreshReportTextArea();
+    return;
+  }
   rcSaveLevel(lastReportStats.id, cat, val);
   rcUnfreeze(lastReportStats.classId, lastReportStats.id);
   refreshReportTextArea();
@@ -12351,6 +12406,13 @@ function rcGroupSync(){
   if(el) el.textContent = `${done}/${total} ${state.reportLang==='pt'?'copiados':'copied'}`;
 }
 function rcGroupSet(id, param, val){
+  const classId = rcGroupClassId();
+  if(rcAskNextRound(classId, id)){
+    rcStartNextRound(classId);
+    rcSaveLevel(id, param, val);
+    renderGroupReport();
+    return;
+  }
   rcSaveLevel(id, param, val);
   rcUnfreeze(rcGroupClassId(), id);
   const v = rcLevelsFor(id)[param];
@@ -12409,7 +12471,7 @@ function rcGroupNextRound(){
   const list = studentsInClass(classId);
   // Counts what was really copied, even a text whose mark no longer shows
   // because a level changed afterwards: that text did reach the family.
-  const copied = list.filter(s=>st.copied[s.id]).length;
+  const copied = rcSentCount(classId);
   if(!copied){
     alert(isPt
       ? `Nenhum texto foi copiado no Boletim ${st.round} desta turma ainda.\n\nClique no ícone de copiar de pelo menos um aluno e depois comece o próximo boletim.`
