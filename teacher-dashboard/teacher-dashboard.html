@@ -12259,7 +12259,7 @@ function rcGroupSectionHtml(cls, students, isPt){
           <span class="meta" id="rc-copied-count">${done}/${students.length} ${isPt?'copiados':'copied'}</span>
           <label class="rc-toggle"><input type="checkbox" ${rcShowText?'checked':''} onchange="rcGroupToggleText(this.checked)"> ${isPt?'Mostrar textos':'Show texts'}</label>
           <button type="button" class="btn-ghost small" onclick="rcGroupReword()" title="${isPt?'Troca as frases de quem ainda não foi copiado':'New phrasing for everyone not copied yet'}">${isPt?'↻ Outra redação':'↻ Reword'}</button>
-          <button type="button" class="btn-ghost small" id="rc-next-btn" onclick="rcGroupNextRound()" ${done?'':'disabled'}
+          <button type="button" class="btn-ghost small" id="rc-next-btn" onclick="rcGroupNextRound()"
                   title="${isPt?'Guarda os textos copiados no histórico de cada aluno e começa o próximo boletim':'Keeps the copied texts in each student\'s history and starts the next report card'}">${isPt?`Começar Boletim ${rcClassState(cls.id).round + 1}`:`Start report card ${rcClassState(cls.id).round + 1}`}</button>
         </div>
       </div>
@@ -12349,8 +12349,6 @@ function rcGroupSync(){
   });
   const el = document.getElementById('rc-copied-count');
   if(el) el.textContent = `${done}/${total} ${state.reportLang==='pt'?'copiados':'copied'}`;
-  const next = document.getElementById('rc-next-btn');
-  if(next) next.disabled = !done;
 }
 function rcGroupSet(id, param, val){
   rcSaveLevel(id, param, val);
@@ -12409,7 +12407,15 @@ function rcGroupNextRound(){
   const isPt = state.reportLang === 'pt';
   const st = rcClassState(classId);
   const list = studentsInClass(classId);
+  // Counts what was really copied, even a text whose mark no longer shows
+  // because a level changed afterwards: that text did reach the family.
   const copied = list.filter(s=>st.copied[s.id]).length;
+  if(!copied){
+    alert(isPt
+      ? `Nenhum texto foi copiado no Boletim ${st.round} desta turma ainda.\n\nClique no ícone de copiar de pelo menos um aluno e depois comece o próximo boletim.`
+      : `No text has been copied in report card ${st.round} for this class yet.\n\nClick the copy icon for at least one student, then start the next report card.`);
+    return;
+  }
   const missing = list.length - copied;
   const n = st.round, m = n + 1;
   const msg = isPt
