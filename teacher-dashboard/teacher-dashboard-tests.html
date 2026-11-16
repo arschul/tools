@@ -413,6 +413,8 @@ function run(T, state){
   ok('alertHandled: multi-key resolution', T.alertHandled({contactParentsHistory:[{alertKeys:['grade:c:under:72//','test:c:0:2026-10-01']}]}, 'test:c:0:2026-10-01'));
   ok('alertHandled: legacy single key', T.alertHandled({contactParentsHistory:[{alertKey:'att2:a:b'}]}, 'att2:a:b'));
   ok('alertHandled: unrelated key stays open', !T.alertHandled({contactParentsHistory:[{alertKeys:['x']}]}, 'y'));
+  ok('alertHandled: dismissed key is hidden', T.alertHandled({dismissedAlerts:['attmiss:2026-11-10']}, 'attmiss:2026-11-10'));
+  ok('alertHandled: dismissal is per key', !T.alertHandled({dismissedAlerts:['attmiss:2026-11-10']}, 'attmiss:2026-11-17'));
   const rq = T.buildAttentionQueue({
     cpStudents:[{id:'s1',name:'A',classId:'c1',contactParents:{category:'Behavior',reason:'r'}}],
     missedTests:[{id:'s1',name:'A',classId:'c1',date:'2026-10-01',key:'t1',testLabel:'First Test'},

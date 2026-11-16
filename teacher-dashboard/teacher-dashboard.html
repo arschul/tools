@@ -4408,6 +4408,7 @@ function _renderDashboard(el){
           </div>
           <div class="attn-acts">
             <button class="btn-accent small" title="Record what was done and archive these warnings" onclick="openResolveModal('${r.studentId}')">✓ Resolve</button>
+            <button class="btn-ghost small" title="Remove from Needs attention without logging anything — nothing appears on the report" onclick="dismissAttnRow('${r.studentId}')">✕ Dismiss</button>
             <button class="btn-ghost small" onclick="navigate('student',{studentProfileId:'${r.studentId}',studentProfileReturn:'classes'})">Report →</button>
             ${r.flagged?'':`<button class="icon-btn" title="Flag to contact parents" onclick="openContactParentsModal('${r.studentId}')">📞 Flag</button>`}
           </div>
@@ -5418,6 +5419,8 @@ function attendanceAlertKey(kind){
   return [kind].concat(Array.prototype.slice.call(arguments, 1)).join(':');
 }
 function alertHandled(student, key){
+  // A dismissed warning is hidden without anything being logged (no report line).
+  if(student && Array.isArray(student.dismissedAlerts) && student.dismissedAlerts.includes(key)) return true;
   return ((student && student.contactParentsHistory) || []).some(h =>
     h.alertKey === key || (Array.isArray(h.alertKeys) && h.alertKeys.includes(key)));
 }
@@ -5448,7 +5451,6 @@ function openResolveModal(studentId){
   const links = [];
   _resolveCtx = { studentId, signals: row.signals.slice(), links };
   const linkBtn = a => { links.push(a.run); return `<button type="button" class="btn-ghost small" onclick="closeModal();_resolveCtx.links[${links.length-1}]()">${esc(a.label)}</button>`; };
-  const hasFlag = row.signals.some(sg=>sg.kind==='flag');
   showModal(`${sizeModal('md')}
     <h3>✓ Resolve — ${esc(s.name)}</h3>
     <fieldset class="field rs-set"><legend>Warnings</legend>
@@ -5472,12 +5474,56 @@ function openResolveModal(studentId){
       <textarea id="rs-will" rows="2" class="rs-text" placeholder="e.g. Attend every class until the test and redo homework units 3–4."></textarea>
     </div>
     <div class="modal-actions" style="flex-wrap:wrap;gap:8px;">
-      ${hasFlag?`<button class="btn-ghost" style="color:var(--red);margin-right:auto;" title="Remove the manual flag without logging anything" onclick="discardContactParents('${studentId}')">Discard flag without logging</button>`:''}
+      <button class="btn-ghost" style="color:var(--red);margin-right:auto;" title="Hide the ticked warnings without logging anything — nothing appears on the report" onclick="dismissTickedWarnings()">✕ Dismiss without logging</button>
       <button class="btn-ghost" onclick="_resolveCtx=null;closeModal()">Cancel</button>
       <button class="btn-accent" onclick="confirmResolve()">✓ Resolve</button>
     </div>
   `);
   setTimeout(()=>{ const t=document.getElementById('rs-did'); if(t) t.focus(); }, 0);
+}
+/* Dismiss: for warnings that are wrong or no longer apply (a test that was
+   moved, a flag raised by mistake). The keys go into student.dismissedAlerts,
+   which alertHandled reads; nothing is written to contactParentsHistory, so
+   nothing reaches the report or Contacts. Derived keys encode the situation,
+   so a genuinely new problem still raises a fresh warning. A dismissed manual
+   flag is simply cleared. */
+function dismissWarnings(studentId, signals){
+  const s = anyStudent(studentId);
+  if(!s || !signals || !signals.length) return;
+  const prevDismissed = Array.isArray(s.dismissedAlerts) ? s.dismissedAlerts.slice() : null;
+  const prevFlag = s.contactParents || null;
+  const keys = signals.map(sg=>sg.key).filter(k=>k && k!=='flag');
+  if(keys.length){
+    const set = new Set(s.dismissedAlerts || []);
+    keys.forEach(k=>set.add(k));
+    s.dismissedAlerts = [...set];
+  }
+  const hadFlag = signals.some(sg=>sg.kind==='flag');
+  if(hadFlag) s.contactParents = null;
+  const save = () => { if(privStudent(s.id)) persistPrivate(); else scheduleSave('students', state.students); };
+  save();
+  _resolveCtx = null;
+  closeModal();
+  refreshView();
+  showUndoToast(`Dismissed ${signals.length} warning${signals.length===1?'':'s'} for ${s.name}`, ()=>{
+    const st = anyStudent(studentId);
+    if(!st) return;
+    if(prevDismissed) st.dismissedAlerts = prevDismissed; else delete st.dismissedAlerts;
+    if(hadFlag) st.contactParents = prevFlag;
+    save();
+    refreshView();
+  });
+}
+function dismissAttnRow(studentId){
+  const row = (window._attnRows||{})[studentId];
+  if(row && row.signals.length) dismissWarnings(studentId, row.signals.slice());
+}
+function dismissTickedWarnings(){
+  const ctx = _resolveCtx;
+  if(!ctx) return;
+  const picked = [...document.querySelectorAll('.rs-sig-cb')].filter(cb=>cb.checked).map(cb=>ctx.signals[+cb.dataset.i]).filter(Boolean);
+  if(!picked.length){ alert('Tick at least one warning to dismiss.'); return; }
+  dismissWarnings(ctx.studentId, picked);
 }
 function confirmResolve(){
   const ctx = _resolveCtx;
@@ -7727,7 +7773,18 @@ function gmSetTestDate(testIdx, value){
   if(!cycle.testEventIds) cycle.testEventIds = [];
   while(cycle.testEventIds.length<n) cycle.testEventIds.push(null);
 
+  const oldDate = cycle.testDates[testIdx] || null;
   cycle.testDates[testIdx] = value || null;
+
+  // A test also added by hand in the calendar (not linked to Grades) would be
+  // left behind on the old date, and anyone absent that day would be flagged
+  // "Missed test". Offer to move it along.
+  if(oldDate && value && oldDate!==value){
+    const strays = state.events.filter(e=> e.date===oldDate && !e.fromGrades && e.classId===gmClassId && (e.type==='test' || e.type==='review'));
+    if(strays.length && confirm(`The calendar also has ${strays.map(e=>'"'+e.title+'"').join(', ')} on ${formatDateShort(oldDate)} for this class.\n\nMove ${strays.length===1?'it':'them'} to ${formatDateShort(value)} too?`)){
+      strays.forEach(e=>{ e.date = value; });
+    }
+  }
 
   // Sync the linked calendar event (type 'test', marked fromGrades)
   const evId = cycle.testEventIds[testIdx];
@@ -14320,6 +14377,7 @@ window.state = state;
 window.__testables = {
   buildAttentionQueue,
   alertHandled,
+  dismissWarnings,
   resolveActionLabel,
   attendanceRate,
   pointsFor,
