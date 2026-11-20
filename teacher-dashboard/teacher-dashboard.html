@@ -730,9 +730,13 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .rollcall-controls select, .rollcall-controls input,
   .cw-switch select{border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);min-height:36px;}
   .cw-switch select{max-width:220px;font-weight:600;cursor:pointer;}
+  .modal .cl-range input[type=date]{width:auto;flex:0 0 auto;}
   .cl-range input[type=date]{border:1px solid var(--border);border-radius:10px;padding:6px 10px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);min-height:34px;}
   .warn-banner{background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;font-weight:500;}
   .rollcall-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .rc-datebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
+  .rc-datebar-label{font-family:var(--font-head);font-weight:600;font-size:15px;color:var(--text);}
+  .rc-datebar .rc-peek{margin-left:auto;}
   .rollcall-actions .rc-act-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
   .save-indicator{font-size:12px;color:var(--muted);}
 
@@ -4108,6 +4112,7 @@ function refreshView(){
   if(!_routeSuspend && dataReady) pushRoute(true);   // keep the URL in step with state
 }
 function goToRollCall(classId, date){
+  if(document.querySelector('#modal-root .cl-peek')) closeModal();
   state.rollcall.classId = classId;
   state.rollcall.date = date;
   state.rcTab = 'now';
@@ -4756,7 +4761,7 @@ function renderClassCard(c, isArchived){
   return `
     <div class="card class-card" ${isArchived?'style="opacity:.75;"':''}>
       <div class="class-card-head">
-        <button type="button" class="dash-row-left" onclick="openClassTab('${c.id}','students')"
+        <button type="button" class="dash-row-left" onclick="openClass('${c.id}')"
           title="Open ${esc(c.name)}">
           <span class="color-dot" style="background:${c.color}" aria-hidden="true"></span>
           <span>
@@ -4768,7 +4773,7 @@ function renderClassCard(c, isArchived){
           ${isArchived
             ? `<button class="icon-btn" onclick="unarchiveClass('${c.id}')">\u21a9 Unarchive</button>
                <button class="icon-btn danger" onclick="deleteClass('${c.id}')">Delete</button>`
-            : `<button class="icon-btn" onclick="openClassTab('${c.id}','students')">Open \u2192</button>
+            : `<button class="icon-btn" onclick="openClass('${c.id}')">Open \u2192</button>
                <details class="kebab"><summary aria-label="More actions for ${esc(c.name)}">\u22ef</summary>
                  <div class="kebab-menu">
                    <button type="button" onclick="closeKebabs();openClassTab('${c.id}','grades')">\ud83d\udcdd Grades</button>
@@ -4802,11 +4807,130 @@ const CW_TABS = [
 ];
 
 function classViewTab(){ return (state.classView && state.classView.tab) || 'students'; }
+
+/* ---------- one header for every class page ----------
+   Roll Call is the first tab of the class page. Internally it is still its own
+   view (#/rollcall/<class>/<date>) so every existing link keeps working; this
+   header is what makes the two read as one place. ctx is only passed by Roll
+   Call: {date, dow, scheduled, offSchedule}. */
+function classHeaderHtml(c, tab, ctx){
+  const students = studentsInClass(c.id);
+  const isRc = tab === 'rollcall';
+  let switcher = '';
+  if(isRc){
+    // Classes that meet on this weekday first, then the rest as makeups.
+    const sched = ctx.scheduled || [];
+    const rest = sortByWeekSlot(activeClasses().filter(x=>!sched.some(y=>y.id===x.id)));
+    const opt = x => `<option value="${x.id}" ${x.id===c.id?'selected':''}>${esc(x.name)}</option>`;
+    switcher = `<select onchange="setRollcallClass(this.value)" aria-label="Switch class" title="Switch class">
+      ${sched.length?`<optgroup label="${DAY_NAMES[ctx.dow]}s">${sched.map(opt).join('')}</optgroup>`:''}
+      ${rest.length?`<optgroup label="Other classes (off-schedule)">${rest.map(opt).join('')}</optgroup>`:''}
+    </select>`;
+  }else{
+    const others = sortByWeekSlot(activeClasses().filter(x=>x.id!==c.id));
+    const arch = archivedClasses().filter(x=>x.id!==c.id);
+    if(others.length || arch.length) switcher = `<select onchange="openClassTab(this.value,'${tab}')" aria-label="Switch class" title="Switch class">
+      <option value="${c.id}" selected>${esc(c.name)}</option>
+      ${others.length?`<optgroup label="Active">${others.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>`:''}
+      ${arch.length?`<optgroup label="Archived">${arch.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>`:''}
+    </select>`;
+  }
+  const tabs = (c.archived ? [] : [['rollcall','✓ Roll Call']])
+    .concat(CW_TABS.filter(([k])=> k!=='points' || c.pointsEnabled));
+  return `
+    <div class="topbar">
+      <div class="cw-head" style="width:100%;">
+        <div>
+          <button class="btn-ghost back-btn no-print" onclick="goBack('classes')">← ${canGoBack()?'Back':'Classes &amp; Students'}</button>
+          <h1 style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+            <span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}
+            ${c.level?`<span class="badge other">${esc(c.level)}</span>`:''}
+            ${c.archived?`<span class="badge other">Archived</span>`:''}
+          </h1>
+          <div class="meta">${scheduleLabel(c)}${c.time?' · '+c.time:''} · ${students.length} students</div>
+        </div>
+        <div class="cw-switch no-print">
+          ${switcher}
+          <details class="kebab"><summary aria-label="Class actions">⋯</summary>
+            <div class="kebab-menu">
+              <button type="button" onclick="closeKebabs();openClassModal('${c.id}')">✏️ Edit class</button>
+              ${c.archived
+                ? `<button type="button" onclick="closeKebabs();unarchiveClass('${c.id}')">↩ Unarchive</button>`
+                : `<button type="button" onclick="closeKebabs();archiveClass('${c.id}')">📦 Archive</button>`}
+              <button type="button" class="danger" onclick="closeKebabs();deleteClass('${c.id}')">🗑 Delete class</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+    <div class="cw-tabs no-print" role="tablist" aria-label="Class sections">
+      ${tabs.map(([k,label])=>`<button type="button" role="tab" class="tab ${tab===k?'active':''}"
+          aria-selected="${tab===k}" onclick="classTabGo('${c.id}','${k}')">${label}</button>`).join('')}
+    </div>`;
+}
+
+/* Does this class meet on dateStr (weekday, term dates, not a holiday)? */
+function classMeetsOn(c, dateStr){
+  if(!c || c.archived) return false;
+  if(!getClassDays(c).includes(new Date(dateStr+'T00:00:00').getDay())) return false;
+  if(c.startDate && dateStr < c.startDate) return false;
+  if(c.endDate && dateStr > c.endDate) return false;
+  return !isHoliday(dateStr);
+}
+/* The date the Roll Call tab opens on: the date already open for this class,
+   else today if it meets today, else its most recent session, else its next. */
+function rollcallDateFor(c){
+  if(state.rollcall && state.rollcall.classId===c.id && state.rollcall.date) return state.rollcall.date;
+  const t = todayStr();
+  if(classMeetsOn(c, t)) return t;
+  const prev = getPreviousClassDate(c, t);
+  if(prev && (!c.startDate || prev >= c.startDate)) return prev;
+  return getNextClassDate(c, t) || t;
+}
+/* Switching tabs inside one class replaces the history entry (as setClassTab
+   always did), whether the hop is to or from Roll Call. */
+function classTabGo(classId, tab){
+  const c = classById(classId);
+  if(!c) return navigate('classes');
+  const inClass = (state.view==='class' && classViewId()===classId) ||
+                  (state.view==='rollcall' && state.rollcall && state.rollcall.classId===classId);
+  if(tab==='rollcall'){
+    state.rollcall.date = rollcallDateFor(c);
+    state.rollcall.classId = classId;
+    state.rcTab = 'now';
+    state.openDrawer = null;
+    closeModal();
+    return navigate('rollcall', {}, {replace: inClass});
+  }
+  state.classView = { classId, tab };
+  closeModal();
+  navigate('class', {}, {replace: inClass});
+}
+/* Opening a class from the list: its register if it meets today, else Students. */
+function openClass(classId){
+  const c = classById(classId);
+  if(c && classMeetsOn(c, todayStr())){
+    state.rollcall.classId = classId;
+    state.rollcall.date = todayStr();
+    state.rcTab = 'now';
+    state.openDrawer = null;
+    return navigate('rollcall');
+  }
+  openClassTab(classId, 'students');
+}
 function classViewId(){ return state.classView && state.classView.classId; }
 
 function openClassTab(classId, tab){
   tab = tab || 'students';
   if(!classById(classId)) return navigate('classes');
+  if(tab==='rollcall'){
+    const c = classById(classId);
+    state.rollcall.date = rollcallDateFor(c);
+    state.rollcall.classId = classId;
+    state.rcTab = 'now';
+    closeModal();
+    return navigate('rollcall');
+  }
   // Re-entering the tab you are already on (a points +1, a grade edit) must
   // repaint, not stack another history entry.
   if(state.view==='class' && classViewId()===classId && classViewTab()===tab){
@@ -4830,6 +4954,7 @@ function renderClassWorkspace(){
   if(!c){ el.innerHTML = ''; return; }
   let tab = classViewTab();
   if(tab==='points' && !c.pointsEnabled) tab = 'students';
+  if(tab==='rollcall') tab = 'students';   // Roll Call is its own view; never render it here
   const students = studentsInClass(c.id);
 
   // Panels carry their own module-level cursor state; point it at this class
@@ -4853,47 +4978,8 @@ function renderClassWorkspace(){
     </div>`;
   }
 
-  const others = activeClasses().filter(x=>x.id!==c.id);
   el.innerHTML = `
-    <div class="topbar">
-      <div class="cw-head" style="width:100%;">
-        <div>
-          <button class="btn-ghost back-btn no-print" onclick="goBack('classes')">\u2190 ${canGoBack()?'Back':'Classes &amp; Students'}</button>
-          <h1 style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
-            <span class="color-dot" style="background:${c.color}"></span>${esc(c.name)}
-            ${c.level?`<span class="badge other">${esc(c.level)}</span>`:''}
-            ${c.archived?`<span class="badge other">Archived</span>`:''}
-          </h1>
-          <div class="meta">${scheduleLabel(c)}${c.time?' \u00b7 '+c.time:''} \u00b7 ${students.length} students</div>
-        </div>
-        <div class="cw-switch no-print">
-          ${(()=>{
-            const arch = archivedClasses().filter(x=>x.id!==c.id);
-            if(!others.length && !arch.length) return '';
-            return `<select onchange="openClassTab(this.value,'${tab}')" aria-label="Switch class" title="Switch class">
-              <option value="${c.id}" selected>${esc(c.name)}</option>
-              ${others.length?`<optgroup label="Active">${others.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>`:''}
-              ${arch.length?`<optgroup label="Archived">${arch.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')}</optgroup>`:''}
-            </select>`;
-          })()}
-          <button class="btn-ghost small" onclick="goToRollCall('${c.id}', todayStr())">\u2713 Roll Call</button>
-          <details class="kebab"><summary aria-label="Class actions">\u22ef</summary>
-            <div class="kebab-menu">
-              <button type="button" onclick="closeKebabs();openClassModal('${c.id}')">\u270f\ufe0f Edit class</button>
-              ${c.archived
-                ? `<button type="button" onclick="closeKebabs();unarchiveClass('${c.id}')">\u21a9 Unarchive</button>`
-                : `<button type="button" onclick="closeKebabs();archiveClass('${c.id}')">\ud83d\udce6 Archive</button>`}
-              <button type="button" class="danger" onclick="closeKebabs();deleteClass('${c.id}')">\ud83d\uddd1 Delete class</button>
-            </div>
-          </details>
-        </div>
-      </div>
-    </div>
-    <div class="cw-tabs no-print" role="tablist" aria-label="Class sections">
-      ${CW_TABS.filter(([k])=> k!=='points' || c.pointsEnabled)
-        .map(([k,label])=>`<button type="button" role="tab" class="tab ${tab===k?'active':''}"
-          aria-selected="${tab===k}" onclick="setClassTab('${k}')">${label}</button>`).join('')}
-    </div>
+    ${classHeaderHtml(c, tab)}
     ${body}
   `;
 }
@@ -5029,7 +5115,33 @@ function openClassLogModal(classId, upto){
   classLogPanelInit(classId, upto);
   openClassTab(classId, 'log');
 }
-function renderClassLogModal(){ if(state.view==='class') refreshView(); }
+/* Quick peek: the class log in a popup over Roll Call, so the register stays
+   open mid-lesson. The full log is the Class log tab. */
+function openClassLogPeek(classId, upto){
+  const c = classById(classId);
+  if(!c) return;
+  classLogPanelInit(classId, upto);
+  paintClassLogPeek();
+}
+function paintClassLogPeek(){
+  const c = classById(clLogClassId);
+  if(!c) return;
+  showModal(`${sizeModal('lg')}
+    <div class="cl-peek">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+        <h3 style="margin:0;">📓 Class log · ${esc(c.name)}</h3>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn-ghost small" onclick="closeModal();openClassTab('${c.id}','log')">Open full Class log →</button>
+          <button type="button" class="btn-ghost small" onclick="closeModal()" aria-label="Close">✕</button>
+        </div>
+      </div>
+      ${classLogPanelHtml()}
+    </div>`);
+}
+function renderClassLogModal(){
+  if(document.querySelector('#modal-root .cl-peek')) return paintClassLogPeek();
+  if(state.view==='class') refreshView();
+}
 function clSetLogTab(t){ clLogTab = (t==='attendance'?'attendance':'log'); renderClassLogModal(); }
 
 /* Every date this class demonstrably ran, up to and including `upto`.
@@ -8123,32 +8235,19 @@ function renderRollCall(){
   const nav = rollcallSessionNeighbors(cls, date);
 
   document.getElementById('view-rollcall').innerHTML = `
-    <div class="topbar">
-      <div><h1>Roll Call</h1><div class="meta">${formatDateLong(date)}</div></div>
-      <div class="rollcall-controls">
-        <select onchange="setRollcallClass(this.value)">
-          ${(()=>{
-            // Default: only classes scheduled this weekday. If we're already on an
-            // off-schedule class (makeup), or the user asked to see all, list every
-            // active class so a makeup can be started right here.
-            const showAll = offSchedule || state.rollcallShowAll;
-            const list = showAll ? active : scheduled;
-            const opts = list.map(c=>`<option value="${c.id}" ${c.id===cls.id?'selected':''}>${esc(c.name)}${getClassDays(c).includes(dow)?'':' (off-schedule)'}</option>`).join('');
-            return opts + (showAll ? '' : `<option value="__all__">+ Off-schedule class…</option>`);
-          })()}
-        </select>
-        <div class="date-nav">
-          <button type="button" class="date-nav-btn" aria-label="Previous class" ${nav.prev?'':'disabled'}
-            title="${nav.prev?'Previous class \u2014 '+formatDateLong(nav.prev)+' (Alt+\u2190)':'No earlier class for '+esc(cls.name)}"
-            onclick="navRollcallSession(-1)">\u2190</button>
-          <input type="date" value="${date}" onchange="setRollcallDate(this.value)">
-          <button type="button" class="date-nav-btn" aria-label="Next class" ${nav.next?'':'disabled'}
-            title="${nav.next?'Next class \u2014 '+formatDateLong(nav.next)+' (Alt+\u2192)':'No later class for '+esc(cls.name)}"
-            onclick="navRollcallSession(1)">\u2192</button>
-        </div>
-        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}','${date}')" title="Class log — lesson history and the cumulative attendance register">📓 Class log</button>
-        ${cls.pointsEnabled?`<button type="button" class="btn-ghost small" onclick="openClassTab('${cls.id}','points')" title="Class points scoreboard">🏆 Points</button>`:''}
+    ${classHeaderHtml(cls, 'rollcall', { date, dow, scheduled, offSchedule })}
+    <div class="rollcall-controls rc-datebar no-print">
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" aria-label="Previous class" ${nav.prev?'':'disabled'}
+          title="${nav.prev?'Previous class \u2014 '+formatDateLong(nav.prev)+' (Alt+\u2190)':'No earlier class for '+esc(cls.name)}"
+          onclick="navRollcallSession(-1)">\u2190</button>
+        <input type="date" value="${date}" onchange="setRollcallDate(this.value)" aria-label="Session date">
+        <button type="button" class="date-nav-btn" aria-label="Next class" ${nav.next?'':'disabled'}
+          title="${nav.next?'Next class \u2014 '+formatDateLong(nav.next)+' (Alt+\u2192)':'No later class for '+esc(cls.name)}"
+          onclick="navRollcallSession(1)">\u2192</button>
       </div>
+      <span class="rc-datebar-label">${formatDateLong(date)}</span>
+      <button type="button" class="btn-ghost small rc-peek" onclick="openClassLogPeek('${cls.id}','${date}')" title="Peek at the class log without leaving Roll Call">📓 Peek at log</button>
     </div>
     ${holiday?`<div class="warn-banner" style="font-size:14px;">🎉 <b>${esc(holiday.label)}</b> — ${formatDateLong(date)} is a holiday. No roll call can be taken on this day.</div>`:''}
     ${offSchedule&&!holiday?`<div class="warn-banner">${esc(cls.name)} isn't normally scheduled on ${DAY_NAMES[dow]}s (${scheduleLabel(cls)}).</div>`:''}
@@ -10471,6 +10570,8 @@ function setRollcallDate(date){
   refreshView();
 }
 function openRollCallNav(){
+  state.rollcall.date = todayStr();
+  state.rcTab = 'now';
   const dow = new Date(state.rollcall.date+'T00:00:00').getDay();
   const cls = classById(state.rollcall.classId);
   if(!cls || cls.archived || !getClassDays(cls).includes(dow)){
