@@ -3160,6 +3160,25 @@ function studentScores(cycle, studentId, n){
 // gradeSettings.margin: also flag students who pass but sit within `margin` points
 // of the minimum (e.g. margin 3 flags averages 80–82.9 as "close").
 function gradeMargin(){ return Math.max(0, Number(state.gradeSettings?.margin)||0); }
+/* Points still needed to reach the 240 total, split across the tests not yet
+   entered. Whole points, spread as evenly as possible (151 over two tests ->
+   [76, 75]). scores: number|null per test slot. Returns null when every test
+   is already in. reached: 240 already banked. impossible: the split needs more
+   than 100 on some test. */
+function pointsToPass(scores, totalTarget, maxScore){
+  totalTarget = totalTarget == null ? CYCLE_TOTAL_TARGET : totalTarget;
+  maxScore = maxScore == null ? 100 : maxScore;
+  const open = [];
+  let total = 0;
+  scores.forEach((v,i)=>{ if(v==null) open.push(i); else total += v; });
+  if(!open.length) return null;
+  const missing = Math.max(0, Math.ceil(totalTarget - total - 1e-9));
+  const base = Math.floor(missing / open.length), extra = missing - base*open.length;
+  const split = open.map((ti,k)=>({ testIdx: ti, need: base + (k < extra ? 1 : 0) }));
+  return { missing, remaining: open.length, split,
+           reached: missing === 0,
+           impossible: split.some(x=>x.need > maxScore) };
+}
 function gradeStatus(cls, cycle, studentId){
   const n = testCountFor(cls);
   const entries = studentScores(cycle, studentId, n);
@@ -3186,9 +3205,23 @@ function gradeStatus(cls, cycle, studentId){
              close: final != null && final >= target && final < target + margin };
   }
   return { advanced:false, target:CYCLE_AVG_TARGET, totalTarget:CYCLE_TOTAL_TARGET, total, avg, entered:nums.length, of:n, scores, entries,
+           toPass: pointsToPass(scores, CYCLE_TOTAL_TARGET, 100),
            under: avg < CYCLE_AVG_TARGET, close: avg >= CYCLE_AVG_TARGET && avg < CYCLE_AVG_TARGET + margin };
 }
 // Human line describing a status (for dashboard alerts / reports). lang: 'en' | 'pt'
+// "needs 90 on Third" / "needs 75 + 75" — short form of st.toPass. labels: test names (optional).
+function toPassText(st, lang, labels){
+  const tp = st && st.toPass, pt = lang==='pt';
+  if(!tp) return '';
+  if(tp.reached) return pt ? `${st.totalTarget} pontos já garantidos` : `${st.totalTarget} points already secured`;
+  if(tp.impossible) return pt ? `faltam ${tp.missing} pontos — não alcança ${st.totalTarget}` : `${tp.missing} points short — ${st.totalTarget} out of reach`;
+  if(tp.remaining === 1){
+    const lb = labels && labels[tp.split[0].testIdx];
+    return pt ? `precisa de ${tp.split[0].need}${lb?' na '+lb:' na última prova'}`
+              : `needs ${tp.split[0].need}${lb?' on '+lb:' on the last test'}`;
+  }
+  return (pt ? 'precisa de pelo menos ' : 'needs at least ') + tp.split.map(x=>x.need).join(' + ');
+}
 function gradeStatusLine(st, lang){
   const pt = lang==='pt';
   const scoresTxt = st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ');
@@ -3205,7 +3238,9 @@ function gradeStatusLine(st, lang){
                  : (pt?' — já na meta no diagnóstico':' — already at target on the diagnostic'))
          : '');
   }
+  const need = toPassText(st, lang);
   return `${scoresTxt} · ${pt?'total':'total'} ${st.total}/${st.totalTarget} · ${pt?'média':'avg'} ${st.avg}`
+    + (need ? ` · ${need}` : '')
     + (st.under ? (pt?' — abaixo da média 80':' — below the 80 average')
        : st.close ? (pt?' — perto da média 80':' — close to the 80 average') : '');
 }
@@ -7222,7 +7257,7 @@ function gmSimpleBody(c, cycle, students, n, testDates, target, adv){
               <td style="font-weight:600;">${esc(s.name)}</td>
               ${scores.map((v,ti)=>`<td style="text-align:center;"><input type="number" min="0" max="${adv?677:100}" value="${v==null?'':v}" style="width:70px;text-align:center;" onchange="gmSetScore(window._gmIds[${si}], ${ti}, this.value)"></td>`).join('')}
               <td style="text-align:center;">${st?st.total:'—'}</td>
-              <td style="text-align:center;">${st?st.avg:'—'}</td>
+              <td style="text-align:center;">${st?st.avg:'—'}${gmToPassHtml(st, c)}</td>
               <td>${gmStatusHtml(st, c, target)}</td>
             </tr>`;
           }).join('')}
@@ -7231,6 +7266,19 @@ function gmSimpleBody(c, cycle, students, n, testDates, target, adv){
     </div>` : `<div class="empty">No students in this class yet.</div>`}`;
 }
 
+// Small line under the average: what the remaining tests must add up to.
+function gmToPassHtml(st, c){
+  const tp = st && st.toPass;
+  if(!tp) return '';
+  const color = tp.reached ? 'var(--green)' : tp.impossible ? 'var(--red)' : 'var(--muted)';
+  const labels = Array.from({length:st.of},(_,i)=>testLabelFor(c,i));
+  const title = tp.reached ? '' : ` title="${tp.missing} of ${st.totalTarget} points still needed across ${tp.remaining} test${tp.remaining>1?'s':''}"`;
+  const txt = tp.reached ? '240 secured'
+            : tp.impossible ? `${tp.missing} short · out of reach`
+            : tp.remaining === 1 ? `needs ${tp.split[0].need} on ${esc(labels[tp.split[0].testIdx])}`
+            : `needs ${tp.split.map(x=>x.need).join(' + ')}`;
+  return `<div style="font-size:11px;font-weight:600;color:${color};white-space:nowrap;margin-top:2px;"${title}>${txt}</div>`;
+}
 function gmStatusHtml(st, c, target){
   const adv = isAdvancedLevel(c.level);
   if(!st) return '<span style="color:var(--muted);font-size:12px;">—</span>';
@@ -11701,7 +11749,7 @@ function renderStudentProfile(){
               <td>${esc(cy.label)}${cy.isCurrent?` <span class="badge other" style="font-size:11px;">${state.reportLang==='pt'?'atual':'current'}</span>`:''}</td>
               <td>${st.scores.map(v=>(v==null||v==='')?'—':v).join(' / ')}</td>
               ${gradesInfo.advanced?'':`<td style="text-align:center;">${st.total}</td>`}
-              <td style="text-align:center;">${gradesInfo.advanced ? (st.gain==null?'—':`<b style="color:${st.gain>0?'var(--green)':st.gain<0?'var(--red)':'var(--muted)'};">${st.gain>0?'+':''}${st.gain}</b>`) : st.avg}</td>
+              <td style="text-align:center;">${gradesInfo.advanced ? (st.gain==null?'—':`<b style="color:${st.gain>0?'var(--green)':st.gain<0?'var(--red)':'var(--muted)'};">${st.gain>0?'+':''}${st.gain}</b>`) : st.avg + (toPassText(st, state.reportLang) ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(toPassText(st, state.reportLang))}</div>` : '')}</td>
               <td>${st.under?`<span class="badge red">📞 ${statusTxt}</span>`:st.close?`<span class="badge amber">📞 ${statusTxt}</span>`:(ok?`<span class="badge" style="background:var(--green-soft,#e5f7ec);color:var(--green);">✓ ${statusTxt}</span>`:`<span class="badge other">${statusTxt}</span>`)}</td>
             </tr>`;
           }).join('')}
@@ -14375,6 +14423,8 @@ window.state = state;
 // E2: expose pure/near-pure functions for the test harness. Guarded so it never
 // interferes with normal use. See teacher-dashboard-tests.html.
 window.__testables = {
+  pointsToPass,
+  toPassText,
   buildAttentionQueue,
   alertHandled,
   dismissWarnings,
