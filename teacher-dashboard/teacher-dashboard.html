@@ -513,7 +513,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   /* Roll Call view toggle + compact roster */
   .view-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;}
   .view-seg button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;color:var(--muted);}
-  .view-seg button.on{background:var(--accent);color:#fff;}
+  .view-seg button.on{background:var(--accent);color:var(--on-accent, #fff);}
   .compact-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .compact-roster{border-collapse:collapse;width:100%;font-size:13px;}
   .compact-roster th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:2px solid var(--border);white-space:nowrap;}
@@ -566,6 +566,15 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .stat-label{font-size:12px;color:var(--muted);margin-top:4px;}
+  .dash-tiles{grid-template-columns:repeat(4,1fr);}
+  .stat-act{position:relative;width:100%;font:inherit;color:inherit;cursor:pointer;border:1px solid var(--border, transparent);transition:transform .12s, box-shadow .12s;}
+  .stat-act:hover{transform:translateY(-1px);}
+  .stat-act:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  .stat-go{position:absolute;top:10px;right:12px;font-size:13px;color:var(--muted);}
+  .stat-num.tone-red{background:none;-webkit-text-fill-color:var(--red);color:var(--red);}
+  .stat-num.tone-amber{background:none;-webkit-text-fill-color:var(--amber);color:var(--amber);}
+  .stat-num.stat-clear{background:none;-webkit-text-fill-color:var(--green);color:var(--green);}
+  @media(prefers-reduced-motion:reduce){ .stat-act{transition:none;} .stat-act:hover{transform:none;} }
 
   /* dashboard */
   .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -716,9 +725,12 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
 
   /* roll call */
   .rollcall-controls{display:flex;gap:10px;flex-wrap:wrap;}
-  .rollcall-controls select, .rollcall-controls input{border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:#fff;}
+  .rollcall-controls select, .rollcall-controls input,
+  .cw-switch select{border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);min-height:36px;}
+  .cw-switch select{max-width:220px;font-weight:600;cursor:pointer;}
   .warn-banner{background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;font-weight:500;}
-  .rollcall-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .rollcall-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .rollcall-actions .rc-act-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
   .save-indicator{font-size:12px;color:var(--muted);}
 
   .roster-list{display:flex;flex-direction:column;padding:6px 0;}
@@ -768,7 +780,14 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   tr:last-child td{border-bottom:none;}
 
   /* calendar */
-  .cal-nav{display:flex;align-items:center;gap:10px;}
+  .cal-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+  .cal-grid.cal-grid-week{grid-template-columns:repeat(var(--wk-cols,7),minmax(0,1fr));}
+  @media (max-width:700px){
+    .cal-nav{justify-content:flex-start;gap:8px;width:100%;}
+    .cal-nav .tabs{margin-right:0 !important;order:2;}
+    .cal-nav .cal-wkd{order:3;margin-left:auto;}
+    .cal-month-label{min-width:0;flex:1;}
+  }
   .cal-month-label{font-family:var(--font-head);font-weight:600;font-size:15px;min-width:140px;text-align:center;}
   .cal-grid-wrap{padding:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;}
@@ -776,7 +795,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
      so a week with a test is visibly taller than the one below it. */
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;grid-auto-rows:minmax(112px,1fr);}
   .cal-grid-week{grid-auto-rows:minmax(220px,1fr);}
-  @media (max-width:700px){ .cal-grid-week{grid-template-columns:1fr;grid-auto-rows:auto;} }
+  @media (max-width:700px){ .cal-grid.cal-grid-week{grid-template-columns:1fr;grid-auto-rows:auto;} }
   @media (max-width:700px){ .cal-grid{grid-auto-rows:minmax(84px,1fr);} }
   /* height:100% makes each cell fill its equal row rather than hug its content. */
   .cal-cell{border:1px solid var(--border);border-radius:10px;padding:8px;height:100%;min-height:0;cursor:pointer;display:flex;flex-direction:column;gap:4px;overflow:hidden;}
@@ -898,7 +917,11 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     body{flex-direction:column;}
     .sidebar{display:none !important;}
     .main{padding:18px 18px 96px;}
-    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .stat-row, .dash-tiles{grid-template-columns:repeat(2,1fr);}
+    .dash-tiles{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
+    .dash-tiles .stat-allclear{display:none;}   /* on a phone, only tiles that need you */
+    .dash-tiles .stat{padding:12px 10px;}
+    .dash-tiles .stat-num{font-size:22px;}
     .dash-grid{grid-template-columns:1fr !important;}
     .drawer{grid-template-columns:1fr;}
     .cal-cell{min-height:60px;}
@@ -1273,7 +1296,7 @@ let state = {
   rollcallShowAll: false,   // when true, Roll Call dropdown lists all classes (for makeups)
   rcTab: 'now',             // Roll Call panel: 'before' | 'now' | 'after'
   calendar: { year: new Date().getFullYear(), month: new Date().getMonth() },
-  calView: 'month',
+  calView: null,              // null = not chosen yet: month on desktop, week on phones
   calWeekStart: null,
   expandedClassId: null,
   classView: { classId: null, tab: 'students' },   // P1: per-class workspace
@@ -2130,12 +2153,13 @@ function loadUi(){
       scale: (ui.scale >= 0.9 && ui.scale <= 1.25) ? ui.scale : 1,
       bg: BGS.some(b=>b.id===ui.bg) ? ui.bg : 'theme',
       rollView: ui.rollView==='compact' ? 'compact' : 'full',
+      calWeekends: ui.calWeekends==='show' ? 'show' : 'auto',
       rcPrint: {
         width:    Number(ui.rcPrint && ui.rcPrint.width)    || 90,
         maxLines: Number(ui.rcPrint && ui.rcPrint.maxLines) || 20
       }
     };
-  }catch(e){ return { theme:'classic', scale:1, bg:'theme', rollView:'full',
+  }catch(e){ return { theme:'classic', scale:1, bg:'theme', rollView:'full', calWeekends:'auto',
                       rcPrint:{ width:90, maxLines:20 } }; }
 }
 function saveUi(ui){
@@ -2162,6 +2186,27 @@ function applyBg(id){
 }
 function setTheme(id){ applyTheme(id); openSettingsModal(); }
 function setBg(id){ applyBg(id); openSettingsModal(); }
+/* Weekend columns: hidden unless something lands on that weekday in the
+   visible range (a class, event, holiday, private lesson), or the teacher
+   pinned them on. Nothing scheduled is ever hidden. */
+function calHiddenDows(dates){
+  if(loadUi().calWeekends==='show') return new Set();
+  const hide = new Set([0,6]);
+  dates.forEach(d=>{
+    const dow = new Date(d+'T00:00:00').getDay();
+    if(!hide.has(dow)) return;
+    if(getHoliday(d) || calDayItemsHtml(d).trim()) hide.delete(dow);
+  });
+  return hide;
+}
+function toggleCalWeekends(){
+  const ui = loadUi(); ui.calWeekends = ui.calWeekends==='show' ? 'auto' : 'show'; saveUi(ui);
+  refreshView();
+}
+function calWeekendBtn(){
+  const on = loadUi().calWeekends==='show';
+  return `<button type="button" class="btn-ghost small cal-wkd" aria-pressed="${on}" onclick="toggleCalWeekends()" title="${on?'Hide empty Saturdays and Sundays':'Always show Saturday and Sunday'}">${on?'✓ ':''}Weekends</button>`;
+}
 function setRollView(v){
   const ui = loadUi(); ui.rollView = v==='compact' ? 'compact' : 'full'; saveUi(ui);
   refreshView();
@@ -2366,8 +2411,31 @@ function setGradeMargin(v){
 }
 
 function setDashUpcomingRange(r){
-  localStorage.setItem('dashUpcomingRange', r);   // per-device preference, like theme
+  try { localStorage.setItem('dashUpcomingRange', r); } catch(e){}   // per-device preference, like theme
   refreshView();
+}
+/* Dashboard action tile: a count you can act on. Zero shows a calm "all clear"
+   line instead of a bare 0; a non-zero tile with an action is a button. */
+function dashTile(n, label, clearText, action, tone){
+  const clear = !n && clearText;
+  const inner = clear
+    ? `<div class="stat-num stat-clear">✓</div><div class="stat-label">${clearText}</div>`
+    : `<div class="stat-num${n&&tone?' tone-'+tone:''}">${n}</div><div class="stat-label">${label}</div>`;
+  return action
+    ? `<button type="button" class="card stat stat-act" onclick="${action}">${inner}<span class="stat-go" aria-hidden="true">→</span></button>`
+    : `<div class="card stat${clear?' stat-allclear':''}">${inner}</div>`;
+}
+/* Report language as a two-way switch that shows the CURRENT language,
+   instead of a lone "PT"/"EN" button that named the other one. */
+function reportLangSeg(isPt, toggleCall){
+  const b = (on, code, label) => `<button type="button" role="radio" aria-checked="${on}" class="${on?'on':''}" title="Report in ${label}" ${on?'':`onclick="${toggleCall}"`}>${code}</button>`;
+  return `<div class="view-seg" role="radiogroup" aria-label="Report language">${b(!isPt,'EN','English')}${b(isPt,'PT','Portuguese')}</div>`;
+}
+function dashJump(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduce?'auto':'smooth', block:'start' });
 }
 
 const BACKUP_KEYS = ['classes','students','sessions','events','holidays','sessionMeta',
@@ -2509,6 +2577,12 @@ function byClassTime(a, b){
   return (ta - tb) || byName(a, b);
 }
 function sortByClassTime(list){ return list.slice().sort(byClassTime); }
+/* The class list in the order the week runs: first class day (Mon first,
+   Sunday last), then start time. Classes with no days set go last. */
+function sortByWeekSlot(list){
+  const firstDay = c => { const d = getClassDays(c).map(x=>(x+6)%7); return d.length ? Math.min(...d) : 9; };
+  return list.slice().sort((a,b)=> firstDay(a)-firstDay(b) || byClassTime(a,b));
+}
 function archivedClasses(){ return state.classes.filter(c=>c.archived); }
 
 /* ---------- group level tags & test grades ----------
@@ -4030,10 +4104,12 @@ function _renderDashboard(el){
   // Upcoming = group class occurrences + calendar events + scheduled private lessons,
   // merged chronologically, filtered by range: Today (default) / Tomorrow / This week.
   const privName = id => state.privateStudents.find(p=>p.id===id)?.name || 'Private student';
-  const upRange = localStorage.getItem('dashUpcomingRange') || 'today';
+  let upRange = 'tomorrow';
+  try { upRange = localStorage.getItem('dashUpcomingRange') || 'tomorrow'; } catch(e){}
+  if(upRange==='today') upRange = 'tomorrow';   // today now lives in the Today card only
   const addDays = (dstr,n)=>{ const d=new Date(dstr+'T00:00:00'); d.setDate(d.getDate()+n); return dateToStr(d.getFullYear(), d.getMonth(), d.getDate()); };
-  const upFrom = upRange==='tomorrow' ? addDays(today,1) : today;
-  const upTo   = upRange==='week' ? addDays(today,6) : upFrom;
+  const upFrom = addDays(today,1);
+  const upTo   = upRange==='week' ? addDays(today,7) : upFrom;
 
   // Expand recurring group classes into dated occurrences within the range
   const classOccurrences = [];
@@ -4103,6 +4179,18 @@ function _renderDashboard(el){
       <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashPrivTodayIds[${i}]})">Open →</button>
     </div>`).join('');
 
+  // — Today's calendar events (tests, reviews…) — shown in the Today card —
+  const todayEventsHtml = state.events.filter(e=>e.date===today).map(e=>`
+    <div class="dash-row">
+      <div class="dash-row-left">
+        <span class="badge ${e.type}">${eventTypeLabel(e.type)}</span>
+        <div>
+          <div class="dash-row-title">${esc(e.title)}</div>
+          <div class="dash-row-sub">Today${e.classId?' · '+esc(classById(e.classId)?.name||''):''}</div>
+        </div>
+      </div>
+    </div>`).join('');
+
   // — Today's classes —
   let todayHtml = '';
   if(todayHoliday){
@@ -4129,7 +4217,7 @@ function _renderDashboard(el){
       </div>`;
       }).join('');
   } else {
-    todayHtml = privTodayList.length ? '' : `<div class="empty">No classes scheduled today.</div>`;
+    todayHtml = (privTodayList.length || todayEventsHtml) ? '' : `<div class="empty">No classes scheduled today.</div>`;
   }
 
   // — Upcoming —
@@ -4166,7 +4254,7 @@ function _renderDashboard(el){
       </div>
       <button class="btn-ghost small" onclick="navigate('priv-student',{privOpenStudentId:window._dashUpcomingPrivIds[${i}]})">Open →</button>
     </div>`).join('')
-    : `<div class="empty">${upRange==='today'?'Nothing scheduled for today.':upRange==='tomorrow'?'Nothing scheduled for tomorrow.':'Nothing scheduled this week.'} <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
+    : `<div class="empty">${upRange==='tomorrow'?'Nothing scheduled for tomorrow.':'Nothing scheduled in the next 7 days.'} <button type="button" class="linkish" onclick="navigate('calendar')">Add one in Calendar</button></div>`;
 
   // — Contact Parents (group students) —
   const cpStudents = sortByName(state.students.filter(s=>{ const c=classById(s.classId); return s.contactParents?.reason && c && !c.archived; }));
@@ -4426,8 +4514,10 @@ function _renderDashboard(el){
   window._attnRows = {};
   attnQueue.forEach(r=>{ window._attnRows[r.studentId] = r; });
   const attnSevWord = n => n>=3 ? 'flagged' : n>=2 ? 'needs a call' : 'early warning';
+  const leftToday = todaysClasses.filter(c=>!isSessionCompleted(c.id, today)).length;
+  const privOwing = state.privateStudents.filter(s=>s.status==='active' && computeLedger(s.id).balance>0.5).length;
   const attnHtml = attnQueue.length ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid ${attnQueue[0].sev>=2?'var(--red)':'var(--amber)'};">
+    <div class="card section" id="dash-attn" style="margin-top:16px;border-left:4px solid ${attnQueue[0].sev>=2?'var(--red)':'var(--amber)'};">
       <h3>⚠️ Needs attention <span class="attn-count">— ${attnQueue.length} student${attnQueue.length===1?'':'s'}, ${attnQueue.reduce((n,r)=>n+r.signals.length,0)} warning${attnQueue.reduce((n,r)=>n+r.signals.length,0)===1?'':'s'}</span></h3>
       ${attnQueue.map(r=>{
         const cls = classById(r.classId);
@@ -4455,7 +4545,7 @@ function _renderDashboard(el){
 
   const hkCount = (backupDays>=7?1:0) + pendingCompletions.length + staleLessons.length;
   const hkHtml = hkCount ? `
-    <div class="card section" style="margin-top:16px;border-left:4px solid var(--amber);">
+    <div class="card section" id="dash-hk" style="margin-top:16px;border-left:4px solid var(--amber);">
       <button type="button" class="dash-row-left" aria-expanded="${state.showDashHk!==false}" onclick="state.showDashHk = state.showDashHk===false; refreshView();">
         <span class="chevron" aria-hidden="true">${state.showDashHk!==false?'▾':'▸'}</span>
         <span class="section-title" style="margin:0;">🧹 Housekeeping (${hkCount})</span>
@@ -4465,18 +4555,19 @@ function _renderDashboard(el){
 
   el.innerHTML = `
     <div class="topbar"><div><h1>Dashboard</h1><div class="meta">${formatDateLong(today)}</div></div></div>
-    <div class="stat-row">
-      <div class="card stat"><div class="stat-num">${activeClasses().length}</div><div class="stat-label">Classes</div></div>
-      <div class="card stat"><div class="stat-num">${state.students.filter(s=>{const c=classById(s.classId);return c&&!c.archived;}).length}</div><div class="stat-label">Students</div></div>
-      <div class="card stat"><div class="stat-num">${todaysClasses.length}</div><div class="stat-label">Classes today</div></div>
+    <div class="stat-row dash-tiles">
+      ${dashTile(leftToday, leftToday===1?'class left today':'classes left today', todaysClasses.length?'All done today':'No classes today', null)}
+      ${dashTile(attnQueue.length, attnQueue.length===1?'student needs attention':'students need attention', 'Nobody flagged', attnQueue.length?"dashJump('dash-attn')":null, attnQueue.length&&attnQueue[0].sev>=2?'red':'amber')}
+      ${dashTile(pendingCompletions.length, pendingCompletions.length===1?'class to mark complete':'classes to mark complete', 'All marked', pendingCompletions.length?"state.showDashHk=true;refreshView();dashJump('dash-hk')":null, 'amber')}
+      ${dashTile(privOwing, privOwing===1?'private student owes':'private students owe', 'Everyone paid up', privOwing?"state.privView='payments';navigate('private')":null, 'red')}
     </div>
-    <div class="dash-grid" style="grid-template-columns:1fr 2fr;">
-      <div class="card section"><h3>Today's Classes</h3>${todayHtml}${privTodayHtml}</div>
+    <div class="dash-grid">
+      <div class="card section"><h3>Today</h3>${todayHtml}${todayEventsHtml}${privTodayHtml}</div>
       <div class="card section">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
           <h3 style="margin:0;">Upcoming</h3>
           <div class="pill-group" role="radiogroup" aria-label="Upcoming range">
-            ${[['today','Today'],['tomorrow','Tomorrow'],['week','This week']].map(([v,l])=>`
+            ${[['tomorrow','Tomorrow'],['week','Next 7 days']].map(([v,l])=>`
               <button type="button" class="pill ${upRange===v?'on':''}" role="radio" aria-checked="${upRange===v}" onclick="setDashUpcomingRange('${v}')">${l}</button>`).join('')}
           </div>
         </div>
@@ -4595,7 +4686,7 @@ function renderClasses(){
       <div><h1>Classes &amp; Students</h1><div class="meta">${active.length} classes · ${activeStudentCount} students</div></div>
       <button class="btn-accent" onclick="openClassModal()">+ Add class</button>
     </div>
-    ${active.length ? active.map(c=>renderClassCard(c,false)).join('') : `
+    ${active.length ? sortByWeekSlot(active).map(c=>renderClassCard(c,false)).join('') : `
       <div class="card empty-card">
         <p>No active classes.</p>
         <button class="btn-accent" onclick="openClassModal()">+ Add your first class</button>
@@ -4623,7 +4714,6 @@ function renderClassCard(c, isArchived){
             <span class="dash-row-title">${esc(c.name)}${c.level?` <span class="badge other" style="margin-left:6px;">${esc(c.level)}</span>`:''}${isArchived?` <span class="badge other" style="margin-left:6px;">Archived</span>`:''}</span>
             <span class="dash-row-sub">${scheduleLabel(c)}${c.time?' \u00b7 '+c.time:''} \u00b7 ${students.length} students \u00b7 ${dur}</span>
           </span>
-          <span class="chevron" style="margin-left:8px;" aria-hidden="true">\u203a</span>
         </button>
         <div class="class-card-actions">
           ${isArchived
@@ -4633,7 +4723,7 @@ function renderClassCard(c, isArchived){
                <details class="kebab"><summary aria-label="More actions for ${esc(c.name)}">\u22ef</summary>
                  <div class="kebab-menu">
                    <button type="button" onclick="closeKebabs();openClassTab('${c.id}','grades')">\ud83d\udcdd Grades</button>
-                   <button type="button" onclick="closeKebabs();openClassTab('${c.id}','log')">\ud83d\udccb Class log</button>
+                   <button type="button" onclick="closeKebabs();openClassTab('${c.id}','log')">\ud83d\udcd3 Class log</button>
                    <button type="button" onclick="closeKebabs();openClassTab('${c.id}','trends')">\ud83d\udcc8 Trends</button>
                    ${c.pointsEnabled?`<button type="button" onclick="closeKebabs();openClassTab('${c.id}','points')">\ud83c\udfc6 Points</button>`:''}
                    <button type="button" onclick="closeKebabs();openClassTab('${c.id}','reports')">\ud83d\udcca Reports</button>
@@ -4656,7 +4746,7 @@ function renderClassCard(c, isArchived){
 const CW_TABS = [
   ['students', '\ud83d\udc65 Students'],
   ['grades',   '\ud83d\udcdd Grades'],
-  ['log',      '\ud83d\udccb Log'],
+  ['log',      '\ud83d\udcd3 Class log'],
   ['trends',   '\ud83d\udcc8 Trends'],
   ['points',   '\ud83c\udfc6 Points'],
   ['reports',  '\ud83d\udcca Reports']
@@ -6806,7 +6896,7 @@ function contactsTabsHtml(active){
   const btn = (k, label, count) => `<button class="btn-ghost small" onclick="setContactsTab('${k}')"
     style="${active===k?'border-color:var(--accent);color:var(--accent);font-weight:700;':''}">${label}${count!=null?` (${count})`:''}</button>`;
   return `<div class="no-print" style="display:flex;gap:8px;margin-bottom:16px;">
-    ${btn('log','Contact log')}${btn('messages','Message parents', n)}
+    ${btn('log','Contact history')}${btn('messages','Message parents', n)}
   </div>`;
 }
 
@@ -8008,7 +8098,7 @@ function renderRollCall(){
             title="${nav.next?'Next class \u2014 '+formatDateLong(nav.next)+' (Alt+\u2192)':'No later class for '+esc(cls.name)}"
             onclick="navRollcallSession(1)">\u2192</button>
         </div>
-        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}','${date}')" title="Class log — lesson history and the cumulative attendance register">📋 Log</button>
+        <button type="button" class="btn-ghost small" onclick="openClassLogModal('${cls.id}','${date}')" title="Class log — lesson history and the cumulative attendance register">📓 Class log</button>
         ${cls.pointsEnabled?`<button type="button" class="btn-ghost small" onclick="openClassTab('${cls.id}','points')" title="Class points scoreboard">🏆 Points</button>`:''}
       </div>
     </div>
@@ -8122,6 +8212,7 @@ function renderRollCall(){
           <div class="rollcall-actions">
             ${locked?'':`<button class="btn-ghost" onclick="markAllPresent()" title="Everyone present, then mark the few who missed">Mark all present</button>`}
             ${locked?'':`<button class="btn-ghost" onclick="markAllAbsent()" title="Everyone absent, then tick off the few who turned up">Mark all absent</button>`}
+            <div class="rc-act-right">
             <div class="view-seg" role="radiogroup" aria-label="Roster view">
               <button type="button" role="radio" aria-checked="${loadUi().rollView!=='compact'}" class="${loadUi().rollView!=='compact'?'on':''}" onclick="setRollView('full')">Full</button>
               <button type="button" role="radio" aria-checked="${loadUi().rollView==='compact'}" class="${loadUi().rollView==='compact'?'on':''}" onclick="setRollView('compact')">Compact</button>
@@ -8130,6 +8221,7 @@ function renderRollCall(){
               onclick="saveNowClicked('rc-save-btn','rc-save-msg')">\uD83D\uDCBE Save</button>
             <span id="rc-save-msg" class="save-msg"></span>
             <span class="save-indicator"></span>
+            </div>
           </div>
           <div class="card roster-list ${locked?'locked-session':''}">
             ${loadUi().rollView==='compact'
@@ -11521,12 +11613,12 @@ function renderStudentProfile(){
         <button class="btn-ghost back-btn no-print" onclick="goBack('${returnView}')">${returnLabel}</button>
         <h1>${esc(student.name)}${student.englishClub?` <span class="badge amber" style="font-size:13px;vertical-align:middle;">${t.englishClubBadge}</span>`:''}${student.contactParents?.reason?` <span class="badge red" style="font-size:13px;vertical-align:middle;">📞 ${esc(student.contactParents.category)}</span>`:''}</h1>
         <div class="meta">${cls?esc(cls.name):'No class'}</div>
-        <div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:6px;">${t.reportPeriod}: ${fromVal?formatDateShort(fromVal):t.allTime}${fromVal||toVal?` – ${toVal?formatDateShort(toVal):t.present2}`:''}</div>
+        <div class="print-only" style="font-size:14px;font-weight:600;color:var(--accent);margin-top:6px;">${t.reportPeriod}: ${fromVal?formatDateShort(fromVal):t.allTime}${fromVal||toVal?` – ${toVal?formatDateShort(toVal):t.present2}`:''}</div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;" class="no-print">
-        <button class="btn-ghost" onclick="openParentMessages(['${student.id}'])" title="Message parents — builds a message from this student's own grades and attendance">📱</button>
-        <button class="btn-ghost" onclick="openRenameStudentModal('${student.id}')" title="Edit this student's name">✏️</button>
-        <button class="btn-ghost" onclick="toggleReportLang()" title="Switch language">${t.langToggle}</button>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;" class="no-print">
+        <button class="btn-ghost" onclick="openParentMessages(['${student.id}'])" title="Message parents — builds a message from this student's own grades and attendance">📱 Message parents</button>
+        <button class="btn-ghost" onclick="openRenameStudentModal('${student.id}')" title="Edit this student's name">✏️ Rename</button>
+        ${reportLangSeg(pt0, 'toggleReportLang()')}
         <button class="btn-ghost" onclick="openReportTextModal()">${t.copyTextBtn}</button>
         <button class="btn-accent" onclick="window.print()">${t.printBtn}</button>
       </div>
@@ -11540,7 +11632,6 @@ function renderStudentProfile(){
         <span style="color:var(--muted);font-size:13px;">${t.to}</span>
         <input type="date" value="${toVal}" onchange="setReportRange('to', this.value)">
         <button class="btn-ghost small" onclick="resetReportRange()">${t.allTime}</button>
-        <button class="btn-ghost small" onclick="navigate('${returnView}')" style="margin-left:auto;">← Change</button>
       </div>
     </div>
     <div class="stat-row">
@@ -12668,7 +12759,7 @@ function renderGroupReport(){
         <div class="meta">${fromVal?formatDateShort(fromVal):'Start'} – ${toVal?formatDateShort(toVal):'Present'} · ${students.length} students</div>
       </div>
       <div style="display:flex;gap:10px;" class="no-print">
-        <button class="btn-ghost" onclick="toggleGroupReportLang()">${t.langToggle}</button>
+        ${reportLangSeg(state.reportLang==='pt', 'toggleGroupReportLang()')}
         <button class="btn-ghost" onclick="openGroupReportTextModal()">📋 ${state.reportLang==='pt'?'Texto':'Written report'}</button>
         <button class="btn-ghost" onclick="exportGroupReportCsv()">⬇ CSV</button>
         <button class="btn-accent" onclick="window.print()">🖨️ ${state.reportLang==='pt'?'Imprimir':'Print'}</button>
@@ -12881,17 +12972,24 @@ function calDayItemsHtml(dateStr){
 }
 
 function renderCalendar(){
+  // On a phone the month grid is too narrow to read; open in week view unless the teacher picked one.
+  if(!state.calView && window.matchMedia && matchMedia('(max-width:700px)').matches) state.calView = 'week';
   if(state.calView === 'week') return renderCalendarWeek();
   const {year, month} = state.calendar;
   const firstDay = new Date(year, month, 1);
   const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const monthName = firstDay.toLocaleString('en-US',{month:'long'});
+  const monthDates = Array.from({length:daysInMonth}, (_,i)=>dateToStr(year, month, i+1));
+  const hidden = calHiddenDows(monthDates);
+  const shownDows = [0,1,2,3,4,5,6].filter(x=>!hidden.has(x));
+  const colsStyle = `grid-template-columns:repeat(${shownDows.length},minmax(0,1fr));`;
 
   let cells = '';
-  for(let i=0;i<startWeekday;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let i=0;i<startWeekday;i++) if(!hidden.has(i)) cells += `<div class="cal-cell empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
     const dateStr = dateToStr(year, month, d);
+    if(hidden.has(new Date(dateStr+'T00:00:00').getDay())) continue;
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
     const as = holiday ? {cls:'',style:'',flag:''} : assessCellAttrs(dateStr);
@@ -12912,11 +13010,12 @@ function renderCalendar(){
         <div class="cal-month-label">${monthName} ${year}</div>
         <button class="btn-ghost" onclick="changeMonth(1)">→</button>
         <button class="btn-ghost" onclick="goToCurrentMonth()">Today</button>
+        ${calWeekendBtn()}
       </div>
     </div>
     <div class="card cal-grid-wrap">
-      <div class="cal-weekdays">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>
-      <div class="cal-grid">${cells}</div>
+      <div class="cal-weekdays" style="${colsStyle}">${shownDows.map(i=>`<div>${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i]}</div>`).join('')}</div>
+      <div class="cal-grid" style="${colsStyle}">${cells}</div>
     </div>
     ${calLegendHtml()}
   `;
@@ -12978,7 +13077,10 @@ function renderCalendarWeek(){
   const rangeLabel = `${formatDateShort(days[0])} – ${formatDateShort(endStr)}`;
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+  const hiddenW = calHiddenDows(days);
+  const shownCount = days.filter((_,i)=>!hiddenW.has(i)).length;
   const cols = days.map((dateStr,i)=>{
+    if(hiddenW.has(i)) return '';
     const isToday = dateStr===todayStr();
     const holiday = getHoliday(dateStr);
     const dnum = Number(dateStr.slice(8,10));
@@ -13002,10 +13104,11 @@ function renderCalendarWeek(){
         <div class="cal-month-label">${rangeLabel}</div>
         <button class="btn-ghost" onclick="changeWeek(1)">→</button>
         <button class="btn-ghost" onclick="goToCurrentWeek()">This week</button>
+        ${calWeekendBtn()}
       </div>
     </div>
     <div class="card cal-grid-wrap">
-      <div class="cal-grid cal-grid-week">${cols}</div>
+      <div class="cal-grid cal-grid-week" style="--wk-cols:${shownCount};">${cols}</div>
     </div>
     ${calLegendHtml()}
   `;
