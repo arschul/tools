@@ -513,6 +513,8 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   /* Roll Call view toggle + compact roster */
   .view-seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;}
   .view-seg button{border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;color:var(--muted);}
+  .view-seg button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;}
+  .view-seg button{min-height:32px;}
   .view-seg button.on{background:var(--accent);color:var(--on-accent, #fff);}
   .compact-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .compact-roster{border-collapse:collapse;width:100%;font-size:13px;}
@@ -728,6 +730,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .rollcall-controls select, .rollcall-controls input,
   .cw-switch select{border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);min-height:36px;}
   .cw-switch select{max-width:220px;font-weight:600;cursor:pointer;}
+  .cl-range input[type=date]{border:1px solid var(--border);border-radius:10px;padding:6px 10px;font-family:inherit;font-size:13px;background:var(--surface);color:var(--text);min-height:34px;}
   .warn-banner{background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;font-weight:500;}
   .rollcall-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
   .rollcall-actions .rc-act-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
@@ -784,7 +787,7 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .cal-grid.cal-grid-week{grid-template-columns:repeat(var(--wk-cols,7),minmax(0,1fr));}
   @media (max-width:700px){
     .cal-nav{justify-content:flex-start;gap:8px;width:100%;}
-    .cal-nav .tabs{margin-right:0 !important;order:2;}
+    .cal-nav .cal-view-seg{order:2;}
     .cal-nav .cal-wkd{order:3;margin-left:auto;}
     .cal-month-label{min-width:0;flex:1;}
   }
@@ -987,10 +990,25 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   .shortcut-row:last-child{border-bottom:none;}
   .shortcut-row .keys{flex:0 0 130px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;}
   .sidebar-foot{
-    margin-top:2px;background:none;border:none;color:#7d869c;font-family:inherit;font-size:11.5px;
-    cursor:pointer;padding:4px 10px;text-align:left;width:100%;
+    background:none;border:none;color:var(--sidebar-text);opacity:.75;font-family:inherit;font-size:12px;
+    cursor:pointer;padding:6px 10px;border-radius:8px;text-align:left;
   }
-  .sidebar-foot:hover{color:#fff;}
+  .sidebar-foot:hover{color:var(--sidebar-strong);opacity:1;background:var(--sidebar-hover);}
+  .sidebar-foot:focus-visible, .sidebar-hub:focus-visible, .sidebar-search:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  .sidebar-account{display:flex;gap:2px;flex-wrap:wrap;margin:2px 0 0;}
+  .nav-group-label{
+    font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--sidebar-text);opacity:.55;margin:14px 12px 6px;
+  }
+  .sidebar-hub{display:flex;align-items:center;gap:6px;color:var(--sidebar-text);opacity:.75;font-size:12px;
+    text-decoration:none;margin:-16px 0 18px 2px;transition:opacity .15s, color .15s;}
+  .sidebar-hub:hover{opacity:1;color:var(--sidebar-strong);}
+  .sidebar-search{display:flex;align-items:center;gap:8px;width:100%;background:var(--sidebar-badge);
+    border:1px solid var(--sidebar-divider);color:var(--sidebar-text);border-radius:9px;padding:8px 11px;
+    font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:4px;text-align:left;}
+  .sidebar-search:hover{background:var(--sidebar-badge-hover);color:var(--sidebar-strong);}
+  .sidebar-search kbd{margin-left:auto;font-family:inherit;font-size:11px;padding:0 6px;border-radius:5px;
+    border:1px solid var(--sidebar-divider);opacity:.8;}
   /* The manual Save stays out of the way until there is something to save. */
   .sidebar-save.is-idle .save-btn{display:none;}
 
@@ -1144,30 +1162,38 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
 
 <nav class="sidebar app-hidden" id="app-sidebar" aria-label="Main navigation">
   <div class="brand"><span class="dot"></span>EFL Dashboard</div>
-  <a href="../" style="display:flex;align-items:center;gap:6px;color:#7d869c;font-size:12px;text-decoration:none;margin:-16px 0 20px 2px;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#7d869c'">← Tool Hub</a>
-  <button type="button" onclick="openStudentSearch()" title="Search students (press /)" style="display:flex;align-items:center;gap:8px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#aab3c5;border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:16px;text-align:left;">
+  <a href="../" class="sidebar-hub">← Tool Hub</a>
+  <button type="button" class="sidebar-search" onclick="openStudentSearch()" title="Search students (press /)">
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    Search students…
+    Search students…<kbd>/</kbd>
   </button>
+  <div class="nav-group-label" aria-hidden="true">Today</div>
   <button type="button" class="nav-item" data-view="dashboard" onclick="navigate('dashboard')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9"/></svg></span>
     Dashboard
-  </button>
-  <button type="button" class="nav-item" data-view="classes" onclick="navigate('classes')">
-    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="7" r="2.5"/><path d="M21 20c0-2.7-1.8-5-4.5-5.8"/></svg></span>
-    Classes &amp; Students
   </button>
   <button type="button" class="nav-item" data-view="rollcall" onclick="openRollCallNav()">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="m9 13 2 2 4-4"/></svg></span>
     Roll Call
   </button>
-  <button type="button" class="nav-item" data-view="club-list" onclick="navigate('club-list')">
-    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
-    English Club
+  <div class="nav-group-label" aria-hidden="true">Teaching</div>
+  <button type="button" class="nav-item" data-view="classes" onclick="navigate('classes')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="7" r="2.5"/><path d="M21 20c0-2.7-1.8-5-4.5-5.8"/></svg></span>
+    Classes &amp; Students
   </button>
   <button type="button" class="nav-item" data-view="calendar" onclick="navigate('calendar')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
     Calendar
+  </button>
+  <button type="button" class="nav-item" data-view="private" onclick="navigate('private')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+    Private Lessons
+    <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
+  </button>
+  <div class="nav-group-label" aria-hidden="true">Extras</div>
+  <button type="button" class="nav-item" data-view="club-list" onclick="navigate('club-list')">
+    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+    English Club
   </button>
   <button type="button" class="nav-item" data-view="projects" onclick="navigate('projects')">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l2 2h7v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="m9 13 2 2 4-4"/></svg></span>
@@ -1177,11 +1203,6 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
     Contacts
   </button>
-  <button type="button" class="nav-item" data-view="private" onclick="navigate('private')">
-    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-    Private Lessons
-    <span id="priv-alert-dot" style="display:none;width:8px;height:8px;border-radius:50%;background:#d1453d;margin-left:auto;"></span>
-  </button>
   <div class="sidebar-divider"></div>
   <div class="sidebar-save no-print">
     <button type="button" id="global-save-btn" class="btn-ghost small save-btn"
@@ -1189,15 +1210,14 @@ document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
     <span id="global-save-msg" class="save-msg"></span>
     <span class="save-indicator"></span>
   </div>
-  <button type="button" class="nav-item" onclick="openSettingsModal()">
+  <button type="button" class="nav-item" data-view="settings" onclick="openSettingsModal()">
     <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
     Settings
   </button>
-  <button type="button" class="sidebar-foot no-print" onclick="openShortcutsModal()" title="Keyboard shortcuts (?)">⌨ Keyboard shortcuts</button>
-  <button type="button" class="nav-item" onclick="doLogout()">
-    <span class="nav-icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
-    Log out
-  </button>
+  <div class="sidebar-account no-print">
+    <button type="button" class="sidebar-foot" onclick="openShortcutsModal()" title="Keyboard shortcuts (?)">⌨ Shortcuts</button>
+    <button type="button" class="sidebar-foot" onclick="doLogout()">↪ Log out</button>
+  </div>
 </nav>
 
 <nav class="mobile-nav app-hidden no-print" id="mobile-nav" aria-label="Main navigation">
@@ -2220,7 +2240,25 @@ function setFieldDirect(studentId, field, val){
 }
 function setScale(v){ applyScale(Number(v)); openSettingsModal(); }
 
+/* Settings is a modal, but it has its own address: "<current route>!settings".
+   Opening pushes one history entry, so Back closes it (handy on a phone) and
+   the link can be bookmarked. Re-renders from inside Settings don't push again. */
+let _settingsPushed = false, _inPopstate = false;
+const SETTINGS_MARK = '!settings';
+function hashHasSettings(h){ return String(h||'').endsWith(SETTINGS_MARK); }
+function settingsRouteOpened(){
+  if(_routeSuspend || hashHasSettings(location.hash) || !window.history || !history.pushState) return;
+  _routeDepth++;
+  history.pushState({d:_routeDepth}, '', routeHash() + SETTINGS_MARK);
+  _settingsPushed = true;
+}
+function settingsRouteClosed(){
+  if(_inPopstate || !hashHasSettings(location.hash)) return;
+  if(_settingsPushed){ _settingsPushed = false; history.back(); }
+  else history.replaceState({d:_routeDepth}, '', routeHash());
+}
 function openSettingsModal(){
+  settingsRouteOpened();
   const ui = loadUi();
   const last = state.backupMeta?.lastBackupAt;
   const days = daysSinceLastBackup();
@@ -3824,6 +3862,7 @@ function closeModal(){
   _pendingCallCtx = null;  // dismissing by Escape or backdrop must not leave it armed
   root.innerHTML = '';
   modalPersistent = false;
+  settingsRouteClosed();
   const target = modalLastFocus;
   modalLastFocus = null;
   if(target && document.contains(target) && typeof target.focus === 'function'){
@@ -3888,7 +3927,8 @@ function routeHash(){
 
 function pushRoute(replace){
   if(!window.history || !history.pushState) return;
-  const h = routeHash();
+  // While Settings is open, keep its mark so a repaint behind it doesn't drop it.
+  const h = routeHash() + (document.querySelector('#modal-root .set-rail') ? SETTINGS_MARK : '');
   if(location.hash === h) return;           // already there — never double an entry
   if(replace){ history.replaceState({d:_routeDepth}, '', h); return; }
   _routeDepth++;
@@ -3898,6 +3938,13 @@ function pushRoute(replace){
 /* Parse a hash into a navigate() call. Anything that points at a record that
    no longer exists falls back rather than rendering a ghost view. */
 function applyHash(hash){
+  if(hashHasSettings(hash)){
+    const base = String(hash).slice(0, -SETTINGS_MARK.length);
+    applyHash(base);
+    if(window.history && history.replaceState) history.replaceState(history.state, '', routeHash() + SETTINGS_MARK);
+    openSettingsModal();   // _routeSuspend is up in both callers, so this doesn't push
+    return;
+  }
   const parts = String(hash||'').replace(/^#\/?/,'').split('/')
     .map(x=>{ try{ return decodeURIComponent(x); }catch(e){ return x; } })
     .filter(x=>x!=='');
@@ -3946,7 +3993,9 @@ function applyHash(hash){
 window.addEventListener('popstate', (e)=>{
   if(!dataReady) return;
   _routeDepth = (e.state && e.state.d) || 0;
-  closeModal();
+  _inPopstate = true;
+  try { closeModal(); } finally { _inPopstate = false; }
+  _settingsPushed = false;
   _routeSuspend = true;
   try { applyHash(location.hash); }
   finally { _routeSuspend = false; }
@@ -4566,9 +4615,9 @@ function _renderDashboard(el){
       <div class="card section">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
           <h3 style="margin:0;">Upcoming</h3>
-          <div class="pill-group" role="radiogroup" aria-label="Upcoming range">
+          <div class="view-seg" role="radiogroup" aria-label="Upcoming range">
             ${[['tomorrow','Tomorrow'],['week','Next 7 days']].map(([v,l])=>`
-              <button type="button" class="pill ${upRange===v?'on':''}" role="radio" aria-checked="${upRange===v}" onclick="setDashUpcomingRange('${v}')">${l}</button>`).join('')}
+              <button type="button" class="${upRange===v?'on':''}" role="radio" aria-checked="${upRange===v}" onclick="setDashUpcomingRange('${v}')">${l}</button>`).join('')}
           </div>
         </div>
         ${upcomingHtml}
@@ -5218,13 +5267,13 @@ function classLogPanelHtml(){
 
   return `<div class="card section">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-      <div class="log-tabs" role="tablist">
+      <div class="view-seg" role="tablist" aria-label="Class log view">
         <button type="button" role="tab" aria-selected="${clLogTab!=='attendance'}" class="${clLogTab!=='attendance'?'on':''}" onclick="clSetLogTab('log')">📓 What we did</button>
         <button type="button" role="tab" aria-selected="${clLogTab==='attendance'}" class="${clLogTab==='attendance'?'on':''}" onclick="clSetLogTab('attendance')">✓ Attendance</button>
       </div>
       <span style="font-size:12px;color:var(--muted);">${clLogTab==='attendance'?'cumulative register':rows.length+' entr'+(rows.length===1?'y':'ies')}</span>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;">
+    <div class="cl-range" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0;">
       <label style="font-size:13px;font-weight:600;color:var(--muted);">Period:</label>
       <input type="date" value="${clLogFrom}" onchange="clSetRange('from',this.value)">
       <span style="color:var(--muted);font-size:13px;">–</span>
@@ -6893,9 +6942,8 @@ function setContactsTab(tab){
 }
 function contactsTabsHtml(active){
   const n = pmRoster().length;
-  const btn = (k, label, count) => `<button class="btn-ghost small" onclick="setContactsTab('${k}')"
-    style="${active===k?'border-color:var(--accent);color:var(--accent);font-weight:700;':''}">${label}${count!=null?` (${count})`:''}</button>`;
-  return `<div class="no-print" style="display:flex;gap:8px;margin-bottom:16px;">
+  const btn = (k, label, count) => `<button type="button" role="tab" class="tab ${active===k?'active':''}" aria-selected="${active===k}" onclick="setContactsTab('${k}')">${label}${count!=null?` (${count})`:''}</button>`;
+  return `<div class="tabs no-print" role="tablist" aria-label="Contacts sections" style="margin-bottom:16px;">
     ${btn('log','Contact history')}${btn('messages','Message parents', n)}
   </div>`;
 }
@@ -13005,7 +13053,7 @@ function renderCalendar(){
     <div class="topbar">
       <div><h1>Calendar</h1></div>
       <div class="cal-nav">
-        <div class="tabs" style="margin-right:6px;"><button class="tab active" onclick="setCalView('month')">Month</button><button class="tab" onclick="setCalView('week')">Week</button></div>
+        ${calViewSeg('month')}
         <button class="btn-ghost" onclick="changeMonth(-1)">←</button>
         <div class="cal-month-label">${monthName} ${year}</div>
         <button class="btn-ghost" onclick="changeMonth(1)">→</button>
@@ -13037,6 +13085,10 @@ function calLegendHtml(){
     </div>`;
 }
 
+function calViewSeg(cur){
+  const b = (v,l) => `<button type="button" role="radio" aria-checked="${cur===v}" class="${cur===v?'on':''}" onclick="setCalView('${v}')">${l}</button>`;
+  return `<div class="view-seg cal-view-seg" role="radiogroup" aria-label="Calendar view">${b('month','Month')}${b('week','Week')}</div>`;
+}
 function setCalView(v){
   state.calView = v;
   if(v==='week' && !state.calWeekStart){
@@ -13099,7 +13151,7 @@ function renderCalendarWeek(){
     <div class="topbar">
       <div><h1>Calendar</h1></div>
       <div class="cal-nav">
-        <div class="tabs" style="margin-right:6px;"><button class="tab" onclick="setCalView('month')">Month</button><button class="tab active" onclick="setCalView('week')">Week</button></div>
+        ${calViewSeg('week')}
         <button class="btn-ghost" onclick="changeWeek(-1)">←</button>
         <div class="cal-month-label">${rangeLabel}</div>
         <button class="btn-ghost" onclick="changeWeek(1)">→</button>
